@@ -1,0 +1,1211 @@
+{
+  "_meta": {
+    "models": {
+      "projects": "Projet de jardin-forêt pour un client, avec toutes les informations terrain, budget, palette végétale et plan de plantation.",
+      "teamMembers": "Membres de l'équipe assignés au projet avec leur rôle (Project Manager, Designer, Butineur).",
+      "timesheets": "Temps passé par un membre sur le projet, avec phase associée, mode de facturation et déplacements.",
+      "expenses": "Dépenses effectuées pour le projet (achats de plants, matériel, etc.) avec justificatifs.",
+      "siteAnalysis": "Analyse structurée du terrain selon l'échelle de permanence (climat, eau, sol, etc.).",
+      "plantPalette": "Liste des plantes sélectionnées pour le projet, organisées par strate avec quantités et prix.",
+      "plantingPlan": "Plan de plantation avec image du terrain et position des plantes numérotées.",
+      "quotes": "Devis générés pour le projet avec lignes détaillées et historique des versions.",
+      "documents": "Documents uploadés et organisés par catégorie (offres, contrats, analyses...).",
+      "mediaItems": "Photos et vidéos de l'album du projet.",
+      "meetings": "Réunions liées au projet avec notes et résumé IA.",
+      "annotations": "Commentaires positionnés sur les plans et orthophotos, par l'équipe ou le client.",
+      "plantFollowUp": "Suivi co-gestion : statut des plantes, visites terrain et interventions.",
+      "clientContributions": "Contributions du client : questionnaire terrain, wishlist plantes, journal par plante.",
+      "harvestCalendar": "Calendrier de récoltes mois par mois, généré depuis la palette végétale.",
+      "maintenanceCalendar": "Calendrier de maintenance mois par mois, éditable par l'équipe."
+    },
+    "relationships": [
+      "Chaque Project a une équipe (teamMembers) avec un Project Manager et des membres",
+      "Chaque Project contient des Timesheets et des Expenses pour le suivi financier",
+      "Chaque Project a une SiteAnalysis structurée selon l'échelle de permanence",
+      "Chaque Project a une PlantPalette avec les plantes sélectionnées par strate",
+      "Chaque Project a un PlantingPlan avec l'image du terrain et les marqueurs",
+      "Chaque Project peut avoir plusieurs Quotes versionnés",
+      "Chaque Project a des Documents organisés par catégorie et des MediaItems dans l'album",
+      "Chaque Project a des Meetings avec notes et résumés IA",
+      "Les Annotations sont positionnées sur les plans/orthophotos du projet",
+      "Le PlantFollowUp contient le suivi de chaque plante, les visites et interventions",
+      "Les ClientContributions regroupent les apports du client (questionnaire, wishlist, journal)",
+      "Les calendriers (récoltes et maintenance) sont générés/éditables par projet"
+    ]
+  },
+  "projects": [
+    {
+      "id": "proj-001",
+      "name": "Jardin-forêt des Griants",
+      "clientId": "contact-001",
+      "clientName": "Famille Dubois-Martin",
+      "clientEmail": "pierre.dubois@email.be",
+      "clientPhone": "+32 475 12 34 56",
+      "placeId": "place-001",
+      "address": "Rue des Griants 42, 1390 Grez-Doiceau",
+      "coordinates": { "lat": 50.7412, "lng": 4.6891 },
+      "area": 2500,
+      "phase": "co-gestion",
+      "status": "active",
+      "startDate": "2024-03-15",
+      "plantingDate": "2024-11-23",
+      "projectManagerId": "member-001",
+      "budget": {
+        "hoursPlanned": 120,
+        "hoursWorked": 98,
+        "hoursBilled": 72,
+        "hoursSemos": 26,
+        "expensesBudget": 8500,
+        "expensesActual": 7234.50
+      },
+      "templateId": null,
+      "createdAt": "2024-03-01",
+      "updatedAt": "2025-01-15"
+    },
+    {
+      "id": "proj-002",
+      "name": "Verger communautaire de Wavre",
+      "clientId": "contact-002",
+      "clientName": "Ville de Wavre",
+      "clientEmail": "environnement@wavre.be",
+      "clientPhone": "+32 10 23 45 67",
+      "placeId": "place-002",
+      "address": "Parc de la Dodaine, 1300 Wavre",
+      "coordinates": { "lat": 50.7167, "lng": 4.6000 },
+      "area": 5000,
+      "phase": "projet-detaille",
+      "status": "active",
+      "startDate": "2024-09-01",
+      "plantingDate": null,
+      "projectManagerId": "member-002",
+      "budget": {
+        "hoursPlanned": 200,
+        "hoursWorked": 87,
+        "hoursBilled": 87,
+        "hoursSemos": 0,
+        "expensesBudget": 25000,
+        "expensesActual": 3200
+      },
+      "templateId": "template-verger",
+      "createdAt": "2024-08-15",
+      "updatedAt": "2025-01-10"
+    },
+    {
+      "id": "proj-003",
+      "name": "Forêt nourricière école Saint-Joseph",
+      "clientId": "contact-003",
+      "clientName": "École Saint-Joseph Ottignies",
+      "clientEmail": "direction@stjoseph-olln.be",
+      "clientPhone": "+32 10 41 12 34",
+      "placeId": "place-003",
+      "address": "Avenue des Combattants 15, 1340 Ottignies",
+      "coordinates": { "lat": 50.6667, "lng": 4.5667 },
+      "area": 800,
+      "phase": "offre",
+      "status": "pending",
+      "startDate": null,
+      "plantingDate": null,
+      "projectManagerId": "member-001",
+      "budget": {
+        "hoursPlanned": 60,
+        "hoursWorked": 8,
+        "hoursBilled": 0,
+        "hoursSemos": 8,
+        "expensesBudget": 4500,
+        "expensesActual": 0
+      },
+      "templateId": "template-ecole",
+      "createdAt": "2025-01-05",
+      "updatedAt": "2025-01-12"
+    }
+  ],
+  "teamMembers": [
+    {
+      "id": "team-001",
+      "projectId": "proj-001",
+      "memberId": "member-001",
+      "memberName": "Sophie Lemaire",
+      "memberEmail": "sophie@semisto.be",
+      "memberAvatar": "/avatars/sophie.jpg",
+      "role": "project-manager",
+      "isPaid": true,
+      "assignedAt": "2024-03-01"
+    },
+    {
+      "id": "team-002",
+      "projectId": "proj-001",
+      "memberId": "member-003",
+      "memberName": "Marc Janssens",
+      "memberEmail": "marc@semisto.be",
+      "memberAvatar": "/avatars/marc.jpg",
+      "role": "designer",
+      "isPaid": true,
+      "assignedAt": "2024-03-15"
+    },
+    {
+      "id": "team-003",
+      "projectId": "proj-001",
+      "memberId": "member-004",
+      "memberName": "Émilie Rousseau",
+      "memberEmail": "emilie@semisto.be",
+      "memberAvatar": "/avatars/emilie.jpg",
+      "role": "butineur",
+      "isPaid": false,
+      "assignedAt": "2024-05-01"
+    },
+    {
+      "id": "team-004",
+      "projectId": "proj-002",
+      "memberId": "member-002",
+      "memberName": "Thomas Dumont",
+      "memberEmail": "thomas@semisto.be",
+      "memberAvatar": "/avatars/thomas.jpg",
+      "role": "project-manager",
+      "isPaid": true,
+      "assignedAt": "2024-08-15"
+    },
+    {
+      "id": "team-005",
+      "projectId": "proj-002",
+      "memberId": "member-001",
+      "memberName": "Sophie Lemaire",
+      "memberEmail": "sophie@semisto.be",
+      "memberAvatar": "/avatars/sophie.jpg",
+      "role": "designer",
+      "isPaid": true,
+      "assignedAt": "2024-09-01"
+    }
+  ],
+  "timesheets": [
+    {
+      "id": "ts-001",
+      "projectId": "proj-001",
+      "memberId": "member-001",
+      "memberName": "Sophie Lemaire",
+      "date": "2025-01-10",
+      "hours": 4,
+      "phase": "co-gestion",
+      "mode": "billed",
+      "travelKm": 45,
+      "notes": "Visite de suivi avec le client, contrôle des plantations d'automne"
+    },
+    {
+      "id": "ts-002",
+      "projectId": "proj-001",
+      "memberId": "member-003",
+      "memberName": "Marc Janssens",
+      "date": "2025-01-08",
+      "hours": 2,
+      "phase": "co-gestion",
+      "mode": "semos",
+      "travelKm": 0,
+      "notes": "Mise à jour du plan de plantation avec les remplacements"
+    },
+    {
+      "id": "ts-003",
+      "projectId": "proj-002",
+      "memberId": "member-002",
+      "memberName": "Thomas Dumont",
+      "date": "2025-01-09",
+      "hours": 6,
+      "phase": "projet-detaille",
+      "mode": "billed",
+      "travelKm": 30,
+      "notes": "Finalisation de la palette végétale avec les services techniques de la ville"
+    },
+    {
+      "id": "ts-004",
+      "projectId": "proj-003",
+      "memberId": "member-001",
+      "memberName": "Sophie Lemaire",
+      "date": "2025-01-05",
+      "hours": 3,
+      "phase": "offre",
+      "mode": "semos",
+      "travelKm": 25,
+      "notes": "Première visite terrain avec la directrice"
+    }
+  ],
+  "expenses": [
+    {
+      "id": "exp-001",
+      "projectId": "proj-001",
+      "date": "2024-11-15",
+      "amount": 3450.00,
+      "category": "plants",
+      "description": "Commande pépinière Ecosem - arbres fruitiers et arbustes",
+      "phase": "mise-en-oeuvre",
+      "memberId": "member-001",
+      "memberName": "Sophie Lemaire",
+      "receiptUrl": "/receipts/ecosem-nov2024.pdf",
+      "status": "approved"
+    },
+    {
+      "id": "exp-002",
+      "projectId": "proj-001",
+      "date": "2024-11-20",
+      "amount": 856.50,
+      "category": "material",
+      "description": "Paillage BRF - 15m³",
+      "phase": "mise-en-oeuvre",
+      "memberId": "member-003",
+      "memberName": "Marc Janssens",
+      "receiptUrl": "/receipts/brf-nov2024.pdf",
+      "status": "approved"
+    },
+    {
+      "id": "exp-003",
+      "projectId": "proj-002",
+      "date": "2024-12-10",
+      "amount": 3200.00,
+      "category": "plants",
+      "description": "Acompte pépinière - commande printemps 2025",
+      "phase": "projet-detaille",
+      "memberId": "member-002",
+      "memberName": "Thomas Dumont",
+      "receiptUrl": "/receipts/acompte-wavre.pdf",
+      "status": "pending"
+    }
+  ],
+  "siteAnalysis": [
+    {
+      "id": "analysis-001",
+      "projectId": "proj-001",
+      "updatedAt": "2024-04-15",
+      "climate": {
+        "hardinessZone": "8a",
+        "frostFreeDays": 180,
+        "annualRainfall": 850,
+        "notes": "Zone tempérée océanique, risque de gelées tardives jusqu'à mi-avril"
+      },
+      "geomorphology": {
+        "slope": "légère pente 3% vers le sud",
+        "aspect": "sud-ouest",
+        "elevation": 125,
+        "soilType": "limon argileux",
+        "notes": "Terrain en légère cuvette, bon drainage naturel"
+      },
+      "water": {
+        "sources": ["puits existant", "récupération eau de pluie 10000L"],
+        "wetZones": "zone humide en bas du terrain (mare potentielle)",
+        "drainage": "bon",
+        "notes": "Nappe phréatique à 8m, sol retient bien l'humidité"
+      },
+      "socioEconomic": {
+        "ownership": "propriété privée",
+        "easements": "servitude de passage côté nord",
+        "neighbors": "voisins bienveillants, intéressés par le projet",
+        "localMarket": "marchés locaux Grez et Wavre, GASAP",
+        "notes": "Famille motivée, 2 enfants, souhaitent autonomie alimentaire"
+      },
+      "access": {
+        "mainAccess": "chemin carrossable depuis rue",
+        "secondaryAccess": "portillon piéton côté jardin",
+        "parking": "place pour 3 véhicules",
+        "notes": "Accès facile pour livraisons"
+      },
+      "vegetation": {
+        "existingTrees": ["2 vieux pommiers", "1 noyer", "haie de charme"],
+        "problematicSpecies": ["ronces invasives zone nord"],
+        "notableFeatures": "vieux pommier à conserver comme arbre tuteur",
+        "notes": "Haie de charme à renforcer avec essences mellifères"
+      },
+      "microclimate": {
+        "windExposure": "vent dominant sud-ouest, protégé par haie",
+        "sunPatterns": "plein soleil 10h-18h en été",
+        "frostPockets": "légère poche de gel en bas de pente",
+        "notes": "Créer brise-vent côté ouest pour protéger zone de culture"
+      },
+      "buildings": {
+        "existing": ["maison principale", "cabanon de jardin", "serre 12m²"],
+        "utilities": "eau et électricité disponibles au cabanon",
+        "notes": "Possibilité d'agrandir la serre"
+      },
+      "soil": {
+        "type": "limon argileux",
+        "ph": 6.8,
+        "organic": "3.2%",
+        "texture": "équilibrée",
+        "notes": "Sol fertile, légèrement acide, bon pour fruitiers"
+      },
+      "clientObservations": {
+        "sunnyAreas": "coin sud-est très ensoleillé l'après-midi",
+        "wetAreas": "zone basse reste humide après les pluies",
+        "windyAreas": "couloir de vent entre maison et cabanon",
+        "favoriteSpots": "sous le vieux pommier, vue sur la campagne",
+        "historyNotes": "ancien potager de la grand-mère, très fertile"
+      },
+      "clientPhotos": [
+        {
+          "id": "photo-001",
+          "url": "/uploads/griants/terrain-vue-generale.jpg",
+          "caption": "Vue générale depuis la terrasse",
+          "coordinates": { "lat": 50.7412, "lng": 4.6891 },
+          "takenAt": "2024-03-20"
+        },
+        {
+          "id": "photo-002",
+          "url": "/uploads/griants/zone-humide.jpg",
+          "caption": "Zone humide en bas du terrain",
+          "coordinates": { "lat": 50.7410, "lng": 4.6893 },
+          "takenAt": "2024-03-20"
+        }
+      ],
+      "clientUsageMap": [
+        {
+          "id": "usage-001",
+          "type": "passage",
+          "coordinates": [{ "lat": 50.7412, "lng": 4.6890 }, { "lat": 50.7411, "lng": 4.6892 }],
+          "description": "Chemin principal maison-cabanon"
+        },
+        {
+          "id": "usage-002",
+          "type": "preserve-view",
+          "coordinates": [{ "lat": 50.7413, "lng": 4.6891 }],
+          "description": "Vue sur la campagne à préserver"
+        },
+        {
+          "id": "usage-003",
+          "type": "favorite",
+          "coordinates": [{ "lat": 50.7411, "lng": 4.6890 }],
+          "description": "Coin lecture sous le vieux pommier"
+        }
+      ]
+    }
+  ],
+  "plantPalette": [
+    {
+      "id": "palette-001",
+      "projectId": "proj-001",
+      "updatedAt": "2024-09-15",
+      "items": [
+        {
+          "id": "item-001",
+          "speciesId": "sp-malus-domestica",
+          "speciesName": "Malus domestica",
+          "commonName": "Pommier",
+          "varietyId": "var-reine-reinettes",
+          "varietyName": "Reine des Reinettes",
+          "layer": "canopy",
+          "quantity": 3,
+          "unitPrice": 45.00,
+          "notes": "Pollinisateur pour les autres pommiers",
+          "harvestMonths": [8, 9, 10],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-002",
+          "speciesId": "sp-malus-domestica",
+          "speciesName": "Malus domestica",
+          "commonName": "Pommier",
+          "varietyId": "var-belle-de-boskoop",
+          "varietyName": "Belle de Boskoop",
+          "layer": "canopy",
+          "quantity": 2,
+          "unitPrice": 45.00,
+          "notes": "Excellente pomme de garde",
+          "harvestMonths": [9, 10],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-003",
+          "speciesId": "sp-prunus-avium",
+          "speciesName": "Prunus avium",
+          "commonName": "Cerisier",
+          "varietyId": "var-burlat",
+          "varietyName": "Burlat",
+          "layer": "canopy",
+          "quantity": 2,
+          "unitPrice": 55.00,
+          "notes": "Variété précoce, autofertile",
+          "harvestMonths": [6],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-004",
+          "speciesId": "sp-corylus-avellana",
+          "speciesName": "Corylus avellana",
+          "commonName": "Noisetier",
+          "varietyId": "var-fertile-coutard",
+          "varietyName": "Fertile de Coutard",
+          "layer": "shrub",
+          "quantity": 5,
+          "unitPrice": 18.00,
+          "notes": "Excellente production, précoce",
+          "harvestMonths": [9, 10],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-005",
+          "speciesId": "sp-ribes-nigrum",
+          "speciesName": "Ribes nigrum",
+          "commonName": "Cassissier",
+          "varietyId": "var-noir-de-bourgogne",
+          "varietyName": "Noir de Bourgogne",
+          "layer": "shrub",
+          "quantity": 8,
+          "unitPrice": 12.00,
+          "notes": "Riche en vitamine C",
+          "harvestMonths": [7],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-006",
+          "speciesId": "sp-rubus-idaeus",
+          "speciesName": "Rubus idaeus",
+          "commonName": "Framboisier",
+          "varietyId": "var-heritage",
+          "varietyName": "Heritage",
+          "layer": "shrub",
+          "quantity": 20,
+          "unitPrice": 6.00,
+          "notes": "Remontant, production été et automne",
+          "harvestMonths": [6, 7, 9, 10],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-007",
+          "speciesId": "sp-fragaria-vesca",
+          "speciesName": "Fragaria vesca",
+          "commonName": "Fraisier des bois",
+          "varietyId": null,
+          "varietyName": null,
+          "layer": "ground-cover",
+          "quantity": 50,
+          "unitPrice": 2.50,
+          "notes": "Couvre-sol productif",
+          "harvestMonths": [5, 6, 7, 8, 9],
+          "harvestProducts": ["fruits"]
+        },
+        {
+          "id": "item-008",
+          "speciesId": "sp-allium-ursinum",
+          "speciesName": "Allium ursinum",
+          "commonName": "Ail des ours",
+          "varietyId": null,
+          "varietyName": null,
+          "layer": "ground-cover",
+          "quantity": 100,
+          "unitPrice": 1.50,
+          "notes": "Se naturalise facilement à l'ombre",
+          "harvestMonths": [3, 4, 5],
+          "harvestProducts": ["feuilles", "fleurs"]
+        },
+        {
+          "id": "item-009",
+          "speciesId": "sp-symphytum-officinale",
+          "speciesName": "Symphytum officinale",
+          "commonName": "Consoude",
+          "varietyId": "var-bocking-14",
+          "varietyName": "Bocking 14",
+          "layer": "herbaceous",
+          "quantity": 15,
+          "unitPrice": 4.00,
+          "notes": "Accumulateur de potasse, purin fertilisant",
+          "harvestMonths": [4, 5, 6, 7, 8, 9],
+          "harvestProducts": ["feuilles"]
+        }
+      ],
+      "totals": {
+        "totalPlants": 205,
+        "totalCost": 1096.00,
+        "byLayer": {
+          "canopy": { "count": 7, "cost": 335.00 },
+          "shrub": { "count": 33, "cost": 306.00 },
+          "herbaceous": { "count": 15, "cost": 60.00 },
+          "ground-cover": { "count": 150, "cost": 395.00 }
+        }
+      }
+    }
+  ],
+  "plantingPlan": [
+    {
+      "id": "plan-001",
+      "projectId": "proj-001",
+      "imageUrl": "/uploads/griants/plan-plantation-dec2025.jpg",
+      "imageWidth": 2400,
+      "imageHeight": 1800,
+      "scale": 5,
+      "updatedAt": "2024-10-15",
+      "markers": [
+        {
+          "id": "marker-001",
+          "paletteItemId": "item-001",
+          "number": 1,
+          "x": 450,
+          "y": 320,
+          "speciesName": "Malus domestica",
+          "varietyName": "Reine des Reinettes"
+        },
+        {
+          "id": "marker-002",
+          "paletteItemId": "item-001",
+          "number": 2,
+          "x": 520,
+          "y": 380,
+          "speciesName": "Malus domestica",
+          "varietyName": "Reine des Reinettes"
+        },
+        {
+          "id": "marker-003",
+          "paletteItemId": "item-002",
+          "number": 3,
+          "x": 600,
+          "y": 350,
+          "speciesName": "Malus domestica",
+          "varietyName": "Belle de Boskoop"
+        },
+        {
+          "id": "marker-004",
+          "paletteItemId": "item-003",
+          "number": 4,
+          "x": 380,
+          "y": 450,
+          "speciesName": "Prunus avium",
+          "varietyName": "Burlat"
+        },
+        {
+          "id": "marker-005",
+          "paletteItemId": "item-004",
+          "number": 5,
+          "x": 700,
+          "y": 420,
+          "speciesName": "Corylus avellana",
+          "varietyName": "Fertile de Coutard"
+        }
+      ]
+    }
+  ],
+  "quotes": [
+    {
+      "id": "quote-001",
+      "projectId": "proj-001",
+      "version": 3,
+      "status": "approved",
+      "title": "Offre jardin-forêt des Griants v3",
+      "createdAt": "2024-05-20",
+      "validUntil": "2024-07-20",
+      "approvedAt": "2024-06-05",
+      "approvedBy": "Pierre Dubois",
+      "clientComment": "Parfait, nous acceptons cette version. Hâte de commencer !",
+      "lines": [
+        {
+          "id": "line-001",
+          "description": "Design et étude de faisabilité",
+          "quantity": 1,
+          "unit": "forfait",
+          "unitPrice": 1200.00,
+          "total": 1200.00
+        },
+        {
+          "id": "line-002",
+          "description": "Plants et végétaux (palette végétale)",
+          "quantity": 1,
+          "unit": "lot",
+          "unitPrice": 3500.00,
+          "total": 3500.00
+        },
+        {
+          "id": "line-003",
+          "description": "Paillage BRF (15m³)",
+          "quantity": 15,
+          "unit": "m³",
+          "unitPrice": 60.00,
+          "total": 900.00
+        },
+        {
+          "id": "line-004",
+          "description": "Chantier de plantation (main d'œuvre)",
+          "quantity": 2,
+          "unit": "jours",
+          "unitPrice": 800.00,
+          "total": 1600.00
+        },
+        {
+          "id": "line-005",
+          "description": "Suivi co-gestion année 1 (4 visites)",
+          "quantity": 4,
+          "unit": "visites",
+          "unitPrice": 150.00,
+          "total": 600.00
+        }
+      ],
+      "subtotal": 7800.00,
+      "vatRate": 6,
+      "vatAmount": 468.00,
+      "total": 8268.00
+    },
+    {
+      "id": "quote-002",
+      "projectId": "proj-002",
+      "version": 1,
+      "status": "sent",
+      "title": "Offre verger communautaire Wavre",
+      "createdAt": "2024-10-15",
+      "validUntil": "2024-12-15",
+      "approvedAt": null,
+      "approvedBy": null,
+      "clientComment": null,
+      "lines": [
+        {
+          "id": "line-006",
+          "description": "Design participatif et co-création",
+          "quantity": 1,
+          "unit": "forfait",
+          "unitPrice": 4500.00,
+          "total": 4500.00
+        },
+        {
+          "id": "line-007",
+          "description": "Plants et végétaux",
+          "quantity": 1,
+          "unit": "lot",
+          "unitPrice": 12000.00,
+          "total": 12000.00
+        },
+        {
+          "id": "line-008",
+          "description": "Préparation du sol et amendements",
+          "quantity": 5000,
+          "unit": "m²",
+          "unitPrice": 0.80,
+          "total": 4000.00
+        },
+        {
+          "id": "line-009",
+          "description": "Chantier participatif (coordination)",
+          "quantity": 4,
+          "unit": "jours",
+          "unitPrice": 600.00,
+          "total": 2400.00
+        }
+      ],
+      "subtotal": 22900.00,
+      "vatRate": 6,
+      "vatAmount": 1374.00,
+      "total": 24274.00
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-001",
+      "projectId": "proj-001",
+      "category": "offres",
+      "name": "Offre jardin-forêt des Griants v3.pdf",
+      "url": "/documents/griants/offre-v3.pdf",
+      "size": 2456000,
+      "uploadedAt": "2024-05-20",
+      "uploadedBy": "Sophie Lemaire"
+    },
+    {
+      "id": "doc-002",
+      "projectId": "proj-001",
+      "category": "contrats",
+      "name": "Convention de partenariat signée.pdf",
+      "url": "/documents/griants/convention-signee.pdf",
+      "size": 1234000,
+      "uploadedAt": "2024-06-10",
+      "uploadedBy": "Sophie Lemaire"
+    },
+    {
+      "id": "doc-003",
+      "projectId": "proj-001",
+      "category": "analyses",
+      "name": "Analyse de sol - Labo UCLouvain.pdf",
+      "url": "/documents/griants/analyse-sol.pdf",
+      "size": 567000,
+      "uploadedAt": "2024-04-25",
+      "uploadedBy": "Marc Janssens"
+    },
+    {
+      "id": "doc-004",
+      "projectId": "proj-001",
+      "category": "plans",
+      "name": "Plan de plantation final.pdf",
+      "url": "/documents/griants/plan-plantation.pdf",
+      "size": 8900000,
+      "uploadedAt": "2024-10-30",
+      "uploadedBy": "Sophie Lemaire"
+    },
+    {
+      "id": "doc-005",
+      "projectId": "proj-001",
+      "category": "plans",
+      "name": "Palette végétale.pdf",
+      "url": "/documents/griants/palette-vegetale.pdf",
+      "size": 1200000,
+      "uploadedAt": "2024-09-15",
+      "uploadedBy": "Marc Janssens"
+    }
+  ],
+  "mediaItems": [
+    {
+      "id": "media-001",
+      "projectId": "proj-001",
+      "type": "image",
+      "url": "/media/griants/chantier-plantation-01.jpg",
+      "thumbnailUrl": "/media/griants/thumbs/chantier-plantation-01.jpg",
+      "caption": "Premier jour de plantation - équipe au complet",
+      "takenAt": "2024-11-23",
+      "uploadedAt": "2024-11-24",
+      "uploadedBy": "Sophie Lemaire"
+    },
+    {
+      "id": "media-002",
+      "projectId": "proj-001",
+      "type": "image",
+      "url": "/media/griants/chantier-plantation-02.jpg",
+      "thumbnailUrl": "/media/griants/thumbs/chantier-plantation-02.jpg",
+      "caption": "Les enfants plantent leur premier arbre",
+      "takenAt": "2024-11-23",
+      "uploadedAt": "2024-11-24",
+      "uploadedBy": "Émilie Rousseau"
+    },
+    {
+      "id": "media-003",
+      "projectId": "proj-001",
+      "type": "video",
+      "url": "/media/griants/timelapse-plantation.mp4",
+      "thumbnailUrl": "/media/griants/thumbs/timelapse-plantation.jpg",
+      "caption": "Timelapse de la journée de plantation",
+      "takenAt": "2024-11-23",
+      "uploadedAt": "2024-11-25",
+      "uploadedBy": "Marc Janssens"
+    },
+    {
+      "id": "media-004",
+      "projectId": "proj-001",
+      "type": "image",
+      "url": "/media/griants/visite-janvier-2025.jpg",
+      "thumbnailUrl": "/media/griants/thumbs/visite-janvier-2025.jpg",
+      "caption": "Visite de suivi janvier 2025 - tout pousse bien !",
+      "takenAt": "2025-01-10",
+      "uploadedAt": "2025-01-10",
+      "uploadedBy": "Sophie Lemaire"
+    }
+  ],
+  "meetings": [
+    {
+      "id": "meeting-001",
+      "projectId": "proj-001",
+      "title": "Réunion de lancement avec les clients",
+      "date": "2024-03-25",
+      "time": "14:00",
+      "duration": 90,
+      "location": "Sur site",
+      "attendees": ["Sophie Lemaire", "Pierre Dubois", "Marie Martin"],
+      "notes": "## Points abordés\n\n- Présentation du processus Semisto\n- Visite du terrain avec les clients\n- Discussion des souhaits : autonomie alimentaire, espace de jeu pour les enfants, coin détente\n- Calendrier prévisionnel établi\n\n## Prochaines étapes\n\n- Envoi du questionnaire terrain au client\n- Réalisation de l'analyse de sol\n- Première ébauche de design",
+      "aiSummary": "Réunion de lancement productive. Les clients souhaitent un jardin-forêt familial orienté vers l'autonomie alimentaire, avec un espace de jeu pour leurs deux enfants et un coin détente sous le vieux pommier. Le calendrier vise une plantation à l'automne 2024.",
+      "createdAt": "2024-03-25",
+      "updatedAt": "2024-03-26"
+    },
+    {
+      "id": "meeting-002",
+      "projectId": "proj-001",
+      "title": "Présentation du design préliminaire",
+      "date": "2024-05-10",
+      "time": "10:00",
+      "duration": 120,
+      "location": "Visioconférence",
+      "attendees": ["Sophie Lemaire", "Marc Janssens", "Pierre Dubois", "Marie Martin"],
+      "notes": "## Présentation\n\n- Présentation de 2 options de design\n- Option A : focus production fruitière\n- Option B : équilibre production/esthétique\n\n## Feedback client\n\n- Préférence pour l'option B\n- Demande d'ajouter plus de petits fruits (framboises, cassis)\n- Question sur l'entretien des premières années\n\n## Décisions\n\n- Partir sur l'option B avec ajustements\n- Ajouter une zone de petits fruits côté est\n- Prévoir un accompagnement co-gestion sur 3 ans",
+      "aiSummary": "Les clients ont choisi l'option B (équilibre production/esthétique) avec ajout d'une zone de petits fruits. Un accompagnement co-gestion sur 3 ans est prévu pour les aider dans l'entretien.",
+      "createdAt": "2024-05-10",
+      "updatedAt": "2024-05-11"
+    },
+    {
+      "id": "meeting-003",
+      "projectId": "proj-001",
+      "title": "Visite de suivi post-plantation",
+      "date": "2025-01-10",
+      "time": "09:30",
+      "duration": 60,
+      "location": "Sur site",
+      "attendees": ["Sophie Lemaire", "Pierre Dubois"],
+      "notes": "## État des plantations\n\n- Tous les arbres ont bien repris malgré l'hiver doux\n- 3 framboisiers à remplacer (zone trop humide)\n- Paillage en bon état, à renouveler au printemps\n\n## Actions\n\n- Commander 3 framboisiers de remplacement\n- Planifier la taille de formation des pommiers (mars)\n- Client satisfait, enthousiaste pour la suite",
+      "aiSummary": "Visite de suivi positive. La plupart des plantations ont bien repris. Trois framboisiers sont à remplacer dans une zone trop humide. Taille de formation prévue en mars.",
+      "createdAt": "2025-01-10",
+      "updatedAt": "2025-01-10"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "annot-001",
+      "projectId": "proj-001",
+      "documentId": "doc-004",
+      "x": 520,
+      "y": 380,
+      "authorId": "member-003",
+      "authorName": "Marc Janssens",
+      "authorType": "team",
+      "content": "Attention au drainage ici - prévoir butte surélevée",
+      "createdAt": "2024-10-20",
+      "resolved": true
+    },
+    {
+      "id": "annot-002",
+      "projectId": "proj-001",
+      "documentId": "doc-004",
+      "x": 700,
+      "y": 300,
+      "authorId": "contact-001",
+      "authorName": "Pierre Dubois",
+      "authorType": "client",
+      "content": "On aimerait garder cette vue dégagée vers la campagne",
+      "createdAt": "2024-10-22",
+      "resolved": true
+    },
+    {
+      "id": "annot-003",
+      "projectId": "proj-001",
+      "documentId": "doc-004",
+      "x": 350,
+      "y": 500,
+      "authorId": "contact-001",
+      "authorName": "Marie Martin",
+      "authorType": "client",
+      "content": "Est-ce qu'on pourrait ajouter un banc ici ? C'est notre coin préféré",
+      "createdAt": "2024-10-25",
+      "resolved": false
+    }
+  ],
+  "plantFollowUp": [
+    {
+      "projectId": "proj-001",
+      "plants": [
+        {
+          "id": "plant-001",
+          "paletteItemId": "item-001",
+          "markerId": "marker-001",
+          "speciesName": "Malus domestica",
+          "varietyName": "Reine des Reinettes",
+          "plantedAt": "2024-11-23",
+          "status": "alive",
+          "healthScore": 4,
+          "lastChecked": "2025-01-10",
+          "notes": "Belle reprise, premiers bourgeons visibles"
+        },
+        {
+          "id": "plant-002",
+          "paletteItemId": "item-006",
+          "markerId": null,
+          "speciesName": "Rubus idaeus",
+          "varietyName": "Heritage",
+          "plantedAt": "2024-11-23",
+          "status": "to-replace",
+          "healthScore": 1,
+          "lastChecked": "2025-01-10",
+          "notes": "Mort - zone trop humide, à déplacer"
+        }
+      ],
+      "visits": [
+        {
+          "id": "visit-001",
+          "date": "2024-12-15",
+          "type": "follow-up",
+          "memberId": "member-001",
+          "memberName": "Sophie Lemaire",
+          "notes": "Première visite post-plantation. Tout semble bien parti malgré quelques jours de gel. Paillage en bon état.",
+          "photos": ["/visits/griants/dec2024-01.jpg", "/visits/griants/dec2024-02.jpg"]
+        },
+        {
+          "id": "visit-002",
+          "date": "2025-01-10",
+          "type": "follow-up",
+          "memberId": "member-001",
+          "memberName": "Sophie Lemaire",
+          "notes": "Visite avec le client. 3 framboisiers morts en zone humide, à remplacer au printemps. Reste du jardin en excellent état.",
+          "photos": ["/visits/griants/jan2025-01.jpg"]
+        }
+      ],
+      "interventions": [
+        {
+          "id": "interv-001",
+          "date": "2024-11-23",
+          "type": "planting",
+          "description": "Plantation initiale - 205 plants",
+          "memberId": "member-003",
+          "memberName": "Marc Janssens"
+        },
+        {
+          "id": "interv-002",
+          "date": "2024-11-24",
+          "type": "mulching",
+          "description": "Paillage BRF 15cm sur l'ensemble du jardin",
+          "memberId": "member-004",
+          "memberName": "Émilie Rousseau"
+        }
+      ]
+    }
+  ],
+  "clientContributions": [
+    {
+      "projectId": "proj-001",
+      "clientId": "contact-001",
+      "terrainQuestionnaire": {
+        "completedAt": "2024-04-01",
+        "responses": {
+          "sunObservations": "Le coin sud-est reçoit le plus de soleil, surtout l'après-midi. Le nord reste ombragé par la haie de charme.",
+          "wetAreas": "Après les grosses pluies, le bas du terrain reste humide plusieurs jours. En été, le sol sèche vite sauf sous les arbres.",
+          "windPatterns": "Le vent vient surtout du sud-ouest. Entre la maison et le cabanon, il y a un couloir de vent assez fort.",
+          "soilHistory": "Ma grand-mère avait un potager ici pendant 30 ans. La terre est très noire et fertile dans cette zone.",
+          "existingWildlife": "Beaucoup de mésanges et rouge-gorges. Un hérisson qui visite régulièrement. Parfois un renard."
+        }
+      },
+      "wishlist": [
+        {
+          "id": "wish-001",
+          "type": "fruit",
+          "description": "Des poires - on adore les poires !",
+          "addedAt": "2024-03-30"
+        },
+        {
+          "id": "wish-002",
+          "type": "fruit",
+          "description": "Des framboises pour les enfants",
+          "addedAt": "2024-03-30"
+        },
+        {
+          "id": "wish-003",
+          "type": "herb",
+          "description": "De la menthe pour les tisanes et mojitos",
+          "addedAt": "2024-04-05"
+        }
+      ],
+      "plantJournal": [
+        {
+          "id": "journal-001",
+          "plantId": "plant-001",
+          "speciesName": "Malus domestica",
+          "varietyName": "Reine des Reinettes",
+          "entries": [
+            {
+              "id": "entry-001",
+              "date": "2024-11-23",
+              "text": "Notre premier pommier planté ! Les enfants ont mis la terre autour. Moment magique.",
+              "photos": ["/journal/griants/premier-pommier.jpg"]
+            },
+            {
+              "id": "entry-002",
+              "date": "2025-01-05",
+              "text": "Les premiers bourgeons apparaissent malgré l'hiver. On a hâte de voir les premières fleurs !",
+              "photos": []
+            }
+          ]
+        },
+        {
+          "id": "journal-002",
+          "plantId": "plant-003",
+          "speciesName": "Ribes nigrum",
+          "varietyName": "Noir de Bourgogne",
+          "entries": [
+            {
+              "id": "entry-003",
+              "date": "2024-12-20",
+              "text": "Les cassissiers ont l'air en forme. Lucas (6 ans) vérifie tous les jours s'il y a des fruits 😊",
+              "photos": ["/journal/griants/cassis-lucas.jpg"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "harvestCalendar": [
+    {
+      "projectId": "proj-001",
+      "months": [
+        {
+          "month": 3,
+          "name": "Mars",
+          "harvests": [
+            { "product": "feuilles", "species": "Allium ursinum", "commonName": "Ail des ours", "notes": "Récolter avant floraison pour plus de saveur" }
+          ]
+        },
+        {
+          "month": 4,
+          "name": "Avril",
+          "harvests": [
+            { "product": "feuilles", "species": "Allium ursinum", "commonName": "Ail des ours", "notes": "" },
+            { "product": "fleurs", "species": "Allium ursinum", "commonName": "Ail des ours", "notes": "Décoration comestible" },
+            { "product": "feuilles", "species": "Symphytum officinale", "commonName": "Consoude", "notes": "Pour purin fertilisant" }
+          ]
+        },
+        {
+          "month": 5,
+          "name": "Mai",
+          "harvests": [
+            { "product": "fruits", "species": "Fragaria vesca", "commonName": "Fraisier des bois", "notes": "Début de saison" },
+            { "product": "feuilles", "species": "Symphytum officinale", "commonName": "Consoude", "notes": "" }
+          ]
+        },
+        {
+          "month": 6,
+          "name": "Juin",
+          "harvests": [
+            { "product": "fruits", "species": "Prunus avium", "commonName": "Cerisier Burlat", "notes": "Variété précoce" },
+            { "product": "fruits", "species": "Fragaria vesca", "commonName": "Fraisier des bois", "notes": "Pleine saison" },
+            { "product": "fruits", "species": "Rubus idaeus", "commonName": "Framboisier", "notes": "Première récolte" }
+          ]
+        },
+        {
+          "month": 7,
+          "name": "Juillet",
+          "harvests": [
+            { "product": "fruits", "species": "Ribes nigrum", "commonName": "Cassissier", "notes": "Riche en vitamine C" },
+            { "product": "fruits", "species": "Rubus idaeus", "commonName": "Framboisier", "notes": "" },
+            { "product": "fruits", "species": "Fragaria vesca", "commonName": "Fraisier des bois", "notes": "" }
+          ]
+        },
+        {
+          "month": 8,
+          "name": "Août",
+          "harvests": [
+            { "product": "fruits", "species": "Malus domestica", "commonName": "Pommier Reine des Reinettes", "notes": "Premières pommes" },
+            { "product": "fruits", "species": "Fragaria vesca", "commonName": "Fraisier des bois", "notes": "Fin de saison" }
+          ]
+        },
+        {
+          "month": 9,
+          "name": "Septembre",
+          "harvests": [
+            { "product": "fruits", "species": "Malus domestica", "commonName": "Pommier", "notes": "Pleine récolte" },
+            { "product": "fruits", "species": "Corylus avellana", "commonName": "Noisetier", "notes": "Début de récolte" },
+            { "product": "fruits", "species": "Rubus idaeus", "commonName": "Framboisier remontant", "notes": "Deuxième récolte" }
+          ]
+        },
+        {
+          "month": 10,
+          "name": "Octobre",
+          "harvests": [
+            { "product": "fruits", "species": "Malus domestica", "commonName": "Pommier Belle de Boskoop", "notes": "Pommes de garde" },
+            { "product": "fruits", "species": "Corylus avellana", "commonName": "Noisetier", "notes": "Fin de récolte" },
+            { "product": "fruits", "species": "Rubus idaeus", "commonName": "Framboisier remontant", "notes": "Dernières framboises" }
+          ]
+        }
+      ]
+    }
+  ],
+  "maintenanceCalendar": [
+    {
+      "projectId": "proj-001",
+      "months": [
+        {
+          "month": 2,
+          "name": "Février",
+          "tasks": [
+            {
+              "title": "Taille de formation des fruitiers",
+              "description": "Tailler les pommiers et cerisiers pour former la structure. Vidéo explicative ci-dessous.",
+              "videoUrl": "https://www.youtube.com/watch?v=example1",
+              "photos": []
+            }
+          ]
+        },
+        {
+          "month": 3,
+          "name": "Mars",
+          "tasks": [
+            {
+              "title": "Renouvellement du paillage",
+              "description": "Ajouter 5-10cm de BRF ou paille sur les zones dégarnies. Ne pas pailler contre les troncs !",
+              "videoUrl": null,
+              "photos": ["/maintenance/paillage-exemple.jpg"]
+            },
+            {
+              "title": "Plantation des remplacements",
+              "description": "Replanter les 3 framboisiers dans une zone mieux drainée.",
+              "videoUrl": null,
+              "photos": []
+            }
+          ]
+        },
+        {
+          "month": 5,
+          "name": "Mai",
+          "tasks": [
+            {
+              "title": "Éclaircissage des fruits",
+              "description": "Retirer les fruits en excès sur les pommiers (garder 1 fruit tous les 10-15cm). Cela donne des fruits plus gros et évite l'alternance.",
+              "videoUrl": "https://www.youtube.com/watch?v=example2",
+              "photos": []
+            }
+          ]
+        },
+        {
+          "month": 6,
+          "name": "Juin",
+          "tasks": [
+            {
+              "title": "Arrosage si canicule",
+              "description": "En cas de forte chaleur, arroser copieusement les jeunes arbres (20L/arbre) une fois par semaine.",
+              "videoUrl": null,
+              "photos": []
+            },
+            {
+              "title": "Récolte de la consoude",
+              "description": "Couper les feuilles de consoude pour faire du purin. Recette : 1kg de feuilles pour 10L d'eau, laisser fermenter 2 semaines.",
+              "videoUrl": null,
+              "photos": []
+            }
+          ]
+        },
+        {
+          "month": 11,
+          "name": "Novembre",
+          "tasks": [
+            {
+              "title": "Protection hivernale",
+              "description": "Protéger les jeunes troncs avec des spirales anti-rongeurs. Vérifier le paillage avant l'hiver.",
+              "videoUrl": null,
+              "photos": ["/maintenance/spirale-protection.jpg"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "projectTemplates": [
+    {
+      "id": "template-famille",
+      "name": "Jardin-forêt familial",
+      "description": "Design type pour une famille souhaitant l'autonomie alimentaire sur 1000-3000m²",
+      "defaultPhases": ["offre", "pre-projet", "projet-detaille", "mise-en-oeuvre", "co-gestion"],
+      "suggestedHours": 80,
+      "suggestedBudget": 6000
+    },
+    {
+      "id": "template-verger",
+      "name": "Verger communautaire",
+      "description": "Design participatif pour collectivités, écoles ou associations",
+      "defaultPhases": ["offre", "pre-projet", "projet-detaille", "mise-en-oeuvre", "co-gestion"],
+      "suggestedHours": 200,
+      "suggestedBudget": 25000
+    },
+    {
+      "id": "template-ecole",
+      "name": "Forêt nourricière pédagogique",
+      "description": "Petit projet adapté aux écoles avec dimension éducative",
+      "defaultPhases": ["offre", "pre-projet", "projet-detaille", "mise-en-oeuvre", "co-gestion"],
+      "suggestedHours": 60,
+      "suggestedBudget": 4500
+    }
+  ],
+  "dashboardStats": {
+    "activeProjects": 2,
+    "pendingProjects": 1,
+    "totalProjects": 3,
+    "totalHoursThisMonth": 15,
+    "totalRevenueThisYear": 32542,
+    "quoteConversionRate": 0.75,
+    "upcomingMeetings": [
+      {
+        "id": "meeting-004",
+        "projectId": "proj-002",
+        "projectName": "Verger communautaire de Wavre",
+        "title": "Présentation palette végétale",
+        "date": "2025-01-22",
+        "time": "14:00"
+      }
+    ]
+  }
+}

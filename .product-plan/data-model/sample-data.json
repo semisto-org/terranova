@@ -1,0 +1,50 @@
+{
+  "labs": [
+    {
+      "id": "lab-wallonie",
+      "name": "Semisto Wallonie",
+      "slug": "wallonie",
+      "country": "Belgique",
+      "region": "Wallonie",
+      "description": "Lab initial du mouvement Semisto, basé en Wallonie",
+      "contactEmail": "wallonie@semisto.org",
+      "address": "Rue de Semisto 1, 5000 Namur",
+      "coordinates": { "lat": 50.4674, "lng": 4.8712 }
+    }
+  ],
+  "members": [
+    {
+      "id": "member-1",
+      "firstName": "Marie",
+      "lastName": "Dupont",
+      "email": "marie@semisto.org",
+      "avatar": "",
+      "roles": ["designer", "coordination"],
+      "status": "active",
+      "isAdmin": true,
+      "joinedAt": "2023-01-15",
+      "walletId": "wallet-1",
+      "labId": "lab-wallonie"
+    }
+  ],
+  "genera": [
+    {
+      "id": "genus-1",
+      "latinName": "Malus",
+      "description": "Genre regroupant les pommiers"
+    }
+  ],
+  "species": [
+    {
+      "id": "species-1",
+      "genusId": "genus-1",
+      "latinName": "Malus domestica",
+      "type": "tree",
+      "edibleParts": ["fruit"],
+      "interests": ["comestible", "mellifère"],
+      "exposures": ["plein soleil"],
+      "hardiness": "H6",
+      "lifeCycle": "perennial"
+    }
+  ]
+}

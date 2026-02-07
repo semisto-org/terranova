@@ -1,0 +1,1088 @@
+{
+  "_meta": {
+    "models": {
+      "genera": "Genre botanique regroupant plusieurs espèces apparentées (ex: Malus regroupe les pommiers).",
+      "species": "Espèce végétale avec ses caractéristiques détaillées : type, exposition, rusticité, usages, etc.",
+      "varieties": "Variété ou cultivar d'une espèce, avec des propriétés spécifiques comme la productivité ou le goût.",
+      "commonNames": "Nom vernaculaire d'un genre, espèce ou variété dans une langue donnée.",
+      "references": "Lien externe (Wikipedia, PFAF) ou document PDF attaché à une fiche.",
+      "photos": "Photo uploadée par un contributeur sur une fiche, indépendante des notes.",
+      "notes": "Commentaire d'un contributeur sur une fiche, pouvant contenir des photos intégrées.",
+      "plantLocations": "Emplacement géolocalisé où une espèce/variété a été plantée, avec indicateur plant-mère.",
+      "nurseryStocks": "Disponibilité d'une espèce/variété dans une pépinière-école du réseau.",
+      "contributors": "Profil d'un contributeur avec ses statistiques et Semos gagnés.",
+      "activityFeed": "Flux des dernières contributions de la communauté.",
+      "plantPalettes": "Palette végétale sauvegardée par un utilisateur, organisée par strates.",
+      "filterOptions": "Listes de valeurs pour les filtres de recherche."
+    },
+    "relationships": [
+      "Chaque Genre (Genus) contient plusieurs Espèces (Species)",
+      "Chaque Espèce peut avoir plusieurs Variétés (Variety)",
+      "Les Noms communs, Photos, Notes et Références sont liés à un Genre, une Espèce ou une Variété",
+      "Les Emplacements (PlantLocation) indiquent où une Espèce/Variété a été plantée",
+      "Les Disponibilités pépinière (NurseryStock) relient une Espèce/Variété à une pépinière",
+      "Les Contributeurs sont les auteurs des Photos, Notes et modifications",
+      "Les Palettes végétales contiennent des Espèces/Variétés organisées par strate"
+    ]
+  },
+
+  "filterOptions": {
+    "types": [
+      { "id": "tree", "label": "Arbre" },
+      { "id": "shrub", "label": "Arbuste" },
+      { "id": "small-shrub", "label": "Arbrisseau" },
+      { "id": "climber", "label": "Grimpante" },
+      { "id": "herbaceous", "label": "Herbacée" },
+      { "id": "ground-cover", "label": "Couvre-sol" }
+    ],
+    "exposures": [
+      { "id": "sun", "label": "Soleil" },
+      { "id": "partial-shade", "label": "Mi-ombre" },
+      { "id": "shade", "label": "Ombre" }
+    ],
+    "hardinessZones": [
+      { "id": "zone-5", "label": "Zone 5 (-28°C à -23°C)" },
+      { "id": "zone-6", "label": "Zone 6 (-23°C à -18°C)" },
+      { "id": "zone-7", "label": "Zone 7 (-18°C à -12°C)" },
+      { "id": "zone-8", "label": "Zone 8 (-12°C à -7°C)" },
+      { "id": "zone-9", "label": "Zone 9 (-7°C à -1°C)" }
+    ],
+    "edibleParts": [
+      { "id": "fruit", "label": "Fruit" },
+      { "id": "leaf", "label": "Feuille" },
+      { "id": "flower", "label": "Fleur" },
+      { "id": "seed", "label": "Graine" },
+      { "id": "root", "label": "Racine" },
+      { "id": "bark", "label": "Écorce" },
+      { "id": "sap", "label": "Sève" }
+    ],
+    "interests": [
+      { "id": "edible", "label": "Comestible" },
+      { "id": "medicinal", "label": "Médicinal" },
+      { "id": "nitrogen-fixer", "label": "Fixateur d'azote" },
+      { "id": "dynamic-accumulator", "label": "Accumulateur dynamique" },
+      { "id": "pollinator", "label": "Mellifère" },
+      { "id": "windbreak", "label": "Brise-vent" },
+      { "id": "fodder", "label": "Fourrage" },
+      { "id": "wood", "label": "Bois d'œuvre" },
+      { "id": "firewood", "label": "Bois de chauffage" },
+      { "id": "hedge", "label": "Haie" },
+      { "id": "ornamental", "label": "Ornemental" }
+    ],
+    "ecosystemNeeds": [
+      { "id": "nurse-tree", "label": "Arbre tuteur" },
+      { "id": "pioneer", "label": "Pionnier" },
+      { "id": "climax", "label": "Climacique" },
+      { "id": "ground-cover", "label": "Couverture du sol" },
+      { "id": "erosion-control", "label": "Anti-érosion" }
+    ],
+    "propagationMethods": [
+      { "id": "seed", "label": "Semis" },
+      { "id": "cutting", "label": "Bouturage" },
+      { "id": "layering", "label": "Marcottage" },
+      { "id": "grafting", "label": "Greffage" },
+      { "id": "division", "label": "Division" },
+      { "id": "sucker", "label": "Drageon" }
+    ],
+    "flowerColors": [
+      { "id": "white", "label": "Blanc" },
+      { "id": "pink", "label": "Rose" },
+      { "id": "red", "label": "Rouge" },
+      { "id": "yellow", "label": "Jaune" },
+      { "id": "orange", "label": "Orange" },
+      { "id": "purple", "label": "Violet" },
+      { "id": "blue", "label": "Bleu" },
+      { "id": "green", "label": "Vert" }
+    ],
+    "plantingSeasons": [
+      { "id": "autumn", "label": "Automne" },
+      { "id": "winter", "label": "Hiver" },
+      { "id": "spring", "label": "Printemps" }
+    ],
+    "months": [
+      { "id": "jan", "label": "Janvier" },
+      { "id": "feb", "label": "Février" },
+      { "id": "mar", "label": "Mars" },
+      { "id": "apr", "label": "Avril" },
+      { "id": "may", "label": "Mai" },
+      { "id": "jun", "label": "Juin" },
+      { "id": "jul", "label": "Juillet" },
+      { "id": "aug", "label": "Août" },
+      { "id": "sep", "label": "Septembre" },
+      { "id": "oct", "label": "Octobre" },
+      { "id": "nov", "label": "Novembre" },
+      { "id": "dec", "label": "Décembre" }
+    ],
+    "foliageTypes": [
+      { "id": "deciduous", "label": "Caduc" },
+      { "id": "semi-evergreen", "label": "Semi-persistant" },
+      { "id": "evergreen", "label": "Persistant" },
+      { "id": "marcescent", "label": "Marcescent" }
+    ],
+    "europeanCountries": [
+      { "id": "be", "label": "Belgique" },
+      { "id": "fr", "label": "France" },
+      { "id": "de", "label": "Allemagne" },
+      { "id": "nl", "label": "Pays-Bas" },
+      { "id": "lu", "label": "Luxembourg" },
+      { "id": "ch", "label": "Suisse" },
+      { "id": "es", "label": "Espagne" },
+      { "id": "it", "label": "Italie" },
+      { "id": "pt", "label": "Portugal" },
+      { "id": "uk", "label": "Royaume-Uni" },
+      { "id": "ie", "label": "Irlande" },
+      { "id": "at", "label": "Autriche" },
+      { "id": "pl", "label": "Pologne" },
+      { "id": "cz", "label": "République tchèque" },
+      { "id": "dk", "label": "Danemark" },
+      { "id": "se", "label": "Suède" },
+      { "id": "no", "label": "Norvège" },
+      { "id": "fi", "label": "Finlande" }
+    ],
+    "fertilityTypes": [
+      { "id": "self-fertile", "label": "Autofertile" },
+      { "id": "self-sterile", "label": "Autostérile" },
+      { "id": "partially-self-fertile", "label": "Partiellement autofertile" }
+    ],
+    "rootSystems": [
+      { "id": "taproot", "label": "Pivotant" },
+      { "id": "fibrous", "label": "Fasciculé" },
+      { "id": "spreading", "label": "Traçant" },
+      { "id": "shallow", "label": "Superficiel" },
+      { "id": "deep", "label": "Profond" }
+    ],
+    "growthRates": [
+      { "id": "slow", "label": "Lente" },
+      { "id": "medium", "label": "Moyenne" },
+      { "id": "fast", "label": "Rapide" },
+      { "id": "slow-start", "label": "Lente au début" },
+      { "id": "fast-start", "label": "Rapide au début" }
+    ],
+    "forestGardenZones": [
+      { "id": "edge", "label": "En bordure" },
+      { "id": "light-shade", "label": "À l'ombre légère d'un arbre" },
+      { "id": "full-sun", "label": "Plein soleil" },
+      { "id": "understory", "label": "Sous-étage" },
+      { "id": "canopy", "label": "Canopée" }
+    ],
+    "pollinationTypes": [
+      { "id": "insect", "label": "Entomophile (insectes)" },
+      { "id": "wind", "label": "Anémophile (vent)" },
+      { "id": "self", "label": "Autopollinisation" },
+      { "id": "bird", "label": "Ornithophile (oiseaux)" }
+    ],
+    "soilTypes": [
+      { "id": "clay", "label": "Argileux" },
+      { "id": "loam", "label": "Limoneux" },
+      { "id": "sandy", "label": "Sableux" },
+      { "id": "chalky", "label": "Calcaire" },
+      { "id": "peaty", "label": "Tourbeux" }
+    ],
+    "soilMoistures": [
+      { "id": "dry", "label": "Sec" },
+      { "id": "moist", "label": "Frais" },
+      { "id": "wet", "label": "Humide" },
+      { "id": "waterlogged", "label": "Détrempé" }
+    ],
+    "soilRichness": [
+      { "id": "poor", "label": "Pauvre" },
+      { "id": "moderate", "label": "Moyen" },
+      { "id": "rich", "label": "Riche" },
+      { "id": "very-rich", "label": "Très riche" }
+    ],
+    "wateringNeeds": [
+      { "id": "1", "label": "1 - Très faible" },
+      { "id": "2", "label": "2 - Faible" },
+      { "id": "3", "label": "3 - Modéré" },
+      { "id": "4", "label": "4 - Élevé" },
+      { "id": "5", "label": "5 - Très élevé" }
+    ],
+    "lifeCycles": [
+      { "id": "annual", "label": "Annuel" },
+      { "id": "biennial", "label": "Bisannuel" },
+      { "id": "perennial", "label": "Vivace" }
+    ],
+    "foliageColors": [
+      { "id": "green", "label": "Vert" },
+      { "id": "dark-green", "label": "Vert foncé" },
+      { "id": "light-green", "label": "Vert clair" },
+      { "id": "purple", "label": "Pourpre" },
+      { "id": "variegated", "label": "Panaché" },
+      { "id": "silver", "label": "Argenté" },
+      { "id": "golden", "label": "Doré" }
+    ],
+    "fragranceLevels": [
+      { "id": "none", "label": "Non parfumée" },
+      { "id": "light", "label": "Légèrement parfumée" },
+      { "id": "medium", "label": "Parfumée" },
+      { "id": "strong", "label": "Très parfumée" }
+    ],
+    "transformations": [
+      { "id": "jam", "label": "Confiture" },
+      { "id": "jelly", "label": "Gelée" },
+      { "id": "compote", "label": "Compote" },
+      { "id": "juice", "label": "Jus" },
+      { "id": "syrup", "label": "Sirop" },
+      { "id": "liqueur", "label": "Liqueur" },
+      { "id": "dried", "label": "Séché" },
+      { "id": "frozen", "label": "Congelé" },
+      { "id": "vinegar", "label": "Vinaigre" },
+      { "id": "fruit-leather", "label": "Cuir de fruits" },
+      { "id": "chutney", "label": "Chutney" },
+      { "id": "fritters", "label": "Beignets" },
+      { "id": "oil", "label": "Huile" },
+      { "id": "flour", "label": "Farine" }
+    ],
+    "fodderQualities": [
+      { "id": "sheep", "label": "Moutons" },
+      { "id": "goats", "label": "Chèvres" },
+      { "id": "pigs", "label": "Cochons" },
+      { "id": "cattle", "label": "Vaches" },
+      { "id": "poultry", "label": "Volailles" },
+      { "id": "rabbits", "label": "Lapins" }
+    ],
+    "strates": [
+      { "id": "aquatic", "label": "Aquatique" },
+      { "id": "ground-cover", "label": "Couvre-sols" },
+      { "id": "herbaceous", "label": "Herbacées" },
+      { "id": "climbers", "label": "Grimpantes" },
+      { "id": "shrubs", "label": "Arbustes" },
+      { "id": "trees", "label": "Arbres" }
+    ]
+  },
+
+  "genera": [
+    {
+      "id": "genus-malus",
+      "latinName": "Malus",
+      "description": "Genre regroupant les pommiers, arbres fruitiers de la famille des Rosacées. Comprend des espèces sauvages et cultivées, toutes produisant des fruits à pépins."
+    },
+    {
+      "id": "genus-corylus",
+      "latinName": "Corylus",
+      "description": "Genre des noisetiers, arbustes à chatons de la famille des Bétulacées. Produit des noisettes, fruits secs très nutritifs."
+    },
+    {
+      "id": "genus-ribes",
+      "latinName": "Ribes",
+      "description": "Genre regroupant les groseilliers et cassissiers, arbustes fruitiers de la famille des Grossulariacées. Petits fruits riches en vitamine C."
+    }
+  ],
+
+  "species": [
+    {
+      "id": "species-malus-domestica",
+      "genusId": "genus-malus",
+      "latinName": "Malus domestica",
+      "type": "tree",
+      "edibleParts": ["fruit"],
+      "interests": ["edible", "pollinator", "ornamental"],
+      "ecosystemNeeds": ["climax"],
+      "propagationMethods": ["grafting", "cutting"],
+      "origin": "Asie centrale (Kazakhstan)",
+      "flowerColors": ["white", "pink"],
+      "plantingSeasons": ["autumn", "winter"],
+      "harvestMonths": ["aug", "sep", "oct", "nov"],
+      "exposures": ["sun", "partial-shade"],
+      "hardiness": "Zone 4 à 8 (-30°C à -7°C)",
+      "fruitingMonths": ["aug", "sep", "oct"],
+      "floweringMonths": ["apr", "may"],
+      "foliageType": "deciduous",
+      "nativeCountries": [],
+      "fertility": "self-sterile",
+      "rootSystem": "spreading",
+      "growthRate": "medium",
+      "forestGardenZone": "canopy",
+      "pollinationType": "insect",
+      "soilTypes": ["loam", "clay", "sandy"],
+      "soilMoisture": "moist",
+      "soilRichness": "moderate",
+      "wateringNeed": "3",
+      "toxicElements": "Pépins (amygdaline en faible quantité)",
+      "isInvasive": false,
+      "therapeuticProperties": "Riche en fibres et antioxydants. La pectine aide à réguler le transit.",
+      "lifeCycle": "perennial",
+      "foliageColor": "green",
+      "fragrance": "light",
+      "transformations": ["jam", "compote", "juice", "dried", "vinegar", "chutney"],
+      "fodderQualities": ["pigs", "sheep"]
+    },
+    {
+      "id": "species-malus-sylvestris",
+      "genusId": "genus-malus",
+      "latinName": "Malus sylvestris",
+      "type": "tree",
+      "edibleParts": ["fruit"],
+      "interests": ["edible", "pollinator", "hedge", "ornamental"],
+      "ecosystemNeeds": ["pioneer", "nurse-tree"],
+      "propagationMethods": ["seed", "grafting"],
+      "origin": "Europe",
+      "flowerColors": ["white", "pink"],
+      "plantingSeasons": ["autumn", "winter"],
+      "harvestMonths": ["sep", "oct", "nov"],
+      "exposures": ["sun", "partial-shade"],
+      "hardiness": "Zone 4 à 7 (-30°C à -12°C)",
+      "fruitingMonths": ["sep", "oct"],
+      "floweringMonths": ["apr", "may"],
+      "foliageType": "deciduous",
+      "nativeCountries": ["be", "fr", "de", "nl", "lu", "ch", "uk", "ie", "at", "pl", "cz", "dk"],
+      "fertility": "self-sterile",
+      "rootSystem": "spreading",
+      "growthRate": "slow",
+      "forestGardenZone": "edge",
+      "pollinationType": "insect",
+      "soilTypes": ["loam", "clay", "chalky"],
+      "soilMoisture": "moist",
+      "soilRichness": "moderate",
+      "wateringNeed": "2",
+      "toxicElements": "Pépins (amygdaline)",
+      "isInvasive": false,
+      "therapeuticProperties": "Fruits riches en pectine et tanins, utilisés en tisanes digestives.",
+      "lifeCycle": "perennial",
+      "foliageColor": "green",
+      "fragrance": "medium",
+      "transformations": ["jelly", "vinegar", "liqueur"],
+      "fodderQualities": ["pigs", "sheep"]
+    },
+    {
+      "id": "species-malus-floribunda",
+      "genusId": "genus-malus",
+      "latinName": "Malus floribunda",
+      "type": "tree",
+      "edibleParts": ["fruit"],
+      "interests": ["pollinator", "ornamental"],
+      "ecosystemNeeds": [],
+      "propagationMethods": ["grafting", "cutting"],
+      "origin": "Japon",
+      "flowerColors": ["pink", "red", "white"],
+      "plantingSeasons": ["autumn", "winter"],
+      "harvestMonths": ["sep", "oct"],
+      "exposures": ["sun", "partial-shade"],
+      "hardiness": "Zone 5 à 8 (-28°C à -7°C)",
+      "fruitingMonths": ["sep", "oct"],
+      "floweringMonths": ["apr", "may"],
+      "foliageType": "deciduous",
+      "nativeCountries": [],
+      "fertility": "self-sterile",
+      "rootSystem": "spreading",
+      "growthRate": "medium",
+      "forestGardenZone": "canopy",
+      "pollinationType": "insect",
+      "soilTypes": ["loam", "clay", "sandy"],
+      "soilMoisture": "moist",
+      "soilRichness": "moderate",
+      "wateringNeed": "3",
+      "toxicElements": null,
+      "isInvasive": false,
+      "therapeuticProperties": null,
+      "lifeCycle": "perennial",
+      "foliageColor": "green",
+      "fragrance": "medium",
+      "transformations": ["jelly"],
+      "fodderQualities": []
+    },
+    {
+      "id": "species-corylus-avellana",
+      "genusId": "genus-corylus",
+      "latinName": "Corylus avellana",
+      "type": "shrub",
+      "edibleParts": ["seed"],
+      "interests": ["edible", "windbreak", "hedge", "wood"],
+      "ecosystemNeeds": ["pioneer", "nurse-tree"],
+      "propagationMethods": ["layering", "sucker", "seed"],
+      "origin": "Europe, Asie occidentale",
+      "flowerColors": ["yellow"],
+      "plantingSeasons": ["autumn", "winter"],
+      "harvestMonths": ["sep", "oct"],
+      "exposures": ["sun", "partial-shade"],
+      "hardiness": "Zone 4 à 8 (-30°C à -7°C)",
+      "fruitingMonths": ["sep", "oct"],
+      "floweringMonths": ["feb", "mar"],
+      "foliageType": "deciduous",
+      "nativeCountries": ["be", "fr", "de", "nl", "lu", "ch", "uk", "ie", "at", "pl", "cz", "dk", "se", "it"],
+      "fertility": "self-sterile",
+      "rootSystem": "fibrous",
+      "growthRate": "fast",
+      "forestGardenZone": "edge",
+      "pollinationType": "wind",
+      "soilTypes": ["loam", "chalky", "clay"],
+      "soilMoisture": "moist",
+      "soilRichness": "moderate",
+      "wateringNeed": "2",
+      "toxicElements": null,
+      "isInvasive": false,
+      "therapeuticProperties": "Les noisettes sont riches en vitamine E, acides gras insaturés et minéraux.",
+      "lifeCycle": "perennial",
+      "foliageColor": "green",
+      "fragrance": "none",
+      "transformations": ["oil", "flour", "dried"],
+      "fodderQualities": ["pigs", "poultry"]
+    },
+    {
+      "id": "species-ribes-nigrum",
+      "genusId": "genus-ribes",
+      "latinName": "Ribes nigrum",
+      "type": "shrub",
+      "edibleParts": ["fruit", "leaf"],
+      "interests": ["edible", "medicinal", "pollinator"],
+      "ecosystemNeeds": ["ground-cover"],
+      "propagationMethods": ["cutting", "layering"],
+      "origin": "Europe du Nord, Asie",
+      "flowerColors": ["green"],
+      "plantingSeasons": ["autumn", "winter", "spring"],
+      "harvestMonths": ["jul", "aug"],
+      "exposures": ["sun", "partial-shade"],
+      "hardiness": "Zone 3 à 7 (-40°C à -12°C)",
+      "fruitingMonths": ["jul", "aug"],
+      "floweringMonths": ["apr", "may"],
+      "foliageType": "deciduous",
+      "nativeCountries": ["be", "fr", "de", "nl", "uk", "pl", "se", "fi", "no", "dk"],
+      "fertility": "self-fertile",
+      "rootSystem": "fibrous",
+      "growthRate": "fast",
+      "forestGardenZone": "light-shade",
+      "pollinationType": "insect",
+      "soilTypes": ["loam", "clay"],
+      "soilMoisture": "moist",
+      "soilRichness": "rich",
+      "wateringNeed": "3",
+      "toxicElements": null,
+      "isInvasive": false,
+      "therapeuticProperties": "Anti-inflammatoire puissant. Les feuilles en infusion soulagent les douleurs articulaires. Très riche en vitamine C.",
+      "lifeCycle": "perennial",
+      "foliageColor": "green",
+      "fragrance": "medium",
+      "transformations": ["jam", "jelly", "juice", "syrup", "liqueur", "frozen"],
+      "fodderQualities": ["poultry"]
+    },
+    {
+      "id": "species-ribes-rubrum",
+      "genusId": "genus-ribes",
+      "latinName": "Ribes rubrum",
+      "type": "shrub",
+      "edibleParts": ["fruit"],
+      "interests": ["edible", "pollinator", "ornamental"],
+      "ecosystemNeeds": [],
+      "propagationMethods": ["cutting", "layering"],
+      "origin": "Europe occidentale",
+      "flowerColors": ["green", "yellow"],
+      "plantingSeasons": ["autumn", "winter"],
+      "harvestMonths": ["jun", "jul", "aug"],
+      "exposures": ["sun", "partial-shade"],
+      "hardiness": "Zone 3 à 7 (-40°C à -12°C)",
+      "fruitingMonths": ["jun", "jul"],
+      "floweringMonths": ["apr", "may"],
+      "foliageType": "deciduous",
+      "nativeCountries": ["be", "fr", "de", "nl", "uk", "ie"],
+      "fertility": "self-fertile",
+      "rootSystem": "fibrous",
+      "growthRate": "medium",
+      "forestGardenZone": "light-shade",
+      "pollinationType": "insect",
+      "soilTypes": ["loam", "clay"],
+      "soilMoisture": "moist",
+      "soilRichness": "moderate",
+      "wateringNeed": "3",
+      "toxicElements": null,
+      "isInvasive": false,
+      "therapeuticProperties": "Riche en vitamine C et antioxydants.",
+      "lifeCycle": "perennial",
+      "foliageColor": "green",
+      "fragrance": "none",
+      "transformations": ["jam", "jelly", "juice", "syrup", "frozen"],
+      "fodderQualities": ["poultry"]
+    },
+    {
+      "id": "species-symphytum-officinale",
+      "genusId": null,
+      "latinName": "Symphytum officinale",
+      "type": "herbaceous",
+      "edibleParts": ["leaf"],
+      "interests": ["medicinal", "dynamic-accumulator", "fodder", "nitrogen-fixer"],
+      "ecosystemNeeds": ["ground-cover", "pioneer"],
+      "propagationMethods": ["division", "cutting"],
+      "origin": "Europe",
+      "flowerColors": ["purple", "pink", "white"],
+      "plantingSeasons": ["spring", "autumn"],
+      "harvestMonths": ["may", "jun", "jul", "aug", "sep"],
+      "exposures": ["sun", "partial-shade", "shade"],
+      "hardiness": "Zone 4 à 9 (-30°C à -1°C)",
+      "fruitingMonths": [],
+      "floweringMonths": ["may", "jun", "jul"],
+      "foliageType": "deciduous",
+      "nativeCountries": ["be", "fr", "de", "nl", "uk", "ie", "ch", "at", "pl"],
+      "fertility": "self-fertile",
+      "rootSystem": "deep",
+      "growthRate": "fast",
+      "forestGardenZone": "understory",
+      "pollinationType": "insect",
+      "soilTypes": ["loam", "clay"],
+      "soilMoisture": "wet",
+      "soilRichness": "rich",
+      "wateringNeed": "4",
+      "toxicElements": "Alcaloïdes pyrrolizidiniques (consommation modérée recommandée)",
+      "isInvasive": false,
+      "therapeuticProperties": "Cicatrisant externe puissant (allantoïne). Utilisé en cataplasme pour les fractures et entorses.",
+      "lifeCycle": "perennial",
+      "foliageColor": "dark-green",
+      "fragrance": "none",
+      "transformations": [],
+      "fodderQualities": ["poultry", "pigs", "cattle"]
+    }
+  ],
+
+  "varieties": [
+    {
+      "id": "variety-malus-domestica-reine-des-reinettes",
+      "speciesId": "species-malus-domestica",
+      "latinName": "Malus domestica 'Reine des Reinettes'",
+      "productivity": "Élevée (40-60 kg/arbre adulte)",
+      "fruitSize": "Moyen à gros (150-200g)",
+      "tasteRating": 5,
+      "storageLife": "3-4 mois en cave",
+      "maturity": "Mi-saison (septembre-octobre)",
+      "diseaseResistance": "Sensible à la tavelure, résistant à l'oïdium"
+    },
+    {
+      "id": "variety-malus-domestica-belle-de-boskoop",
+      "speciesId": "species-malus-domestica",
+      "latinName": "Malus domestica 'Belle de Boskoop'",
+      "productivity": "Très élevée (60-80 kg/arbre adulte)",
+      "fruitSize": "Gros à très gros (200-300g)",
+      "tasteRating": 4,
+      "storageLife": "5-6 mois en cave",
+      "maturity": "Tardive (octobre-novembre)",
+      "diseaseResistance": "Bonne résistance générale, légèrement sensible au chancre"
+    },
+    {
+      "id": "variety-malus-domestica-cox-orange",
+      "speciesId": "species-malus-domestica",
+      "latinName": "Malus domestica 'Cox's Orange Pippin'",
+      "productivity": "Moyenne (30-40 kg/arbre adulte)",
+      "fruitSize": "Moyen (130-160g)",
+      "tasteRating": 5,
+      "storageLife": "2-3 mois en cave",
+      "maturity": "Mi-saison (septembre-octobre)",
+      "diseaseResistance": "Sensible à la tavelure et au chancre, exigeant en soins"
+    },
+    {
+      "id": "variety-corylus-avellana-webb-prize-cob",
+      "speciesId": "species-corylus-avellana",
+      "latinName": "Corylus avellana 'Webb's Prize Cob'",
+      "productivity": "Élevée",
+      "fruitSize": "Gros",
+      "tasteRating": 5,
+      "storageLife": "6-12 mois à sec",
+      "maturity": "Mi-saison (septembre)",
+      "diseaseResistance": "Bonne résistance au balanin"
+    },
+    {
+      "id": "variety-ribes-nigrum-noir-de-bourgogne",
+      "speciesId": "species-ribes-nigrum",
+      "latinName": "Ribes nigrum 'Noir de Bourgogne'",
+      "productivity": "Moyenne à élevée (3-5 kg/plant)",
+      "fruitSize": "Moyen",
+      "tasteRating": 5,
+      "storageLife": "3-5 jours frais, congélation recommandée",
+      "maturity": "Mi-saison (juillet)",
+      "diseaseResistance": "Sensible à l'oïdium, résistant aux acariens"
+    },
+    {
+      "id": "variety-ribes-rubrum-jonkheer-van-tets",
+      "speciesId": "species-ribes-rubrum",
+      "latinName": "Ribes rubrum 'Jonkheer van Tets'",
+      "productivity": "Très élevée (5-8 kg/plant)",
+      "fruitSize": "Gros",
+      "tasteRating": 4,
+      "storageLife": "1 semaine au frais",
+      "maturity": "Précoce (fin juin)",
+      "diseaseResistance": "Excellente résistance générale"
+    }
+  ],
+
+  "commonNames": [
+    { "id": "cn-1", "targetId": "genus-malus", "targetType": "genus", "language": "fr", "name": "Pommier" },
+    { "id": "cn-2", "targetId": "genus-malus", "targetType": "genus", "language": "en", "name": "Apple tree" },
+    { "id": "cn-3", "targetId": "genus-malus", "targetType": "genus", "language": "nl", "name": "Appelboom" },
+    { "id": "cn-4", "targetId": "genus-malus", "targetType": "genus", "language": "de", "name": "Apfelbaum" },
+    { "id": "cn-5", "targetId": "genus-corylus", "targetType": "genus", "language": "fr", "name": "Noisetier" },
+    { "id": "cn-6", "targetId": "genus-corylus", "targetType": "genus", "language": "en", "name": "Hazel" },
+    { "id": "cn-7", "targetId": "genus-corylus", "targetType": "genus", "language": "nl", "name": "Hazelaar" },
+    { "id": "cn-8", "targetId": "genus-ribes", "targetType": "genus", "language": "fr", "name": "Groseillier" },
+    { "id": "cn-9", "targetId": "genus-ribes", "targetType": "genus", "language": "en", "name": "Currant" },
+    { "id": "cn-10", "targetId": "species-ribes-nigrum", "targetType": "species", "language": "fr", "name": "Cassissier" },
+    { "id": "cn-11", "targetId": "species-ribes-nigrum", "targetType": "species", "language": "en", "name": "Blackcurrant" },
+    { "id": "cn-12", "targetId": "species-ribes-rubrum", "targetType": "species", "language": "fr", "name": "Groseillier rouge" },
+    { "id": "cn-13", "targetId": "species-ribes-rubrum", "targetType": "species", "language": "en", "name": "Redcurrant" },
+    { "id": "cn-14", "targetId": "species-symphytum-officinale", "targetType": "species", "language": "fr", "name": "Consoude officinale" },
+    { "id": "cn-15", "targetId": "species-symphytum-officinale", "targetType": "species", "language": "en", "name": "Comfrey" },
+    { "id": "cn-16", "targetId": "species-symphytum-officinale", "targetType": "species", "language": "nl", "name": "Smeerwortel" },
+    { "id": "cn-17", "targetId": "variety-malus-domestica-reine-des-reinettes", "targetType": "variety", "language": "en", "name": "King of the Pippins" },
+    { "id": "cn-18", "targetId": "variety-malus-domestica-reine-des-reinettes", "targetType": "variety", "language": "de", "name": "Goldparmäne" },
+    { "id": "cn-19", "targetId": "species-malus-sylvestris", "targetType": "species", "language": "fr", "name": "Pommier sauvage" },
+    { "id": "cn-20", "targetId": "species-malus-sylvestris", "targetType": "species", "language": "en", "name": "European crab apple" },
+    { "id": "cn-21", "targetId": "species-malus-sylvestris", "targetType": "species", "language": "nl", "name": "Wilde appel" },
+    { "id": "cn-22", "targetId": "species-malus-floribunda", "targetType": "species", "language": "fr", "name": "Pommier à fleurs du Japon" },
+    { "id": "cn-23", "targetId": "species-malus-floribunda", "targetType": "species", "language": "en", "name": "Japanese flowering crabapple" }
+  ],
+
+  "references": [
+    {
+      "id": "ref-1",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "type": "link",
+      "title": "Malus domestica - Wikipedia",
+      "url": "https://fr.wikipedia.org/wiki/Pommier_domestique",
+      "source": "Wikipedia"
+    },
+    {
+      "id": "ref-2",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "type": "link",
+      "title": "Malus domestica - PFAF",
+      "url": "https://pfaf.org/user/Plant.aspx?LatinName=Malus+domestica",
+      "source": "PFAF"
+    },
+    {
+      "id": "ref-3",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "type": "link",
+      "title": "Corylus avellana - Wikipedia",
+      "url": "https://fr.wikipedia.org/wiki/Noisetier_commun",
+      "source": "Wikipedia"
+    },
+    {
+      "id": "ref-4",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "type": "pdf",
+      "title": "Guide de culture du noisetier en agroforesterie",
+      "url": "/documents/noisetier-agroforesterie.pdf",
+      "source": "INRAE"
+    },
+    {
+      "id": "ref-5",
+      "targetId": "species-symphytum-officinale",
+      "targetType": "species",
+      "type": "link",
+      "title": "La consoude au jardin - Usage et multiplication",
+      "url": "https://www.permaculture.org/consoude-jardin",
+      "source": "Permaculture Magazine"
+    },
+    {
+      "id": "ref-6",
+      "targetId": "variety-malus-domestica-reine-des-reinettes",
+      "targetType": "variety",
+      "type": "link",
+      "title": "Reine des Reinettes - Les Croqueurs de Pommes",
+      "url": "https://croqueurs-de-pommes.fr/reine-des-reinettes",
+      "source": "Croqueurs de Pommes"
+    }
+  ],
+
+  "photos": [
+    {
+      "id": "photo-1",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "url": "/photos/malus-domestica-flower.jpg",
+      "caption": "Floraison printanière du pommier",
+      "contributorId": "contributor-1",
+      "createdAt": "2024-04-15T10:30:00Z"
+    },
+    {
+      "id": "photo-2",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "url": "/photos/malus-domestica-fruit.jpg",
+      "caption": "Pommes mûres en septembre",
+      "contributorId": "contributor-2",
+      "createdAt": "2024-09-20T14:15:00Z"
+    },
+    {
+      "id": "photo-3",
+      "targetId": "variety-malus-domestica-reine-des-reinettes",
+      "targetType": "variety",
+      "url": "/photos/reine-des-reinettes-1.jpg",
+      "caption": "Reine des Reinettes - coloration typique",
+      "contributorId": "contributor-1",
+      "createdAt": "2024-10-05T09:45:00Z"
+    },
+    {
+      "id": "photo-4",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "url": "/photos/corylus-chatons.jpg",
+      "caption": "Chatons mâles en février",
+      "contributorId": "contributor-3",
+      "createdAt": "2024-02-28T11:20:00Z"
+    },
+    {
+      "id": "photo-5",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "url": "/photos/corylus-noisettes.jpg",
+      "caption": "Noisettes prêtes à récolter",
+      "contributorId": "contributor-2",
+      "createdAt": "2024-09-15T16:00:00Z"
+    },
+    {
+      "id": "photo-6",
+      "targetId": "species-ribes-nigrum",
+      "targetType": "species",
+      "url": "/photos/cassis-grappe.jpg",
+      "caption": "Grappes de cassis bien formées",
+      "contributorId": "contributor-1",
+      "createdAt": "2024-07-10T08:30:00Z"
+    },
+    {
+      "id": "photo-7",
+      "targetId": "species-symphytum-officinale",
+      "targetType": "species",
+      "url": "/photos/consoude-fleurs.jpg",
+      "caption": "Consoude en fleur - attire de nombreux pollinisateurs",
+      "contributorId": "contributor-3",
+      "createdAt": "2024-06-01T13:45:00Z"
+    }
+  ],
+
+  "notes": [
+    {
+      "id": "note-1",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "contributorId": "contributor-1",
+      "content": "Dans notre verger de Wallonie, nous avons observé que les pommiers plantés en association avec des noisetiers montrent une meilleure résistance aux pucerons. L'effet brise-vent du noisetier semble aussi bénéfique pour la nouaison.",
+      "language": "fr",
+      "photos": [],
+      "createdAt": "2024-06-20T14:30:00Z"
+    },
+    {
+      "id": "note-2",
+      "targetId": "variety-malus-domestica-reine-des-reinettes",
+      "targetType": "variety",
+      "contributorId": "contributor-2",
+      "content": "Excellente variété pollinisatrice ! Nous l'utilisons systématiquement dans nos designs comme pollinisateur universel. Sa floraison longue chevauche celle de nombreuses autres variétés.",
+      "language": "fr",
+      "photos": [],
+      "createdAt": "2024-05-15T10:00:00Z"
+    },
+    {
+      "id": "note-3",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "contributorId": "contributor-3",
+      "content": "Perfect for forest garden edges. We've planted them in a mixed hedge with hawthorn and they provide excellent wind protection for the understory plants. The nuts are also popular with local squirrels, so we recommend planting extra!",
+      "language": "en",
+      "photos": ["/photos/notes/corylus-hedge.jpg"],
+      "createdAt": "2024-08-10T16:45:00Z"
+    },
+    {
+      "id": "note-4",
+      "targetId": "species-symphytum-officinale",
+      "targetType": "species",
+      "contributorId": "contributor-1",
+      "content": "Plante indispensable en permaculture ! Nous coupons les feuilles 4-5 fois par saison pour faire du purin ou du paillage au pied des fruitiers. Attention : une fois installée, elle est quasi impossible à déplacer à cause de sa racine pivotante.",
+      "language": "fr",
+      "photos": ["/photos/notes/consoude-paillage.jpg", "/photos/notes/consoude-purin.jpg"],
+      "createdAt": "2024-07-25T09:15:00Z"
+    },
+    {
+      "id": "note-5",
+      "targetId": "species-ribes-nigrum",
+      "targetType": "species",
+      "contributorId": "contributor-2",
+      "content": "Les feuilles séchées font une excellente tisane, légèrement diurétique. À récolter avant la floraison pour un goût plus doux.",
+      "language": "fr",
+      "photos": [],
+      "createdAt": "2024-04-30T11:00:00Z"
+    }
+  ],
+
+  "plantLocations": [
+    {
+      "id": "loc-1",
+      "targetId": "variety-malus-domestica-reine-des-reinettes",
+      "targetType": "variety",
+      "latitude": 50.4675,
+      "longitude": 4.8719,
+      "placeName": "Verger de Gembloux",
+      "labId": "lab-wallonie",
+      "isMotherPlant": true,
+      "plantedYear": 2019,
+      "isPublic": true
+    },
+    {
+      "id": "loc-2",
+      "targetId": "variety-malus-domestica-belle-de-boskoop",
+      "targetType": "variety",
+      "latitude": 50.8503,
+      "longitude": 4.3517,
+      "placeName": "Forest Garden Bruxelles",
+      "labId": "lab-wallonie",
+      "isMotherPlant": false,
+      "plantedYear": 2021,
+      "isPublic": true
+    },
+    {
+      "id": "loc-3",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "latitude": 50.6292,
+      "longitude": 5.5797,
+      "placeName": "Haie comestible Liège",
+      "labId": "lab-wallonie",
+      "isMotherPlant": true,
+      "plantedYear": 2018,
+      "isPublic": true
+    },
+    {
+      "id": "loc-4",
+      "targetId": "species-symphytum-officinale",
+      "targetType": "species",
+      "latitude": 48.8566,
+      "longitude": 2.3522,
+      "placeName": "Jardin partagé Paris 20e",
+      "labId": null,
+      "isMotherPlant": true,
+      "plantedYear": 2020,
+      "isPublic": true
+    },
+    {
+      "id": "loc-5",
+      "targetId": "variety-ribes-nigrum-noir-de-bourgogne",
+      "targetType": "variety",
+      "latitude": 47.3220,
+      "longitude": 5.0415,
+      "placeName": "Ferme des Music'orties, Dijon",
+      "labId": null,
+      "isMotherPlant": false,
+      "plantedYear": 2022,
+      "isPublic": true
+    }
+  ],
+
+  "nurseryStocks": [
+    {
+      "id": "stock-malus-domestica-1",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "nurseryId": "nursery-wallonie",
+      "nurseryName": "Pépinière Semisto Wallonie",
+      "quantity": 12,
+      "rootstock": "M26",
+      "age": "2 ans",
+      "price": 22.00
+    },
+    {
+      "id": "stock-malus-domestica-2",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "nurseryId": "nursery-bretagne",
+      "nurseryName": "Pépinière Semisto Bretagne",
+      "quantity": 8,
+      "rootstock": "MM106",
+      "age": "3 ans",
+      "price": 28.50
+    },
+    {
+      "id": "stock-1",
+      "targetId": "variety-malus-domestica-reine-des-reinettes",
+      "targetType": "variety",
+      "nurseryId": "nursery-wallonie",
+      "nurseryName": "Pépinière Semisto Wallonie",
+      "quantity": 25,
+      "rootstock": "M106",
+      "age": "2 ans",
+      "price": 18.50
+    },
+    {
+      "id": "stock-2",
+      "targetId": "variety-malus-domestica-belle-de-boskoop",
+      "targetType": "variety",
+      "nurseryId": "nursery-wallonie",
+      "nurseryName": "Pépinière Semisto Wallonie",
+      "quantity": 15,
+      "rootstock": "M111",
+      "age": "3 ans",
+      "price": 24.00
+    },
+    {
+      "id": "stock-3",
+      "targetId": "variety-corylus-avellana-webb-prize-cob",
+      "targetType": "variety",
+      "nurseryId": "nursery-wallonie",
+      "nurseryName": "Pépinière Semisto Wallonie",
+      "quantity": 40,
+      "rootstock": null,
+      "age": "2 ans",
+      "price": 12.00
+    },
+    {
+      "id": "stock-4",
+      "targetId": "species-symphytum-officinale",
+      "targetType": "species",
+      "nurseryId": "nursery-wallonie",
+      "nurseryName": "Pépinière Semisto Wallonie",
+      "quantity": 100,
+      "rootstock": null,
+      "age": "Division",
+      "price": 4.50
+    },
+    {
+      "id": "stock-5",
+      "targetId": "variety-ribes-nigrum-noir-de-bourgogne",
+      "targetType": "variety",
+      "nurseryId": "nursery-bretagne",
+      "nurseryName": "Pépinière Semisto Bretagne",
+      "quantity": 0,
+      "rootstock": null,
+      "age": "1 an",
+      "price": 8.00
+    }
+  ],
+
+  "contributors": [
+    {
+      "id": "contributor-1",
+      "name": "Marie Dupont",
+      "avatarUrl": "https://ui-avatars.com/api/?name=Marie+Dupont&background=AFBD00&color=fff&size=200&bold=true&font-size=0.5",
+      "joinedAt": "2022-03-15T00:00:00Z",
+      "labId": "lab-wallonie",
+      "stats": {
+        "speciesCreated": 12,
+        "varietiesCreated": 8,
+        "photosAdded": 47,
+        "notesWritten": 23
+      },
+      "semosEarned": 2340,
+      "activityByMonth": [12, 8, 15, 22, 18, 25, 30, 28, 20, 15, 10, 8]
+    },
+    {
+      "id": "contributor-2",
+      "name": "Jean-Pierre Martin",
+      "avatarUrl": "/avatars/jp-martin.jpg",
+      "joinedAt": "2021-09-01T00:00:00Z",
+      "labId": "lab-wallonie",
+      "stats": {
+        "speciesCreated": 34,
+        "varietiesCreated": 56,
+        "photosAdded": 128,
+        "notesWritten": 67
+      },
+      "semosEarned": 8750,
+      "activityByMonth": [25, 30, 28, 35, 40, 45, 38, 42, 50, 48, 35, 30]
+    },
+    {
+      "id": "contributor-3",
+      "name": "Sarah Williams",
+      "avatarUrl": "/avatars/sarah-williams.jpg",
+      "joinedAt": "2023-01-20T00:00:00Z",
+      "labId": null,
+      "stats": {
+        "speciesCreated": 5,
+        "varietiesCreated": 2,
+        "photosAdded": 34,
+        "notesWritten": 15
+      },
+      "semosEarned": 890,
+      "activityByMonth": [0, 5, 8, 12, 15, 18, 22, 20, 18, 15, 12, 10]
+    }
+  ],
+
+  "activityFeed": [
+    {
+      "id": "activity-1",
+      "type": "species_created",
+      "contributorId": "contributor-2",
+      "targetId": "species-symphytum-officinale",
+      "targetType": "species",
+      "targetName": "Symphytum officinale",
+      "timestamp": "2024-12-27T14:30:00Z"
+    },
+    {
+      "id": "activity-2",
+      "type": "photo_added",
+      "contributorId": "contributor-1",
+      "targetId": "species-ribes-nigrum",
+      "targetType": "species",
+      "targetName": "Ribes nigrum",
+      "timestamp": "2024-12-27T11:15:00Z"
+    },
+    {
+      "id": "activity-3",
+      "type": "note_added",
+      "contributorId": "contributor-3",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "targetName": "Corylus avellana",
+      "timestamp": "2024-12-26T16:45:00Z"
+    },
+    {
+      "id": "activity-4",
+      "type": "variety_created",
+      "contributorId": "contributor-2",
+      "targetId": "variety-ribes-rubrum-jonkheer-van-tets",
+      "targetType": "variety",
+      "targetName": "Ribes rubrum 'Jonkheer van Tets'",
+      "timestamp": "2024-12-26T10:00:00Z"
+    },
+    {
+      "id": "activity-5",
+      "type": "species_updated",
+      "contributorId": "contributor-1",
+      "targetId": "species-malus-domestica",
+      "targetType": "species",
+      "targetName": "Malus domestica",
+      "timestamp": "2024-12-25T09:30:00Z"
+    },
+    {
+      "id": "activity-6",
+      "type": "reference_added",
+      "contributorId": "contributor-2",
+      "targetId": "species-corylus-avellana",
+      "targetType": "species",
+      "targetName": "Corylus avellana",
+      "timestamp": "2024-12-24T15:20:00Z"
+    },
+    {
+      "id": "activity-7",
+      "type": "photo_added",
+      "contributorId": "contributor-3",
+      "targetId": "variety-malus-domestica-reine-des-reinettes",
+      "targetType": "variety",
+      "targetName": "Malus domestica 'Reine des Reinettes'",
+      "timestamp": "2024-12-24T12:00:00Z"
+    }
+  ],
+
+  "plantPalettes": [
+    {
+      "id": "palette-1",
+      "name": "Verger diversifié - Sol argileux mi-ombre",
+      "description": "Palette pour un terrain argileux avec exposition mi-ombre, orientée production fruitière et transformation.",
+      "createdBy": "contributor-1",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "strates": {
+        "aquatic": [],
+        "groundCover": [],
+        "herbaceous": [
+          { "id": "species-symphytum-officinale", "type": "species", "latinName": "Symphytum officinale" }
+        ],
+        "climbers": [],
+        "shrubs": [
+          { "id": "variety-corylus-avellana-webb-prize-cob", "type": "variety", "latinName": "Corylus avellana 'Webb's Prize Cob'" },
+          { "id": "variety-ribes-nigrum-noir-de-bourgogne", "type": "variety", "latinName": "Ribes nigrum 'Noir de Bourgogne'" },
+          { "id": "variety-ribes-rubrum-jonkheer-van-tets", "type": "variety", "latinName": "Ribes rubrum 'Jonkheer van Tets'" }
+        ],
+        "trees": [
+          { "id": "variety-malus-domestica-reine-des-reinettes", "type": "variety", "latinName": "Malus domestica 'Reine des Reinettes'" },
+          { "id": "variety-malus-domestica-belle-de-boskoop", "type": "variety", "latinName": "Malus domestica 'Belle de Boskoop'" }
+        ]
+      }
+    }
+  ]
+}

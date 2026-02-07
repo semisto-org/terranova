@@ -1,0 +1,794 @@
+{
+  "_meta": {
+    "models": {
+      "trainingTypes": "Types de formations réutilisables (ex: 'Formation à la taille') avec template de checklist et galerie photos partagée.",
+      "trainings": "Formations concrètes organisées, basées sur un type de formation. Chaque formation a un statut, des dates, lieux, formateurs, tarif, places et peut nécessiter un hébergement.",
+      "trainingSessions": "Sessions individuelles d'une formation. Une formation peut avoir une ou plusieurs sessions (ex: Cursus sur 15 sessions de 2 jours).",
+      "trainingLocations": "Lieux de formation avec descriptif WYSIWYG, galerie photos et types de formation compatibles.",
+      "trainingRegistrations": "Inscriptions détaillées des participants à une formation, avec montant payé, statut de paiement et note interne.",
+      "trainingAttendances": "Présences des participants aux sessions spécifiques d'une formation.",
+      "trainingDocuments": "Documents uploadés par les coordinateurs pour les participants (accès privé via le site web).",
+      "trainingExpenses": "Dépenses liées à une formation (location salle, matériel, repas, etc.) pour calculer la rentabilité.",
+      "ideaNotes": "Notes du carnet d'idées pour capturer des idées sur sujets, formateurs potentiels, lieux judicieux, etc."
+    },
+    "relationships": [
+      "Chaque Training est basée sur un TrainingType (hérite du template checklist et des photos)",
+      "Chaque Training a une ou plusieurs TrainingSessions (dates, lieux, formateurs/assistants)",
+      "Chaque TrainingSession peut avoir plusieurs TrainingLocations",
+      "Chaque TrainingRegistration appartient à une Training et un Contact (participant)",
+      "Chaque TrainingAttendance lie une Registration à une Session spécifique",
+      "Chaque TrainingDocument est lié à une Training",
+      "Chaque TrainingExpense est lié à une Training",
+      "Les TrainingLocations indiquent quels TrainingTypes peuvent s'y dérouler"
+    ]
+  },
+  "trainingTypes": [
+    {
+      "id": "type-001",
+      "name": "Formation à la taille",
+      "description": "Formation pratique sur les techniques de taille productive des arbres fruitiers en jardin-forêt.",
+      "checklistTemplate": [
+        "Réserver le lieu de formation",
+        "Confirmer la disponibilité du formateur",
+        "Commander le matériel de taille",
+        "Préparer les supports pédagogiques",
+        "Envoyer les informations pratiques aux participants",
+        "Prévoir les repas de midi",
+        "Vérifier les conditions météo",
+        "Préparer la liste des présences"
+      ],
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800",
+        "https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?w=800",
+        "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800"
+      ],
+      "trainerIds": ["member-002", "member-005"],
+      "createdAt": "2023-01-15"
+    },
+    {
+      "id": "type-002",
+      "name": "Cursus de concepteur de forêts comestibles",
+      "description": "Formation complète sur 15 sessions de 2 jours pour devenir concepteur de jardins-forêts et forêts comestibles.",
+      "checklistTemplate": [
+        "Planifier les 15 sessions sur l'année",
+        "Réserver les lieux pour chaque session",
+        "Confirmer les formateurs et assistants",
+        "Préparer le syllabus participatif",
+        "Mettre en ligne les contenus e-learning",
+        "Organiser les sessions pratiques",
+        "Prévoir l'hébergement pour les sessions résidentielles",
+        "Gérer les inscriptions au cursus complet",
+        "Suivre les présences session par session",
+        "Préparer les certificats de fin de cursus"
+      ],
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800",
+        "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800",
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800"
+      ],
+      "trainerIds": ["member-002", "member-005", "member-006"],
+      "createdAt": "2022-09-01"
+    },
+    {
+      "id": "type-003",
+      "name": "Initiation aux jardins-forêts",
+      "description": "Formation d'une journée pour découvrir les principes de base des jardins-forêts.",
+      "checklistTemplate": [
+        "Réserver le lieu",
+        "Confirmer le formateur",
+        "Préparer les supports visuels",
+        "Envoyer les informations pratiques",
+        "Prévoir le repas de midi"
+      ],
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800"
+      ],
+      "trainerIds": ["member-002"],
+      "createdAt": "2023-03-10"
+    },
+    {
+      "id": "type-004",
+      "name": "Gestion de la biodiversité en forêt comestible",
+      "description": "Formation de 2 jours sur la gestion écologique et la biodiversité dans les forêts comestibles.",
+      "checklistTemplate": [
+        "Réserver le lieu pour 2 jours",
+        "Confirmer les formateurs",
+        "Prévoir l'hébergement",
+        "Préparer les supports pédagogiques",
+        "Organiser les repas",
+        "Prévoir le matériel d'observation",
+        "Envoyer les informations pratiques"
+      ],
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800",
+        "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800"
+      ],
+      "trainerIds": ["member-002", "member-005"],
+      "createdAt": "2023-05-20"
+    },
+    {
+      "id": "type-005",
+      "name": "Multiplication végétale",
+      "description": "Formation pratique sur les techniques de multiplication des plantes (bouturage, marcottage, semis).",
+      "checklistTemplate": [
+        "Réserver le lieu avec espace pratique",
+        "Confirmer le formateur",
+        "Commander le matériel (pots, terreau, outils)",
+        "Préparer les plants-mères",
+        "Prévoir les supports pédagogiques",
+        "Envoyer les informations pratiques"
+      ],
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?w=800"
+      ],
+      "trainerIds": ["member-005"],
+      "createdAt": "2023-07-15"
+    }
+  ],
+  "trainingLocations": [
+    {
+      "id": "location-001",
+      "name": "Ferme de la Forêt Comestible",
+      "address": "Rue des Pommiers 42, 5030 Gembloux",
+      "description": "<p>La Ferme de la Forêt Comestible est un lieu d'expérimentation et de démonstration de 2 hectares situé à Gembloux. Elle dispose d'une grande salle de formation équipée (50 places), d'espaces extérieurs pour les pratiques, et d'un jardin-forêt mature pour les démonstrations.</p><p>Le lieu est idéal pour les formations pratiques nécessitant un accès direct aux plantations.</p>",
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800",
+        "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800"
+      ],
+      "compatibleTrainingTypeIds": ["type-001", "type-002", "type-003", "type-004", "type-005"],
+      "capacity": 50,
+      "hasAccommodation": false,
+      "createdAt": "2022-06-01"
+    },
+    {
+      "id": "location-002",
+      "name": "Centre de Formation Semisto",
+      "address": "Avenue des Chênes 15, 5000 Namur",
+      "description": "<p>Le Centre de Formation Semisto est un espace dédié aux formations du réseau. Il comprend plusieurs salles modulables (20 à 100 places), une cuisine équipée, et des espaces de convivialité.</p><p>Idéal pour les formations théoriques et les sessions de cursus nécessitant un environnement confortable et professionnel.</p>",
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800"
+      ],
+      "compatibleTrainingTypeIds": ["type-002", "type-003", "type-004"],
+      "capacity": 100,
+      "hasAccommodation": false,
+      "createdAt": "2022-08-15"
+    },
+    {
+      "id": "location-003",
+      "name": "Domaine de la Source",
+      "address": "Chemin de la Source 8, 6940 Durbuy",
+      "description": "<p>Le Domaine de la Source est un lieu résidentiel de 5 hectares avec hébergement sur place. Il dispose de chambres pour 30 personnes, d'une grande salle de formation, et d'un jardin-forêt en développement.</p><p>Parfait pour les formations de plusieurs jours nécessitant un hébergement et une immersion complète.</p>",
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800",
+        "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800"
+      ],
+      "compatibleTrainingTypeIds": ["type-002", "type-004"],
+      "capacity": 30,
+      "hasAccommodation": true,
+      "createdAt": "2023-02-10"
+    },
+    {
+      "id": "location-004",
+      "name": "Jardin Botanique de Liège",
+      "address": "Rue Fusch 3, 4000 Liège",
+      "description": "<p>Partenariat avec le Jardin Botanique de Liège pour certaines formations nécessitant un accès à des collections végétales spécifiques. Salle de conférence disponible (40 places) et accès aux collections.</p>",
+      "photoGallery": [
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800"
+      ],
+      "compatibleTrainingTypeIds": ["type-003", "type-004", "type-005"],
+      "capacity": 40,
+      "hasAccommodation": false,
+      "createdAt": "2023-04-05"
+    }
+  ],
+  "trainings": [
+    {
+      "id": "training-001",
+      "trainingTypeId": "type-001",
+      "title": "Taille productive d'arbres fruitiers - Session printemps 2024",
+      "status": "completed",
+      "price": 120,
+      "maxParticipants": 15,
+      "requiresAccommodation": false,
+      "description": "Formation pratique d'une journée sur les techniques de taille productive des arbres fruitiers en jardin-forêt. Focus sur la taille de formation et la taille de fructification.",
+      "coordinatorNote": "Formation très appréciée, prévoir une session automne également.",
+      "createdAt": "2024-01-15",
+      "updatedAt": "2024-03-20"
+    },
+    {
+      "id": "training-002",
+      "trainingTypeId": "type-002",
+      "title": "Cursus de concepteur de forêts comestibles 2024-2025",
+      "status": "in_progress",
+      "price": 2800,
+      "maxParticipants": 20,
+      "requiresAccommodation": true,
+      "description": "Formation complète sur 15 sessions de 2 jours pour devenir concepteur de jardins-forêts et forêts comestibles. Le cursus couvre tous les aspects : design, écologie, économie, mise en œuvre.",
+      "coordinatorNote": "Cursus en cours, 18 participants inscrits. Session 8/15 terminée.",
+      "createdAt": "2023-11-01",
+      "updatedAt": "2024-03-15"
+    },
+    {
+      "id": "training-003",
+      "trainingTypeId": "type-001",
+      "title": "Taille productive d'arbres fruitiers - Session automne 2024",
+      "status": "registrations_open",
+      "price": 120,
+      "maxParticipants": 15,
+      "requiresAccommodation": false,
+      "description": "Formation pratique d'une journée sur les techniques de taille productive des arbres fruitiers en jardin-forêt. Focus sur la taille de fructification et la préparation pour l'hiver.",
+      "coordinatorNote": "Inscriptions ouvertes depuis le 1er mars. Déjà 8 inscrits sur 15 places.",
+      "createdAt": "2024-02-20",
+      "updatedAt": "2024-03-10"
+    },
+    {
+      "id": "training-004",
+      "trainingTypeId": "type-003",
+      "title": "Initiation aux jardins-forêts - Juin 2024",
+      "status": "planned",
+      "price": 80,
+      "maxParticipants": 25,
+      "requiresAccommodation": false,
+      "description": "Formation d'une journée pour découvrir les principes de base des jardins-forêts : strates, associations, design de base.",
+      "coordinatorNote": "À planifier pour le samedi 15 juin. Lieu à confirmer.",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-05"
+    },
+    {
+      "id": "training-005",
+      "trainingTypeId": "type-004",
+      "title": "Gestion de la biodiversité - Mai 2024",
+      "status": "draft",
+      "price": 200,
+      "maxParticipants": 18,
+      "requiresAccommodation": true,
+      "description": "Formation de 2 jours sur la gestion écologique et la biodiversité dans les forêts comestibles. Observation sur le terrain et mise en pratique.",
+      "coordinatorNote": "En cours de préparation. Contacter les formateurs pour disponibilité.",
+      "createdAt": "2024-03-10",
+      "updatedAt": "2024-03-12"
+    },
+    {
+      "id": "training-006",
+      "trainingTypeId": "type-005",
+      "title": "Multiplication végétale - Avril 2024",
+      "status": "completed",
+      "price": 100,
+      "maxParticipants": 12,
+      "requiresAccommodation": false,
+      "description": "Formation pratique sur les techniques de multiplication des plantes : bouturage, marcottage, semis. Chaque participant repart avec ses propres plants.",
+      "coordinatorNote": "Formation réussie, tous les participants satisfaits. Prévoir une session automne également.",
+      "createdAt": "2024-01-20",
+      "updatedAt": "2024-04-15"
+    },
+    {
+      "id": "training-007",
+      "trainingTypeId": "type-002",
+      "title": "Cursus de concepteur de forêts comestibles 2025-2026",
+      "status": "planned",
+      "price": 3000,
+      "maxParticipants": 20,
+      "requiresAccommodation": true,
+      "description": "Nouvelle édition du cursus complet sur 15 sessions de 2 jours. Programme mis à jour avec les dernières avancées.",
+      "coordinatorNote": "Cursus à planifier pour septembre 2025. Déjà plusieurs demandes d'inscription.",
+      "createdAt": "2024-02-15",
+      "updatedAt": "2024-03-01"
+    },
+    {
+      "id": "training-008",
+      "trainingTypeId": "type-001",
+      "title": "Taille productive d'arbres fruitiers - Session hiver 2024",
+      "status": "cancelled",
+      "price": 120,
+      "maxParticipants": 15,
+      "requiresAccommodation": false,
+      "description": "Formation pratique d'une journée sur les techniques de taille productive des arbres fruitiers en jardin-forêt.",
+      "coordinatorNote": "Annulée faute de participants suffisants. Reprogrammer au printemps 2025.",
+      "createdAt": "2024-01-10",
+      "updatedAt": "2024-02-28"
+    }
+  ],
+  "trainingSessions": [
+    {
+      "id": "session-001",
+      "trainingId": "training-001",
+      "startDate": "2026-03-15",
+      "endDate": "2026-03-15",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-001-bis",
+      "trainingId": "training-003",
+      "startDate": "2026-03-15",
+      "endDate": "2026-03-15",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": [],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-002-01",
+      "trainingId": "training-002",
+      "startDate": "2026-01-10",
+      "endDate": "2026-01-11",
+      "locationIds": ["location-003"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005", "member-006"],
+      "description": "Session 1/15 : Introduction au design de forêts comestibles"
+    },
+    {
+      "id": "session-002-02",
+      "trainingId": "training-002",
+      "startDate": "2026-01-24",
+      "endDate": "2026-01-25",
+      "locationIds": ["location-003"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session 2/15 : Écologie des systèmes forestiers"
+    },
+    {
+      "id": "session-002-03",
+      "trainingId": "training-002",
+      "startDate": "2026-02-07",
+      "endDate": "2026-02-08",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-006"],
+      "description": "Session 3/15 : Sélection et association des espèces"
+    },
+    {
+      "id": "session-002-03-bis",
+      "trainingId": "training-006",
+      "startDate": "2026-02-07",
+      "endDate": "2026-02-07",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-005"],
+      "assistantIds": ["member-006"],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-002-04",
+      "trainingId": "training-002",
+      "startDate": "2026-02-21",
+      "endDate": "2026-02-22",
+      "locationIds": ["location-003"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session 4/15 : Design et planification"
+    },
+    {
+      "id": "session-002-05",
+      "trainingId": "training-002",
+      "startDate": "2026-03-07",
+      "endDate": "2026-03-08",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-006"],
+      "description": "Session 5/15 : Mise en pratique sur le terrain"
+    },
+    {
+      "id": "session-003",
+      "trainingId": "training-003",
+      "startDate": "2026-03-20",
+      "endDate": "2026-03-20",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": [],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-004",
+      "trainingId": "training-004",
+      "startDate": "2026-02-14",
+      "endDate": "2026-02-14",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-004-bis",
+      "trainingId": "training-001",
+      "startDate": "2026-02-14",
+      "endDate": "2026-02-14",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-005",
+      "trainingId": "training-005",
+      "startDate": "2026-01-20",
+      "endDate": "2026-01-21",
+      "locationIds": ["location-003"],
+      "trainerIds": ["member-005"],
+      "assistantIds": ["member-006"],
+      "description": "Session de 2 jours"
+    },
+    {
+      "id": "session-006",
+      "trainingId": "training-006",
+      "startDate": "2026-02-28",
+      "endDate": "2026-02-28",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-005"],
+      "assistantIds": ["member-006"],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-007",
+      "trainingId": "training-007",
+      "startDate": "2026-03-10",
+      "endDate": "2026-03-11",
+      "locationIds": ["location-003"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session 1/15 : Introduction"
+    },
+    {
+      "id": "session-008",
+      "trainingId": "training-001",
+      "startDate": "2026-01-15",
+      "endDate": "2026-01-15",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": ["member-005"],
+      "description": "Session unique d'une journée complète"
+    },
+    {
+      "id": "session-009",
+      "trainingId": "training-003",
+      "startDate": "2026-02-05",
+      "endDate": "2026-02-05",
+      "locationIds": ["location-001"],
+      "trainerIds": ["member-002"],
+      "assistantIds": [],
+      "description": "Session unique d'une journée complète"
+    }
+  ],
+  "trainingRegistrations": [
+    {
+      "id": "reg-001",
+      "trainingId": "training-001",
+      "contactId": "contact-001",
+      "contactName": "Jean Dupont",
+      "contactEmail": "jean.dupont@email.com",
+      "amountPaid": 120,
+      "paymentStatus": "paid",
+      "internalNote": "Très motivé, intéressé par d'autres formations",
+      "registeredAt": "2024-02-15"
+    },
+    {
+      "id": "reg-002",
+      "trainingId": "training-001",
+      "contactId": "contact-002",
+      "contactName": "Marie Lefebvre",
+      "contactEmail": "marie.lefebvre@email.com",
+      "amountPaid": 120,
+      "paymentStatus": "paid",
+      "internalNote": "",
+      "registeredAt": "2024-02-18"
+    },
+    {
+      "id": "reg-003",
+      "trainingId": "training-001",
+      "contactId": "contact-003",
+      "contactName": "Pierre Martin",
+      "contactEmail": "pierre.martin@email.com",
+      "amountPaid": 60,
+      "paymentStatus": "partial",
+      "internalNote": "Reste 60€ à payer avant la formation",
+      "registeredAt": "2024-02-20"
+    },
+    {
+      "id": "reg-004",
+      "trainingId": "training-002",
+      "contactId": "contact-004",
+      "contactName": "Sophie Bernard",
+      "contactEmail": "sophie.bernard@email.com",
+      "amountPaid": 2800,
+      "paymentStatus": "paid",
+      "internalNote": "Paiement en 3 fois, dernière échéance en mai",
+      "registeredAt": "2023-12-01"
+    },
+    {
+      "id": "reg-005",
+      "trainingId": "training-002",
+      "contactId": "contact-005",
+      "contactName": "Luc Petit",
+      "contactEmail": "luc.petit@email.com",
+      "amountPaid": 1400,
+      "paymentStatus": "partial",
+      "internalNote": "Paiement échelonné, reste 1400€",
+      "registeredAt": "2023-12-05"
+    },
+    {
+      "id": "reg-006",
+      "trainingId": "training-003",
+      "contactId": "contact-006",
+      "contactName": "Emma Dubois",
+      "contactEmail": "emma.dubois@email.com",
+      "amountPaid": 120,
+      "paymentStatus": "paid",
+      "internalNote": "",
+      "registeredAt": "2024-03-05"
+    },
+    {
+      "id": "reg-007",
+      "trainingId": "training-003",
+      "contactId": "contact-007",
+      "contactName": "Antoine Moreau",
+      "contactEmail": "antoine.moreau@email.com",
+      "amountPaid": 0,
+      "paymentStatus": "pending",
+      "internalNote": "En attente de paiement, relancer dans 1 semaine",
+      "registeredAt": "2024-03-08"
+    },
+    {
+      "id": "reg-008",
+      "trainingId": "training-006",
+      "contactId": "contact-008",
+      "contactName": "Claire Rousseau",
+      "contactEmail": "claire.rousseau@email.com",
+      "amountPaid": 100,
+      "paymentStatus": "paid",
+      "internalNote": "",
+      "registeredAt": "2024-03-20"
+    }
+  ],
+  "trainingAttendances": [
+    {
+      "id": "att-001",
+      "registrationId": "reg-001",
+      "sessionId": "session-001",
+      "isPresent": true,
+      "note": ""
+    },
+    {
+      "id": "att-002",
+      "registrationId": "reg-002",
+      "sessionId": "session-001",
+      "isPresent": true,
+      "note": ""
+    },
+    {
+      "id": "att-003",
+      "registrationId": "reg-003",
+      "sessionId": "session-001",
+      "isPresent": false,
+      "note": "Absent pour raison médicale"
+    },
+    {
+      "id": "att-004",
+      "registrationId": "reg-004",
+      "sessionId": "session-002-01",
+      "isPresent": true,
+      "note": ""
+    },
+    {
+      "id": "att-005",
+      "registrationId": "reg-004",
+      "sessionId": "session-002-02",
+      "isPresent": true,
+      "note": ""
+    },
+    {
+      "id": "att-006",
+      "registrationId": "reg-004",
+      "sessionId": "session-002-03",
+      "isPresent": true,
+      "note": ""
+    },
+    {
+      "id": "att-007",
+      "registrationId": "reg-005",
+      "sessionId": "session-002-01",
+      "isPresent": true,
+      "note": ""
+    },
+    {
+      "id": "att-008",
+      "registrationId": "reg-005",
+      "sessionId": "session-002-02",
+      "isPresent": false,
+      "note": "Absent pour raison personnelle"
+    },
+    {
+      "id": "att-009",
+      "registrationId": "reg-008",
+      "sessionId": "session-006",
+      "isPresent": true,
+      "note": ""
+    }
+  ],
+  "trainingDocuments": [
+    {
+      "id": "doc-001",
+      "trainingId": "training-001",
+      "name": "Support de cours - Taille productive.pdf",
+      "type": "pdf",
+      "url": "/documents/training-001/support-cours.pdf",
+      "uploadedAt": "2024-03-05",
+      "uploadedBy": "member-002"
+    },
+    {
+      "id": "doc-002",
+      "trainingId": "training-001",
+      "name": "Fiche technique - Outils de taille.pdf",
+      "type": "pdf",
+      "url": "/documents/training-001/fiche-outils.pdf",
+      "uploadedAt": "2024-03-05",
+      "uploadedBy": "member-002"
+    },
+    {
+      "id": "doc-003",
+      "trainingId": "training-002",
+      "name": "Syllabus Session 1 - Introduction.pdf",
+      "type": "pdf",
+      "url": "/documents/training-002/session-01.pdf",
+      "uploadedAt": "2024-01-10",
+      "uploadedBy": "member-002"
+    },
+    {
+      "id": "doc-004",
+      "trainingId": "training-002",
+      "name": "Contenu e-learning - Module 1",
+      "type": "link",
+      "url": "https://elearning.semisto.org/cursus-2024/module-1",
+      "uploadedAt": "2024-01-08",
+      "uploadedBy": "member-002"
+    },
+    {
+      "id": "doc-005",
+      "trainingId": "training-006",
+      "name": "Guide pratique - Multiplication végétale.pdf",
+      "type": "pdf",
+      "url": "/documents/training-006/guide-multiplication.pdf",
+      "uploadedAt": "2024-04-05",
+      "uploadedBy": "member-005"
+    }
+  ],
+  "trainingExpenses": [
+    {
+      "id": "exp-001",
+      "trainingId": "training-001",
+      "category": "location",
+      "description": "Location salle Ferme de la Forêt Comestible",
+      "amount": 150,
+      "date": "2024-03-10",
+      "createdAt": "2024-03-11"
+    },
+    {
+      "id": "exp-002",
+      "trainingId": "training-001",
+      "category": "material",
+      "description": "Matériel de taille (sécateurs, scies, gants)",
+      "amount": 85,
+      "date": "2024-03-08",
+      "createdAt": "2024-03-09"
+    },
+    {
+      "id": "exp-003",
+      "trainingId": "training-001",
+      "category": "food",
+      "description": "Repas de midi pour 15 participants",
+      "amount": 180,
+      "date": "2024-03-10",
+      "createdAt": "2024-03-11"
+    },
+    {
+      "id": "exp-004",
+      "trainingId": "training-002",
+      "category": "location",
+      "description": "Location Domaine de la Source - Session 1",
+      "amount": 400,
+      "date": "2024-01-13",
+      "createdAt": "2024-01-14"
+    },
+    {
+      "id": "exp-005",
+      "trainingId": "training-002",
+      "category": "accommodation",
+      "description": "Hébergement 18 participants - Session 1",
+      "amount": 540,
+      "date": "2024-01-13",
+      "createdAt": "2024-01-14"
+    },
+    {
+      "id": "exp-006",
+      "trainingId": "training-002",
+      "category": "food",
+      "description": "Repas Session 1 (déjeuners et dîners)",
+      "amount": 720,
+      "date": "2024-01-13",
+      "createdAt": "2024-01-14"
+    },
+    {
+      "id": "exp-007",
+      "trainingId": "training-006",
+      "category": "material",
+      "description": "Pots, terreau, outils pour 12 participants",
+      "amount": 120,
+      "date": "2024-04-10",
+      "createdAt": "2024-04-11"
+    },
+    {
+      "id": "exp-008",
+      "trainingId": "training-006",
+      "category": "location",
+      "description": "Location salle Ferme de la Forêt Comestible",
+      "amount": 150,
+      "date": "2024-04-13",
+      "createdAt": "2024-04-14"
+    }
+  ],
+  "ideaNotes": [
+    {
+      "id": "idea-001",
+      "category": "subject",
+      "title": "Formation sur la greffe",
+      "content": "Idée de formation sur les techniques de greffe des arbres fruitiers. Beaucoup de demandes de la part des participants aux formations taille.",
+      "createdAt": "2024-03-15",
+      "tags": ["greffe", "arbres fruitiers"]
+    },
+    {
+      "id": "idea-002",
+      "category": "trainer",
+      "title": "Contact formateur permaculture",
+      "content": "Marc Dubois - formateur expérimenté en permaculture, intéressé par collaborer sur des formations jardins-forêts. À contacter pour sessions 2025.",
+      "createdAt": "2024-02-20",
+      "tags": ["formateur", "permaculture"]
+    },
+    {
+      "id": "idea-003",
+      "category": "location",
+      "title": "Nouveau lieu potentiel - Château de Modave",
+      "content": "Le Château de Modave dispose de jardins historiques et pourrait être intéressant pour certaines formations. À explorer pour partenariat.",
+      "createdAt": "2024-01-10",
+      "tags": ["lieu", "partenariat"]
+    },
+    {
+      "id": "idea-004",
+      "category": "subject",
+      "title": "Formation sur les champignons comestibles",
+      "content": "Demande récurrente pour une formation sur l'identification et la culture des champignons comestibles en forêt comestible.",
+      "createdAt": "2024-03-01",
+      "tags": ["champignons", "identification"]
+    },
+    {
+      "id": "idea-005",
+      "category": "trainer",
+      "title": "Assistante formatrice - Julie Martin",
+      "content": "Julie Martin, ancienne participante au cursus, très compétente et intéressée pour devenir assistante formatrice. À former progressivement.",
+      "createdAt": "2024-02-28",
+      "tags": ["assistant", "formation interne"]
+    }
+  ],
+  "members": [
+    {
+      "id": "member-002",
+      "firstName": "Thomas",
+      "lastName": "Martin",
+      "email": "thomas.martin@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas"
+    },
+    {
+      "id": "member-005",
+      "firstName": "Emma",
+      "lastName": "Bernard",
+      "email": "emma.bernard@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma"
+    },
+    {
+      "id": "member-006",
+      "firstName": "Antoine",
+      "lastName": "Moreau",
+      "email": "antoine.moreau@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Antoine"
+    }
+  ]
+}
+

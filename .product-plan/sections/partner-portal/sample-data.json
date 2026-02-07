@@ -1,0 +1,513 @@
+{
+  "_meta": {
+    "models": {
+      "partner": "L'organisation partenaire connectée au portail — une entreprise, institution ou collectivité qui soutient le mouvement Semisto.",
+      "packages": "Les offres prédéfinies par Semisto que les partenaires peuvent choisir. Chaque package a un type (projet citoyen, team building, parrainage, mécénat, formation, programme ambassadeur), une description et un tarif indicatif.",
+      "engagements": "Un package activé pour le partenaire. Contient le suivi concret : calendrier des événements, documents partagés, photos et vidéos du terrain.",
+      "fundingProposals": "Propositions de projets publiées par les Labs que le partenaire peut choisir de financer. Inspiré du flow collaborative funding en 5 étapes.",
+      "fundings": "Allocations de fonds effectuées par le partenaire vers des projets spécifiques, avec traçabilité de l'impact.",
+      "impactMetrics": "Métriques d'impact agrégées du partenaire pour son dashboard et son reporting RSE."
+    },
+    "relationships": [
+      "Un Partner a plusieurs Engagements (packages activés)",
+      "Un Engagement est lié à un Package (le type d'offre choisie)",
+      "Un Engagement contient des événements, documents et médias",
+      "Un Partner a plusieurs Fundings (allocations de fonds)",
+      "Un Funding est lié à une FundingProposal (le projet financé)",
+      "Les ImpactMetrics sont calculées à partir des Engagements et Fundings du Partner"
+    ]
+  },
+  "partner": {
+    "id": "partner-001",
+    "name": "Colruyt Group",
+    "type": "enterprise",
+    "logo": "https://placeholder.co/120x40",
+    "contactName": "Sophie Vandenberghe",
+    "contactEmail": "sophie.vandenberghe@colruytgroup.com",
+    "contactRole": "Responsable RSE",
+    "joinedDate": "2025-09-15",
+    "description": "Colruyt Group soutient la transition écologique en Belgique à travers des projets de reforestation comestible et la mobilisation de ses collaborateurs."
+  },
+  "packages": [
+    {
+      "id": "pkg-001",
+      "type": "citizen-project",
+      "title": "Projet Citoyen — Forêt Comestible de Quartier",
+      "shortTitle": "Projet Citoyen",
+      "description": "Lancez un projet de forêt comestible dans un quartier de votre choix. Semisto accompagne la co-conception participative avec les habitants, la plantation et le suivi sur 3 ans. Votre organisation devient le parrain visible du projet.",
+      "includes": [
+        "Étude de faisabilité et sélection du site",
+        "3 ateliers de co-conception avec les riverains",
+        "Chantier de plantation (1 à 3 journées)",
+        "Suivi agronomique pendant 3 ans",
+        "Plaque de parrainage sur site",
+        "Reporting d'impact annuel"
+      ],
+      "priceRange": "15 000 € — 45 000 €",
+      "duration": "3 ans",
+      "imageUrl": "https://placeholder.co/600x400",
+      "highlighted": true
+    },
+    {
+      "id": "pkg-002",
+      "type": "team-building",
+      "title": "Team Building — Journée Plantation",
+      "shortTitle": "Team Building",
+      "description": "Offrez à vos équipes une journée de plantation conviviale dans un projet de forêt comestible. Briefing permaculture, plantation en équipe, et dégustation de produits du terroir.",
+      "includes": [
+        "Accueil et briefing permaculture (1h)",
+        "Session de plantation encadrée (3h)",
+        "Repas convivial avec produits locaux",
+        "Photos professionnelles de la journée",
+        "Certificat de participation par collaborateur",
+        "Bilan carbone de la journée"
+      ],
+      "priceRange": "2 500 € — 5 000 €",
+      "duration": "1 journée",
+      "imageUrl": "https://placeholder.co/600x400",
+      "highlighted": false
+    },
+    {
+      "id": "pkg-003",
+      "type": "sponsorship",
+      "title": "Parrainage Plantation — Adoptez un Chantier",
+      "shortTitle": "Parrainage Plantation",
+      "description": "Parrainez un chantier de plantation existant et recevez des mises à jour régulières sur l'évolution du site. Chaque arbre planté est traçable et lié à votre contribution.",
+      "includes": [
+        "Choix du chantier parmi les projets en cours",
+        "Traçabilité arbre par arbre de votre contribution",
+        "Photos saisonnières du site",
+        "Visite annuelle du site avec un guide Semisto",
+        "Mention sur la page projet publique"
+      ],
+      "priceRange": "5 000 € — 20 000 €",
+      "duration": "1 an renouvelable",
+      "imageUrl": "https://placeholder.co/600x400",
+      "highlighted": false
+    },
+    {
+      "id": "pkg-004",
+      "type": "recurring-patronage",
+      "title": "Mécénat Périodique — Soutien Continu",
+      "shortTitle": "Mécénat Périodique",
+      "description": "Engagez-vous dans un soutien financier régulier au réseau Semisto. Vos fonds sont répartis entre les Labs selon les besoins prioritaires, avec un reporting trimestriel transparent.",
+      "includes": [
+        "Prélèvement mensuel ou trimestriel",
+        "Reporting trimestriel d'utilisation des fonds",
+        "Invitation aux événements réseau Semisto",
+        "Mention dans le rapport annuel Semisto",
+        "Accès prioritaire aux nouveaux packages"
+      ],
+      "priceRange": "500 € — 5 000 € / mois",
+      "duration": "Engagement 12 mois minimum",
+      "imageUrl": "https://placeholder.co/600x400",
+      "highlighted": false
+    },
+    {
+      "id": "pkg-005",
+      "type": "training",
+      "title": "Formation — Sensibilisation Agroforesterie",
+      "shortTitle": "Formation",
+      "description": "Formez vos collaborateurs aux enjeux de l'agroforesterie et de la sécurité alimentaire locale. Sessions en présentiel ou en ligne, adaptées à votre contexte d'entreprise.",
+      "includes": [
+        "Session de 2h à 1 journée (au choix)",
+        "Support pédagogique personnalisé",
+        "Visite terrain optionnelle",
+        "Attestation de participation",
+        "Kit de ressources pour aller plus loin"
+      ],
+      "priceRange": "1 500 € — 4 000 €",
+      "duration": "2h à 1 journée",
+      "imageUrl": "https://placeholder.co/600x400",
+      "highlighted": false
+    },
+    {
+      "id": "pkg-006",
+      "type": "ambassador",
+      "title": "Programme Ambassadeur — Partenariat Stratégique",
+      "shortTitle": "Programme Ambassadeur",
+      "description": "Devenez un ambassadeur officiel du mouvement Semisto. Un partenariat long terme avec une visibilité maximale, un accès privilégié aux projets et une co-construction de la stratégie régionale.",
+      "includes": [
+        "Co-branding sur le site Semisto et les événements",
+        "Place au conseil consultatif Semisto",
+        "Accès illimité à tous les packages",
+        "Rapport d'impact personnalisé bi-annuel",
+        "Communication conjointe (communiqués de presse, réseaux sociaux)",
+        "3 team buildings par an inclus",
+        "Naming d'un projet phare"
+      ],
+      "priceRange": "50 000 € — 100 000 € / an",
+      "duration": "Engagement 2 ans minimum",
+      "imageUrl": "https://placeholder.co/600x400",
+      "highlighted": true
+    }
+  ],
+  "engagements": [
+    {
+      "id": "eng-001",
+      "packageId": "pkg-001",
+      "packageType": "citizen-project",
+      "title": "Forêt Comestible du Parc de la Dodaine",
+      "status": "active",
+      "startDate": "2025-10-01",
+      "endDate": "2028-09-30",
+      "labName": "Semisto Wallonie",
+      "labContact": "Antoine Dumont",
+      "totalBudget": 32000,
+      "location": "Nivelles, Brabant wallon",
+      "progress": 35,
+      "nextEvent": {
+        "title": "Atelier co-conception #2 avec les riverains",
+        "date": "2026-02-22",
+        "location": "Salle communale de Nivelles"
+      },
+      "events": [
+        {
+          "id": "evt-001",
+          "title": "Visite de terrain et étude de faisabilité",
+          "date": "2025-10-15",
+          "type": "milestone",
+          "status": "completed",
+          "description": "Visite du site avec l'équipe Semisto et les représentants de la commune. Validation du potentiel du terrain."
+        },
+        {
+          "id": "evt-002",
+          "title": "Atelier co-conception #1 — Rêver le jardin",
+          "date": "2025-12-08",
+          "type": "workshop",
+          "status": "completed",
+          "description": "Premier atelier avec 23 riverains. Recueil des souhaits, présentation du concept de forêt comestible."
+        },
+        {
+          "id": "evt-003",
+          "title": "Atelier co-conception #2 — Dessiner le plan",
+          "date": "2026-02-22",
+          "type": "workshop",
+          "status": "upcoming",
+          "description": "Deuxième atelier participatif : choix des espèces, zonage, chemins. Présentation du plan de design préliminaire."
+        },
+        {
+          "id": "evt-004",
+          "title": "Chantier de plantation — Jour 1",
+          "date": "2026-03-15",
+          "type": "planting",
+          "status": "upcoming",
+          "description": "Premier jour de plantation avec les bénévoles Food Forest Heroes et les riverains."
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc-001",
+          "title": "Rapport de faisabilité",
+          "type": "report",
+          "date": "2025-10-28",
+          "url": "#",
+          "fileSize": "2.4 MB"
+        },
+        {
+          "id": "doc-002",
+          "title": "Compte-rendu atelier #1",
+          "type": "report",
+          "date": "2025-12-12",
+          "url": "#",
+          "fileSize": "1.1 MB"
+        },
+        {
+          "id": "doc-003",
+          "title": "Plan de design préliminaire",
+          "type": "design",
+          "date": "2026-01-20",
+          "url": "#",
+          "fileSize": "8.7 MB"
+        }
+      ],
+      "media": [
+        {
+          "id": "media-001",
+          "type": "photo",
+          "title": "Visite de terrain — Parc de la Dodaine",
+          "date": "2025-10-15",
+          "url": "https://placeholder.co/800x600",
+          "thumbnailUrl": "https://placeholder.co/200x150"
+        },
+        {
+          "id": "media-002",
+          "type": "photo",
+          "title": "Atelier co-conception #1 — Les riverains dessinent",
+          "date": "2025-12-08",
+          "url": "https://placeholder.co/800x600",
+          "thumbnailUrl": "https://placeholder.co/200x150"
+        },
+        {
+          "id": "media-003",
+          "type": "video",
+          "title": "Timelapse — Préparation du terrain",
+          "date": "2026-01-10",
+          "url": "#",
+          "thumbnailUrl": "https://placeholder.co/200x150",
+          "duration": "2:34"
+        }
+      ]
+    },
+    {
+      "id": "eng-002",
+      "packageId": "pkg-002",
+      "packageType": "team-building",
+      "title": "Team Building Équipe Innovation — Forêt de Modave",
+      "status": "completed",
+      "startDate": "2025-11-18",
+      "endDate": "2025-11-18",
+      "labName": "Semisto Wallonie",
+      "labContact": "Marie Lefèvre",
+      "totalBudget": 3500,
+      "location": "Modave, Province de Liège",
+      "progress": 100,
+      "nextEvent": null,
+      "events": [
+        {
+          "id": "evt-005",
+          "title": "Journée Team Building — Plantation d'automne",
+          "date": "2025-11-18",
+          "type": "team-building",
+          "status": "completed",
+          "description": "28 collaborateurs ont participé à la plantation de 85 arbres fruitiers et arbustes. Journée conclue par un repas convivial au coin du feu."
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc-004",
+          "title": "Bilan carbone de la journée",
+          "type": "report",
+          "date": "2025-11-25",
+          "url": "#",
+          "fileSize": "0.8 MB"
+        },
+        {
+          "id": "doc-005",
+          "title": "Certificats de participation (28)",
+          "type": "certificate",
+          "date": "2025-11-20",
+          "url": "#",
+          "fileSize": "3.2 MB"
+        }
+      ],
+      "media": [
+        {
+          "id": "media-004",
+          "type": "photo",
+          "title": "L'équipe Innovation plante son premier arbre",
+          "date": "2025-11-18",
+          "url": "https://placeholder.co/800x600",
+          "thumbnailUrl": "https://placeholder.co/200x150"
+        },
+        {
+          "id": "media-005",
+          "type": "photo",
+          "title": "Vue d'ensemble du chantier",
+          "date": "2025-11-18",
+          "url": "https://placeholder.co/800x600",
+          "thumbnailUrl": "https://placeholder.co/200x150"
+        },
+        {
+          "id": "media-006",
+          "type": "photo",
+          "title": "Repas convivial — produits du terroir",
+          "date": "2025-11-18",
+          "url": "https://placeholder.co/800x600",
+          "thumbnailUrl": "https://placeholder.co/200x150"
+        },
+        {
+          "id": "media-007",
+          "type": "video",
+          "title": "Récap vidéo de la journée",
+          "date": "2025-11-22",
+          "url": "#",
+          "thumbnailUrl": "https://placeholder.co/200x150",
+          "duration": "3:12"
+        }
+      ]
+    },
+    {
+      "id": "eng-003",
+      "packageId": "pkg-004",
+      "packageType": "recurring-patronage",
+      "title": "Mécénat Mensuel — Réseau Semisto",
+      "status": "active",
+      "startDate": "2025-09-15",
+      "endDate": "2026-09-14",
+      "labName": "Réseau Semisto",
+      "labContact": "coordination@semisto.org",
+      "totalBudget": 24000,
+      "location": null,
+      "progress": 42,
+      "nextEvent": {
+        "title": "Reporting trimestriel Q1 2026",
+        "date": "2026-04-05",
+        "location": "Visioconférence"
+      },
+      "events": [
+        {
+          "id": "evt-006",
+          "title": "Reporting trimestriel Q3 2025",
+          "date": "2025-10-10",
+          "type": "reporting",
+          "status": "completed",
+          "description": "Présentation de l'utilisation des fonds sur juillet-septembre 2025. 60% alloués à Semisto Wallonie, 40% à Semisto Bruxelles."
+        },
+        {
+          "id": "evt-007",
+          "title": "Reporting trimestriel Q4 2025",
+          "date": "2026-01-12",
+          "type": "reporting",
+          "status": "completed",
+          "description": "Bilan du dernier trimestre. Vos fonds ont contribué à la plantation de 340 arbres sur 3 sites."
+        },
+        {
+          "id": "evt-008",
+          "title": "Reporting trimestriel Q1 2026",
+          "date": "2026-04-05",
+          "type": "reporting",
+          "status": "upcoming",
+          "description": "Prochain bilan trimestriel d'utilisation de vos fonds."
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc-006",
+          "title": "Rapport trimestriel Q3 2025",
+          "type": "report",
+          "date": "2025-10-10",
+          "url": "#",
+          "fileSize": "1.5 MB"
+        },
+        {
+          "id": "doc-007",
+          "title": "Rapport trimestriel Q4 2025",
+          "type": "report",
+          "date": "2026-01-12",
+          "url": "#",
+          "fileSize": "1.8 MB"
+        }
+      ],
+      "media": []
+    }
+  ],
+  "fundingProposals": [
+    {
+      "id": "fp-001",
+      "title": "Verger Communautaire de Saint-Gilles",
+      "labName": "Semisto Bruxelles",
+      "description": "Transformer une friche urbaine de 800 m² en verger communautaire avec 45 arbres fruitiers et une haie comestible. Le terrain est mis à disposition par la commune pour 15 ans.",
+      "targetAmount": 18000,
+      "raisedAmount": 11500,
+      "raisedPercent": 64,
+      "contributorsCount": 3,
+      "status": "open",
+      "deadline": "2026-03-31",
+      "location": "Saint-Gilles, Bruxelles",
+      "hectares": 0.08,
+      "treesPlanned": 45,
+      "imageUrl": "https://placeholder.co/600x400",
+      "tags": ["urbain", "fruitier", "communautaire"]
+    },
+    {
+      "id": "fp-002",
+      "title": "Forêt Nourricière de la Ferme du Bois",
+      "labName": "Semisto Wallonie",
+      "description": "Projet ambitieux de 2 hectares en partenariat avec un agriculteur bio. Installation d'un système agroforestier avec 200+ arbres et arbustes, zone maraîchère et parcelle pédagogique. Ce projet pilote servira de vitrine pour la région.",
+      "targetAmount": 65000,
+      "raisedAmount": 22000,
+      "raisedPercent": 34,
+      "contributorsCount": 5,
+      "status": "open",
+      "deadline": "2026-06-30",
+      "location": "Ohey, Province de Namur",
+      "hectares": 2.0,
+      "treesPlanned": 220,
+      "imageUrl": "https://placeholder.co/600x400",
+      "tags": ["rural", "agroforesterie", "pilote"]
+    },
+    {
+      "id": "fp-003",
+      "title": "Jardin-Forêt de l'École du Centre",
+      "labName": "Semisto Wallonie",
+      "description": "Création d'un jardin-forêt pédagogique de 400 m² dans la cour de l'école primaire du Centre à Namur. Les enfants participent à la conception et à la plantation, avec un programme éducatif sur 2 ans.",
+      "targetAmount": 8500,
+      "raisedAmount": 8500,
+      "raisedPercent": 100,
+      "contributorsCount": 7,
+      "status": "funded",
+      "deadline": "2026-01-15",
+      "location": "Namur",
+      "hectares": 0.04,
+      "treesPlanned": 25,
+      "imageUrl": "https://placeholder.co/600x400",
+      "tags": ["éducation", "école", "pédagogique"]
+    },
+    {
+      "id": "fp-004",
+      "title": "Haies Comestibles — Quartier Boondael",
+      "labName": "Semisto Bruxelles",
+      "description": "Plantation de 500 mètres linéaires de haies comestibles le long des voiries du quartier Boondael à Ixelles. Espèces sélectionnées pour la biodiversité et les fruits accessibles aux passants.",
+      "targetAmount": 12000,
+      "raisedAmount": 0,
+      "raisedPercent": 0,
+      "contributorsCount": 0,
+      "status": "new",
+      "deadline": "2026-09-30",
+      "location": "Ixelles, Bruxelles",
+      "hectares": 0.15,
+      "treesPlanned": 180,
+      "imageUrl": "https://placeholder.co/600x400",
+      "tags": ["urbain", "haie", "biodiversité"]
+    }
+  ],
+  "fundings": [
+    {
+      "id": "fund-001",
+      "proposalId": "fp-002",
+      "proposalTitle": "Forêt Nourricière de la Ferme du Bois",
+      "amount": 15000,
+      "date": "2025-11-20",
+      "status": "allocated",
+      "labName": "Semisto Wallonie"
+    },
+    {
+      "id": "fund-002",
+      "proposalId": "fp-001",
+      "proposalTitle": "Verger Communautaire de Saint-Gilles",
+      "amount": 5000,
+      "date": "2025-12-05",
+      "status": "allocated",
+      "labName": "Semisto Bruxelles"
+    },
+    {
+      "id": "fund-003",
+      "proposalId": "fp-003",
+      "proposalTitle": "Jardin-Forêt de l'École du Centre",
+      "amount": 3000,
+      "date": "2025-10-01",
+      "status": "spent",
+      "labName": "Semisto Wallonie"
+    }
+  ],
+  "impactMetrics": {
+    "totalInvested": 80500,
+    "hectaresContributed": 2.27,
+    "treesPlanted": 425,
+    "treesPlanned": 470,
+    "participantsMobilized": 74,
+    "eventsSponsored": 4,
+    "co2OffsetTons": 12.8,
+    "projectsSupported": 4,
+    "labsReached": 2,
+    "history": [
+      { "month": "2025-09", "invested": 2000, "trees": 0, "hectares": 0 },
+      { "month": "2025-10", "invested": 5000, "trees": 0, "hectares": 0 },
+      { "month": "2025-11", "invested": 20500, "trees": 85, "hectares": 0.12 },
+      { "month": "2025-12", "invested": 7000, "trees": 0, "hectares": 0 },
+      { "month": "2026-01", "invested": 2000, "trees": 340, "hectares": 2.0 },
+      { "month": "2026-02", "invested": 2000, "trees": 0, "hectares": 0.15 }
+    ]
+  }
+}

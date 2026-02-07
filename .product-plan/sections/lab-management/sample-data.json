@@ -1,0 +1,832 @@
+{
+  "_meta": {
+    "models": {
+      "members": "Personnes actives dans le Lab avec leurs rôles (designer, formateur, comptable, etc.). Chaque membre a un portefeuille Semos.",
+      "cycles": "Périodes de travail Shape Up de 6 semaines suivies de 2 semaines de cooldown. Les cycles donnent le rythme aux projets.",
+      "guilds": "Fonctions support transversales du Lab (IT, financement, comptabilité, communication, logistique).",
+      "pitches": "Documents de cadrage Shape Up avec les 5 ingrédients : Problem, Appetite, Solution, Rabbit Holes, No-Gos.",
+      "bets": "Paris placés sur les pitches pour décider quels projets seront réalisés dans le prochain cycle.",
+      "scopes": "Tranches de travail intégrées au sein d'un projet en cours de construction.",
+      "hillChartSnapshots": "Historique des positions des scopes sur le Hill Chart pour suivre l'avancement.",
+      "chowderItems": "Tâches découvertes en cours de route qui n'appartiennent pas encore à un scope défini.",
+      "ideaLists": "Listes décentralisées (Requests, Bugs, Ideas) qui alimentent le processus de shaping.",
+      "events": "Réunions, Design Days, Semisto Days et autres événements du calendrier du Lab.",
+      "wallets": "Portefeuilles Semos des membres avec solde, plancher et plafond.",
+      "semosTransactions": "Mouvements de Semos entre portefeuilles : paiements, échanges, rétributions.",
+      "semosEmissions": "Créations de Semos : cotisations, rétributions bénévoles, fidélisation.",
+      "semosRates": "Tarifs de référence en Semos configurables par le Lab.",
+      "timesheets": "Temps passé par les membres, facturé en euros ou valorisé en Semos."
+    },
+    "relationships": [
+      "Chaque Member a un Wallet pour ses Semos",
+      "Chaque Cycle contient des Bets qui référencent des Pitches",
+      "Chaque Pitch peut avoir plusieurs Scopes une fois en construction",
+      "Chaque Scope a des HillChartSnapshots pour suivre son avancement",
+      "Les Events sont liés à un Cycle ou sont des événements collectifs",
+      "Les Timesheets appartiennent à un Member et peuvent être liés à un Project, Course ou Guild",
+      "Les SemosTransactions lient deux Wallets (émetteur et destinataire)",
+      "Les SemosEmissions créditent un Wallet"
+    ]
+  },
+  "members": [
+    {
+      "id": "member-001",
+      "firstName": "Sophie",
+      "lastName": "Dubois",
+      "email": "sophie.dubois@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie",
+      "roles": ["designer", "shaper"],
+      "status": "active",
+      "isAdmin": true,
+      "joinedAt": "2022-03-15",
+      "walletId": "wallet-001",
+      "guildIds": ["guild-001"]
+    },
+    {
+      "id": "member-002",
+      "firstName": "Thomas",
+      "lastName": "Martin",
+      "email": "thomas.martin@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas",
+      "roles": ["designer", "formateur"],
+      "status": "active",
+      "isAdmin": false,
+      "joinedAt": "2022-06-01",
+      "walletId": "wallet-002",
+      "guildIds": ["guild-002"]
+    },
+    {
+      "id": "member-003",
+      "firstName": "Marie",
+      "lastName": "Laurent",
+      "email": "marie.laurent@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie",
+      "roles": ["comptable", "coordination"],
+      "status": "active",
+      "isAdmin": true,
+      "joinedAt": "2021-09-10",
+      "walletId": "wallet-003",
+      "guildIds": ["guild-003"]
+    },
+    {
+      "id": "member-004",
+      "firstName": "Lucas",
+      "lastName": "Petit",
+      "email": "lucas.petit@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas",
+      "roles": ["designer"],
+      "status": "active",
+      "isAdmin": false,
+      "joinedAt": "2023-01-20",
+      "walletId": "wallet-004",
+      "guildIds": []
+    },
+    {
+      "id": "member-005",
+      "firstName": "Emma",
+      "lastName": "Bernard",
+      "email": "emma.bernard@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
+      "roles": ["formateur", "communication"],
+      "status": "active",
+      "isAdmin": false,
+      "joinedAt": "2023-04-05",
+      "walletId": "wallet-005",
+      "guildIds": ["guild-001", "guild-002"]
+    },
+    {
+      "id": "member-006",
+      "firstName": "Antoine",
+      "lastName": "Moreau",
+      "email": "antoine.moreau@semisto.org",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Antoine",
+      "roles": ["IT", "designer"],
+      "status": "inactive",
+      "isAdmin": false,
+      "joinedAt": "2022-11-12",
+      "walletId": "wallet-006",
+      "guildIds": ["guild-001"]
+    }
+  ],
+  "cycles": [
+    {
+      "id": "cycle-001",
+      "name": "Cycle Hiver 2025-2026",
+      "startDate": "2025-12-01",
+      "endDate": "2026-01-11",
+      "cooldownStart": "2026-01-12",
+      "cooldownEnd": "2026-01-25",
+      "status": "active",
+      "betIds": ["bet-001", "bet-002"]
+    },
+    {
+      "id": "cycle-002",
+      "name": "Cycle Automne 2025",
+      "startDate": "2025-10-13",
+      "endDate": "2025-11-23",
+      "cooldownStart": "2025-11-24",
+      "cooldownEnd": "2025-11-30",
+      "status": "completed",
+      "betIds": ["bet-003", "bet-004"]
+    }
+  ],
+  "guilds": [
+    {
+      "id": "guild-001",
+      "name": "IT & Outils",
+      "description": "Développement et maintenance des outils numériques du Lab, support technique aux membres.",
+      "leaderId": "member-001",
+      "memberIds": ["member-001", "member-005", "member-006"],
+      "color": "blue"
+    },
+    {
+      "id": "guild-002",
+      "name": "Communication",
+      "description": "Stratégie de communication, réseaux sociaux, newsletter, relations presse.",
+      "leaderId": "member-005",
+      "memberIds": ["member-002", "member-005"],
+      "color": "purple"
+    },
+    {
+      "id": "guild-003",
+      "name": "Financement & Admin",
+      "description": "Gestion financière, comptabilité, recherche de subsides, administration générale.",
+      "leaderId": "member-003",
+      "memberIds": ["member-003"],
+      "color": "green"
+    }
+  ],
+  "pitches": [
+    {
+      "id": "pitch-001",
+      "title": "Système de réservation des formations",
+      "status": "building",
+      "appetite": "6-weeks",
+      "authorId": "member-001",
+      "createdAt": "2025-02-15",
+      "problem": "Les inscriptions aux formations se font par email, ce qui génère beaucoup d'échanges manuels et des erreurs (doubles inscriptions, paiements non suivis). Les formateurs passent 2-3h par formation juste pour gérer l'administratif.",
+      "solution": "Un système de réservation en ligne intégré au site avec confirmation automatique, liste d'attente, et suivi des paiements. Le formateur reçoit une liste consolidée la veille de la formation.",
+      "rabbitHoles": [
+        "Tentation d'ajouter un système de paiement complet dès le début",
+        "Intégration calendrier externe (Google, Outlook) - à éviter pour V1",
+        "Gestion des remboursements - garder manuel pour l'instant"
+      ],
+      "noGos": [
+        "Pas de paiement en ligne dans cette version",
+        "Pas de récurrence automatique des formations",
+        "Pas d'intégration avec des outils tiers"
+      ],
+      "breadboard": {
+        "places": ["Catalogue formations", "Fiche formation", "Formulaire inscription", "Confirmation", "Dashboard formateur"],
+        "affordances": ["Voir détails", "S'inscrire", "Confirmer présence", "Annuler", "Exporter liste"],
+        "connections": [
+          { "from": "Catalogue formations", "to": "Fiche formation", "via": "Voir détails" },
+          { "from": "Fiche formation", "to": "Formulaire inscription", "via": "S'inscrire" },
+          { "from": "Formulaire inscription", "to": "Confirmation", "via": "Valider" }
+        ]
+      },
+      "fatMarkerSketch": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCI+PC9zdmc+"
+    },
+    {
+      "id": "pitch-002",
+      "title": "Dashboard de suivi des projets clients",
+      "status": "building",
+      "appetite": "6-weeks",
+      "authorId": "member-002",
+      "createdAt": "2025-02-18",
+      "problem": "Les clients n'ont aucune visibilité sur l'avancement de leur projet de jardin-forêt. Ils appellent régulièrement pour demander où on en est, ce qui interrompt le travail des designers.",
+      "solution": "Une page client simple et visuelle montrant les grandes étapes du projet (design, validation, plantation, suivi) avec le statut actuel et les prochaines actions attendues.",
+      "rabbitHoles": [
+        "Vouloir montrer trop de détails techniques",
+        "Système de commentaires/chat avec le client",
+        "Notifications push"
+      ],
+      "noGos": [
+        "Pas d'édition par le client",
+        "Pas de partage de documents sensibles (devis détaillés)",
+        "Pas de système de messagerie intégré"
+      ],
+      "breadboard": {
+        "places": ["Page projet client", "Timeline", "Documents partagés"],
+        "affordances": ["Voir étape", "Télécharger doc", "Contacter équipe"],
+        "connections": [
+          { "from": "Page projet client", "to": "Timeline", "via": "Voir avancement" },
+          { "from": "Page projet client", "to": "Documents partagés", "via": "Voir documents" }
+        ]
+      },
+      "fatMarkerSketch": null
+    },
+    {
+      "id": "pitch-003",
+      "title": "Outil de sélection végétale",
+      "status": "shaped",
+      "appetite": "6-weeks",
+      "authorId": "member-001",
+      "createdAt": "2025-03-20",
+      "problem": "La sélection des espèces pour un projet est fastidieuse : on consulte plusieurs sources, on croise manuellement les critères (sol, exposition, usages), et on oublie souvent des espèces pertinentes.",
+      "solution": "Un outil de filtrage multi-critères sur la base de données végétale, avec sauvegarde de sélections et export vers les documents projet.",
+      "rabbitHoles": [
+        "Interface de filtrage trop complexe avec 20+ critères",
+        "Suggestions automatiques basées sur l'IA",
+        "Import de plans de plantation existants"
+      ],
+      "noGos": [
+        "Pas de création d'espèces depuis cet outil",
+        "Pas de visualisation cartographique",
+        "Pas de calcul automatique de densités"
+      ],
+      "breadboard": {
+        "places": ["Recherche", "Résultats", "Fiche espèce", "Ma sélection"],
+        "affordances": ["Filtrer", "Ajouter à sélection", "Retirer", "Exporter"],
+        "connections": []
+      },
+      "fatMarkerSketch": null
+    },
+    {
+      "id": "pitch-004",
+      "title": "Refonte du système de timesheets",
+      "status": "raw",
+      "appetite": "3-weeks",
+      "authorId": "member-003",
+      "createdAt": "2025-04-01",
+      "problem": "Le système actuel de timesheets est un tableur partagé difficile à maintenir. Les membres oublient de le remplir, les catégories sont incohérentes, et le reporting mensuel prend une journée entière.",
+      "solution": "Un formulaire simple intégré à l'app avec rappels automatiques et catégories prédéfinies. Export automatique pour la comptabilité.",
+      "rabbitHoles": [],
+      "noGos": [],
+      "breadboard": null,
+      "fatMarkerSketch": null
+    }
+  ],
+  "bets": [
+    {
+      "id": "bet-001",
+      "pitchId": "pitch-001",
+      "cycleId": "cycle-001",
+      "teamMemberIds": ["member-002", "member-004"],
+      "status": "in_progress",
+      "placedAt": "2025-02-28",
+      "placedBy": "member-001"
+    },
+    {
+      "id": "bet-002",
+      "pitchId": "pitch-002",
+      "cycleId": "cycle-001",
+      "teamMemberIds": ["member-001", "member-005"],
+      "status": "in_progress",
+      "placedAt": "2025-02-28",
+      "placedBy": "member-003"
+    },
+    {
+      "id": "bet-003",
+      "pitchId": "pitch-003",
+      "cycleId": "cycle-002",
+      "teamMemberIds": ["member-001", "member-002"],
+      "status": "completed",
+      "placedAt": "2025-01-03",
+      "placedBy": "member-001"
+    },
+    {
+      "id": "bet-004",
+      "pitchId": "pitch-004",
+      "cycleId": "cycle-002",
+      "teamMemberIds": ["member-003"],
+      "status": "cancelled",
+      "placedAt": "2025-01-03",
+      "placedBy": "member-003"
+    }
+  ],
+  "scopes": [
+    {
+      "id": "scope-001",
+      "pitchId": "pitch-001",
+      "name": "Catalogue & fiches formation",
+      "description": "Affichage du catalogue et des fiches détaillées de chaque formation",
+      "hillPosition": 75,
+      "tasks": [
+        { "id": "task-001", "title": "Page catalogue avec filtres", "isNiceToHave": false, "completed": true },
+        { "id": "task-002", "title": "Fiche formation détaillée", "isNiceToHave": false, "completed": true },
+        { "id": "task-003", "title": "Affichage places disponibles", "isNiceToHave": false, "completed": false },
+        { "id": "task-004", "title": "Partage sur réseaux sociaux", "isNiceToHave": true, "completed": false }
+      ]
+    },
+    {
+      "id": "scope-002",
+      "pitchId": "pitch-001",
+      "name": "Formulaire d'inscription",
+      "description": "Formulaire de réservation avec validation et confirmation",
+      "hillPosition": 45,
+      "tasks": [
+        { "id": "task-005", "title": "Formulaire multi-étapes", "isNiceToHave": false, "completed": true },
+        { "id": "task-006", "title": "Validation email", "isNiceToHave": false, "completed": false },
+        { "id": "task-007", "title": "Page de confirmation", "isNiceToHave": false, "completed": false }
+      ]
+    },
+    {
+      "id": "scope-003",
+      "pitchId": "pitch-001",
+      "name": "Dashboard formateur",
+      "description": "Interface de gestion pour les formateurs",
+      "hillPosition": 20,
+      "tasks": [
+        { "id": "task-008", "title": "Liste des inscrits", "isNiceToHave": false, "completed": false },
+        { "id": "task-009", "title": "Export CSV", "isNiceToHave": false, "completed": false },
+        { "id": "task-010", "title": "Envoi email groupé", "isNiceToHave": true, "completed": false }
+      ]
+    },
+    {
+      "id": "scope-004",
+      "pitchId": "pitch-002",
+      "name": "Page projet publique",
+      "description": "Vue client de l'avancement du projet",
+      "hillPosition": 60,
+      "tasks": [
+        { "id": "task-011", "title": "Layout page projet", "isNiceToHave": false, "completed": true },
+        { "id": "task-012", "title": "Timeline visuelle", "isNiceToHave": false, "completed": true },
+        { "id": "task-013", "title": "Section documents", "isNiceToHave": false, "completed": false }
+      ]
+    }
+  ],
+  "hillChartSnapshots": [
+    {
+      "id": "snapshot-001",
+      "pitchId": "pitch-001",
+      "createdAt": "2025-03-10",
+      "positions": [
+        { "scopeId": "scope-001", "position": 30 },
+        { "scopeId": "scope-002", "position": 15 },
+        { "scopeId": "scope-003", "position": 5 }
+      ]
+    },
+    {
+      "id": "snapshot-002",
+      "pitchId": "pitch-001",
+      "createdAt": "2025-03-17",
+      "positions": [
+        { "scopeId": "scope-001", "position": 50 },
+        { "scopeId": "scope-002", "position": 30 },
+        { "scopeId": "scope-003", "position": 10 }
+      ]
+    },
+    {
+      "id": "snapshot-003",
+      "pitchId": "pitch-001",
+      "createdAt": "2025-03-24",
+      "positions": [
+        { "scopeId": "scope-001", "position": 75 },
+        { "scopeId": "scope-002", "position": 45 },
+        { "scopeId": "scope-003", "position": 20 }
+      ]
+    }
+  ],
+  "chowderItems": [
+    {
+      "id": "chowder-001",
+      "pitchId": "pitch-001",
+      "title": "Gérer les listes d'attente",
+      "createdAt": "2025-03-15",
+      "createdBy": "member-002"
+    },
+    {
+      "id": "chowder-002",
+      "pitchId": "pitch-001",
+      "title": "Email de rappel J-2",
+      "createdAt": "2025-03-18",
+      "createdBy": "member-004"
+    },
+    {
+      "id": "chowder-003",
+      "pitchId": "pitch-002",
+      "title": "Version imprimable de la page projet",
+      "createdAt": "2025-03-20",
+      "createdBy": "member-001"
+    }
+  ],
+  "ideaLists": [
+    {
+      "id": "list-001",
+      "name": "Requests",
+      "description": "Demandes des membres et clients",
+      "items": [
+        { "id": "idea-001", "title": "Pouvoir payer en Semos sur le site", "createdAt": "2025-03-01", "votes": 5 },
+        { "id": "idea-002", "title": "App mobile pour les timesheets", "createdAt": "2025-03-05", "votes": 3 },
+        { "id": "idea-003", "title": "Intégration avec Google Calendar", "createdAt": "2025-03-10", "votes": 7 }
+      ]
+    },
+    {
+      "id": "list-002",
+      "name": "Bugs",
+      "description": "Problèmes techniques à résoudre",
+      "items": [
+        { "id": "idea-004", "title": "Export PDF ne fonctionne plus sur Safari", "createdAt": "2025-03-12", "votes": 2 },
+        { "id": "idea-005", "title": "Photos floues sur mobile", "createdAt": "2025-03-15", "votes": 1 }
+      ]
+    },
+    {
+      "id": "list-003",
+      "name": "Ideas",
+      "description": "Idées d'amélioration pour le futur",
+      "items": [
+        { "id": "idea-006", "title": "Gamification des contributions bénévoles", "createdAt": "2025-02-20", "votes": 8 },
+        { "id": "idea-007", "title": "Cartographie interactive des projets", "createdAt": "2025-02-25", "votes": 12 }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "event-001",
+      "title": "Réunion de projet - Jardin Marchin",
+      "type": "project_meeting",
+      "startDate": "2025-12-28T10:00:00",
+      "endDate": "2025-12-28T12:00:00",
+      "location": "Google Meet",
+      "description": "Point d'avancement avec le client sur le design final",
+      "attendeeIds": ["member-001", "member-002"],
+      "cycleId": "cycle-001"
+    },
+    {
+      "id": "event-002",
+      "title": "Design Day",
+      "type": "design_day",
+      "startDate": "2025-12-30T09:00:00",
+      "endDate": "2025-12-30T17:00:00",
+      "location": "Bureau Semisto, Liège",
+      "description": "Journée de travail collective de l'équipe design",
+      "attendeeIds": ["member-001", "member-002", "member-004", "member-005"],
+      "cycleId": "cycle-001"
+    },
+    {
+      "id": "event-003",
+      "title": "Réunion porteurs de projet",
+      "type": "stakeholder_meeting",
+      "startDate": "2026-01-02T14:00:00",
+      "endDate": "2026-01-02T16:00:00",
+      "location": "Slack",
+      "description": "Présentation des pitches pour le prochain cycle",
+      "attendeeIds": ["member-001", "member-002", "member-003"],
+      "cycleId": "cycle-001"
+    },
+    {
+      "id": "event-004",
+      "title": "Semisto Day",
+      "type": "semisto_day",
+      "startDate": "2026-01-04T09:00:00",
+      "endDate": "2026-01-04T18:00:00",
+      "location": "Ferme de la Hulotte, Namur",
+      "description": "Journée de travail collective de tout le mouvement Semisto",
+      "attendeeIds": ["member-001", "member-002", "member-003", "member-004", "member-005"],
+      "cycleId": null
+    },
+    {
+      "id": "event-005",
+      "title": "GT Financement",
+      "type": "guild_meeting",
+      "startDate": "2026-01-07T10:00:00",
+      "endDate": "2026-01-07T12:00:00",
+      "location": "Slack",
+      "description": "Groupe de travail sur la recherche de subsides européens",
+      "attendeeIds": ["member-003"],
+      "cycleId": null
+    },
+    {
+      "id": "event-006",
+      "title": "Betting Table - Cycle Hiver 2026",
+      "type": "betting",
+      "startDate": "2026-01-10T14:00:00",
+      "endDate": "2026-01-10T17:00:00",
+      "location": "Bureau Semisto, Liège",
+      "description": "Session de sélection des projets pour le prochain cycle",
+      "attendeeIds": ["member-001", "member-002", "member-003", "member-005"],
+      "cycleId": "cycle-001"
+    },
+    {
+      "id": "event-007",
+      "title": "Semos Fest 2026",
+      "type": "semos_fest",
+      "startDate": "2026-06-21T10:00:00",
+      "endDate": "2026-06-22T22:00:00",
+      "location": "Domaine de Chevetogne",
+      "description": "2 jours de fête annuelle du mouvement Semisto avec ateliers, conférences et concerts",
+      "attendeeIds": ["member-001", "member-002", "member-003", "member-004", "member-005", "member-006"],
+      "cycleId": null
+    },
+    {
+      "id": "event-008",
+      "title": "Formation Taille douce",
+      "type": "training",
+      "startDate": "2025-12-28T09:30:00",
+      "endDate": "2025-12-30T17:00:00",
+      "location": "Pépinière de Modave",
+      "description": "Formation pratique sur les techniques de taille douce des fruitiers",
+      "attendeeIds": ["member-002"],
+      "cycleId": null
+    }
+  ],
+  "wallets": [
+    {
+      "id": "wallet-001",
+      "memberId": "member-001",
+      "balance": 245.5,
+      "floor": -50,
+      "ceiling": 500
+    },
+    {
+      "id": "wallet-002",
+      "memberId": "member-002",
+      "balance": 180.0,
+      "floor": -50,
+      "ceiling": 500
+    },
+    {
+      "id": "wallet-003",
+      "memberId": "member-003",
+      "balance": 320.0,
+      "floor": -100,
+      "ceiling": 1000
+    },
+    {
+      "id": "wallet-004",
+      "memberId": "member-004",
+      "balance": 45.0,
+      "floor": -50,
+      "ceiling": 500
+    },
+    {
+      "id": "wallet-005",
+      "memberId": "member-005",
+      "balance": 112.5,
+      "floor": -50,
+      "ceiling": 500
+    },
+    {
+      "id": "wallet-006",
+      "memberId": "member-006",
+      "balance": 0,
+      "floor": -50,
+      "ceiling": 500
+    }
+  ],
+  "semosTransactions": [
+    {
+      "id": "tx-001",
+      "fromWalletId": "wallet-001",
+      "toWalletId": "wallet-004",
+      "amount": 25.0,
+      "description": "Achat plants pépinière",
+      "createdAt": "2025-03-15T14:30:00",
+      "type": "payment"
+    },
+    {
+      "id": "tx-002",
+      "fromWalletId": "wallet-002",
+      "toWalletId": "wallet-005",
+      "amount": 15.0,
+      "description": "Participation formation",
+      "createdAt": "2025-03-18T10:00:00",
+      "type": "payment"
+    },
+    {
+      "id": "tx-003",
+      "fromWalletId": "wallet-003",
+      "toWalletId": "wallet-001",
+      "amount": 50.0,
+      "description": "Remboursement frais Design Day",
+      "createdAt": "2025-03-20T16:45:00",
+      "type": "transfer"
+    },
+    {
+      "id": "tx-004",
+      "fromWalletId": "wallet-005",
+      "toWalletId": "wallet-002",
+      "amount": 30.0,
+      "description": "Échange contre plants",
+      "createdAt": "2025-03-25T11:20:00",
+      "type": "exchange"
+    }
+  ],
+  "semosEmissions": [
+    {
+      "id": "emission-001",
+      "walletId": "wallet-001",
+      "amount": 50.0,
+      "reason": "cotisation_member",
+      "description": "Cotisation annuelle membre actif",
+      "createdAt": "2025-01-15T09:00:00",
+      "createdBy": "member-003"
+    },
+    {
+      "id": "emission-002",
+      "walletId": "wallet-004",
+      "amount": 8.0,
+      "reason": "volunteer_work",
+      "description": "Participation chantier plantation Modave (8h)",
+      "createdAt": "2025-03-10T18:00:00",
+      "createdBy": "member-003"
+    },
+    {
+      "id": "emission-003",
+      "walletId": "wallet-002",
+      "amount": 75.0,
+      "reason": "provider_fee",
+      "description": "5% CA formation Permaculture (1500€)",
+      "createdAt": "2025-03-22T12:00:00",
+      "createdBy": "member-003"
+    },
+    {
+      "id": "emission-004",
+      "walletId": "wallet-005",
+      "amount": 4.0,
+      "reason": "peer_review",
+      "description": "Participation Peer Review design Marchin",
+      "createdAt": "2025-03-28T15:00:00",
+      "createdBy": "member-001"
+    }
+  ],
+  "semosRates": [
+    {
+      "id": "rate-001",
+      "type": "cotisation_member_active",
+      "amount": 50.0,
+      "description": "Cotisation annuelle membre actif"
+    },
+    {
+      "id": "rate-002",
+      "type": "cotisation_member_support",
+      "amount": 20.0,
+      "description": "Cotisation annuelle membre de soutien"
+    },
+    {
+      "id": "rate-003",
+      "type": "volunteer_hourly",
+      "amount": 1.0,
+      "description": "Rétribution bénévole par heure"
+    },
+    {
+      "id": "rate-004",
+      "type": "provider_fee_percentage",
+      "amount": 5.0,
+      "description": "Pourcentage CA pour fidélisation prestataire"
+    },
+    {
+      "id": "rate-005",
+      "type": "peer_review",
+      "amount": 2.0,
+      "description": "Rétribution participation Peer Review"
+    }
+  ],
+  "timesheets": [
+    {
+      "id": "ts-001",
+      "memberId": "member-001",
+      "date": "2025-03-25",
+      "hours": 4.5,
+      "paymentType": "invoice",
+      "description": "Design jardin-forêt Marchin - plan de plantation",
+      "category": "design",
+      "invoiced": true,
+      "kilometers": 45,
+      "projectId": "proj-marchin",
+      "courseId": null,
+      "guildId": null
+    },
+    {
+      "id": "ts-002",
+      "memberId": "member-001",
+      "date": "2025-03-26",
+      "hours": 2.0,
+      "paymentType": "semos",
+      "description": "Réunion GT IT - roadmap outils",
+      "category": "coordination",
+      "invoiced": false,
+      "kilometers": 0,
+      "projectId": null,
+      "courseId": null,
+      "guildId": "guild-001"
+    },
+    {
+      "id": "ts-003",
+      "memberId": "member-002",
+      "date": "2025-03-24",
+      "hours": 7.0,
+      "paymentType": "invoice",
+      "description": "Formation Permaculture - journée complète",
+      "category": "formation",
+      "invoiced": true,
+      "kilometers": 30,
+      "projectId": null,
+      "courseId": "course-permaculture",
+      "guildId": null
+    },
+    {
+      "id": "ts-004",
+      "memberId": "member-002",
+      "date": "2025-03-27",
+      "hours": 3.0,
+      "paymentType": "invoice",
+      "description": "Préparation supports formation Bouturage",
+      "category": "formation",
+      "invoiced": false,
+      "kilometers": 0,
+      "projectId": null,
+      "courseId": "course-bouturage",
+      "guildId": null
+    },
+    {
+      "id": "ts-005",
+      "memberId": "member-003",
+      "date": "2025-03-25",
+      "hours": 3.5,
+      "paymentType": "invoice",
+      "description": "Comptabilité mensuelle + rapprochement bancaire",
+      "category": "administratif",
+      "invoiced": true,
+      "kilometers": 0,
+      "projectId": null,
+      "courseId": null,
+      "guildId": "guild-003"
+    },
+    {
+      "id": "ts-006",
+      "memberId": "member-003",
+      "date": "2025-03-28",
+      "hours": 5.0,
+      "paymentType": "invoice",
+      "description": "Dossier subside Région Wallonne - rédaction",
+      "category": "administratif",
+      "invoiced": false,
+      "kilometers": 0,
+      "projectId": null,
+      "courseId": null,
+      "guildId": "guild-003"
+    },
+    {
+      "id": "ts-007",
+      "memberId": "member-004",
+      "date": "2025-03-26",
+      "hours": 6.0,
+      "paymentType": "invoice",
+      "description": "Visite terrain + relevé client Ohey",
+      "category": "design",
+      "invoiced": false,
+      "kilometers": 60,
+      "projectId": "proj-ohey",
+      "courseId": null,
+      "guildId": null
+    },
+    {
+      "id": "ts-008",
+      "memberId": "member-005",
+      "date": "2025-03-24",
+      "hours": 2.0,
+      "paymentType": "semos",
+      "description": "Rédaction newsletter mars",
+      "category": "communication",
+      "invoiced": false,
+      "kilometers": 0,
+      "projectId": null,
+      "courseId": null,
+      "guildId": "guild-002"
+    },
+    {
+      "id": "ts-009",
+      "memberId": "member-005",
+      "date": "2025-03-27",
+      "hours": 1.5,
+      "paymentType": "semos",
+      "description": "Animation réseaux sociaux",
+      "category": "communication",
+      "invoiced": false,
+      "kilometers": 0,
+      "projectId": null,
+      "courseId": null,
+      "guildId": "guild-002"
+    },
+    {
+      "id": "ts-010",
+      "memberId": "member-001",
+      "date": "2025-03-28",
+      "hours": 8.0,
+      "paymentType": "invoice",
+      "description": "Design Day - travail collaboratif sur projets en cours",
+      "category": "design",
+      "invoiced": false,
+      "kilometers": 25,
+      "projectId": null,
+      "courseId": null,
+      "guildId": null
+    },
+    {
+      "id": "ts-011",
+      "memberId": "member-004",
+      "date": "2025-03-28",
+      "hours": 8.0,
+      "paymentType": "invoice",
+      "description": "Design Day - travail collaboratif sur projets en cours",
+      "category": "design",
+      "invoiced": false,
+      "kilometers": 40,
+      "projectId": null,
+      "courseId": null,
+      "guildId": null
+    }
+  ]
+}
