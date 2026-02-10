@@ -1,0 +1,71 @@
+{
+  "common": {
+    "appName": "Terranova",
+    "search": "Zoeken",
+    "notifications": "Meldingen",
+    "settings": "Instellingen",
+    "logout": "Uitloggen",
+    "loading": "Laden…",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "create": "Aanmaken",
+    "back": "Terug"
+  },
+  "poles": {
+    "design-studio": "Design Studio",
+    "academy": "Academy",
+    "nursery": "Nursery",
+    "mise-en-oeuvre": "Uitvoering",
+    "lab-management": "Lab Beheer",
+    "website": "Website"
+  },
+  "nav": {
+    "projects": "Projecten",
+    "clients": "Klanten",
+    "offers": "Offertes",
+    "plantations": "Plantages",
+    "trainings": "Opleidingen",
+    "registrations": "Inschrijvingen",
+    "contents": "Inhoud",
+    "participants": "Deelnemers",
+    "stocks": "Voorraden",
+    "orders": "Bestellingen",
+    "catalog": "Catalogus",
+    "worksites": "Werkplaatsen",
+    "heroes": "Heroes",
+    "events": "Evenementen",
+    "equipment": "Materiaal",
+    "cycles": "Cycli",
+    "members": "Leden",
+    "guilds": "Gilden",
+    "semos": "Semos",
+    "finance": "Financiën",
+    "reporting": "Rapportage",
+    "timesheets": "Timesheets",
+    "calendar": "Kalender",
+    "pages": "Pagina's",
+    "transformationMap": "Transformation Map",
+    "shop": "Winkel",
+    "portfolio": "Portfolio"
+  },
+  "shell": {
+    "poles": "Pôles",
+    "labManagement": "Lab Beheer",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten"
+  },
+  "placeholder": {
+    "title": "Pagina in aanbouw",
+    "description": "Deze sectie is binnenkort beschikbaar."
+  },
+  "plants": {
+    "title": "Plantendatabase",
+    "search": "Zoek een soort…"
+  },
+  "partner": {
+    "title": "Partnerportaal",
+    "description": "Welkom in uw partnerruimte."
+  }
+}

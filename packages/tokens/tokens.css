@@ -1,0 +1,31 @@
+/* Design Tokens for Terranova */
+
+:root {
+  /* Primary — Deep purple, used for Lab branding and primary actions */
+  --color-primary: #5B5781;
+  --color-primary-light: #c8bfd2;
+
+  /* Secondary — Lime green, used for Design Studio and accents */
+  --color-secondary: #AFBD00;
+  --color-secondary-light: #e1e6d8;
+
+  /* Neutral — Tailwind Stone palette */
+  --color-neutral: stone;
+
+  /* Pole Colors */
+  --color-pole-lab: #5B5781;
+  --color-pole-lab-bg: #c8bfd2;
+  --color-pole-design: #AFBD00;
+  --color-pole-design-bg: #e1e6d8;
+  --color-pole-academy: #B01A19;
+  --color-pole-academy-bg: #eac7b8;
+  --color-pole-nursery: #EF9B0D;
+  --color-pole-nursery-bg: #fbe6c3;
+  --color-pole-implementation: #234766;
+  --color-pole-implementation-bg: #c9d1d9;
+
+  /* Typography */
+  --font-heading: 'Sole Serif Small', 'DM Serif Display', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}

@@ -1,0 +1,71 @@
+{
+  "common": {
+    "appName": "Terranova",
+    "search": "Search",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "logout": "Log out",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back"
+  },
+  "poles": {
+    "design-studio": "Design Studio",
+    "academy": "Academy",
+    "nursery": "Nursery",
+    "mise-en-oeuvre": "Implementation",
+    "lab-management": "Lab Management",
+    "website": "Website"
+  },
+  "nav": {
+    "projects": "Projects",
+    "clients": "Clients",
+    "offers": "Offers",
+    "plantations": "Plantations",
+    "trainings": "Trainings",
+    "registrations": "Registrations",
+    "contents": "Contents",
+    "participants": "Participants",
+    "stocks": "Stocks",
+    "orders": "Orders",
+    "catalog": "Catalog",
+    "worksites": "Worksites",
+    "heroes": "Heroes",
+    "events": "Events",
+    "equipment": "Equipment",
+    "cycles": "Cycles",
+    "members": "Members",
+    "guilds": "Guilds",
+    "semos": "Semos",
+    "finance": "Finance",
+    "reporting": "Reporting",
+    "timesheets": "Timesheets",
+    "calendar": "Calendar",
+    "pages": "Pages",
+    "transformationMap": "Transformation Map",
+    "shop": "Shop",
+    "portfolio": "Portfolio"
+  },
+  "shell": {
+    "poles": "Poles",
+    "labManagement": "Lab Management",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "placeholder": {
+    "title": "Page under construction",
+    "description": "This section will be available soon."
+  },
+  "plants": {
+    "title": "Plant Database",
+    "search": "Search a species…"
+  },
+  "partner": {
+    "title": "Partner Portal",
+    "description": "Welcome to your partner space."
+  }
+}

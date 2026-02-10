@@ -1,1 +1,29 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Astro
+dist/
+.astro/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Prisma
+prisma/generated/
+
+# Turbo
+.turbo/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
