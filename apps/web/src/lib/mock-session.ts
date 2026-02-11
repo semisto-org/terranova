@@ -47,6 +47,7 @@ export const navigationConfig: Record<string, NavItem[]> = {
     { label: 'Membres', href: '/lab/members' },
     { label: 'Guildes', href: '/lab/guildes' },
     { label: 'Semos', href: '/lab/semos' },
+    { label: 'Shape Up', href: '/lab/shape-up' },
     { label: 'Finance', href: '/lab/finance' },
     { label: 'Reporting', href: '/lab/reporting' },
     { label: 'Feuilles de temps', href: '/lab/timesheets' },

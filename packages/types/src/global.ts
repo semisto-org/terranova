@@ -38,6 +38,7 @@ export interface Member {
   isAdmin: boolean
   joinedAt: string
   walletId: string
+  guildIds: string[]
   labId: string
 }
 
@@ -52,6 +53,7 @@ export interface Cycle {
   cooldownStart: string
   cooldownEnd: string
   status: CycleStatus
+  betIds: string[]
 }
 
 export interface Guild {
@@ -61,6 +63,7 @@ export interface Guild {
   labId: string
   leaderId: string
   memberIds: string[]
+  color: 'blue' | 'purple' | 'green' | 'orange' | 'red'
 }
 
 // --- Botanical ---
@@ -173,13 +176,27 @@ export interface Worksite {
   currentParticipants: number
 }
 
+export type EventType =
+  | 'project_meeting'
+  | 'stakeholder_meeting'
+  | 'design_day'
+  | 'guild_meeting'
+  | 'betting'
+  | 'semisto_day'
+  | 'semos_fest'
+  | 'training'
+
 export interface Event {
   id: string
   labId: string
   title: string
-  date: string
+  type: EventType
+  startDate: string
+  endDate: string
   location: string
-  type: string
+  description: string
+  attendeeIds: string[]
+  cycleId: string | null
 }
 
 export interface Equipment {
@@ -230,19 +247,37 @@ export interface SemosTransaction {
   type: TransactionType
 }
 
+export type EmissionReason =
+  | 'cotisation_member'
+  | 'volunteer_work'
+  | 'provider_fee'
+  | 'peer_review'
+  | 'loyalty'
+  | 'participation'
+
 export interface SemosEmission {
   id: string
-  labId: string
+  walletId: string
   amount: number
-  date: string
-  reason: string
+  reason: EmissionReason
+  description: string
+  createdAt: string
+  createdBy: string
 }
+
+export type RateType =
+  | 'cotisation_member_active'
+  | 'cotisation_member_support'
+  | 'volunteer_hourly'
+  | 'provider_fee_percentage'
+  | 'peer_review'
 
 export interface SemosRate {
   id: string
   labId: string
-  euroToSemos: number
-  effectiveDate: string
+  type: RateType
+  amount: number
+  description: string
 }
 
 // --- Cross-cutting ---
@@ -264,12 +299,25 @@ export interface Contact {
   type: 'client' | 'prospect' | 'partner' | 'donor'
 }
 
+export type PaymentType = 'invoice' | 'semos'
+
+export type TimesheetCategory =
+  | 'design'
+  | 'formation'
+  | 'administratif'
+  | 'coordination'
+  | 'communication'
+
 export interface Timesheet {
   id: string
   memberId: string
   date: string
   hours: number
+  paymentType: PaymentType
   description: string
+  category: TimesheetCategory
+  invoiced: boolean
+  kilometers: number
   projectId: string | null
   courseId: string | null
   guildId: string | null
@@ -292,4 +340,99 @@ export interface Planting {
   name: string
   area: number
   plantCount: number
+}
+
+// --- Shape Up ---
+
+export type PitchStatus = 'raw' | 'shaped' | 'betting' | 'building' | 'completed' | 'cancelled'
+export type Appetite = '2-weeks' | '3-weeks' | '6-weeks'
+
+export interface BreadboardConnection {
+  from: string
+  to: string
+  via: string
+}
+
+export interface Breadboard {
+  places: string[]
+  affordances: string[]
+  connections: BreadboardConnection[]
+}
+
+export interface Pitch {
+  id: string
+  title: string
+  status: PitchStatus
+  appetite: Appetite
+  authorId: string
+  createdAt: string
+  updatedAt: string
+  problem: string
+  solution: string
+  rabbitHoles: string[]
+  noGos: string[]
+  breadboard: Breadboard | null
+  fatMarkerSketch: string | null
+}
+
+export type BetStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+
+export interface Bet {
+  id: string
+  pitchId: string
+  cycleId: string
+  teamMemberIds: string[]
+  status: BetStatus
+  placedAt: string
+  placedBy: string
+}
+
+export interface Task {
+  id: string
+  title: string
+  isNiceToHave: boolean
+  completed: boolean
+}
+
+export interface Scope {
+  id: string
+  pitchId: string
+  name: string
+  description: string
+  hillPosition: number // 0-100, 0-50 = uphill (figuring out), 51-100 = downhill (making it happen)
+  tasks: Task[]
+}
+
+export interface ScopePosition {
+  scopeId: string
+  position: number
+}
+
+export interface HillChartSnapshot {
+  id: string
+  pitchId: string
+  createdAt: string
+  positions: ScopePosition[]
+}
+
+export interface ChowderItem {
+  id: string
+  pitchId: string
+  title: string
+  createdAt: string
+  createdBy: string
+}
+
+export interface IdeaItem {
+  id: string
+  title: string
+  createdAt: string
+  votes: number
+}
+
+export interface IdeaList {
+  id: string
+  name: string
+  description: string
+  items: IdeaItem[]
 }
