@@ -1,0 +1,8 @@
+{
+  "entrypoints/application.js": {
+    "file": "assets/application-lc-MXRhn.js",
+    "name": "application",
+    "src": "entrypoints/application.js",
+    "isEntry": true
+  }
+}

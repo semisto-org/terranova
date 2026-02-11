@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RAILS_PORT="${PORT:-3000}"
+
+bundle exec rails server -b 0.0.0.0 -p "$RAILS_PORT" &
+RAILS_PID=$!
+
+pnpm dev &
+VITE_PID=$!
+
+cleanup() {
+  kill "$RAILS_PID" "$VITE_PID" 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
+wait "$RAILS_PID" "$VITE_PID"
