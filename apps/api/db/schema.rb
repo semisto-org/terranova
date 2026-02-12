@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_12_164000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_12_173000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -58,6 +58,32 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_164000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "design_annotations", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "document_id", null: false
+    t.decimal "x", precision: 8, scale: 4, null: false
+    t.decimal "y", precision: 8, scale: 4, null: false
+    t.string "author_id", null: false
+    t.string "author_name", null: false
+    t.string "author_type", null: false
+    t.text "content", null: false
+    t.boolean "resolved", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_annotations_on_project_id"
+  end
+
+  create_table "design_client_contributions", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "client_id", null: false
+    t.jsonb "terrain_questionnaire", default: {}, null: false
+    t.jsonb "wishlist", default: [], null: false
+    t.jsonb "plant_journal", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_client_contributions_on_project_id", unique: true
+  end
+
   create_table "design_expenses", force: :cascade do |t|
     t.bigint "project_id", null: false
     t.date "date", null: false
@@ -72,6 +98,49 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_164000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_design_expenses_on_project_id"
+  end
+
+  create_table "design_harvest_calendars", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.jsonb "months", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_harvest_calendars_on_project_id", unique: true
+  end
+
+  create_table "design_maintenance_calendars", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.jsonb "months", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_maintenance_calendars_on_project_id", unique: true
+  end
+
+  create_table "design_media_items", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "media_type", null: false
+    t.string "url", null: false
+    t.string "thumbnail_url", default: "", null: false
+    t.string "caption", default: "", null: false
+    t.datetime "taken_at", null: false
+    t.datetime "uploaded_at", null: false
+    t.string "uploaded_by", default: "team", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_media_items_on_project_id"
+  end
+
+  create_table "design_project_documents", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "category", null: false
+    t.string "name", null: false
+    t.string "url", null: false
+    t.bigint "size", default: 0, null: false
+    t.datetime "uploaded_at", null: false
+    t.string "uploaded_by", default: "team", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_project_documents_on_project_id"
   end
 
   create_table "design_project_meetings", force: :cascade do |t|
@@ -165,6 +234,36 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_164000) do
     t.index ["status"], name: "index_design_projects_on_status"
     t.index ["template_id"], name: "index_design_projects_on_template_id"
     t.index ["updated_at"], name: "index_design_projects_on_updated_at"
+  end
+
+  create_table "design_quote_lines", force: :cascade do |t|
+    t.bigint "quote_id", null: false
+    t.string "description", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
+    t.string "unit", default: "u", null: false
+    t.decimal "unit_price", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "total", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quote_id"], name: "index_design_quote_lines_on_quote_id"
+  end
+
+  create_table "design_quotes", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.integer "version", default: 1, null: false
+    t.string "status", default: "draft", null: false
+    t.string "title", null: false
+    t.date "valid_until", null: false
+    t.datetime "approved_at"
+    t.string "approved_by"
+    t.text "client_comment"
+    t.decimal "vat_rate", precision: 5, scale: 2, default: "21.0", null: false
+    t.decimal "subtotal", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "vat_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "total", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_quotes_on_project_id"
   end
 
   create_table "design_site_analyses", force: :cascade do |t|
@@ -592,12 +691,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_164000) do
   add_foreign_key "bets", "pitches"
   add_foreign_key "chowder_items", "members", column: "created_by_id"
   add_foreign_key "chowder_items", "pitches"
+  add_foreign_key "design_annotations", "design_projects", column: "project_id"
+  add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_expenses", "design_projects", column: "project_id"
+  add_foreign_key "design_harvest_calendars", "design_projects", column: "project_id"
+  add_foreign_key "design_maintenance_calendars", "design_projects", column: "project_id"
+  add_foreign_key "design_media_items", "design_projects", column: "project_id"
+  add_foreign_key "design_project_documents", "design_projects", column: "project_id"
   add_foreign_key "design_project_meetings", "design_projects", column: "project_id"
   add_foreign_key "design_project_palette_items", "design_project_palettes", column: "palette_id"
   add_foreign_key "design_project_palettes", "design_projects", column: "project_id"
   add_foreign_key "design_project_timesheets", "design_projects", column: "project_id"
   add_foreign_key "design_projects", "design_project_templates", column: "template_id"
+  add_foreign_key "design_quote_lines", "design_quotes", column: "quote_id"
+  add_foreign_key "design_quotes", "design_projects", column: "project_id"
   add_foreign_key "design_site_analyses", "design_projects", column: "project_id"
   add_foreign_key "design_team_members", "design_projects", column: "project_id"
   add_foreign_key "event_attendees", "events"

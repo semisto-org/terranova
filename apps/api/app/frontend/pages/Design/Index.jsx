@@ -8,6 +8,11 @@ const DETAIL_TABS = [
   { id: 'expenses', label: 'Expenses' },
   { id: 'site-analysis', label: 'Site Analysis' },
   { id: 'palette', label: 'Palette' },
+  { id: 'quotes', label: 'Quotes' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'album', label: 'Album' },
+  { id: 'meetings', label: 'Meetings' },
+  { id: 'co-gestion', label: 'Co-gestion' },
 ]
 
 async function apiRequest(path, options = {}) {
@@ -127,13 +132,49 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
   )
 }
 
-function ProjectDetail({ detail, busy, onBack, onRefresh, onUpdateName, onAddTeamMember, onRemoveTeamMember, onAddTimesheet, onDeleteTimesheet, onAddExpense, onApproveExpense, onDeleteExpense, onSaveSiteAnalysis, onAddPaletteItem, onDeletePaletteItem, onImportPlantPalette }) {
+function ProjectDetail({
+  detail,
+  busy,
+  onBack,
+  onRefresh,
+  onUpdateName,
+  onAddTeamMember,
+  onRemoveTeamMember,
+  onAddTimesheet,
+  onDeleteTimesheet,
+  onAddExpense,
+  onApproveExpense,
+  onDeleteExpense,
+  onSaveSiteAnalysis,
+  onAddPaletteItem,
+  onDeletePaletteItem,
+  onImportPlantPalette,
+  onCreateQuote,
+  onSendQuote,
+  onDeleteQuote,
+  onAddQuoteLine,
+  onDeleteQuoteLine,
+  onAddDocument,
+  onDeleteDocument,
+  onAddMedia,
+  onDeleteMedia,
+  onAddMeeting,
+  onDeleteMeeting,
+  onAddAnnotation,
+  onResolveAnnotation,
+  onDeleteAnnotation,
+}) {
   const [tab, setTab] = useState('overview')
   const [teamForm, setTeamForm] = useState({ member_name: '', member_email: '', role: 'designer', is_paid: true })
   const [timesheetForm, setTimesheetForm] = useState({ member_name: '', hours: 2, phase: detail.project.phase, mode: 'billed', travel_km: 0, notes: '' })
   const [expenseForm, setExpenseForm] = useState({ amount: 50, category: 'plants', description: '', phase: detail.project.phase, member_name: '' })
   const [analysisForm, setAnalysisForm] = useState({ hardinessZone: detail.siteAnalysis?.climate?.hardinessZone || '', soilType: detail.siteAnalysis?.soil?.type || '', notes: detail.siteAnalysis?.climate?.notes || '' })
   const [paletteForm, setPaletteForm] = useState({ species_id: '', species_name: '', common_name: '', layer: 'shrub', quantity: 1, unit_price: 0 })
+  const [quoteLineForm, setQuoteLineForm] = useState({ description: '', quantity: 1, unit: 'u', unit_price: 0 })
+  const [documentForm, setDocumentForm] = useState({ category: 'plan', name: '', url: '', size: 0, uploaded_by: 'team' })
+  const [mediaForm, setMediaForm] = useState({ media_type: 'image', url: '', thumbnail_url: '', caption: '', uploaded_by: 'team' })
+  const [meetingForm, setMeetingForm] = useState({ title: '', date: new Date().toISOString().slice(0, 10), time: '10:00', duration: 60, location: '' })
+  const [annotationForm, setAnnotationForm] = useState({ document_id: '', x: 0.5, y: 0.5, author_name: 'Team', author_type: 'team', content: '' })
   const [importPaletteId, setImportPaletteId] = useState('')
 
   const project = detail.project
@@ -282,6 +323,213 @@ function ProjectDetail({ detail, busy, onBack, onRefresh, onUpdateName, onAddTea
                   <button className="text-red-600" onClick={() => onDeletePaletteItem(item.id)}>Supprimer</button>
                 </div>
               )) : <p className="text-sm text-stone-500">Palette vide.</p>}
+            </div>
+          )}
+
+          {tab === 'quotes' && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm font-medium" onClick={onCreateQuote}>Nouveau devis</button>
+                <a className="rounded border border-stone-300 px-3 py-2 text-sm" href={`/client/design/${project.id}`} target="_blank" rel="noreferrer">Ouvrir portail client</a>
+              </div>
+
+              {detail.quotes.length === 0 ? (
+                <p className="text-sm text-stone-500">Aucun devis.</p>
+              ) : (
+                detail.quotes.map((quote) => (
+                  <div key={quote.id} className="rounded-xl border border-stone-200 p-3 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span>{quote.title} · v{quote.version} · {quote.status} · {quote.total}€</span>
+                      <div className="flex gap-2">
+                        {quote.status === 'draft' && <button className="text-indigo-700" onClick={() => onSendQuote(quote.id)}>Envoyer</button>}
+                        <button className="text-red-600" onClick={() => onDeleteQuote(quote.id)}>Supprimer</button>
+                      </div>
+                    </div>
+
+                    <form className="grid sm:grid-cols-5 gap-2" onSubmit={(event) => {
+                      event.preventDefault()
+                      onAddQuoteLine(quote.id, quoteLineForm)
+                      setQuoteLineForm({ description: '', quantity: 1, unit: 'u', unit_price: 0 })
+                    }}>
+                      <input className="sm:col-span-2 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Description" value={quoteLineForm.description} onChange={(event) => setQuoteLineForm((prev) => ({ ...prev, description: event.target.value }))} required />
+                      <input type="number" min="0.01" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={quoteLineForm.quantity} onChange={(event) => setQuoteLineForm((prev) => ({ ...prev, quantity: Number(event.target.value || 0) }))} />
+                      <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Unité" value={quoteLineForm.unit} onChange={(event) => setQuoteLineForm((prev) => ({ ...prev, unit: event.target.value }))} />
+                      <input type="number" min="0" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={quoteLineForm.unit_price} onChange={(event) => setQuoteLineForm((prev) => ({ ...prev, unit_price: Number(event.target.value || 0) }))} />
+                      <button className="sm:col-span-5 rounded border border-stone-300 px-2 py-1 text-sm">Ajouter ligne</button>
+                    </form>
+
+                    {(quote.lines || []).length === 0 ? (
+                      <p className="text-sm text-stone-500">Aucune ligne.</p>
+                    ) : (
+                      quote.lines.map((line) => (
+                        <div key={line.id} className="rounded border border-stone-200 px-2 py-1 text-sm flex items-center justify-between">
+                          <span>{line.description} · {line.quantity} {line.unit} · {line.total}€</span>
+                          <button className="text-red-600" onClick={() => onDeleteQuoteLine(line.id)}>Supprimer</button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {tab === 'documents' && (
+            <div className="space-y-3">
+              <form className="grid sm:grid-cols-6 gap-2" onSubmit={(event) => {
+                event.preventDefault()
+                onAddDocument(documentForm)
+                setDocumentForm((prev) => ({ ...prev, name: '', url: '', size: 0 }))
+              }}>
+                <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={documentForm.category} onChange={(event) => setDocumentForm((prev) => ({ ...prev, category: event.target.value }))}>
+                  <option value="plan">plan</option>
+                  <option value="quote">quote</option>
+                  <option value="analysis">analysis</option>
+                  <option value="other">other</option>
+                </select>
+                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Nom" value={documentForm.name} onChange={(event) => setDocumentForm((prev) => ({ ...prev, name: event.target.value }))} required />
+                <input className="sm:col-span-2 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="URL" value={documentForm.url} onChange={(event) => setDocumentForm((prev) => ({ ...prev, url: event.target.value }))} required />
+                <input type="number" min="0" className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Taille (bytes)" value={documentForm.size} onChange={(event) => setDocumentForm((prev) => ({ ...prev, size: Number(event.target.value || 0) }))} />
+                <button className="rounded bg-[#AFBD00] px-2 py-1 text-sm font-medium">Ajouter</button>
+              </form>
+
+              {detail.documents.length === 0 ? (
+                <p className="text-sm text-stone-500">Aucun document.</p>
+              ) : (
+                detail.documents.map((item) => (
+                  <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between gap-2">
+                    <span>{item.category} · {item.name}</span>
+                    <div className="flex items-center gap-2">
+                      <a href={item.url} target="_blank" rel="noreferrer" className="text-indigo-700">Ouvrir</a>
+                      <button className="text-red-600" onClick={() => onDeleteDocument(item.id)}>Supprimer</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {tab === 'album' && (
+            <div className="space-y-3">
+              <form className="grid sm:grid-cols-6 gap-2" onSubmit={(event) => {
+                event.preventDefault()
+                onAddMedia(mediaForm)
+                setMediaForm((prev) => ({ ...prev, url: '', thumbnail_url: '', caption: '' }))
+              }}>
+                <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={mediaForm.media_type} onChange={(event) => setMediaForm((prev) => ({ ...prev, media_type: event.target.value }))}>
+                  <option value="image">image</option>
+                  <option value="video">video</option>
+                </select>
+                <input className="sm:col-span-2 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="URL média" value={mediaForm.url} onChange={(event) => setMediaForm((prev) => ({ ...prev, url: event.target.value }))} required />
+                <input className="sm:col-span-2 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Thumbnail URL" value={mediaForm.thumbnail_url} onChange={(event) => setMediaForm((prev) => ({ ...prev, thumbnail_url: event.target.value }))} />
+                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Caption" value={mediaForm.caption} onChange={(event) => setMediaForm((prev) => ({ ...prev, caption: event.target.value }))} />
+                <button className="sm:col-span-6 rounded bg-[#AFBD00] px-2 py-1 text-sm font-medium">Ajouter média</button>
+              </form>
+
+              {detail.mediaItems.length === 0 ? (
+                <p className="text-sm text-stone-500">Album vide.</p>
+              ) : (
+                detail.mediaItems.map((item) => (
+                  <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between gap-2">
+                    <span>{item.type} · {item.caption || 'sans légende'}</span>
+                    <div className="flex items-center gap-2">
+                      <a href={item.url} target="_blank" rel="noreferrer" className="text-indigo-700">Ouvrir</a>
+                      <button className="text-red-600" onClick={() => onDeleteMedia(item.id)}>Supprimer</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {tab === 'meetings' && (
+            <div className="space-y-3">
+              <form className="grid sm:grid-cols-5 gap-2" onSubmit={(event) => {
+                event.preventDefault()
+                onAddMeeting(meetingForm)
+                setMeetingForm((prev) => ({ ...prev, title: '', location: '' }))
+              }}>
+                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Titre" value={meetingForm.title} onChange={(event) => setMeetingForm((prev) => ({ ...prev, title: event.target.value }))} required />
+                <input type="date" className="rounded border border-stone-300 px-2 py-1 text-sm" value={meetingForm.date} onChange={(event) => setMeetingForm((prev) => ({ ...prev, date: event.target.value }))} required />
+                <input type="time" className="rounded border border-stone-300 px-2 py-1 text-sm" value={meetingForm.time} onChange={(event) => setMeetingForm((prev) => ({ ...prev, time: event.target.value }))} required />
+                <input type="number" min="15" step="15" className="rounded border border-stone-300 px-2 py-1 text-sm" value={meetingForm.duration} onChange={(event) => setMeetingForm((prev) => ({ ...prev, duration: Number(event.target.value || 60) }))} />
+                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Lieu" value={meetingForm.location} onChange={(event) => setMeetingForm((prev) => ({ ...prev, location: event.target.value }))} />
+                <button className="sm:col-span-5 rounded bg-[#AFBD00] px-2 py-1 text-sm font-medium">Planifier</button>
+              </form>
+
+              {detail.meetings.length === 0 ? (
+                <p className="text-sm text-stone-500">Aucune réunion planifiée.</p>
+              ) : (
+                detail.meetings.map((item) => (
+                  <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between gap-2">
+                    <span>{item.date} {item.time} · {item.title} · {item.location || 'sans lieu'}</span>
+                    <button className="text-red-600" onClick={() => onDeleteMeeting(item.id)}>Supprimer</button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {tab === 'co-gestion' && (
+            <div className="space-y-4">
+              <div className="rounded border border-stone-200 p-3">
+                <p className="text-sm font-medium text-stone-800 mb-2">Annotations plan</p>
+                <form className="grid sm:grid-cols-6 gap-2" onSubmit={(event) => {
+                  event.preventDefault()
+                  onAddAnnotation(annotationForm)
+                  setAnnotationForm((prev) => ({ ...prev, content: '' }))
+                }}>
+                  <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Document ID" value={annotationForm.document_id} onChange={(event) => setAnnotationForm((prev) => ({ ...prev, document_id: event.target.value }))} required />
+                  <input type="number" min="0" max="1" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={annotationForm.x} onChange={(event) => setAnnotationForm((prev) => ({ ...prev, x: Number(event.target.value || 0) }))} />
+                  <input type="number" min="0" max="1" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={annotationForm.y} onChange={(event) => setAnnotationForm((prev) => ({ ...prev, y: Number(event.target.value || 0) }))} />
+                  <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={annotationForm.author_type} onChange={(event) => setAnnotationForm((prev) => ({ ...prev, author_type: event.target.value }))}>
+                    <option value="team">team</option>
+                    <option value="client">client</option>
+                  </select>
+                  <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Auteur" value={annotationForm.author_name} onChange={(event) => setAnnotationForm((prev) => ({ ...prev, author_name: event.target.value }))} />
+                  <input className="sm:col-span-6 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Contenu" value={annotationForm.content} onChange={(event) => setAnnotationForm((prev) => ({ ...prev, content: event.target.value }))} required />
+                  <button className="sm:col-span-6 rounded bg-[#AFBD00] px-2 py-1 text-sm font-medium">Ajouter annotation</button>
+                </form>
+
+                <div className="mt-3 space-y-2">
+                  {detail.annotations.length === 0 ? (
+                    <p className="text-sm text-stone-500">Aucune annotation.</p>
+                  ) : (
+                    detail.annotations.map((item) => (
+                      <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between gap-2">
+                        <span>{item.authorType} · {item.content} · {item.resolved ? 'résolue' : 'ouverte'}</span>
+                        <div className="flex gap-2">
+                          {!item.resolved && <button className="text-emerald-700" onClick={() => onResolveAnnotation(item.id)}>Résoudre</button>}
+                          <button className="text-red-600" onClick={() => onDeleteAnnotation(item.id)}>Supprimer</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="rounded border border-stone-200 p-3">
+                  <p className="text-sm font-medium text-stone-800 mb-2">Harvest calendar</p>
+                  {(detail.harvestCalendar?.months || []).length === 0 ? (
+                    <p className="text-sm text-stone-500">Calendrier vide.</p>
+                  ) : (
+                    detail.harvestCalendar.months.slice(0, 6).map((month) => (
+                      <p key={month.month} className="text-sm text-stone-700">{month.name}: {month.harvests?.length || 0} récoltes</p>
+                    ))
+                  )}
+                </div>
+                <div className="rounded border border-stone-200 p-3">
+                  <p className="text-sm font-medium text-stone-800 mb-2">Maintenance calendar</p>
+                  {(detail.maintenanceCalendar?.months || []).length === 0 ? (
+                    <p className="text-sm text-stone-500">Calendrier vide.</p>
+                  ) : (
+                    detail.maintenanceCalendar.months.slice(0, 6).map((month) => (
+                      <p key={month.month} className="text-sm text-stone-700">{month.name}: {month.tasks?.length || 0} tâches</p>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </section>
@@ -531,6 +779,28 @@ export default function DesignIndex({ initialProjectId }) {
         if (!paletteId) return
         return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette/import/${paletteId}`, { method: 'POST' }), { refreshProjectId: currentProjectId })
       },
+      createQuote: () => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/quotes`, { method: 'POST' }), { refreshProjectId: currentProjectId }),
+      sendQuote: (quoteId) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}/send`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
+      deleteQuote: (quoteId) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      addQuoteLine: (quoteId, values) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}/lines`, { method: 'POST', body: JSON.stringify({
+        description: values.description,
+        quantity: values.quantity,
+        unit: values.unit,
+        unit_price: values.unit_price,
+      }) }), { refreshProjectId: currentProjectId }),
+      deleteQuoteLine: (lineId) => runMutation(() => apiRequest(`/api/v1/design/quote-lines/${lineId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      addDocument: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/documents`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      deleteDocument: (documentId) => runMutation(() => apiRequest(`/api/v1/design/documents/${documentId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      addMedia: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/media`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      deleteMedia: (mediaId) => runMutation(() => apiRequest(`/api/v1/design/media/${mediaId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      addMeeting: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/meetings`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      deleteMeeting: (meetingId) => runMutation(() => apiRequest(`/api/v1/design/meetings/${meetingId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      addAnnotation: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/annotations`, { method: 'POST', body: JSON.stringify({
+        ...values,
+        author_id: `member-${Math.random().toString(36).slice(2, 8)}`,
+      }) }), { refreshProjectId: currentProjectId }),
+      resolveAnnotation: (annotationId) => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}/resolve`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
+      deleteAnnotation: (annotationId) => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
     }
   }, [currentProjectId, editProject, runMutation, loadProject])
 
@@ -566,6 +836,20 @@ export default function DesignIndex({ initialProjectId }) {
           onAddPaletteItem={detailActions?.addPaletteItem || (() => {})}
           onDeletePaletteItem={detailActions?.deletePaletteItem || (() => {})}
           onImportPlantPalette={detailActions?.importPlantPalette || (() => {})}
+          onCreateQuote={detailActions?.createQuote || (() => {})}
+          onSendQuote={detailActions?.sendQuote || (() => {})}
+          onDeleteQuote={detailActions?.deleteQuote || (() => {})}
+          onAddQuoteLine={detailActions?.addQuoteLine || (() => {})}
+          onDeleteQuoteLine={detailActions?.deleteQuoteLine || (() => {})}
+          onAddDocument={detailActions?.addDocument || (() => {})}
+          onDeleteDocument={detailActions?.deleteDocument || (() => {})}
+          onAddMedia={detailActions?.addMedia || (() => {})}
+          onDeleteMedia={detailActions?.deleteMedia || (() => {})}
+          onAddMeeting={detailActions?.addMeeting || (() => {})}
+          onDeleteMeeting={detailActions?.deleteMeeting || (() => {})}
+          onAddAnnotation={detailActions?.addAnnotation || (() => {})}
+          onResolveAnnotation={detailActions?.resolveAnnotation || (() => {})}
+          onDeleteAnnotation={detailActions?.deleteAnnotation || (() => {})}
         />
       ) : (
         <ProjectDashboard {...dashboardProps} />

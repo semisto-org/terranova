@@ -44,4 +44,11 @@ class AppController < ApplicationController
       initialProjectId: params[:project_id].to_s
     }
   end
+
+  def design_client_portal
+    render inertia: "Design/ClientPortal", props: {
+      milestone: "Design Studio Client Portal",
+      initialProjectId: params[:project_id].to_s
+    }
+  end
 end

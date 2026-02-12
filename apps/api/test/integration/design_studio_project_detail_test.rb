@@ -3,6 +3,14 @@ require 'test_helper'
 class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
   setup do
     [
+      Design::QuoteLine,
+      Design::Quote,
+      Design::Annotation,
+      Design::MediaItem,
+      Design::ProjectDocument,
+      Design::ClientContribution,
+      Design::HarvestCalendar,
+      Design::MaintenanceCalendar,
       Design::ProjectPaletteItem,
       Design::ProjectPalette,
       Design::SiteAnalysis,
@@ -126,5 +134,144 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_operator body['items'].size, :>=, 1
     assert_equal 'Malus domestica', body['items'].first['speciesName']
+  end
+
+  test 'quote document media meeting and annotations flows work' do
+    post "/api/v1/design/#{@project.id}/quotes", params: { title: 'Devis initial' }, as: :json
+    assert_response :created
+    quote_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/design/quotes/#{quote_id}/lines", params: {
+      description: 'Plants',
+      quantity: 10,
+      unit: 'u',
+      unit_price: 15
+    }, as: :json
+    assert_response :created
+    line_id = JSON.parse(response.body)['id']
+
+    patch "/api/v1/design/quotes/#{quote_id}/send", as: :json
+    assert_response :success
+    assert_equal 'sent', JSON.parse(response.body)['status']
+
+    post "/api/v1/design/#{@project.id}/documents", params: {
+      category: 'plan',
+      name: 'Plan A3',
+      url: 'https://example.com/plan-a3.pdf',
+      size: 12_000,
+      uploaded_by: 'team'
+    }, as: :json
+    assert_response :created
+    document_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/design/#{@project.id}/media", params: {
+      media_type: 'image',
+      url: 'https://example.com/photo.jpg',
+      thumbnail_url: 'https://example.com/photo-thumb.jpg',
+      caption: 'Avant travaux',
+      uploaded_by: 'team'
+    }, as: :json
+    assert_response :created
+    media_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/design/#{@project.id}/meetings", params: {
+      title: 'Kickoff',
+      date: Date.current.iso8601,
+      time: '09:00',
+      duration: 60,
+      location: 'Visio'
+    }, as: :json
+    assert_response :created
+    meeting_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/design/#{@project.id}/annotations", params: {
+      document_id: document_id,
+      x: 0.25,
+      y: 0.33,
+      author_id: 'member-1',
+      author_name: 'Alice',
+      author_type: 'team',
+      content: 'Déplacer la zone de plantation'
+    }, as: :json
+    assert_response :created
+    annotation_id = JSON.parse(response.body)['id']
+
+    patch "/api/v1/design/annotations/#{annotation_id}/resolve", as: :json
+    assert_response :success
+    assert_equal true, JSON.parse(response.body)['resolved']
+
+    get "/api/v1/design/#{@project.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body['quotes'].size
+    assert_equal 1, body['documents'].size
+    assert_equal 1, body['mediaItems'].size
+    assert_equal 1, body['meetings'].size
+    assert_equal 1, body['annotations'].size
+
+    delete "/api/v1/design/quote-lines/#{line_id}", as: :json
+    assert_response :no_content
+    delete "/api/v1/design/quotes/#{quote_id}", as: :json
+    assert_response :no_content
+    delete "/api/v1/design/documents/#{document_id}", as: :json
+    assert_response :no_content
+    delete "/api/v1/design/media/#{media_id}", as: :json
+    assert_response :no_content
+    delete "/api/v1/design/meetings/#{meeting_id}", as: :json
+    assert_response :no_content
+    delete "/api/v1/design/annotations/#{annotation_id}", as: :json
+    assert_response :no_content
+  end
+
+  test 'client portal supports quote approval questionnaire wishlist and journal' do
+    post "/api/v1/design/#{@project.id}/quotes", params: { title: 'Devis client' }, as: :json
+    assert_response :created
+    quote_id = JSON.parse(response.body)['id']
+
+    patch "/api/v1/design/client/quotes/#{quote_id}/approve", params: {
+      approved_by: 'client-portal',
+      comment: 'Ok pour moi'
+    }, as: :json
+    assert_response :success
+    quote = JSON.parse(response.body)
+    assert_equal 'approved', quote['status']
+    assert_equal 'client-portal', quote['approvedBy']
+
+    patch "/api/v1/design/#{@project.id}/client/questionnaire", params: {
+      sun_observations: 'plein sud',
+      wet_areas: 'fond du terrain',
+      wind_patterns: 'nord-est',
+      soil_history: 'ancien potager',
+      existing_wildlife: 'hérissons'
+    }, as: :json
+    assert_response :success
+    contribution = JSON.parse(response.body)
+    assert_equal 'plein sud', contribution['terrainQuestionnaire']['responses']['sunObservations']
+
+    post "/api/v1/design/#{@project.id}/client/wishlist", params: {
+      item_type: 'plant',
+      description: 'Ajouter des petits fruits'
+    }, as: :json
+    assert_response :success
+    contribution = JSON.parse(response.body)
+    assert_equal 1, contribution['wishlist'].size
+
+    post "/api/v1/design/#{@project.id}/client/journal", params: {
+      plant_id: 'plant-1',
+      species_name: 'Malus domestica',
+      text: 'Bonne reprise'
+    }, as: :json
+    assert_response :success
+    contribution = JSON.parse(response.body)
+    assert_equal 1, contribution['plantJournal'].size
+
+    get "/api/v1/design/#{@project.id}/client-portal", as: :json
+    assert_response :success
+    portal = JSON.parse(response.body)
+    assert_equal @project.id.to_s, portal['project']['id']
+    assert_equal 1, portal['quotes'].size
+    assert_equal 1, portal['clientContributions']['wishlist'].size
+    assert_equal 12, portal['harvestCalendar']['months'].size
+    assert_equal 12, portal['maintenanceCalendar']['months'].size
   end
 end
