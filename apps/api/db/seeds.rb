@@ -130,3 +130,150 @@ Timesheet.find_or_create_by!(member: members.first, date: Date.current, descript
   record.invoiced = false
   record.kilometers = 12
 end
+
+# -----------------------------
+# Milestone 3: Plant Database
+# -----------------------------
+
+contributor = Plant::Contributor.find_or_create_by!(name: 'Sophie Dubois') do |item|
+  item.avatar_url = 'https://api.dicebear.com/7.x/avataaars/svg?seed=SophiePlant'
+  item.joined_at = Date.new(2024, 1, 10)
+  item.lab_id = 'lab-bruxelles'
+  item.species_created = 3
+  item.varieties_created = 2
+  item.photos_added = 12
+  item.notes_written = 6
+  item.semos_earned = 180
+  item.activity_by_month = [2, 3, 4, 6, 8, 7, 5, 4, 6, 8, 9, 10]
+end
+
+malus = Plant::Genus.find_or_create_by!(latin_name: 'Malus') do |item|
+  item.description = 'Genre regroupant les pommiers de la famille des Rosacees.'
+end
+
+corylus = Plant::Genus.find_or_create_by!(latin_name: 'Corylus') do |item|
+  item.description = 'Genre des noisetiers, arbustes a chatons de la famille des Betulacees.'
+end
+
+malus_domestica = Plant::Species.find_or_create_by!(latin_name: 'Malus domestica') do |item|
+  item.genus = malus
+  item.plant_type = 'tree'
+  item.edible_parts = ['fruit']
+  item.interests = ['edible', 'pollinator', 'ornamental']
+  item.ecosystem_needs = ['climax']
+  item.propagation_methods = ['grafting', 'cutting']
+  item.origin = 'Asie centrale'
+  item.flower_colors = ['white', 'pink']
+  item.planting_seasons = ['autumn', 'winter']
+  item.harvest_months = ['aug', 'sep', 'oct']
+  item.exposures = ['sun', 'partial-shade']
+  item.hardiness = 'Zone 4 a 8'
+  item.fruiting_months = ['aug', 'sep', 'oct']
+  item.flowering_months = ['apr', 'may']
+  item.foliage_type = 'deciduous'
+  item.native_countries = ['fr', 'be', 'de']
+  item.fertility = 'self-sterile'
+  item.root_system = 'spreading'
+  item.growth_rate = 'medium'
+  item.forest_garden_zone = 'canopy'
+  item.pollination_type = 'insect'
+  item.soil_types = ['loam', 'clay', 'sandy']
+  item.soil_moisture = 'moist'
+  item.soil_richness = 'moderate'
+  item.watering_need = '3'
+  item.toxic_elements = 'Pepins (amygdaline en faible quantite)'
+  item.is_invasive = false
+  item.therapeutic_properties = 'Riche en fibres et antioxydants.'
+  item.life_cycle = 'perennial'
+  item.foliage_color = 'green'
+  item.fragrance = 'light'
+  item.transformations = ['jam', 'compote', 'juice', 'dried']
+  item.fodder_qualities = ['pigs', 'sheep']
+end
+
+corylus_avellana = Plant::Species.find_or_create_by!(latin_name: 'Corylus avellana') do |item|
+  item.genus = corylus
+  item.plant_type = 'shrub'
+  item.edible_parts = ['seed']
+  item.interests = ['edible', 'hedge', 'pollinator']
+  item.ecosystem_needs = ['pioneer']
+  item.propagation_methods = ['layering', 'division']
+  item.origin = 'Europe'
+  item.flower_colors = ['green']
+  item.planting_seasons = ['autumn', 'winter']
+  item.harvest_months = ['sep', 'oct']
+  item.exposures = ['sun', 'partial-shade']
+  item.hardiness = 'Zone 5 a 8'
+  item.fruiting_months = ['sep', 'oct']
+  item.flowering_months = ['feb', 'mar']
+  item.foliage_type = 'deciduous'
+  item.native_countries = ['fr', 'be', 'de', 'nl']
+  item.fertility = 'self-fertile'
+  item.root_system = 'fibrous'
+  item.growth_rate = 'medium'
+  item.forest_garden_zone = 'edge'
+  item.pollination_type = 'wind'
+  item.soil_types = ['loam', 'chalky']
+  item.soil_moisture = 'moist'
+  item.soil_richness = 'moderate'
+  item.watering_need = '2'
+  item.is_invasive = false
+  item.life_cycle = 'perennial'
+  item.foliage_color = 'green'
+  item.fragrance = 'none'
+end
+
+Plant::Variety.find_or_create_by!(latin_name: "Malus domestica 'Reine des Reinettes'") do |item|
+  item.species = malus_domestica
+  item.productivity = 'high'
+  item.fruit_size = 'medium'
+  item.taste_rating = 5
+  item.storage_life = '2-3 months'
+  item.maturity = 'late'
+  item.disease_resistance = 'medium'
+end
+
+Plant::CommonName.find_or_create_by!(target_type: 'species', target_id: malus_domestica.id, language: 'fr', name: 'Pommier')
+Plant::CommonName.find_or_create_by!(target_type: 'species', target_id: corylus_avellana.id, language: 'fr', name: 'Noisetier')
+
+Plant::Reference.find_or_create_by!(target_type: 'species', target_id: malus_domestica.id, title: 'PFAF Malus domestica') do |item|
+  item.reference_type = 'link'
+  item.url = 'https://pfaf.org/user/Plant.aspx?LatinName=Malus+domestica'
+  item.source = 'PFAF'
+end
+
+Plant::Photo.find_or_create_by!(target_type: 'species', target_id: malus_domestica.id, url: 'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce') do |item|
+  item.caption = 'Pommes sur arbre'
+  item.contributor = contributor
+end
+
+Plant::Note.find_or_create_by!(target_type: 'species', target_id: malus_domestica.id, contributor: contributor) do |item|
+  item.content = 'Bonne adaptation au climat belge, attention a la tavelure en annees humides.'
+  item.language = 'fr'
+  item.photos = []
+end
+
+Plant::Location.find_or_create_by!(target_type: 'species', target_id: malus_domestica.id, latitude: 50.8503, longitude: 4.3517) do |item|
+  item.place_name = 'Lab Bruxelles'
+  item.lab_id = 'lab-bruxelles'
+  item.is_mother_plant = true
+  item.planted_year = 2020
+  item.is_public = true
+end
+
+Plant::NurseryStock.find_or_create_by!(target_type: 'species', target_id: malus_domestica.id, nursery_id: 'nursery-brx') do |item|
+  item.nursery_name = 'Pepiniere Bruxelles'
+  item.quantity = 12
+  item.rootstock = 'M106'
+  item.age = '2 years'
+  item.price = 24.5
+end
+
+Plant::ActivityItem.find_or_create_by!(activity_type: 'note_added', contributor: contributor, target_type: 'species', target_id: malus_domestica.id) do |item|
+  item.target_name = malus_domestica.latin_name
+  item.timestamp = Time.current
+end
+
+Plant::Palette.find_or_create_by!(name: 'Palette verger test', created_by: contributor.name) do |item|
+  item.description = 'Premiere palette Milestone 3'
+end

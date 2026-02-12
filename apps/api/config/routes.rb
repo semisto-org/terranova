@@ -3,6 +3,8 @@ Rails.application.routes.draw do
   get "app", to: "app#index"
   get "app/lab", to: "app#lab"
   get "app/*path", to: "app#index"
+  get "plants", to: "app#plants"
+  get "plants/*path", to: "app#plants"
 
   namespace :api do
     namespace :v1 do
@@ -59,8 +61,23 @@ Rails.application.routes.draw do
       delete "lab/timesheets/:id", to: "lab_management#destroy_timesheet"
       patch "lab/timesheets/:id/mark-invoiced", to: "lab_management#mark_invoiced"
 
-      get "plants", to: "placeholders#show", defaults: { section: "plant_database", route: "/plants" }
-      get "plants/:species_id", to: "placeholders#show", defaults: { section: "plant_database", route: "/plants/:speciesId" }
+      get "plants/filter-options", to: "plants#filter_options"
+      get "plants/search", to: "plants#search"
+      get "plants/genera/:id", to: "plants#genus"
+      get "plants/species/:id", to: "plants#species"
+      get "plants/varieties/:id", to: "plants#variety"
+      post "plants/ai-summary", to: "plants#generate_ai_summary"
+      get "plants/activity", to: "plants#activity_feed"
+      get "plants/contributors/:id", to: "plants#contributor"
+      post "plants/palettes", to: "plants#create_palette"
+      get "plants/palettes/:id", to: "plants#show_palette"
+      patch "plants/palettes/:id", to: "plants#update_palette"
+      post "plants/palettes/:palette_id/items", to: "plants#add_palette_item"
+      patch "plants/palette-items/:id", to: "plants#move_palette_item"
+      delete "plants/palette-items/:id", to: "plants#remove_palette_item"
+      post "plants/notes", to: "plants#create_note"
+      post "plants/photos", to: "plants#create_photo"
+      post "plants/references", to: "plants#create_reference"
 
       get "design", to: "placeholders#show", defaults: { section: "design_studio", route: "/design" }
       get "design/:project_id", to: "placeholders#show", defaults: { section: "design_studio", route: "/design/:projectId" }

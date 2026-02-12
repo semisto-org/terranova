@@ -22,4 +22,12 @@ class AppController < ApplicationController
       }
     }
   end
+
+  def plants
+    render inertia: "Plants/Index", props: {
+      milestone: "Plant Database",
+      currentContributorId: Plant::Contributor.order(:id).pick(:id)&.to_s,
+      initialPaletteId: Plant::Palette.order(:id).pick(:id)&.to_s
+    }
+  end
 end

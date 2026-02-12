@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_11_223000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_12_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -163,6 +163,204 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_11_223000) do
     t.index ["author_id"], name: "index_pitches_on_author_id"
   end
 
+  create_table "plant_activity_items", force: :cascade do |t|
+    t.string "activity_type", null: false
+    t.bigint "contributor_id", null: false
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.string "target_name", null: false
+    t.datetime "timestamp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contributor_id"], name: "index_plant_activity_items_on_contributor_id"
+  end
+
+  create_table "plant_ai_summaries", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.string "status", default: "idle", null: false
+    t.text "content"
+    t.datetime "generated_at"
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_plant_ai_summaries_on_target_type_and_target_id", unique: true
+  end
+
+  create_table "plant_common_names", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.string "language", null: false
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_plant_common_names_on_target_type_and_target_id"
+  end
+
+  create_table "plant_contributors", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "avatar_url", default: "", null: false
+    t.date "joined_at", null: false
+    t.string "lab_id"
+    t.integer "species_created", default: 0, null: false
+    t.integer "varieties_created", default: 0, null: false
+    t.integer "photos_added", default: 0, null: false
+    t.integer "notes_written", default: 0, null: false
+    t.integer "semos_earned", default: 0, null: false
+    t.jsonb "activity_by_month", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "plant_genera", force: :cascade do |t|
+    t.string "latin_name", null: false
+    t.text "description", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["latin_name"], name: "index_plant_genera_on_latin_name", unique: true
+  end
+
+  create_table "plant_locations", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.decimal "latitude", precision: 10, scale: 6, null: false
+    t.decimal "longitude", precision: 10, scale: 6, null: false
+    t.string "place_name", default: "", null: false
+    t.string "lab_id"
+    t.boolean "is_mother_plant", default: false, null: false
+    t.integer "planted_year"
+    t.boolean "is_public", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_plant_locations_on_target_type_and_target_id"
+  end
+
+  create_table "plant_notes", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.bigint "contributor_id", null: false
+    t.text "content", null: false
+    t.string "language", default: "fr", null: false
+    t.jsonb "photos", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contributor_id"], name: "index_plant_notes_on_contributor_id"
+    t.index ["target_type", "target_id"], name: "index_plant_notes_on_target_type_and_target_id"
+  end
+
+  create_table "plant_nursery_stocks", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.string "nursery_id", null: false
+    t.string "nursery_name", null: false
+    t.integer "quantity", default: 0, null: false
+    t.string "rootstock"
+    t.string "age", default: "", null: false
+    t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_plant_nursery_stocks_on_target_type_and_target_id"
+  end
+
+  create_table "plant_palette_items", force: :cascade do |t|
+    t.bigint "palette_id", null: false
+    t.string "item_type", null: false
+    t.bigint "item_id", null: false
+    t.string "strate_key", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["palette_id", "item_type", "item_id"], name: "idx_on_palette_id_item_type_item_id_9890869de5", unique: true
+    t.index ["palette_id"], name: "index_plant_palette_items_on_palette_id"
+  end
+
+  create_table "plant_palettes", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description", default: "", null: false
+    t.string "created_by", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "plant_photos", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.string "url", null: false
+    t.string "caption", default: "", null: false
+    t.bigint "contributor_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contributor_id"], name: "index_plant_photos_on_contributor_id"
+    t.index ["target_type", "target_id"], name: "index_plant_photos_on_target_type_and_target_id"
+  end
+
+  create_table "plant_references", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false
+    t.string "reference_type", null: false
+    t.string "title", null: false
+    t.string "url", null: false
+    t.string "source", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_plant_references_on_target_type_and_target_id"
+  end
+
+  create_table "plant_species", force: :cascade do |t|
+    t.bigint "genus_id"
+    t.string "latin_name", null: false
+    t.string "plant_type", null: false
+    t.jsonb "edible_parts", default: [], null: false
+    t.jsonb "interests", default: [], null: false
+    t.jsonb "ecosystem_needs", default: [], null: false
+    t.jsonb "propagation_methods", default: [], null: false
+    t.string "origin", default: "", null: false
+    t.jsonb "flower_colors", default: [], null: false
+    t.jsonb "planting_seasons", default: [], null: false
+    t.jsonb "harvest_months", default: [], null: false
+    t.jsonb "exposures", default: [], null: false
+    t.string "hardiness", default: "", null: false
+    t.jsonb "fruiting_months", default: [], null: false
+    t.jsonb "flowering_months", default: [], null: false
+    t.string "foliage_type", default: "deciduous", null: false
+    t.jsonb "native_countries", default: [], null: false
+    t.string "fertility", default: "self-fertile", null: false
+    t.string "root_system", default: "fibrous", null: false
+    t.string "growth_rate", default: "medium", null: false
+    t.string "forest_garden_zone", default: "edge", null: false
+    t.string "pollination_type", default: "insect", null: false
+    t.jsonb "soil_types", default: [], null: false
+    t.string "soil_moisture", default: "moist", null: false
+    t.string "soil_richness", default: "moderate", null: false
+    t.string "watering_need", default: "3", null: false
+    t.text "toxic_elements"
+    t.boolean "is_invasive", default: false, null: false
+    t.text "therapeutic_properties"
+    t.string "life_cycle", default: "perennial", null: false
+    t.string "foliage_color", default: "green", null: false
+    t.string "fragrance", default: "none", null: false
+    t.jsonb "transformations", default: [], null: false
+    t.jsonb "fodder_qualities", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["genus_id"], name: "index_plant_species_on_genus_id"
+    t.index ["latin_name"], name: "index_plant_species_on_latin_name", unique: true
+  end
+
+  create_table "plant_varieties", force: :cascade do |t|
+    t.bigint "species_id", null: false
+    t.string "latin_name", null: false
+    t.string "productivity", default: "", null: false
+    t.string "fruit_size", default: "", null: false
+    t.integer "taste_rating", default: 3, null: false
+    t.string "storage_life", default: "", null: false
+    t.string "maturity", default: "", null: false
+    t.string "disease_resistance", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["species_id"], name: "index_plant_varieties_on_species_id"
+  end
+
   create_table "scope_tasks", force: :cascade do |t|
     t.bigint "scope_id", null: false
     t.string "title", null: false
@@ -261,6 +459,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_11_223000) do
   add_foreign_key "idea_items", "idea_lists"
   add_foreign_key "member_roles", "members"
   add_foreign_key "pitches", "members", column: "author_id"
+  add_foreign_key "plant_activity_items", "plant_contributors", column: "contributor_id"
+  add_foreign_key "plant_notes", "plant_contributors", column: "contributor_id"
+  add_foreign_key "plant_palette_items", "plant_palettes", column: "palette_id"
+  add_foreign_key "plant_photos", "plant_contributors", column: "contributor_id"
+  add_foreign_key "plant_species", "plant_genera", column: "genus_id"
+  add_foreign_key "plant_varieties", "plant_species", column: "species_id"
   add_foreign_key "scope_tasks", "scopes"
   add_foreign_key "scopes", "pitches"
   add_foreign_key "semos_emissions", "members", column: "created_by_id"
