@@ -47,3 +47,9 @@ Ces endpoints servent de base pour la couche Astro publique.
 - `GET|POST|PATCH|DELETE /api/v1/lab/timesheets`, `PATCH /api/v1/lab/timesheets/:id/mark-invoiced`
 - `GET|POST|PATCH|DELETE /api/v1/lab/events`
 - `GET /api/v1/lab/calendar`
+
+## Tests (Milestone 2)
+
+```bash
+bundle exec rails test test/integration/lab_management_flows_test.rb
+```

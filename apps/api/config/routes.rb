@@ -17,10 +17,12 @@ Rails.application.routes.draw do
       get "lab/cycles", to: "lab_management#list_cycles"
 
       get "lab/members", to: "lab_management#list_members"
+      get "lab/members/:id", to: "lab_management#show_member"
       post "lab/members", to: "lab_management#create_member"
       patch "lab/members/:id", to: "lab_management#update_member"
 
       get "lab/pitches", to: "lab_management#list_pitches"
+      get "lab/pitches/:id", to: "lab_management#show_pitch"
       post "lab/pitches", to: "lab_management#create_pitch"
       patch "lab/pitches/:id", to: "lab_management#update_pitch"
       delete "lab/pitches/:id", to: "lab_management#destroy_pitch"
@@ -33,12 +35,14 @@ Rails.application.routes.draw do
       post "lab/scopes/:id/tasks", to: "lab_management#add_task"
       patch "lab/tasks/:id/toggle", to: "lab_management#toggle_task"
       post "lab/pitches/:id/chowder-items", to: "lab_management#add_chowder_item"
+      delete "lab/chowder-items/:id", to: "lab_management#destroy_chowder_item"
       post "lab/chowder-items/move-to-scope", to: "lab_management#move_to_scope"
 
       post "lab/idea-items", to: "lab_management#add_idea"
       post "lab/idea-items/vote", to: "lab_management#vote_idea"
 
       get "lab/events", to: "lab_management#list_events"
+      get "lab/events/:id", to: "lab_management#show_event"
       get "lab/calendar", to: "lab_management#calendar"
       post "lab/events", to: "lab_management#create_event"
       patch "lab/events/:id", to: "lab_management#update_event"

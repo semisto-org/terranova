@@ -7,11 +7,14 @@
   },
   "dependencies": {
     "@inertiajs/react": "^1.2.0",
+    "@terranova/tokens": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "vite": "^5.4.19",
-    "@vitejs/plugin-react": "^4.4.1"
+    "@tailwindcss/vite": "^4.1.12",
+    "@vitejs/plugin-react": "^4.4.1",
+    "tailwindcss": "^4.1.12",
+    "vite": "^5.4.19"
   }
 }

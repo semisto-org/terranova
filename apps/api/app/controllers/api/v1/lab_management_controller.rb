@@ -3,11 +3,11 @@ module Api
     class LabManagementController < ApplicationController
       class DomainError < StandardError; end
 
-      before_action :set_member, only: [:update_member]
+      before_action :set_member, only: [:show_member, :update_member]
       before_action :set_pitch, only: [:update_pitch, :destroy_pitch, :create_scope, :add_chowder_item]
       before_action :set_scope, only: [:update_hill_position, :add_task]
       before_action :set_task, only: [:toggle_task]
-      before_action :set_event, only: [:update_event, :destroy_event]
+      before_action :set_event, only: [:show_event, :update_event, :destroy_event]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
 
       def overview
@@ -36,6 +36,10 @@ module Api
 
       def list_members
         render json: { items: serialize_members }
+      end
+
+      def show_member
+        render json: serialize_member(@member)
       end
 
       def create_member
@@ -75,6 +79,10 @@ module Api
 
       def list_pitches
         render json: { items: serialize_pitches }
+      end
+
+      def show_pitch
+        render json: serialize_pitch(Pitch.find(params.require(:id)))
       end
 
       def create_pitch
@@ -197,6 +205,11 @@ module Api
         render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
       end
 
+      def destroy_chowder_item
+        ChowderItem.find(params.require(:id)).destroy!
+        head :no_content
+      end
+
       def add_idea
         idea_list = IdeaList.find(params.require(:idea_list_id))
         idea = idea_list.idea_items.create!(title: params.require(:title), votes: 0)
@@ -213,6 +226,10 @@ module Api
 
       def list_events
         render json: { items: serialize_events }
+      end
+
+      def show_event
+        render json: serialize_event(@event)
       end
 
       def calendar

@@ -27,12 +27,16 @@ Source de verite: `.product-plan/product-overview.md`
 
 ### 2) Lab Management
 
-- [~] En cours
+- [x] Termine (implementation)
 - [x] Schema PostgreSQL (membres, cycles, pitches, bets, scopes, semos, timesheets, events)
 - [x] Endpoints API Lab Management (overview + operations principales)
 - [x] Validation metier de base (transfert semos, statut, filtres timesheets)
 - [x] Seed initial pour environnement de dev
-- [ ] Integration UI complete avec composants fournis (en cours)
+- [x] Integration UI complete avec composants fournis (Inertia)
+- [x] Formulaires modaux en remplacement des prompts
+- [x] Endpoints detail et actions manquantes (member/pitch/event + suppression chowder item)
+- [x] Tests d'integration des flows critiques ecrits (pitch, bet, semos, timesheet, overview)
+- [ ] Verification locale complete des tests (a executer hors sandbox)
 
 ### 3) Plant Database
 
