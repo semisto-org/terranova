@@ -30,4 +30,18 @@ class AppController < ApplicationController
       initialPaletteId: Plant::Palette.order(:id).pick(:id)&.to_s
     }
   end
+
+  def design
+    render inertia: "Design/Index", props: {
+      milestone: "Design Studio",
+      initialProjectId: nil
+    }
+  end
+
+  def design_project
+    render inertia: "Design/Index", props: {
+      milestone: "Design Studio",
+      initialProjectId: params[:project_id].to_s
+    }
+  end
 end

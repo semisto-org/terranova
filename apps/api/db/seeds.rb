@@ -277,3 +277,119 @@ end
 Plant::Palette.find_or_create_by!(name: 'Palette verger test', created_by: contributor.name) do |item|
   item.description = 'Premiere palette Milestone 3'
 end
+
+# -----------------------------
+# Milestone 4: Design Studio
+# -----------------------------
+
+template_urban = Design::ProjectTemplate.find_or_create_by!(name: 'Verger urbain') do |item|
+  item.description = 'Projet compact en zone urbaine avec production fruitiere intensive.'
+  item.default_phases = %w[offre pre-projet projet-detaille]
+  item.suggested_hours = 140
+  item.suggested_budget = 7200
+end
+
+template_rural = Design::ProjectTemplate.find_or_create_by!(name: 'Agroforesterie rurale') do |item|
+  item.description = 'Projet de plus grande echelle avec phases de mise en oeuvre longues.'
+  item.default_phases = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion]
+  item.suggested_hours = 260
+  item.suggested_budget = 18900
+end
+
+design_project = Design::Project.find_or_create_by!(name: 'Jardin-foret Dupont') do |item|
+  item.client_id = 'client-dupont'
+  item.client_name = 'Jean Dupont'
+  item.client_email = 'jean.dupont@example.com'
+  item.client_phone = '+32 470 10 20 30'
+  item.place_id = 'place-dupont-namur'
+  item.address = 'Rue des Tilleuls 12, Namur'
+  item.latitude = 50.4669
+  item.longitude = 4.8675
+  item.area = 2400
+  item.phase = 'projet-detaille'
+  item.status = 'active'
+  item.start_date = Date.new(2026, 1, 10)
+  item.planting_date = Date.new(2026, 11, 15)
+  item.project_manager_id = members.first.id.to_s
+  item.template = template_urban
+  item.hours_planned = 140
+  item.hours_worked = 52
+  item.hours_billed = 34
+  item.hours_semos = 18
+  item.expenses_budget = 7200
+  item.expenses_actual = 2350
+end
+
+Design::ProjectMeeting.find_or_create_by!(project: design_project, title: 'Reunion lancement client') do |item|
+  item.starts_at = 5.days.from_now.change(hour: 9, min: 30)
+  item.duration_minutes = 90
+  item.location = 'Visio'
+end
+
+Design::ProjectMeeting.find_or_create_by!(project: design_project, title: 'Atelier palette vegetale') do |item|
+  item.starts_at = 11.days.from_now.change(hour: 14, min: 0)
+  item.duration_minutes = 120
+  item.location = 'Lab Bruxelles'
+end
+
+Design::TeamMember.find_or_create_by!(project: design_project, member_id: members.first.id.to_s, role: 'project-manager') do |item|
+  item.member_name = "#{members.first.first_name} #{members.first.last_name}"
+  item.member_email = members.first.email
+  item.member_avatar = members.first.avatar
+  item.is_paid = true
+  item.assigned_at = 20.days.ago
+end
+
+Design::TeamMember.find_or_create_by!(project: design_project, member_id: members.second.id.to_s, role: 'designer') do |item|
+  item.member_name = "#{members.second.first_name} #{members.second.last_name}"
+  item.member_email = members.second.email
+  item.member_avatar = members.second.avatar
+  item.is_paid = true
+  item.assigned_at = 15.days.ago
+end
+
+Design::ProjectTimesheet.find_or_create_by!(project: design_project, member_id: members.first.id.to_s, date: Date.current - 3) do |item|
+  item.member_name = "#{members.first.first_name} #{members.first.last_name}"
+  item.hours = 4.5
+  item.phase = 'projet-detaille'
+  item.mode = 'billed'
+  item.travel_km = 8
+  item.notes = 'Atelier client et mise a jour concept.'
+end
+
+Design::Expense.find_or_create_by!(project: design_project, date: Date.current - 2, description: 'Achat plants pepiniere') do |item|
+  item.amount = 340.0
+  item.category = 'plants'
+  item.phase = 'projet-detaille'
+  item.member_id = members.first.id.to_s
+  item.member_name = "#{members.first.first_name} #{members.first.last_name}"
+  item.receipt_url = 'https://example.com/receipts/plants-001.pdf'
+  item.status = 'approved'
+end
+
+analysis = Design::SiteAnalysis.find_or_create_by!(project: design_project)
+analysis.update!(
+  climate: { hardinessZone: 'H7', annualRainfall: 820, notes: 'Zone temperee humide' },
+  geomorphology: { slope: 'leger', aspect: 'sud-est', elevation: 180 },
+  water: { sources: ['pluie', 'reseau'], wetZones: 'fond parcelle', drainage: 'modere' },
+  socio_economic: { ownership: 'prive', neighbors: 'zone residentielle' },
+  access_data: { mainAccess: 'portail est', parking: '2 vehicules' },
+  vegetation: { existingTrees: ['Pommier', 'Noisetier'], notableFeatures: 'haie mature' },
+  microclimate: { windExposure: 'modere', sunPatterns: 'plein soleil sud' },
+  buildings: { existing: ['abri jardin'], utilities: 'eau + electricite' },
+  soil: { type: 'limono-argileux', ph: 6.8, texture: 'friable' },
+  client_observations: { favoriteSpots: 'terrasse sud', historyNotes: 'ancien potager' },
+  client_photos: [],
+  client_usage_map: []
+)
+
+design_palette = Design::ProjectPalette.find_or_create_by!(project: design_project)
+Design::ProjectPaletteItem.find_or_create_by!(palette: design_palette, species_id: malus_domestica.id.to_s, layer: 'canopy') do |item|
+  item.species_name = malus_domestica.latin_name
+  item.common_name = 'Pommier'
+  item.quantity = 4
+  item.unit_price = 28
+  item.notes = 'Varietes anciennes'
+  item.harvest_months = [8, 9, 10]
+  item.harvest_products = ['fruits']
+end

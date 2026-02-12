@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   # Inertia-powered application frontend
   get "app", to: "app#index"
   get "app/lab", to: "app#lab"
+  get "app/design", to: "app#design"
+  get "app/design/:project_id", to: "app#design_project"
   get "app/*path", to: "app#index"
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
@@ -81,8 +83,26 @@ Rails.application.routes.draw do
       post "plants/photos", to: "plants#create_photo"
       post "plants/references", to: "plants#create_reference"
 
-      get "design", to: "placeholders#show", defaults: { section: "design_studio", route: "/design" }
-      get "design/:project_id", to: "placeholders#show", defaults: { section: "design_studio", route: "/design/:projectId" }
+      get "design", to: "design_studio#index"
+      get "design/:project_id", to: "design_studio#show"
+      post "design", to: "design_studio#create"
+      patch "design/:project_id", to: "design_studio#update"
+      delete "design/:project_id", to: "design_studio#destroy"
+      post "design/:project_id/duplicate", to: "design_studio#duplicate"
+      post "design/:project_id/team-members", to: "design_studio#create_team_member"
+      delete "design/:project_id/team-members/:member_id", to: "design_studio#destroy_team_member"
+      post "design/:project_id/timesheets", to: "design_studio#create_timesheet"
+      patch "design/timesheets/:timesheet_id", to: "design_studio#update_timesheet"
+      delete "design/timesheets/:timesheet_id", to: "design_studio#destroy_timesheet"
+      post "design/:project_id/expenses", to: "design_studio#create_expense"
+      patch "design/expenses/:expense_id", to: "design_studio#update_expense"
+      delete "design/expenses/:expense_id", to: "design_studio#destroy_expense"
+      patch "design/expenses/:expense_id/approve", to: "design_studio#approve_expense"
+      patch "design/:project_id/site-analysis", to: "design_studio#upsert_site_analysis"
+      post "design/:project_id/palette-items", to: "design_studio#create_palette_item"
+      patch "design/palette-items/:item_id", to: "design_studio#update_palette_item"
+      delete "design/palette-items/:item_id", to: "design_studio#destroy_palette_item"
+      post "design/:project_id/palette/import/:plant_palette_id", to: "design_studio#import_palette_from_plants"
 
       get "academy", to: "placeholders#show", defaults: { section: "academy", route: "/academy" }
       get "academy/:training_id", to: "placeholders#show", defaults: { section: "academy", route: "/academy/:trainingId" }

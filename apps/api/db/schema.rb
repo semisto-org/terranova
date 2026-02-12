@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_12_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_12_164000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -56,6 +56,149 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_130000) do
     t.string "status", default: "upcoming", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "design_expenses", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.date "date", null: false
+    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "category", null: false
+    t.text "description", default: "", null: false
+    t.string "phase", null: false
+    t.string "member_id", default: "", null: false
+    t.string "member_name", default: "", null: false
+    t.string "receipt_url", default: "", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_expenses_on_project_id"
+  end
+
+  create_table "design_project_meetings", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "title", null: false
+    t.datetime "starts_at", null: false
+    t.integer "duration_minutes", default: 60, null: false
+    t.string "location", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_project_meetings_on_project_id"
+    t.index ["starts_at"], name: "index_design_project_meetings_on_starts_at"
+  end
+
+  create_table "design_project_palette_items", force: :cascade do |t|
+    t.bigint "palette_id", null: false
+    t.string "species_id", null: false
+    t.string "species_name", null: false
+    t.string "common_name", default: "", null: false
+    t.string "variety_id"
+    t.string "variety_name"
+    t.string "layer", null: false
+    t.integer "quantity", default: 1, null: false
+    t.decimal "unit_price", precision: 10, scale: 2, default: "0.0", null: false
+    t.text "notes", default: "", null: false
+    t.jsonb "harvest_months", default: [], null: false
+    t.jsonb "harvest_products", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["palette_id"], name: "index_design_project_palette_items_on_palette_id"
+  end
+
+  create_table "design_project_palettes", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_project_palettes_on_project_id", unique: true
+  end
+
+  create_table "design_project_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description", default: "", null: false
+    t.jsonb "default_phases", default: [], null: false
+    t.integer "suggested_hours", default: 0, null: false
+    t.decimal "suggested_budget", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "design_project_timesheets", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "member_id", null: false
+    t.string "member_name", null: false
+    t.date "date", null: false
+    t.decimal "hours", precision: 5, scale: 2, default: "0.0", null: false
+    t.string "phase", null: false
+    t.string "mode", null: false
+    t.integer "travel_km", default: 0, null: false
+    t.text "notes", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_project_timesheets_on_project_id"
+  end
+
+  create_table "design_projects", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "client_id", null: false
+    t.string "client_name", null: false
+    t.string "client_email", default: "", null: false
+    t.string "client_phone", default: "", null: false
+    t.string "place_id", default: "", null: false
+    t.string "address", default: "", null: false
+    t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
+    t.decimal "longitude", precision: 10, scale: 6, default: "0.0", null: false
+    t.integer "area", default: 0, null: false
+    t.string "phase", default: "offre", null: false
+    t.string "status", default: "pending", null: false
+    t.date "start_date"
+    t.date "planting_date"
+    t.string "project_manager_id", default: "", null: false
+    t.bigint "template_id"
+    t.integer "hours_planned", default: 0, null: false
+    t.integer "hours_worked", default: 0, null: false
+    t.integer "hours_billed", default: 0, null: false
+    t.integer "hours_semos", default: 0, null: false
+    t.decimal "expenses_budget", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "expenses_actual", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phase"], name: "index_design_projects_on_phase"
+    t.index ["status"], name: "index_design_projects_on_status"
+    t.index ["template_id"], name: "index_design_projects_on_template_id"
+    t.index ["updated_at"], name: "index_design_projects_on_updated_at"
+  end
+
+  create_table "design_site_analyses", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.jsonb "climate", default: {}, null: false
+    t.jsonb "geomorphology", default: {}, null: false
+    t.jsonb "water", default: {}, null: false
+    t.jsonb "socio_economic", default: {}, null: false
+    t.jsonb "access_data", default: {}, null: false
+    t.jsonb "vegetation", default: {}, null: false
+    t.jsonb "microclimate", default: {}, null: false
+    t.jsonb "buildings", default: {}, null: false
+    t.jsonb "soil", default: {}, null: false
+    t.jsonb "client_observations", default: {}, null: false
+    t.jsonb "client_photos", default: [], null: false
+    t.jsonb "client_usage_map", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_site_analyses_on_project_id", unique: true
+  end
+
+  create_table "design_team_members", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "member_id", null: false
+    t.string "member_name", null: false
+    t.string "member_email", default: "", null: false
+    t.string "member_avatar", default: "", null: false
+    t.string "role", null: false
+    t.boolean "is_paid", default: false, null: false
+    t.datetime "assigned_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "member_id", "role"], name: "idx_design_team_member_unique_role", unique: true
+    t.index ["project_id"], name: "index_design_team_members_on_project_id"
   end
 
   create_table "event_attendees", force: :cascade do |t|
@@ -449,6 +592,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_130000) do
   add_foreign_key "bets", "pitches"
   add_foreign_key "chowder_items", "members", column: "created_by_id"
   add_foreign_key "chowder_items", "pitches"
+  add_foreign_key "design_expenses", "design_projects", column: "project_id"
+  add_foreign_key "design_project_meetings", "design_projects", column: "project_id"
+  add_foreign_key "design_project_palette_items", "design_project_palettes", column: "palette_id"
+  add_foreign_key "design_project_palettes", "design_projects", column: "project_id"
+  add_foreign_key "design_project_timesheets", "design_projects", column: "project_id"
+  add_foreign_key "design_projects", "design_project_templates", column: "template_id"
+  add_foreign_key "design_site_analyses", "design_projects", column: "project_id"
+  add_foreign_key "design_team_members", "design_projects", column: "project_id"
   add_foreign_key "event_attendees", "events"
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
