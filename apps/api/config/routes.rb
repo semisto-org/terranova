@@ -72,6 +72,8 @@ Rails.application.routes.draw do
       post "plants/palettes", to: "plants#create_palette"
       get "plants/palettes/:id", to: "plants#show_palette"
       patch "plants/palettes/:id", to: "plants#update_palette"
+      get "plants/palettes/:id/export", to: "plants#export_palette_pdf"
+      post "plants/palettes/:id/send-to-design-studio", to: "plants#send_to_design_studio"
       post "plants/palettes/:palette_id/items", to: "plants#add_palette_item"
       patch "plants/palette-items/:id", to: "plants#move_palette_item"
       delete "plants/palette-items/:id", to: "plants#remove_palette_item"

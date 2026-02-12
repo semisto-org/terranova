@@ -214,8 +214,10 @@ export interface ActivityItem {
 
 export interface PaletteItem {
   id: string
+  paletteItemId?: string
   type: 'species' | 'variety'
   latinName: string
+  position?: number
 }
 
 export interface PaletteStrates {

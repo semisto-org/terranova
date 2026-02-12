@@ -1,4 +1,5 @@
 import type { PaletteItem, StrateKey, Species, Variety } from '../types'
+import { useState } from 'react'
 
 interface StrateSectionProps {
   strateKey: StrateKey
@@ -11,6 +12,7 @@ interface StrateSectionProps {
   isExpanded: boolean
   onToggle: () => void
   onRemoveItem?: (id: string) => void
+  onMoveItem?: (id: string, fromStrate: StrateKey, toStrate: StrateKey) => void
   onItemClick?: (id: string, type: 'species' | 'variety') => void
 }
 
@@ -25,8 +27,11 @@ export function StrateSection({
   isExpanded,
   onToggle,
   onRemoveItem,
+  onMoveItem,
   onItemClick
 }: StrateSectionProps) {
+  const [isDropActive, setIsDropActive] = useState(false)
+
   const getItemDetails = (item: PaletteItem) => {
     if (item.type === 'species') {
       const sp = species.find(s => s.id === item.id)
@@ -46,8 +51,42 @@ export function StrateSection({
     }
   }
 
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDropActive(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDropActive(false)
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDropActive(false)
+
+    const raw = event.dataTransfer.getData('text/plain')
+    if (!raw) return
+
+    try {
+      const payload = JSON.parse(raw)
+      const fromStrate = payload.fromStrate as StrateKey
+      const id = payload.id as string
+      if (!id || !fromStrate || fromStrate === strateKey) return
+      onMoveItem?.(id, fromStrate, strateKey)
+    } catch (_) {
+      // ignore malformed payload
+    }
+  }
+
   return (
-    <div className="border-b border-stone-200 dark:border-stone-700 last:border-b-0">
+    <div
+      className={`border-b border-stone-200 dark:border-stone-700 last:border-b-0 transition-colors ${
+        isDropActive ? 'bg-[#AFBD00]/10' : ''
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Header */}
       <button
         onClick={onToggle}
@@ -88,8 +127,19 @@ export function StrateSection({
                 const details = getItemDetails(item)
                 return (
                   <div
-                    key={item.id}
+                    key={`${item.type}:${item.id}`}
                     className="group flex items-center gap-3 p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData(
+                        'text/plain',
+                        JSON.stringify({
+                          id: item.paletteItemId || item.id,
+                          fromStrate: strateKey
+                        })
+                      )
+                      event.dataTransfer.effectAllowed = 'move'
+                    }}
                   >
                     {/* Type indicator */}
                     <div
@@ -112,7 +162,7 @@ export function StrateSection({
 
                     {/* Remove button */}
                     <button
-                      onClick={() => onRemoveItem?.(item.id)}
+                      onClick={() => onRemoveItem?.(item.paletteItemId || item.id)}
                       className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
                       title="Retirer de la palette"
                     >

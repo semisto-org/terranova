@@ -729,12 +729,33 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const removePaletteItem = useCallback((targetId, strate) => {
     if (!palette?.strates?.[strate]) return
 
-    const item = palette.strates[strate].find((entry) => entry.id === targetId)
+    const item = palette.strates[strate].find(
+      (entry) => entry.id === targetId || entry.paletteItemId === targetId
+    )
     if (!item) return
 
     mutateAndRefresh(async () => {
       await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
         method: 'DELETE',
+      })
+    })
+  }, [mutateAndRefresh, palette])
+
+  const movePaletteItem = useCallback((itemId, fromStrate, toStrate) => {
+    if (fromStrate === toStrate || !palette?.strates?.[fromStrate]) return
+
+    const item = palette.strates[fromStrate].find(
+      (entry) => entry.paletteItemId === itemId || entry.id === itemId
+    )
+    if (!item) return
+
+    mutateAndRefresh(async () => {
+      await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          strate_key: toStrate,
+          position: 0,
+        }),
       })
     })
   }, [mutateAndRefresh, palette])
@@ -778,6 +799,35 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     if (!contributorPayload) return []
     return contributorPayload.recentActivity || []
   }, [contributorPayload])
+
+  const exportPalettePdf = useCallback(() => {
+    if (!palette?.id) {
+      setNotice('Sauvegardez la palette avant export PDF.')
+      return
+    }
+    window.open(`/api/v1/plants/palettes/${palette.id}/export`, '_blank', 'noopener,noreferrer')
+  }, [palette?.id])
+
+  const sendPaletteToDesignStudio = useCallback(async () => {
+    if (!palette?.id) {
+      setNotice('Sauvegardez la palette avant envoi au Design Studio.')
+      return
+    }
+
+    setBusy(true)
+    setError(null)
+    try {
+      const payload = await apiRequest(`/api/v1/plants/palettes/${palette.id}/send-to-design-studio`, {
+        method: 'POST',
+      })
+      setNotice(payload.message || 'Palette envoyée.')
+      window.location.href = payload.designStudioUrl
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }, [palette?.id])
 
   if (loading || !filterOptions) {
     return (
@@ -901,10 +951,11 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
               species={catalogSpecies}
               varieties={catalogVarieties}
               onRemoveItem={removePaletteItem}
+              onMoveItem={movePaletteItem}
               onSave={savePalette}
               onClear={clearPalette}
-              onExportPDF={() => setNotice('Export PDF à implémenter au prochain pas M3.')}
-              onSendToDesignStudio={() => setNotice('Connexion Design Studio prévue au milestone 4.')}
+              onExportPDF={exportPalettePdf}
+              onSendToDesignStudio={sendPaletteToDesignStudio}
             />
           </div>
         </div>

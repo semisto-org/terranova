@@ -151,6 +151,30 @@ module Api
         render json: serialize_palette(palette)
       end
 
+      def export_palette_pdf
+        palette = Plant::Palette.includes(:items).find(params.require(:id))
+        pdf_data = render_palette_pdf(palette)
+
+        send_data(
+          pdf_data,
+          filename: "palette-#{palette.id}.pdf",
+          type: 'application/pdf',
+          disposition: 'attachment'
+        )
+      end
+
+      def send_to_design_studio
+        palette = Plant::Palette.find(params.require(:id))
+        destination = "/app/design?palette_id=#{palette.id}"
+
+        render json: {
+          status: 'sent',
+          paletteId: palette.id.to_s,
+          designStudioUrl: destination,
+          message: 'Palette envoyee au Design Studio.'
+        }
+      end
+
       def add_palette_item
         palette = Plant::Palette.find(params.require(:palette_id))
         item = palette.items.create!(
@@ -609,6 +633,62 @@ module Api
             end
           end
         }
+      end
+
+      def render_palette_pdf(palette)
+        lines = []
+        lines << "Terranova - Palette vegetale"
+        lines << ""
+        lines << "Nom: #{palette.name}"
+        lines << "Description: #{palette.description.presence || '-'}"
+        lines << "Date: #{Time.current.strftime('%Y-%m-%d %H:%M')}"
+        lines << ""
+
+        grouped = palette.items.order(:position, :id).group_by(&:strate_key)
+        STRATE_KEYS.each do |key|
+          items = Array(grouped[key])
+          lines << "#{key}: #{items.count}"
+          items.each do |item|
+            latin = target_latin_name(item.item_type, item.item_id)
+            lines << " - #{latin} (#{item.item_type})"
+          end
+          lines << ""
+        end
+
+        build_simple_pdf(lines.first(120))
+      end
+
+      def build_simple_pdf(lines)
+        safe_lines = lines.map { |line| line.to_s.gsub(/[()\\]/) { |char| "\\#{char}" } }
+        stream = +"BT\n/F1 11 Tf\n40 800 Td\n14 TL\n"
+        safe_lines.each_with_index do |line, index|
+          stream << (index.zero? ? "(#{line}) Tj\n" : "T* (#{line}) Tj\n")
+        end
+        stream << "ET\n"
+
+        objects = []
+        objects << "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
+        objects << "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n"
+        objects << "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >> endobj\n"
+        objects << "4 0 obj << /Length #{stream.bytesize} >> stream\n#{stream}endstream\nendobj\n"
+        objects << "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n"
+
+        pdf = +"%PDF-1.4\n"
+        offsets = [0]
+        objects.each do |object|
+          offsets << pdf.bytesize
+          pdf << object
+        end
+
+        xref_start = pdf.bytesize
+        pdf << "xref\n0 #{objects.size + 1}\n"
+        pdf << "0000000000 65535 f \n"
+        offsets.drop(1).each do |offset|
+          pdf << format("%010d 00000 n \n", offset)
+        end
+        pdf << "trailer << /Size #{objects.size + 1} /Root 1 0 R >>\n"
+        pdf << "startxref\n#{xref_start}\n%%EOF\n"
+        pdf
       end
 
       def contributors_for_target(target_type, target_id)

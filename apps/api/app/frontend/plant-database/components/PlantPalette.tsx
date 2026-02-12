@@ -19,6 +19,7 @@ export function PlantPalette({
   species,
   varieties,
   onRemoveItem,
+  onMoveItem,
   onSave,
   onExportPDF,
   onSendToDesignStudio,
@@ -88,6 +89,7 @@ export function PlantPalette({
               isExpanded={expandedStrates.has(config.key)}
               onToggle={() => toggleStrate(config.key)}
               onRemoveItem={(id) => onRemoveItem?.(id, config.key)}
+              onMoveItem={(id, fromStrate, toStrate) => onMoveItem?.(id, fromStrate, toStrate)}
             />
           ))
         ) : (

@@ -113,6 +113,27 @@ class PlantsStep1Test < ActionDispatch::IntegrationTest
     assert_response :no_content
   end
 
+  test 'palette export pdf endpoint returns a pdf' do
+    palette = Plant::Palette.create!(name: 'Palette PDF', description: 'desc', created_by: 'tester')
+    palette.items.create!(item_type: 'species', item_id: @species.id, strate_key: 'trees', position: 0)
+
+    get "/api/v1/plants/palettes/#{palette.id}/export"
+    assert_response :success
+    assert_equal 'application/pdf', response.media_type
+    assert_includes response.body, '%PDF-1.4'
+  end
+
+  test 'send to design studio endpoint returns destination url' do
+    palette = Plant::Palette.create!(name: 'Palette Send', description: 'desc', created_by: 'tester')
+
+    post "/api/v1/plants/palettes/#{palette.id}/send-to-design-studio", as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal 'sent', body['status']
+    assert_includes body['designStudioUrl'], "/app/design?palette_id=#{palette.id}"
+  end
+
   test 'create contribution endpoints update feed and contributor stats' do
     post '/api/v1/plants/notes',
          params: { target_type: 'species', target_id: @species.id, contributor_id: @contributor.id, content: 'Nouvelle note', language: 'fr', photos: [] },
