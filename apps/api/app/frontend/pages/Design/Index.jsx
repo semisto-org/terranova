@@ -151,6 +151,7 @@ function ProjectDetail({
   onDeletePaletteItem,
   onImportPlantPalette,
   onSavePlantingPlan,
+  onExportPlan,
   onAddPlantMarker,
   onMovePlantMarker,
   onDeletePlantMarker,
@@ -172,6 +173,10 @@ function ProjectDetail({
   onUpdatePlantRecord,
   onAddFollowUpVisit,
   onAddIntervention,
+  onUpdateHarvestCalendar,
+  onUpdateMaintenanceCalendar,
+  onSearch,
+  searchResults,
 }) {
   const [tab, setTab] = useState('overview')
   const [teamForm, setTeamForm] = useState({ member_name: '', member_email: '', role: 'designer', is_paid: true })
@@ -189,6 +194,7 @@ function ProjectDetail({
   const [plantRecordForm, setPlantRecordForm] = useState({ marker_id: '', palette_item_id: '', status: 'alive', health_score: 100, notes: '' })
   const [visitForm, setVisitForm] = useState({ date: new Date().toISOString().slice(0, 10), visit_type: 'follow-up', notes: '' })
   const [interventionForm, setInterventionForm] = useState({ date: new Date().toISOString().slice(0, 10), intervention_type: 'mulching', notes: '', plant_record_id: '' })
+  const [searchQuery, setSearchQuery] = useState('')
   const [importPaletteId, setImportPaletteId] = useState('')
 
   const project = detail.project
@@ -212,6 +218,25 @@ function ProjectDetail({
         </header>
 
         <section className="mt-4 rounded-2xl border border-stone-200 bg-white p-4">
+          <form
+            className="mb-4 flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              onSearch(searchQuery)
+            }}
+          >
+            <input className="w-full rounded border border-stone-300 px-3 py-2 text-sm" placeholder="Rechercher dans le projet (devis, docs, annotations, co-gestion...)" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+            <button className="rounded border border-stone-300 px-3 py-2 text-sm">Rechercher</button>
+          </form>
+
+          {searchResults?.length > 0 && (
+            <div className="mb-4 rounded-xl border border-stone-200 bg-stone-50 p-3 space-y-1">
+              {searchResults.map((item) => (
+                <p key={item.id} className="text-xs text-stone-700">[{item.kind}] {item.excerpt}</p>
+              ))}
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2 mb-4">
             {DETAIL_TABS.map((item) => (
               <button key={item.id} onClick={() => setTab(item.id)} className={`px-3 py-2 rounded-lg text-sm ${tab === item.id ? 'bg-[#AFBD00] text-stone-900 font-medium' : 'bg-stone-100 text-stone-700'}`}>
@@ -359,6 +384,11 @@ function ProjectDetail({
               ) : (
                 <p className="text-sm text-stone-500">Aucune image plan.</p>
               )}
+
+              <div className="flex gap-2">
+                <button className="rounded border border-stone-300 px-3 py-2 text-sm" type="button" onClick={() => onExportPlan('pdf')}>Exporter PDF</button>
+                <button className="rounded border border-stone-300 px-3 py-2 text-sm" type="button" onClick={() => onExportPlan('image')}>Exporter image</button>
+              </div>
 
               <form className="grid sm:grid-cols-5 gap-2" onSubmit={(event) => {
                 event.preventDefault()
@@ -679,7 +709,21 @@ function ProjectDetail({
                     <p className="text-sm text-stone-500">Calendrier vide.</p>
                   ) : (
                     detail.harvestCalendar.months.slice(0, 6).map((month) => (
-                      <p key={month.month} className="text-sm text-stone-700">{month.name}: {month.harvests?.length || 0} récoltes</p>
+                      <div key={month.month} className="flex items-center justify-between gap-2">
+                        <p className="text-sm text-stone-700">{month.name}: {month.harvests?.length || 0} récoltes</p>
+                        <button
+                          className="text-xs text-indigo-700"
+                          onClick={() => {
+                            const product = window.prompt('Produit récolté (ex: fruits)', 'fruits')
+                            const species = window.prompt('Espèce', '')
+                            if (!product || !species) return
+                            const items = [...(month.harvests || []), { product, species, commonName: '', notes: '' }]
+                            onUpdateHarvestCalendar(month.month, items)
+                          }}
+                        >
+                          Ajouter
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>
@@ -689,7 +733,20 @@ function ProjectDetail({
                     <p className="text-sm text-stone-500">Calendrier vide.</p>
                   ) : (
                     detail.maintenanceCalendar.months.slice(0, 6).map((month) => (
-                      <p key={month.month} className="text-sm text-stone-700">{month.name}: {month.tasks?.length || 0} tâches</p>
+                      <div key={month.month} className="flex items-center justify-between gap-2">
+                        <p className="text-sm text-stone-700">{month.name}: {month.tasks?.length || 0} tâches</p>
+                        <button
+                          className="text-xs text-indigo-700"
+                          onClick={() => {
+                            const title = window.prompt('Nouvelle tâche', '')
+                            if (!title) return
+                            const items = [...(month.tasks || []), { title, description: '', videoUrl: null, photos: [] }]
+                            onUpdateMaintenanceCalendar(month.month, items)
+                          }}
+                        >
+                          Ajouter
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>
@@ -714,6 +771,7 @@ export default function DesignIndex({ initialProjectId }) {
   const [templates, setTemplates] = useState([])
 
   const [projectDetail, setProjectDetail] = useState(null)
+  const [searchResults, setSearchResults] = useState([])
 
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [projectForm, setProjectForm] = useState(defaultProjectForm)
@@ -737,6 +795,7 @@ export default function DesignIndex({ initialProjectId }) {
   const loadProject = useCallback(async (projectId) => {
     const payload = await apiRequest(`/api/v1/design/${projectId}`)
     setProjectDetail(payload)
+    setSearchResults([])
   }, [])
 
   useEffect(() => {
@@ -944,6 +1003,10 @@ export default function DesignIndex({ initialProjectId }) {
         return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette/import/${paletteId}`, { method: 'POST' }), { refreshProjectId: currentProjectId })
       },
       savePlantingPlan: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      exportPlan: (format) => runMutation(async () => {
+        const payload = await apiRequest(`/api/v1/design/${currentProjectId}/planting-plan/export`, { method: 'POST', body: JSON.stringify({ format }) })
+        if (payload?.exportUrl) window.open(payload.exportUrl, '_blank', 'noopener,noreferrer')
+      }, { refreshDashboard: false, refreshProjectId: null }),
       addPlantMarker: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan/markers`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       movePlantMarker: (markerId, values) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       deletePlantMarker: (markerId) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
@@ -973,6 +1036,16 @@ export default function DesignIndex({ initialProjectId }) {
       updatePlantRecord: (recordId, values) => runMutation(() => apiRequest(`/api/v1/design/plant-records/${recordId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       addFollowUpVisit: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/follow-up-visits`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       addIntervention: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/interventions`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      updateHarvestCalendar: (month, items) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/harvest-calendar`, { method: 'PATCH', body: JSON.stringify({ month, items }) }), { refreshProjectId: currentProjectId }),
+      updateMaintenanceCalendar: (month, items) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/maintenance-calendar`, { method: 'PATCH', body: JSON.stringify({ month, items }) }), { refreshProjectId: currentProjectId }),
+      search: async (query) => {
+        if (!query || !query.trim()) {
+          setSearchResults([])
+          return
+        }
+        const payload = await apiRequest(`/api/v1/design/${currentProjectId}/search?q=${encodeURIComponent(query)}`)
+        setSearchResults(payload.results || [])
+      },
     }
   }, [currentProjectId, editProject, runMutation, loadProject])
 
@@ -1009,6 +1082,7 @@ export default function DesignIndex({ initialProjectId }) {
           onDeletePaletteItem={detailActions?.deletePaletteItem || (() => {})}
           onImportPlantPalette={detailActions?.importPlantPalette || (() => {})}
           onSavePlantingPlan={detailActions?.savePlantingPlan || (() => {})}
+          onExportPlan={detailActions?.exportPlan || (() => {})}
           onAddPlantMarker={detailActions?.addPlantMarker || (() => {})}
           onMovePlantMarker={detailActions?.movePlantMarker || (() => {})}
           onDeletePlantMarker={detailActions?.deletePlantMarker || (() => {})}
@@ -1030,6 +1104,10 @@ export default function DesignIndex({ initialProjectId }) {
           onUpdatePlantRecord={detailActions?.updatePlantRecord || (() => {})}
           onAddFollowUpVisit={detailActions?.addFollowUpVisit || (() => {})}
           onAddIntervention={detailActions?.addIntervention || (() => {})}
+          onUpdateHarvestCalendar={detailActions?.updateHarvestCalendar || (() => {})}
+          onUpdateMaintenanceCalendar={detailActions?.updateMaintenanceCalendar || (() => {})}
+          onSearch={detailActions?.search || (() => {})}
+          searchResults={searchResults}
         />
       ) : (
         <ProjectDashboard {...dashboardProps} />

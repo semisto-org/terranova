@@ -219,6 +219,19 @@ module Api
         render json: serialize_planting_plan(plan)
       end
 
+      def export_planting_plan
+        project = find_project
+        plan = ensure_planting_plan(project)
+        format = params[:format].to_s == 'image' ? 'image' : 'pdf'
+
+        render json: {
+          projectId: project.id.to_s,
+          format: format,
+          exportUrl: plan.image_url.presence || "https://example.com/exports/design/#{project.id}/planting-plan.#{format}",
+          generatedAt: Time.current.iso8601
+        }
+      end
+
       def create_plant_marker
         project = find_project
         plan = ensure_planting_plan(project)
@@ -263,6 +276,54 @@ module Api
         project = find_project
         item = project.interventions.create!(intervention_params)
         render json: serialize_intervention(item), status: :created
+      end
+
+      def update_harvest_calendar
+        project = find_project
+        calendar = ensure_harvest_calendar(project)
+        calendar.update!(months: update_calendar_months(calendar.months, params.require(:month).to_i, :harvests, params.require(:items)))
+
+        render json: serialize_harvest_calendar(calendar)
+      end
+
+      def update_maintenance_calendar
+        project = find_project
+        calendar = ensure_maintenance_calendar(project)
+        calendar.update!(months: update_calendar_months(calendar.months, params.require(:month).to_i, :tasks, params.require(:items)))
+
+        render json: serialize_maintenance_calendar(calendar)
+      end
+
+      def search
+        project = find_project
+        query = params[:q].to_s.strip.downcase
+        return render json: { query: query, results: [] } if query.blank?
+
+        results = []
+
+        search_targets = [
+          [:project, project.name.to_s],
+          [:project, project.address.to_s]
+        ]
+        project.quotes.find_each { |item| search_targets << [:quote, "#{item.title} #{item.client_comment}"] }
+        project.documents.find_each { |item| search_targets << [:document, "#{item.name} #{item.category}"] }
+        project.media_items.find_each { |item| search_targets << [:media, "#{item.caption} #{item.url}"] }
+        project.annotations.find_each { |item| search_targets << [:annotation, item.content.to_s] }
+        project.follow_up_visits.find_each { |item| search_targets << [:visit, item.notes.to_s] }
+        project.interventions.find_each { |item| search_targets << [:intervention, item.notes.to_s] }
+        project.plant_records.find_each { |item| search_targets << [:plant_record, "#{item.status} #{item.notes}"] }
+
+        search_targets.each_with_index do |(kind, text), idx|
+          next unless text.to_s.downcase.include?(query)
+
+          results << {
+            id: "#{kind}-#{idx}",
+            kind: kind.to_s,
+            excerpt: text.to_s.tr("\n", ' ')[0, 220]
+          }
+        end
+
+        render json: { query: query, results: results.first(50) }
       end
 
       def create_quote
@@ -682,6 +743,15 @@ module Api
         project.maintenance_calendar || project.create_maintenance_calendar!(months: default_months)
       end
 
+      def update_calendar_months(months, month_number, key, items)
+        source = months.map { |item| item.deep_dup }
+        target = source.find { |item| item['month'].to_i == month_number }
+        return source unless target
+
+        target[key.to_s] = items
+        source
+      end
+
       def default_months
         [
           { month: 1, name: 'Janvier', tasks: [], harvests: [] },
@@ -990,6 +1060,9 @@ module Api
           id: item.id.to_s,
           projectId: item.project_id.to_s,
           imageUrl: item.image_url,
+          imageWidth: 1920,
+          imageHeight: 1080,
+          scale: 1,
           layout: item.layout,
           markers: item.markers.order(:number).map { |marker| serialize_plant_marker(marker) },
           updatedAt: item.updated_at.iso8601

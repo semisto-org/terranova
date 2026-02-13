@@ -209,6 +209,55 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     assert_response :no_content
   end
 
+  test 'planting plan export calendar updates and search work' do
+    patch "/api/v1/design/#{@project.id}/planting-plan", params: {
+      image_url: 'https://example.com/plan-final.png',
+      layout: 'split-3-4-1-4'
+    }, as: :json
+    assert_response :success
+
+    post "/api/v1/design/#{@project.id}/planting-plan/export", params: { format: 'pdf' }, as: :json
+    assert_response :success
+    export = JSON.parse(response.body)
+    assert_equal 'pdf', export['format']
+    assert_match %r{https://}, export['exportUrl']
+
+    patch "/api/v1/design/#{@project.id}/harvest-calendar", params: {
+      month: 6,
+      items: [
+        { product: 'fruits', species: 'Malus domestica', commonName: 'Pommier', notes: '' }
+      ]
+    }, as: :json
+    assert_response :success
+    harvest = JSON.parse(response.body)
+    june = harvest['months'].find { |item| item['month'] == 6 }
+    assert_equal 1, june['harvests'].size
+
+    patch "/api/v1/design/#{@project.id}/maintenance-calendar", params: {
+      month: 6,
+      items: [
+        { title: 'Paillage', description: 'Ajouter 5 cm', videoUrl: nil, photos: [] }
+      ]
+    }, as: :json
+    assert_response :success
+    maintenance = JSON.parse(response.body)
+    june = maintenance['months'].find { |item| item['month'] == 6 }
+    assert_equal 1, june['tasks'].size
+
+    post "/api/v1/design/#{@project.id}/documents", params: {
+      category: 'plan',
+      name: 'Plan final',
+      url: 'https://example.com/plan-final.pdf',
+      size: 1024
+    }, as: :json
+    assert_response :created
+
+    get "/api/v1/design/#{@project.id}/search", params: { q: 'plan final' }, as: :json
+    assert_response :success
+    search = JSON.parse(response.body)
+    assert_operator search['results'].size, :>=, 1
+  end
+
   test 'quote document media meeting and annotations flows work' do
     post "/api/v1/design/#{@project.id}/quotes", params: { title: 'Devis initial' }, as: :json
     assert_response :created
