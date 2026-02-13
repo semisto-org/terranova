@@ -19,6 +19,10 @@ module Design
     has_one :client_contribution, class_name: 'Design::ClientContribution', foreign_key: :project_id, dependent: :destroy
     has_one :harvest_calendar, class_name: 'Design::HarvestCalendar', foreign_key: :project_id, dependent: :destroy
     has_one :maintenance_calendar, class_name: 'Design::MaintenanceCalendar', foreign_key: :project_id, dependent: :destroy
+    has_one :planting_plan, class_name: 'Design::PlantingPlan', foreign_key: :project_id, dependent: :destroy
+    has_many :plant_records, class_name: 'Design::PlantRecord', foreign_key: :project_id, dependent: :destroy
+    has_many :follow_up_visits, class_name: 'Design::FollowUpVisit', foreign_key: :project_id, dependent: :destroy
+    has_many :interventions, class_name: 'Design::Intervention', foreign_key: :project_id, dependent: :destroy
 
     validates :name, :client_id, :client_name, :phase, :status, presence: true
     validates :phase, inclusion: { in: PHASES }

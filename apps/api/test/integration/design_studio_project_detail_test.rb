@@ -8,6 +8,11 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
       Design::Annotation,
       Design::MediaItem,
       Design::ProjectDocument,
+      Design::Intervention,
+      Design::FollowUpVisit,
+      Design::PlantRecord,
+      Design::PlantMarker,
+      Design::PlantingPlan,
       Design::ClientContribution,
       Design::HarvestCalendar,
       Design::MaintenanceCalendar,
@@ -134,6 +139,74 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_operator body['items'].size, :>=, 1
     assert_equal 'Malus domestica', body['items'].first['speciesName']
+  end
+
+  test 'planting plan and co-gestion flows work' do
+    patch "/api/v1/design/#{@project.id}/planting-plan", params: {
+      image_url: 'https://example.com/plan.png',
+      layout: 'split-3-4-1-4'
+    }, as: :json
+    assert_response :success
+    plan = JSON.parse(response.body)
+    assert_equal 'https://example.com/plan.png', plan['imageUrl']
+
+    post "/api/v1/design/#{@project.id}/planting-plan/markers", params: {
+      species_name: 'Malus domestica',
+      x: 0.45,
+      y: 0.72
+    }, as: :json
+    assert_response :created
+    marker = JSON.parse(response.body)
+    marker_id = marker['id']
+
+    patch "/api/v1/design/planting-plan/markers/#{marker_id}", params: { x: 0.5, y: 0.8 }, as: :json
+    assert_response :success
+    marker = JSON.parse(response.body)
+    assert_equal 0.5, marker['x']
+
+    post "/api/v1/design/#{@project.id}/plant-records", params: {
+      marker_id: marker_id,
+      status: 'alive',
+      health_score: 90,
+      notes: 'Bonne reprise'
+    }, as: :json
+    assert_response :created
+    record = JSON.parse(response.body)
+    record_id = record['id']
+
+    patch "/api/v1/design/plant-records/#{record_id}", params: {
+      status: 'to-replace',
+      notes: 'Stress hydrique'
+    }, as: :json
+    assert_response :success
+    assert_equal 'to-replace', JSON.parse(response.body)['status']
+
+    post "/api/v1/design/#{@project.id}/follow-up-visits", params: {
+      date: Date.current.iso8601,
+      visit_type: 'follow-up',
+      notes: 'Passage mensuel'
+    }, as: :json
+    assert_response :created
+
+    post "/api/v1/design/#{@project.id}/interventions", params: {
+      date: Date.current.iso8601,
+      intervention_type: 'mulching',
+      notes: 'Paillage des fruitiers',
+      plant_record_id: record_id
+    }, as: :json
+    assert_response :created
+
+    get "/api/v1/design/#{@project.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 'https://example.com/plan.png', body['plantingPlan']['imageUrl']
+    assert_equal 1, body['plantingPlan']['markers'].size
+    assert_equal 1, body['plantFollowUp']['plantRecords'].size
+    assert_equal 1, body['plantFollowUp']['followUpVisits'].size
+    assert_equal 1, body['plantFollowUp']['interventions'].size
+
+    delete "/api/v1/design/planting-plan/markers/#{marker_id}", as: :json
+    assert_response :no_content
   end
 
   test 'quote document media meeting and annotations flows work' do

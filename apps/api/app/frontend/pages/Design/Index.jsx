@@ -8,6 +8,7 @@ const DETAIL_TABS = [
   { id: 'expenses', label: 'Expenses' },
   { id: 'site-analysis', label: 'Site Analysis' },
   { id: 'palette', label: 'Palette' },
+  { id: 'planting-plan', label: 'Planting Plan' },
   { id: 'quotes', label: 'Quotes' },
   { id: 'documents', label: 'Documents' },
   { id: 'album', label: 'Album' },
@@ -149,6 +150,10 @@ function ProjectDetail({
   onAddPaletteItem,
   onDeletePaletteItem,
   onImportPlantPalette,
+  onSavePlantingPlan,
+  onAddPlantMarker,
+  onMovePlantMarker,
+  onDeletePlantMarker,
   onCreateQuote,
   onSendQuote,
   onDeleteQuote,
@@ -163,6 +168,10 @@ function ProjectDetail({
   onAddAnnotation,
   onResolveAnnotation,
   onDeleteAnnotation,
+  onAddPlantRecord,
+  onUpdatePlantRecord,
+  onAddFollowUpVisit,
+  onAddIntervention,
 }) {
   const [tab, setTab] = useState('overview')
   const [teamForm, setTeamForm] = useState({ member_name: '', member_email: '', role: 'designer', is_paid: true })
@@ -175,6 +184,11 @@ function ProjectDetail({
   const [mediaForm, setMediaForm] = useState({ media_type: 'image', url: '', thumbnail_url: '', caption: '', uploaded_by: 'team' })
   const [meetingForm, setMeetingForm] = useState({ title: '', date: new Date().toISOString().slice(0, 10), time: '10:00', duration: 60, location: '' })
   const [annotationForm, setAnnotationForm] = useState({ document_id: '', x: 0.5, y: 0.5, author_name: 'Team', author_type: 'team', content: '' })
+  const [planForm, setPlanForm] = useState({ image_url: detail.plantingPlan?.imageUrl || '', layout: detail.plantingPlan?.layout || 'split-3-4-1-4' })
+  const [markerForm, setMarkerForm] = useState({ species_name: '', x: 0.5, y: 0.5, palette_item_id: '' })
+  const [plantRecordForm, setPlantRecordForm] = useState({ marker_id: '', palette_item_id: '', status: 'alive', health_score: 100, notes: '' })
+  const [visitForm, setVisitForm] = useState({ date: new Date().toISOString().slice(0, 10), visit_type: 'follow-up', notes: '' })
+  const [interventionForm, setInterventionForm] = useState({ date: new Date().toISOString().slice(0, 10), intervention_type: 'mulching', notes: '', plant_record_id: '' })
   const [importPaletteId, setImportPaletteId] = useState('')
 
   const project = detail.project
@@ -326,6 +340,64 @@ function ProjectDetail({
             </div>
           )}
 
+          {tab === 'planting-plan' && (
+            <div className="space-y-3">
+              <form className="grid sm:grid-cols-3 gap-2" onSubmit={(event) => {
+                event.preventDefault()
+                onSavePlantingPlan(planForm)
+              }}>
+                <input className="sm:col-span-2 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Image plan URL" value={planForm.image_url} onChange={(event) => setPlanForm((prev) => ({ ...prev, image_url: event.target.value }))} />
+                <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={planForm.layout} onChange={(event) => setPlanForm((prev) => ({ ...prev, layout: event.target.value }))}>
+                  <option value="split-3-4-1-4">split-3-4-1-4</option>
+                  <option value="full">full</option>
+                </select>
+                <button className="sm:col-span-3 rounded bg-[#AFBD00] px-3 py-2 text-sm font-medium">Sauvegarder plan</button>
+              </form>
+
+              {detail.plantingPlan?.imageUrl ? (
+                <a className="text-sm text-indigo-700 underline" href={detail.plantingPlan.imageUrl} target="_blank" rel="noreferrer">Voir image plan</a>
+              ) : (
+                <p className="text-sm text-stone-500">Aucune image plan.</p>
+              )}
+
+              <form className="grid sm:grid-cols-5 gap-2" onSubmit={(event) => {
+                event.preventDefault()
+                onAddPlantMarker(markerForm)
+                setMarkerForm({ species_name: '', x: 0.5, y: 0.5, palette_item_id: '' })
+              }}>
+                <input className="sm:col-span-2 rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Espèce" value={markerForm.species_name} onChange={(event) => setMarkerForm((prev) => ({ ...prev, species_name: event.target.value }))} required />
+                <input type="number" min="0" max="1" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={markerForm.x} onChange={(event) => setMarkerForm((prev) => ({ ...prev, x: Number(event.target.value || 0) }))} />
+                <input type="number" min="0" max="1" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={markerForm.y} onChange={(event) => setMarkerForm((prev) => ({ ...prev, y: Number(event.target.value || 0) }))} />
+                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Palette item ID (optionnel)" value={markerForm.palette_item_id} onChange={(event) => setMarkerForm((prev) => ({ ...prev, palette_item_id: event.target.value }))} />
+                <button className="sm:col-span-5 rounded border border-stone-300 px-3 py-2 text-sm">Ajouter marqueur</button>
+              </form>
+
+              {(detail.plantingPlan?.markers || []).length === 0 ? (
+                <p className="text-sm text-stone-500">Aucun marqueur.</p>
+              ) : (
+                detail.plantingPlan.markers.map((marker) => (
+                  <div key={marker.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between gap-2">
+                    <span>#{marker.number} · {marker.speciesName} · ({marker.x}, {marker.y})</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="text-indigo-700"
+                        onClick={() => {
+                          const x = window.prompt('Nouvelle coordonnée x (0..1)', String(marker.x))
+                          const y = window.prompt('Nouvelle coordonnée y (0..1)', String(marker.y))
+                          if (x == null || y == null) return
+                          onMovePlantMarker(marker.id, { x: Number(x), y: Number(y) })
+                        }}
+                      >
+                        Déplacer
+                      </button>
+                      <button className="text-red-600" onClick={() => onDeletePlantMarker(marker.id)}>Supprimer</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
           {tab === 'quotes' && (
             <div className="space-y-3">
               <div className="flex gap-2">
@@ -472,6 +544,98 @@ function ProjectDetail({
 
           {tab === 'co-gestion' && (
             <div className="space-y-4">
+              <div className="rounded border border-stone-200 p-3">
+                <p className="text-sm font-medium text-stone-800 mb-2">Suivi plantes</p>
+                <form className="grid sm:grid-cols-5 gap-2" onSubmit={(event) => {
+                  event.preventDefault()
+                  onAddPlantRecord(plantRecordForm)
+                  setPlantRecordForm({ marker_id: '', palette_item_id: '', status: 'alive', health_score: 100, notes: '' })
+                }}>
+                  <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Marker ID (optionnel)" value={plantRecordForm.marker_id} onChange={(event) => setPlantRecordForm((prev) => ({ ...prev, marker_id: event.target.value }))} />
+                  <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Palette item ID (optionnel)" value={plantRecordForm.palette_item_id} onChange={(event) => setPlantRecordForm((prev) => ({ ...prev, palette_item_id: event.target.value }))} />
+                  <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={plantRecordForm.status} onChange={(event) => setPlantRecordForm((prev) => ({ ...prev, status: event.target.value }))}>
+                    <option value="alive">alive</option>
+                    <option value="dead">dead</option>
+                    <option value="to-replace">to-replace</option>
+                    <option value="replaced">replaced</option>
+                  </select>
+                  <input type="number" min="0" max="100" className="rounded border border-stone-300 px-2 py-1 text-sm" value={plantRecordForm.health_score} onChange={(event) => setPlantRecordForm((prev) => ({ ...prev, health_score: Number(event.target.value || 0) }))} />
+                  <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Notes" value={plantRecordForm.notes} onChange={(event) => setPlantRecordForm((prev) => ({ ...prev, notes: event.target.value }))} />
+                  <button className="sm:col-span-5 rounded border border-stone-300 px-3 py-2 text-sm">Ajouter plant record</button>
+                </form>
+
+                <div className="mt-3 space-y-2">
+                  {(detail.plantFollowUp?.plantRecords || []).length === 0 ? (
+                    <p className="text-sm text-stone-500">Aucun plant record.</p>
+                  ) : (
+                    detail.plantFollowUp.plantRecords.map((item) => (
+                      <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between gap-2">
+                        <span>{item.status} · santé {item.healthScore}/100 · {item.notes || 'sans note'}</span>
+                        <button
+                          className="text-indigo-700"
+                          onClick={() => {
+                            const status = window.prompt('Nouveau status (alive/dead/to-replace/replaced)', item.status)
+                            if (!status) return
+                            onUpdatePlantRecord(item.id, { status })
+                          }}
+                        >
+                          Changer status
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="rounded border border-stone-200 p-3 space-y-2">
+                  <p className="text-sm font-medium text-stone-800">Visites</p>
+                  <form className="grid gap-2" onSubmit={(event) => {
+                    event.preventDefault()
+                    onAddFollowUpVisit(visitForm)
+                    setVisitForm((prev) => ({ ...prev, notes: '' }))
+                  }}>
+                    <input type="date" className="rounded border border-stone-300 px-2 py-1 text-sm" value={visitForm.date} onChange={(event) => setVisitForm((prev) => ({ ...prev, date: event.target.value }))} required />
+                    <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={visitForm.visit_type} onChange={(event) => setVisitForm((prev) => ({ ...prev, visit_type: event.target.value }))}>
+                      <option value="follow-up">follow-up</option>
+                      <option value="intervention">intervention</option>
+                      <option value="client-meeting">client-meeting</option>
+                    </select>
+                    <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Notes" value={visitForm.notes} onChange={(event) => setVisitForm((prev) => ({ ...prev, notes: event.target.value }))} />
+                    <button className="rounded border border-stone-300 px-3 py-2 text-sm">Ajouter visite</button>
+                  </form>
+                  {(detail.plantFollowUp?.followUpVisits || []).map((item) => (
+                    <p key={item.id} className="text-sm text-stone-700">{item.date} · {item.type} · {item.notes || '-'}</p>
+                  ))}
+                </div>
+
+                <div className="rounded border border-stone-200 p-3 space-y-2">
+                  <p className="text-sm font-medium text-stone-800">Interventions</p>
+                  <form className="grid gap-2" onSubmit={(event) => {
+                    event.preventDefault()
+                    onAddIntervention(interventionForm)
+                    setInterventionForm((prev) => ({ ...prev, notes: '' }))
+                  }}>
+                    <input type="date" className="rounded border border-stone-300 px-2 py-1 text-sm" value={interventionForm.date} onChange={(event) => setInterventionForm((prev) => ({ ...prev, date: event.target.value }))} required />
+                    <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={interventionForm.intervention_type} onChange={(event) => setInterventionForm((prev) => ({ ...prev, intervention_type: event.target.value }))}>
+                      <option value="planting">planting</option>
+                      <option value="mulching">mulching</option>
+                      <option value="pruning">pruning</option>
+                      <option value="watering">watering</option>
+                      <option value="treatment">treatment</option>
+                      <option value="replacement">replacement</option>
+                      <option value="other">other</option>
+                    </select>
+                    <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Plant record ID (optionnel)" value={interventionForm.plant_record_id} onChange={(event) => setInterventionForm((prev) => ({ ...prev, plant_record_id: event.target.value }))} />
+                    <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Notes" value={interventionForm.notes} onChange={(event) => setInterventionForm((prev) => ({ ...prev, notes: event.target.value }))} />
+                    <button className="rounded border border-stone-300 px-3 py-2 text-sm">Ajouter intervention</button>
+                  </form>
+                  {(detail.plantFollowUp?.interventions || []).map((item) => (
+                    <p key={item.id} className="text-sm text-stone-700">{item.date} · {item.type} · {item.notes || '-'}</p>
+                  ))}
+                </div>
+              </div>
+
               <div className="rounded border border-stone-200 p-3">
                 <p className="text-sm font-medium text-stone-800 mb-2">Annotations plan</p>
                 <form className="grid sm:grid-cols-6 gap-2" onSubmit={(event) => {
@@ -779,6 +943,10 @@ export default function DesignIndex({ initialProjectId }) {
         if (!paletteId) return
         return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette/import/${paletteId}`, { method: 'POST' }), { refreshProjectId: currentProjectId })
       },
+      savePlantingPlan: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      addPlantMarker: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan/markers`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      movePlantMarker: (markerId, values) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      deletePlantMarker: (markerId) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
       createQuote: () => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/quotes`, { method: 'POST' }), { refreshProjectId: currentProjectId }),
       sendQuote: (quoteId) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}/send`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
       deleteQuote: (quoteId) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
@@ -801,6 +969,10 @@ export default function DesignIndex({ initialProjectId }) {
       }) }), { refreshProjectId: currentProjectId }),
       resolveAnnotation: (annotationId) => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}/resolve`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
       deleteAnnotation: (annotationId) => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      addPlantRecord: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/plant-records`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      updatePlantRecord: (recordId, values) => runMutation(() => apiRequest(`/api/v1/design/plant-records/${recordId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      addFollowUpVisit: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/follow-up-visits`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      addIntervention: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/interventions`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
     }
   }, [currentProjectId, editProject, runMutation, loadProject])
 
@@ -836,6 +1008,10 @@ export default function DesignIndex({ initialProjectId }) {
           onAddPaletteItem={detailActions?.addPaletteItem || (() => {})}
           onDeletePaletteItem={detailActions?.deletePaletteItem || (() => {})}
           onImportPlantPalette={detailActions?.importPlantPalette || (() => {})}
+          onSavePlantingPlan={detailActions?.savePlantingPlan || (() => {})}
+          onAddPlantMarker={detailActions?.addPlantMarker || (() => {})}
+          onMovePlantMarker={detailActions?.movePlantMarker || (() => {})}
+          onDeletePlantMarker={detailActions?.deletePlantMarker || (() => {})}
           onCreateQuote={detailActions?.createQuote || (() => {})}
           onSendQuote={detailActions?.sendQuote || (() => {})}
           onDeleteQuote={detailActions?.deleteQuote || (() => {})}
@@ -850,6 +1026,10 @@ export default function DesignIndex({ initialProjectId }) {
           onAddAnnotation={detailActions?.addAnnotation || (() => {})}
           onResolveAnnotation={detailActions?.resolveAnnotation || (() => {})}
           onDeleteAnnotation={detailActions?.deleteAnnotation || (() => {})}
+          onAddPlantRecord={detailActions?.addPlantRecord || (() => {})}
+          onUpdatePlantRecord={detailActions?.updatePlantRecord || (() => {})}
+          onAddFollowUpVisit={detailActions?.addFollowUpVisit || (() => {})}
+          onAddIntervention={detailActions?.addIntervention || (() => {})}
         />
       ) : (
         <ProjectDashboard {...dashboardProps} />

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_12_173000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_12_182000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -100,12 +100,35 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_173000) do
     t.index ["project_id"], name: "index_design_expenses_on_project_id"
   end
 
+  create_table "design_follow_up_visits", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.date "date", null: false
+    t.string "visit_type", null: false
+    t.text "notes", default: "", null: false
+    t.jsonb "photos", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_follow_up_visits_on_project_id"
+  end
+
   create_table "design_harvest_calendars", force: :cascade do |t|
     t.bigint "project_id", null: false
     t.jsonb "months", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_design_harvest_calendars_on_project_id", unique: true
+  end
+
+  create_table "design_interventions", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "plant_record_id"
+    t.date "date", null: false
+    t.string "intervention_type", null: false
+    t.text "notes", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["plant_record_id"], name: "index_design_interventions_on_plant_record_id"
+    t.index ["project_id"], name: "index_design_interventions_on_project_id"
   end
 
   create_table "design_maintenance_calendars", force: :cascade do |t|
@@ -128,6 +151,43 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_173000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_design_media_items_on_project_id"
+  end
+
+  create_table "design_plant_markers", force: :cascade do |t|
+    t.bigint "planting_plan_id", null: false
+    t.bigint "palette_item_id"
+    t.integer "number", null: false
+    t.decimal "x", precision: 8, scale: 4, null: false
+    t.decimal "y", precision: 8, scale: 4, null: false
+    t.string "species_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["palette_item_id"], name: "index_design_plant_markers_on_palette_item_id"
+    t.index ["planting_plan_id", "number"], name: "idx_design_plant_markers_number_per_plan", unique: true
+    t.index ["planting_plan_id"], name: "index_design_plant_markers_on_planting_plan_id"
+  end
+
+  create_table "design_plant_records", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "marker_id"
+    t.bigint "palette_item_id"
+    t.string "status", default: "alive", null: false
+    t.integer "health_score", default: 100, null: false
+    t.text "notes", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["marker_id"], name: "index_design_plant_records_on_marker_id"
+    t.index ["palette_item_id"], name: "index_design_plant_records_on_palette_item_id"
+    t.index ["project_id"], name: "index_design_plant_records_on_project_id"
+  end
+
+  create_table "design_planting_plans", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "image_url", default: "", null: false
+    t.string "layout", default: "split-3-4-1-4", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_planting_plans_on_project_id", unique: true
   end
 
   create_table "design_project_documents", force: :cascade do |t|
@@ -694,9 +754,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_173000) do
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_expenses", "design_projects", column: "project_id"
+  add_foreign_key "design_follow_up_visits", "design_projects", column: "project_id"
   add_foreign_key "design_harvest_calendars", "design_projects", column: "project_id"
+  add_foreign_key "design_interventions", "design_plant_records", column: "plant_record_id"
+  add_foreign_key "design_interventions", "design_projects", column: "project_id"
   add_foreign_key "design_maintenance_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_media_items", "design_projects", column: "project_id"
+  add_foreign_key "design_plant_markers", "design_planting_plans", column: "planting_plan_id"
+  add_foreign_key "design_plant_markers", "design_project_palette_items", column: "palette_item_id"
+  add_foreign_key "design_plant_records", "design_plant_markers", column: "marker_id"
+  add_foreign_key "design_plant_records", "design_project_palette_items", column: "palette_item_id"
+  add_foreign_key "design_plant_records", "design_projects", column: "project_id"
+  add_foreign_key "design_planting_plans", "design_projects", column: "project_id"
   add_foreign_key "design_project_documents", "design_projects", column: "project_id"
   add_foreign_key "design_project_meetings", "design_projects", column: "project_id"
   add_foreign_key "design_project_palette_items", "design_project_palettes", column: "palette_id"

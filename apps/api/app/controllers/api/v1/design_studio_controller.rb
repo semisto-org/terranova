@@ -31,6 +31,7 @@ module Api
 
         project.save!
         ensure_palette(project)
+        ensure_planting_plan(project)
         ensure_client_contribution(project)
         ensure_harvest_calendar(project)
         ensure_maintenance_calendar(project)
@@ -210,6 +211,60 @@ module Api
         render json: serialize_project_palette(palette)
       end
 
+      def upsert_planting_plan
+        project = find_project
+        plan = ensure_planting_plan(project)
+        plan.update!(planting_plan_params)
+
+        render json: serialize_planting_plan(plan)
+      end
+
+      def create_plant_marker
+        project = find_project
+        plan = ensure_planting_plan(project)
+        number = plan.markers.maximum(:number).to_i + 1
+
+        marker = plan.markers.create!(plant_marker_params.merge(number: number))
+        render json: serialize_plant_marker(marker), status: :created
+      end
+
+      def update_plant_marker
+        marker = Design::PlantMarker.find(params.require(:marker_id))
+        marker.update!(plant_marker_update_params)
+        render json: serialize_plant_marker(marker)
+      end
+
+      def destroy_plant_marker
+        marker = Design::PlantMarker.find(params.require(:marker_id))
+        Design::PlantRecord.where(marker_id: marker.id).update_all(marker_id: nil)
+        marker.destroy!
+        head :no_content
+      end
+
+      def create_plant_record
+        project = find_project
+        record = project.plant_records.create!(plant_record_params)
+        render json: serialize_plant_record(record), status: :created
+      end
+
+      def update_plant_record
+        record = Design::PlantRecord.find(params.require(:record_id))
+        record.update!(plant_record_update_params)
+        render json: serialize_plant_record(record)
+      end
+
+      def create_follow_up_visit
+        project = find_project
+        item = project.follow_up_visits.create!(follow_up_visit_params)
+        render json: serialize_follow_up_visit(item), status: :created
+      end
+
+      def create_intervention
+        project = find_project
+        item = project.interventions.create!(intervention_params)
+        render json: serialize_intervention(item), status: :created
+      end
+
       def create_quote
         project = find_project
 
@@ -360,9 +415,10 @@ module Api
           project: serialize_project(project),
           documents: project.documents.order(uploaded_at: :desc).map { |item| serialize_document(item) },
           plantPalette: serialize_project_palette(ensure_palette(project)),
-          plantingPlan: nil,
+          plantingPlan: serialize_planting_plan(ensure_planting_plan(project)),
           quotes: project.quotes.order(version: :desc).map { |item| serialize_quote(item) },
           annotations: project.annotations.order(created_at: :desc).map { |item| serialize_annotation(item) },
+          plantFollowUp: serialize_plant_follow_up(project),
           clientContributions: serialize_client_contribution(ensure_client_contribution(project)),
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
           maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project))
@@ -444,6 +500,8 @@ module Api
       end
 
       def full_project_payload(project, palette)
+        planting_plan = ensure_planting_plan(project)
+
         {
           project: serialize_project(project),
           teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) },
@@ -451,13 +509,13 @@ module Api
           expenses: project.expenses.order(date: :desc).map { |item| serialize_expense(item) },
           siteAnalysis: serialize_site_analysis(project.site_analysis),
           plantPalette: serialize_project_palette(palette),
-          plantingPlan: nil,
+          plantingPlan: serialize_planting_plan(planting_plan),
           quotes: project.quotes.includes(:lines).order(version: :desc).map { |item| serialize_quote(item) },
           documents: project.documents.order(uploaded_at: :desc).map { |item| serialize_document(item) },
           mediaItems: project.media_items.order(uploaded_at: :desc).map { |item| serialize_media_item(item) },
           meetings: project.meetings.order(starts_at: :asc).map { |meeting| serialize_meeting(meeting) },
           annotations: project.annotations.order(created_at: :desc).map { |item| serialize_annotation(item) },
-          plantFollowUp: nil,
+          plantFollowUp: serialize_plant_follow_up(project),
           clientContributions: serialize_client_contribution(ensure_client_contribution(project)),
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
           maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project))
@@ -504,6 +562,34 @@ module Api
 
       def palette_item_update_params
         params.permit(:layer, :quantity, :unit_price, :notes)
+      end
+
+      def planting_plan_params
+        params.permit(:image_url, :layout)
+      end
+
+      def plant_marker_params
+        params.permit(:palette_item_id, :x, :y, :species_name)
+      end
+
+      def plant_marker_update_params
+        params.permit(:x, :y, :species_name, :palette_item_id)
+      end
+
+      def plant_record_params
+        params.permit(:marker_id, :palette_item_id, :status, :health_score, :notes)
+      end
+
+      def plant_record_update_params
+        params.permit(:status, :health_score, :notes)
+      end
+
+      def follow_up_visit_params
+        params.permit(:date, :visit_type, :notes, photos: [])
+      end
+
+      def intervention_params
+        params.permit(:plant_record_id, :date, :intervention_type, :notes)
       end
 
       def quote_line_params
@@ -578,6 +664,10 @@ module Api
 
       def ensure_palette(project)
         project.palette || project.create_palette!
+      end
+
+      def ensure_planting_plan(project)
+        project.planting_plan || project.create_planting_plan!(image_url: '', layout: 'split-3-4-1-4')
       end
 
       def ensure_client_contribution(project)
@@ -892,6 +982,72 @@ module Api
         {
           projectId: item.project_id.to_s,
           months: item.months.map { |month| month.slice('month', 'name', 'tasks') }
+        }
+      end
+
+      def serialize_planting_plan(item)
+        {
+          id: item.id.to_s,
+          projectId: item.project_id.to_s,
+          imageUrl: item.image_url,
+          layout: item.layout,
+          markers: item.markers.order(:number).map { |marker| serialize_plant_marker(marker) },
+          updatedAt: item.updated_at.iso8601
+        }
+      end
+
+      def serialize_plant_marker(item)
+        {
+          id: item.id.to_s,
+          plantingPlanId: item.planting_plan_id.to_s,
+          paletteItemId: item.palette_item_id&.to_s,
+          number: item.number,
+          x: item.x.to_f,
+          y: item.y.to_f,
+          speciesName: item.species_name
+        }
+      end
+
+      def serialize_plant_follow_up(project)
+        {
+          plantRecords: project.plant_records.order(updated_at: :desc).map { |item| serialize_plant_record(item) },
+          followUpVisits: project.follow_up_visits.order(date: :desc).map { |item| serialize_follow_up_visit(item) },
+          interventions: project.interventions.order(date: :desc).map { |item| serialize_intervention(item) }
+        }
+      end
+
+      def serialize_plant_record(item)
+        {
+          id: item.id.to_s,
+          projectId: item.project_id.to_s,
+          markerId: item.marker_id&.to_s,
+          paletteItemId: item.palette_item_id&.to_s,
+          status: item.status,
+          healthScore: item.health_score,
+          notes: item.notes,
+          updatedAt: item.updated_at.iso8601
+        }
+      end
+
+      def serialize_follow_up_visit(item)
+        {
+          id: item.id.to_s,
+          projectId: item.project_id.to_s,
+          date: item.date.iso8601,
+          type: item.visit_type,
+          notes: item.notes,
+          photos: item.photos
+        }
+      end
+
+      def serialize_intervention(item)
+        {
+          id: item.id.to_s,
+          projectId: item.project_id.to_s,
+          plantRecordId: item.plant_record_id&.to_s,
+          date: item.date.iso8601,
+          type: item.intervention_type,
+          notes: item.notes
         }
       end
 
