@@ -244,7 +244,7 @@ module Api
       end
 
       def location_params
-        params.permit(:name, :address, :description, :capacity, :has_accommodation, photo_gallery: [], compatible_training_type_ids: [])
+        params.permit(:name, :address, :description, :capacity, :has_accommodation, :latitude, :longitude, photo_gallery: [], compatible_training_type_ids: [])
       end
 
       def training_params
@@ -301,6 +301,8 @@ module Api
           compatibleTrainingTypeIds: item.compatible_training_type_ids,
           capacity: item.capacity,
           hasAccommodation: item.has_accommodation,
+          latitude: item.latitude.to_f,
+          longitude: item.longitude.to_f,
           createdAt: item.created_at.iso8601
         }
       end

@@ -240,7 +240,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-stone-900">Checklist template</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Étapes par défaut</h2>
                 <p className="mt-1 text-sm text-stone-500">
                   Définissez les étapes par défaut pour ce type de formation
                 </p>

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import LocationsMap from '../../components/academy/LocationsMap'
 
 const STATUSES = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
 const STATUS_LABELS = {
@@ -195,15 +196,6 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
-  const [showCreateLocationModal, setShowCreateLocationModal] = useState(false)
-  const [showEditLocationModal, setShowEditLocationModal] = useState(false)
-  const [editingLocation, setEditingLocation] = useState(null)
-  const [newLocationName, setNewLocationName] = useState('')
-  const [newLocationAddress, setNewLocationAddress] = useState('')
-  const [newLocationCapacity, setNewLocationCapacity] = useState(20)
-  const [newLocationDescription, setNewLocationDescription] = useState('')
-  const [newLocationHasAccommodation, setNewLocationHasAccommodation] = useState(false)
-
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
     setData(payload)
@@ -255,20 +247,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       window.location.href = `/academy/training-types/${id}/edit`
     },
     createLocation: () => {
-      setNewLocationName('')
-      setNewLocationAddress('')
-      setNewLocationCapacity(20)
-      setNewLocationDescription('')
-      setNewLocationHasAccommodation(false)
-      setShowCreateLocationModal(true)
-    },
-    submitCreateLocation: () => {
-      if (!newLocationName.trim()) {
-        setError('Le nom du lieu est requis')
-        return
-      }
-      setShowCreateLocationModal(false)
-      runMutation(() => apiRequest('/api/v1/academy/locations', { method: 'POST', body: JSON.stringify({ name: newLocationName.trim(), address: newLocationAddress.trim(), description: newLocationDescription.trim(), capacity: newLocationCapacity, has_accommodation: newLocationHasAccommodation, photo_gallery: [], compatible_training_type_ids: [] }) }))
+      window.location.href = '/academy/locations/new'
     },
     deleteLocation: (id) => {
       if (window.confirm('Êtes-vous sûr de vouloir supprimer ce lieu ?')) {
@@ -276,24 +255,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       }
     },
     editLocation: (id) => {
-      const current = data.trainingLocations.find((item) => item.id === id)
-      if (!current) return
-      setEditingLocation(current)
-      setNewLocationName(current.name)
-      setNewLocationAddress(current.address || '')
-      setNewLocationCapacity(current.capacity || 20)
-      setNewLocationDescription(current.description || '')
-      setNewLocationHasAccommodation(current.hasAccommodation || false)
-      setShowEditLocationModal(true)
-    },
-    submitEditLocation: () => {
-      if (!newLocationName.trim()) {
-        setError('Le nom du lieu est requis')
-        return
-      }
-      if (!editingLocation) return
-      setShowEditLocationModal(false)
-      runMutation(() => apiRequest(`/api/v1/academy/locations/${editingLocation.id}`, { method: 'PATCH', body: JSON.stringify({ name: newLocationName.trim(), address: newLocationAddress.trim(), description: newLocationDescription.trim(), capacity: newLocationCapacity, has_accommodation: newLocationHasAccommodation }) }))
+      window.location.href = `/academy/locations/${id}/edit`
     },
     createTraining: () => {
       if (data.trainingTypes.length === 0) {
@@ -397,7 +359,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       setReporting(payload)
       setView('reporting')
     },
-  }), [data, runMutation, newLocationName, newLocationAddress, newLocationCapacity, newLocationDescription, newLocationHasAccommodation, editingLocation])
+  }), [data, runMutation])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
   const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
@@ -658,244 +620,12 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
 
         {view === 'locations' && (
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-stone-900 tracking-tight">Lieux de formation</h2>
-                <p className="text-sm text-stone-500 mt-1">{data.trainingLocations.length} lieu{data.trainingLocations.length !== 1 ? 'x' : ''} disponible{data.trainingLocations.length !== 1 ? 's' : ''}</p>
-              </div>
-              <button
-                className="group relative overflow-hidden rounded-xl bg-[#B01A19] px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-[#8f1514] hover:shadow-lg hover:shadow-[#B01A19]/20 active:scale-[0.98]"
-                onClick={actions.createLocation}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Nouveau lieu
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#B01A19] to-[#8f1514] opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
-            </div>
-
-            {data.trainingLocations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50/50 py-16 px-6">
-                <div className="mb-4 rounded-full bg-stone-100 p-4">
-                  <svg className="h-8 w-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <p className="text-base font-medium text-stone-700">Aucun lieu de formation</p>
-                <p className="mt-1 text-sm text-stone-500">Commencez par créer votre premier lieu</p>
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {data.trainingLocations.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="group relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-stone-300 hover:shadow-lg hover:shadow-stone-200/50"
-                    style={{
-                      animationDelay: `${index * 50}ms`,
-                      animation: 'fadeInUp 0.5s ease-out forwards',
-                      opacity: 0,
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-stone-50/0 via-stone-50/0 to-stone-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
-                    
-                    <div className="relative z-10">
-                      <div className="mb-4 flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-stone-900 leading-tight">{item.name}</h3>
-                          {item.address && (
-                            <p className="mt-1.5 flex items-center gap-1.5 text-sm text-stone-500">
-                              <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span className="line-clamp-1">{item.address}</span>
-                            </p>
-                          )}
-                        </div>
-                        <div className="ml-3 flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            onClick={() => actions.editLocation(item.id)}
-                            className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-[#B01A19]"
-                            title="Modifier"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => actions.deleteLocation(item.id)}
-                            className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                            title="Supprimer"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {item.description && (
-                        <p className="mb-4 line-clamp-2 text-sm text-stone-600 leading-relaxed">{item.description}</p>
-                      )}
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-1.5 rounded-lg bg-stone-100 px-3 py-1.5 text-sm">
-                          <svg className="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span className="font-medium text-stone-700">{item.capacity}</span>
-                          <span className="text-stone-500">personnes</span>
-                        </div>
-
-                        {item.hasAccommodation && (
-                          <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-sm">
-                            <svg className="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            <span className="font-medium text-emerald-700">Hébergement</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <LocationsMap
+            locations={data.trainingLocations}
+            actions={actions}
+            onCreateLocation={actions.createLocation}
+          />
         )}
-
-        {(showCreateLocationModal || showEditLocationModal) && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-            onClick={() => {
-              setShowCreateLocationModal(false)
-              setShowEditLocationModal(false)
-            }}
-          >
-            <div
-              className="relative w-full max-w-lg rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/20"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                animation: 'modalSlideIn 0.3s ease-out',
-              }}
-            >
-              <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-300 to-transparent" />
-              
-              <div className="p-6">
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-stone-900">
-                    {showEditLocationModal ? 'Modifier le lieu' : 'Nouveau lieu'}
-                  </h2>
-                  <button
-                    onClick={() => {
-                      setShowCreateLocationModal(false)
-                      setShowEditLocationModal(false)
-                    }}
-                    className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-5">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-stone-700">
-                      Nom du lieu <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 transition-all focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
-                      value={newLocationName}
-                      onChange={(e) => setNewLocationName(e.target.value)}
-                      placeholder="Ex: Salle de formation principale"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          setShowCreateLocationModal(false)
-                          setShowEditLocationModal(false)
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-stone-700">Adresse</label>
-                    <input
-                      type="text"
-                      className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 transition-all focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
-                      value={newLocationAddress}
-                      onChange={(e) => setNewLocationAddress(e.target.value)}
-                      placeholder="Ex: 123 Rue de la Formation, 75000 Paris"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-stone-700">Capacité</label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm text-stone-900 transition-all focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
-                        value={newLocationCapacity}
-                        onChange={(e) => setNewLocationCapacity(Number(e.target.value) || 0)}
-                        placeholder="20"
-                      />
-                    </div>
-
-                    <div className="flex items-end">
-                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-300 bg-white p-2.5 px-4 text-sm transition-all hover:border-stone-400">
-                        <input
-                          type="checkbox"
-                          checked={newLocationHasAccommodation}
-                          onChange={(e) => setNewLocationHasAccommodation(e.target.checked)}
-                          className="h-4 w-4 rounded border-stone-300 text-[#B01A19] focus:ring-[#B01A19]"
-                        />
-                        <span className="text-stone-700">Hébergement</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-stone-700">Description</label>
-                    <textarea
-                      rows={3}
-                      className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 transition-all focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
-                      value={newLocationDescription}
-                      onChange={(e) => setNewLocationDescription(e.target.value)}
-                      placeholder="Description du lieu, équipements disponibles..."
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-6 flex gap-3 border-t border-stone-200 pt-6">
-                  <button
-                    className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition-all hover:bg-stone-50 active:scale-[0.98]"
-                    onClick={() => {
-                      setShowCreateLocationModal(false)
-                      setShowEditLocationModal(false)
-                    }}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    className="flex-1 rounded-lg bg-[#B01A19] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#8f1514] hover:shadow-md active:scale-[0.98]"
-                    onClick={showEditLocationModal ? actions.submitEditLocation : actions.submitCreateLocation}
-                  >
-                    {showEditLocationModal ? 'Enregistrer' : 'Créer'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
 
         {view === 'ideas' && (
           <section className="rounded-2xl border border-stone-200 bg-white p-4">

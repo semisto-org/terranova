@@ -11,6 +11,8 @@ Rails.application.routes.draw do
   get "academy/calendar", to: "app#academy"
   get "academy/training-types/new", to: "app#academy_training_type_form"
   get "academy/training-types/:id/edit", to: "app#academy_training_type_form"
+  get "academy/locations/new", to: "app#academy_location_form"
+  get "academy/locations/:id/edit", to: "app#academy_location_form"
   get "academy/:training_id", to: "app#academy_training"
   get "nursery", to: "app#nursery"
   get "nursery/orders", to: "app#nursery"

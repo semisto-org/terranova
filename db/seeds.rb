@@ -396,3 +396,73 @@ Design::ProjectPaletteItem.find_or_create_by!(palette: design_palette, species_i
   item.harvest_months = [8, 9, 10]
   item.harvest_products = ['fruits']
 end
+
+# -----------------------------
+# Milestone 5: Academy
+# -----------------------------
+
+academy_type = Academy::TrainingType.find_or_create_by!(name: 'Design de foret-jardin') do |item|
+  item.description = 'Formation complete au design de forets-jardins et forets nouricieres.'
+  item.checklist_template = ['Programme valide', 'Salle confirmee', 'Formateurs confirmes', 'Supports envoyes']
+end
+
+Academy::TrainingType.find_or_create_by!(name: 'Initiation permaculture') do |item|
+  item.description = 'Decouverte des principes de la permaculture appliquee.'
+  item.checklist_template = ['Programme valide', 'Lieu confirme', 'Materiel prepare']
+end
+
+loc_quatre_sources = Academy::TrainingLocation.find_or_create_by!(name: 'Les 4 Sources') do |item|
+  item.address = "Fonds d'Ahinvaux 1, 5530 Yvoir"
+  item.capacity = 50
+  item.description = "Centre de formation en pleine nature, au coeur de la vallee du Bocq. Salles de cours, ateliers pratiques en exterieur et hebergement sur place."
+  item.has_accommodation = true
+  item.latitude = 50.3267
+  item.longitude = 4.8789
+end
+
+loc_queue_pelle = Academy::TrainingLocation.find_or_create_by!(name: 'Queue de Pelle') do |item|
+  item.address = 'Chaumont-Gistoux'
+  item.capacity = 30
+  item.description = "Ferme pedagogique avec jardin-foret de demonstration. Ideal pour formations pratiques en petit groupe."
+  item.has_accommodation = false
+  item.latitude = 50.6833
+  item.longitude = 4.6833
+end
+
+Academy::TrainingLocation.find_or_create_by!(name: 'Lab Bruxelles') do |item|
+  item.address = 'Rue de la Station 62, 1050 Ixelles'
+  item.capacity = 25
+  item.description = "Espace de coworking et formation au coeur de Bruxelles. Equipement multimedia, cuisine partagee."
+  item.has_accommodation = false
+  item.latitude = 50.8340
+  item.longitude = 4.3680
+end
+
+Academy::TrainingLocation.find_or_create_by!(name: 'Ferme du Hayon') do |item|
+  item.address = 'Rue du Hayon 4, 6830 Bouillon'
+  item.capacity = 40
+  item.description = "Domaine forestier en Gaume avec salle de formation, verger conservatoire et foret comestible."
+  item.has_accommodation = true
+  item.latitude = 49.7933
+  item.longitude = 5.0667
+end
+
+training_dj = Academy::Training.find_or_create_by!(title: 'Design foret-jardin - Session printemps 2026') do |item|
+  item.training_type = academy_type
+  item.status = 'registrations_open'
+  item.price = 280
+  item.max_participants = 20
+  item.requires_accommodation = true
+  item.description = 'Formation intensive de 5 jours au design de forets-jardins.'
+  item.coordinator_note = 'Prevoir materiel de terrain.'
+  item.checklist_items = academy_type.checklist_template
+  item.checked_items = [0, 1]
+end
+
+Academy::TrainingSession.find_or_create_by!(training: training_dj, start_date: Date.new(2026, 4, 6)) do |item|
+  item.end_date = Date.new(2026, 4, 10)
+  item.description = 'Semaine complete de formation'
+  item.location_ids = [loc_quatre_sources.id.to_s]
+  item.trainer_ids = [members.second.id.to_s]
+  item.assistant_ids = []
+end

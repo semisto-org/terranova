@@ -60,6 +60,13 @@ class AppController < ApplicationController
     }
   end
 
+  def academy_location_form
+    render inertia: "Academy/LocationForm", props: {
+      milestone: "Academy",
+      locationId: params[:id]
+    }
+  end
+
   def nursery
     render inertia: "Nursery/Index", props: {
       milestone: "Nursery"
