@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_14_151733) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_14_213709) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -122,6 +122,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_151733) do
     t.datetime "updated_at", null: false
     t.index ["status"], name: "index_academy_trainings_on_status"
     t.index ["training_type_id"], name: "index_academy_trainings_on_training_type_id"
+  end
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.string "filename", null: false
+    t.string "key", null: false
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
   create_table "bet_team_memberships", force: :cascade do |t|
@@ -1003,6 +1031,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_151733) do
   add_foreign_key "academy_training_registrations", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_sessions", "academy_trainings", column: "training_id"
   add_foreign_key "academy_trainings", "academy_training_types", column: "training_type_id"
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "bet_team_memberships", "bets"
   add_foreign_key "bet_team_memberships", "members"
   add_foreign_key "bets", "cycles"

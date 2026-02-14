@@ -52,6 +52,16 @@ export default function ContextSwitcher() {
             <div className="px-4 py-3 border-b border-stone-100">
               <p className="text-sm font-medium text-stone-900">{auth.member.firstName} {auth.member.lastName}</p>
               <p className="text-xs text-stone-500">{auth.member.email}</p>
+              <Link
+                href="/profile"
+                onClick={() => setOpen(false)}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Modifier mon profil
+              </Link>
             </div>
           )}
 

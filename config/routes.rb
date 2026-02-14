@@ -9,6 +9,8 @@ Rails.application.routes.draw do
   get "lab", to: "app#lab"
   get "academy", to: "app#academy"
   get "academy/calendar", to: "app#academy"
+  get "academy/training-types/new", to: "app#academy_training_type_form"
+  get "academy/training-types/:id/edit", to: "app#academy_training_type_form"
   get "academy/:training_id", to: "app#academy_training"
   get "nursery", to: "app#nursery"
   get "nursery/orders", to: "app#nursery"
@@ -18,6 +20,7 @@ Rails.application.routes.draw do
   get "client/design/:project_id", to: "app#design_client_portal"
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
+  get "profile", to: "app#profile"
 
   namespace :api do
     namespace :v1 do
@@ -26,6 +29,10 @@ Rails.application.routes.draw do
       get "foundation/routes", to: "foundation#routes"
       get "foundation/shell", to: "foundation#shell"
       get "foundation/milestone", to: "foundation#milestone"
+
+      get "profile", to: "profile#show"
+      patch "profile", to: "profile#update"
+      delete "profile/avatar", to: "profile#remove_avatar"
 
       get "lab", to: "lab_management#overview"
       get "lab/overview", to: "lab_management#overview"

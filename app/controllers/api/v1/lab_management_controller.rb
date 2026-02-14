@@ -469,7 +469,7 @@ module Api
           firstName: member.first_name,
           lastName: member.last_name,
           email: member.email,
-          avatar: member.avatar,
+          avatar: member.avatar_url,
           roles: member.member_roles.map(&:role),
           status: member.status,
           isAdmin: member.is_admin,

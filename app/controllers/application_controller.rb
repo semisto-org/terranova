@@ -10,7 +10,7 @@ class ApplicationController < ActionController::Base
             firstName: current_member.first_name,
             lastName: current_member.last_name,
             email: current_member.email,
-            avatar: current_member.avatar,
+            avatar: current_member.avatar_url,
             isAdmin: current_member.is_admin
           }
         end

@@ -53,6 +53,13 @@ class AppController < ApplicationController
     }
   end
 
+  def academy_training_type_form
+    render inertia: "Academy/TrainingTypeForm", props: {
+      milestone: "Academy",
+      trainingTypeId: params[:id]
+    }
+  end
+
   def nursery
     render inertia: "Nursery/Index", props: {
       milestone: "Nursery"
@@ -70,6 +77,12 @@ class AppController < ApplicationController
     render inertia: "Design/ClientPortal", props: {
       milestone: "Design Studio Client Portal",
       initialProjectId: params[:project_id].to_s
+    }
+  end
+
+  def profile
+    render inertia: "Profile/Index", props: {
+      milestone: "Profile"
     }
   end
 

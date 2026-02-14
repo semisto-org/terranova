@@ -3,6 +3,8 @@ class Member < ApplicationRecord
 
   validates :password, length: { minimum: 8 }, if: -> { password.present? }
 
+  has_one_attached :avatar_image
+
   has_many :member_roles, dependent: :destroy
 
   has_many :guild_memberships, dependent: :destroy
@@ -18,6 +20,15 @@ class Member < ApplicationRecord
   validates :first_name, :last_name, :email, :status, :joined_at, presence: true
 
   enum :status, { active: "active", inactive: "inactive" }, validate: true
+
+  # Returns the avatar URL: ActiveStorage attachment first, then fallback to the legacy string column
+  def avatar_url
+    if avatar_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(avatar_image, only_path: true)
+    elsif avatar.present?
+      avatar
+    end
+  end
 
   def role_names
     member_roles.pluck(:role)
