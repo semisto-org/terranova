@@ -4,25 +4,10 @@ node_modules/
 vendor/bundle/
 .gems/
 
-# Next.js
-.next/
-out/
-
-# Astro
-dist/
-.astro/
-
 # Environment
 .env
 .env.local
 .env.*.local
-apps/website/.env
-
-# Prisma
-prisma/generated/
-
-# Turbo
-.turbo/
 
 # Ruby / Rails
 log/
@@ -31,6 +16,9 @@ storage/
 db/*.sqlite3
 db/*.sqlite3-*
 coverage/
+
+# Vite
+public/vite/
 
 # OS
 .DS_Store

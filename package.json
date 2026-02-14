@@ -1,11 +1,20 @@
 {
   "name": "terranova",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev:app": "pnpm --dir apps/api dev",
-    "dev:website": "pnpm --filter @terranova/website dev",
-    "build:app": "pnpm --dir apps/api build",
-    "build:website": "pnpm --filter @terranova/website build"
+    "dev": "vite",
+    "build": "vite build"
   },
-  "packageManager": "pnpm@9.15.4"
+  "dependencies": {
+    "@inertiajs/react": "^1.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@vitejs/plugin-react": "^4.4.1",
+    "tailwindcss": "^4.1.12",
+    "vite": "^5.4.19"
+  }
 }

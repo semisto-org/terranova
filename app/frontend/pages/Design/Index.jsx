@@ -809,7 +809,7 @@ export default function DesignIndex({ initialProjectId }) {
 
         if (initialProjectId) {
           await loadProject(initialProjectId)
-          window.history.replaceState({}, '', `/app/design/${initialProjectId}`)
+          window.history.replaceState({}, '', `/design/${initialProjectId}`)
         } else if (paletteIdFromQuery && active) {
           setNotice(`Palette ${paletteIdFromQuery} reçue depuis Plant Database.`)
         }
@@ -873,7 +873,7 @@ export default function DesignIndex({ initialProjectId }) {
       })
 
       await loadProject(created.id)
-      window.history.pushState({}, '', `/app/design/${created.id}`)
+      window.history.pushState({}, '', `/design/${created.id}`)
       setNotice('Projet créé.')
     })
 
@@ -883,7 +883,7 @@ export default function DesignIndex({ initialProjectId }) {
   const viewProject = useCallback(async (projectId) => {
     const success = await runMutation(async () => {
       await loadProject(projectId)
-      window.history.pushState({}, '', `/app/design/${projectId}`)
+      window.history.pushState({}, '', `/design/${projectId}`)
     }, { refreshDashboard: false })
 
     if (!success) return
@@ -896,7 +896,7 @@ export default function DesignIndex({ initialProjectId }) {
       await apiRequest(`/api/v1/design/${projectId}`, { method: 'DELETE' })
       if (projectDetail?.project?.id === projectId) {
         setProjectDetail(null)
-        window.history.pushState({}, '', '/app/design')
+        window.history.pushState({}, '', '/design')
       }
       setNotice('Projet supprimé.')
     })
@@ -906,7 +906,7 @@ export default function DesignIndex({ initialProjectId }) {
     runMutation(async () => {
       const created = await apiRequest(`/api/v1/design/${projectId}/duplicate`, { method: 'POST' })
       await loadProject(created.id)
-      window.history.pushState({}, '', `/app/design/${created.id}`)
+      window.history.pushState({}, '', `/design/${created.id}`)
       setNotice('Projet dupliqué.')
     })
   }, [loadProject, runMutation])
@@ -1066,7 +1066,7 @@ export default function DesignIndex({ initialProjectId }) {
           busy={busy}
           onBack={() => {
             setProjectDetail(null)
-            window.history.pushState({}, '', '/app/design')
+            window.history.pushState({}, '', '/design')
           }}
           onRefresh={detailActions?.refresh || (() => {})}
           onUpdateName={detailActions?.updateName || (() => {})}

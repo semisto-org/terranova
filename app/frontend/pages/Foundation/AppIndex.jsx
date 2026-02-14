@@ -9,13 +9,13 @@ export default function AppIndex({ message, milestone }) {
       <p>{message}</p>
       <p>Milestone actif: {milestone}</p>
       <p>
-        <Link href="/app/lab">Aller au Milestone 2 (Lab Management)</Link>
+        <Link href="/lab">Aller au Milestone 2 (Lab Management)</Link>
       </p>
       <p>
         <Link href="/plants">Aller au Milestone 3 (Plant Database)</Link>
       </p>
       <p>
-        <Link href="/app/design">Aller au Milestone 4 (Design Studio)</Link>
+        <Link href="/design">Aller au Milestone 4 (Design Studio)</Link>
       </p>
     </main>
   )

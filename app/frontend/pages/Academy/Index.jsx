@@ -176,7 +176,7 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
-  const [view, setView] = useState(initialPath.includes('/app/academy/calendar') ? 'calendar' : 'kanban')
+  const [view, setView] = useState(initialPath.includes('/academy/calendar') ? 'calendar' : 'kanban')
   const [data, setData] = useState({
     trainingTypes: [],
     trainings: [],
@@ -411,7 +411,7 @@ export default function AcademyIndex({ initialTrainingId }) {
         busy={busy}
         onBack={() => {
           setSelectedTrainingId(null)
-          window.history.pushState({}, '', '/app/academy')
+          window.history.pushState({}, '', '/academy')
         }}
         onRefresh={loadAcademy}
         actions={actions}
@@ -466,7 +466,7 @@ export default function AcademyIndex({ initialTrainingId }) {
                           <div className="mt-2 flex gap-2">
                             <button className="text-indigo-700 text-xs" onClick={() => {
                               setSelectedTrainingId(item.id)
-                              window.history.pushState({}, '', `/app/academy/${item.id}`)
+                              window.history.pushState({}, '', `/academy/${item.id}`)
                             }}>Ouvrir</button>
                             <button className="text-stone-700 text-xs" onClick={() => actions.editTraining(item.id)}>Modifier</button>
                             <button className="text-red-600 text-xs" onClick={() => actions.deleteTraining(item.id)}>Supprimer</button>
@@ -499,7 +499,7 @@ export default function AcademyIndex({ initialTrainingId }) {
                       <span>{item.startDate} → {item.endDate} · {item.training?.title || 'Formation'}</span>
                       {item.training && <button className="text-indigo-700 text-xs" onClick={() => {
                         setSelectedTrainingId(item.training.id)
-                        window.history.pushState({}, '', `/app/academy/${item.training.id}`)
+                        window.history.pushState({}, '', `/academy/${item.training.id}`)
                       }}>Ouvrir</button>}
                     </div>
                   ))}
