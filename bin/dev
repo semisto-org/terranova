@@ -6,7 +6,7 @@ RAILS_PORT="${PORT:-3000}"
 bundle exec rails server -b 0.0.0.0 -p "$RAILS_PORT" &
 RAILS_PID=$!
 
-pnpm dev &
+yarn dev &
 VITE_PID=$!
 
 cleanup() {

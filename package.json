@@ -1,7 +1,7 @@
 {
   "name": "terranova",
   "private": true,
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "yarn@1.22.22",
   "scripts": {
     "dev": "vite",
     "build": "vite build"

@@ -20,12 +20,12 @@ db/              # Migrations & schema
 
 ```bash
 bundle install
-pnpm install
+yarn install
 bin/setup
 bin/dev
 ```
 
-Application Inertia: `http://localhost:3000/app`
+Application Inertia: `http://localhost:3000/`
 
 Healthcheck: `GET /api/v1/health`
 
