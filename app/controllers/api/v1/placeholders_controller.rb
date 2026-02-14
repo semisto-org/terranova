@@ -1,6 +1,7 @@
 module Api
   module V1
-    class PlaceholdersController < ApplicationController
+    class PlaceholdersController < BaseController
+      skip_before_action :require_authentication
       def show
         render json: {
           milestone: "foundation",

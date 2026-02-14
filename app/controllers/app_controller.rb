@@ -1,4 +1,7 @@
 class AppController < ApplicationController
+  before_action :require_authentication, except: [:design_client_portal]
+  before_action :verify_client_portal_token!, only: [:design_client_portal]
+
   def index
     render inertia: "Foundation/AppIndex", props: {
       message: "Terranova app shell via Inertia.js",
@@ -7,11 +10,9 @@ class AppController < ApplicationController
   end
 
   def lab
-    first_member_id = Member.order(:id).pick(:id)&.to_s
-
     render inertia: "Lab/Index", props: {
       milestone: "Lab Management",
-      currentMemberId: first_member_id,
+      currentMemberId: current_member.id.to_s,
       stats: {
         members: Member.count,
         pitches: Pitch.count,
@@ -70,5 +71,24 @@ class AppController < ApplicationController
       milestone: "Design Studio Client Portal",
       initialProjectId: params[:project_id].to_s
     }
+  end
+
+  private
+
+  def verify_client_portal_token!
+    token = params[:token]
+    unless token.present?
+      render plain: "Lien invalide ou manquant.", status: :unauthorized
+      return
+    end
+
+    begin
+      data = Rails.application.message_verifier(:client_portal).verify(token, purpose: :client_portal_access)
+      unless data[:project_id].to_s == params[:project_id].to_s
+        render plain: "Lien invalide.", status: :unauthorized
+      end
+    rescue ActiveSupport::MessageVerifier::InvalidSignature
+      render plain: "Lien invalide.", status: :unauthorized
+    end
   end
 end

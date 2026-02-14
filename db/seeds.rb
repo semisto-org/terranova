@@ -9,7 +9,8 @@ members_data = [
     status: "active",
     is_admin: true,
     joined_at: Date.new(2022, 3, 15),
-    roles: %w[designer shaper]
+    roles: %w[designer shaper],
+    password: "terranova2026"
   },
   {
     first_name: "Thomas",
@@ -19,7 +20,8 @@ members_data = [
     status: "active",
     is_admin: false,
     joined_at: Date.new(2022, 6, 1),
-    roles: %w[designer formateur]
+    roles: %w[designer formateur],
+    password: "terranova2026"
   },
   {
     first_name: "Marie",
@@ -29,7 +31,8 @@ members_data = [
     status: "active",
     is_admin: true,
     joined_at: Date.new(2021, 9, 10),
-    roles: %w[comptable coordination]
+    roles: %w[comptable coordination],
+    password: "terranova2026"
   }
 ]
 

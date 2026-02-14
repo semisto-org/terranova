@@ -1,6 +1,6 @@
 module Api
   module V1
-    class PlantsController < ApplicationController
+    class PlantsController < BaseController
       STRATE_KEYS = %w[aquatic groundCover herbaceous climbers shrubs trees].freeze
 
       def filter_options

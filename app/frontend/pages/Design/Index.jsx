@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { apiRequest } from '@/lib/api'
 import { ProjectDashboard } from '../../design-studio/components'
 
 const DETAIL_TABS = [
@@ -15,30 +16,6 @@ const DETAIL_TABS = [
   { id: 'meetings', label: 'Meetings' },
   { id: 'co-gestion', label: 'Co-gestion' },
 ]
-
-async function apiRequest(path, options = {}) {
-  const response = await fetch(path, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  })
-
-  if (!response.ok) {
-    let message = `${response.status} ${response.statusText}`
-    try {
-      const data = await response.json()
-      if (data?.error) message = data.error
-    } catch (_) {
-      // no-op
-    }
-    throw new Error(message)
-  }
-
-  if (response.status === 204) return null
-  return response.json()
-}
 
 function defaultProjectForm() {
   return {

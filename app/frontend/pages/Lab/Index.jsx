@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { apiRequest } from '@/lib/api'
 import {
   Dashboard,
   ShapeUpWorkboard,
@@ -31,30 +32,6 @@ const EVENT_TYPES = [
 const TIMESHEET_CATEGORIES = ['design', 'formation', 'administratif', 'coordination', 'communication']
 const TIMESHEET_PAYMENT_TYPES = ['invoice', 'semos']
 const APPETITES = ['2-weeks', '3-weeks', '6-weeks']
-
-async function apiRequest(path, options = {}) {
-  const response = await fetch(path, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  })
-
-  if (!response.ok) {
-    let message = `${response.status} ${response.statusText}`
-    try {
-      const data = await response.json()
-      if (data?.error) message = data.error
-    } catch (_) {
-      // no-op
-    }
-    throw new Error(message)
-  }
-
-  if (response.status === 204) return null
-  return response.json()
-}
 
 function toLocalDatetimeInput(date) {
   const d = new Date(date)

@@ -1,6 +1,6 @@
 module Api
   module V1
-    class AcademyController < ApplicationController
+    class AcademyController < BaseController
       def index
         render json: academy_payload
       end

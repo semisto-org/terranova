@@ -1,9 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+function getClientToken() {
+  return new URLSearchParams(window.location.search).get('token') || ''
+}
+
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]')
+  return meta ? meta.getAttribute('content') : ''
+}
+
 async function apiRequest(path, options = {}) {
   const response = await fetch(path, {
     headers: {
       'Content-Type': 'application/json',
+      'X-CSRF-Token': getCsrfToken(),
+      'X-Client-Token': getClientToken(),
       ...(options.headers || {}),
     },
     ...options,

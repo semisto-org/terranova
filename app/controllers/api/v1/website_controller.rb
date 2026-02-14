@@ -1,6 +1,7 @@
 module Api
   module V1
-    class WebsiteController < ApplicationController
+    class WebsiteController < BaseController
+      skip_before_action :require_authentication
       def home
         render json: {
           hero: {

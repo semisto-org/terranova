@@ -1,6 +1,13 @@
 module Api
   module V1
-    class DesignStudioController < ApplicationController
+    class DesignStudioController < BaseController
+      CLIENT_PORTAL_ACTIONS = %i[
+        client_portal client_approve_quote client_reject_quote
+        client_submit_questionnaire client_add_wishlist_item client_add_journal_entry
+      ].freeze
+
+      skip_before_action :require_authentication, only: CLIENT_PORTAL_ACTIONS
+      before_action :require_client_portal_access, only: CLIENT_PORTAL_ACTIONS
       def index
         projects = Design::Project.order(updated_at: :desc)
         templates = Design::ProjectTemplate.order(:name)
@@ -554,7 +561,39 @@ module Api
         render json: serialize_client_contribution(contribution)
       end
 
+      def generate_client_portal_link
+        project = find_project
+        token = Rails.application.message_verifier(:client_portal).generate(
+          { project_id: project.id.to_s },
+          purpose: :client_portal_access
+        )
+
+        render json: {
+          url: "#{request.base_url}/client/design/#{project.id}?token=#{token}",
+          token: token
+        }
+      end
+
       private
+
+      def require_client_portal_access
+        return if current_member
+
+        token = request.headers["X-Client-Token"].presence || params[:client_token]
+        unless token.present?
+          render json: { error: "Non autorise" }, status: :unauthorized
+          return
+        end
+
+        begin
+          data = Rails.application.message_verifier(:client_portal).verify(token, purpose: :client_portal_access)
+          unless data[:project_id].to_s == params[:project_id].to_s
+            render json: { error: "Token invalide pour ce projet" }, status: :unauthorized
+          end
+        rescue ActiveSupport::MessageVerifier::InvalidSignature
+          render json: { error: "Lien invalide" }, status: :unauthorized
+        end
+      end
 
       def find_project
         Design::Project.find(params.require(:project_id))

@@ -1,6 +1,6 @@
 module Api
   module V1
-    class LabManagementController < ApplicationController
+    class LabManagementController < BaseController
       class DomainError < StandardError; end
 
       before_action :set_member, only: [:show_member, :update_member]

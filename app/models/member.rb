@@ -1,4 +1,8 @@
 class Member < ApplicationRecord
+  has_secure_password validations: false
+
+  validates :password, length: { minimum: 8 }, if: -> { password.present? }
+
   has_many :member_roles, dependent: :destroy
 
   has_many :guild_memberships, dependent: :destroy

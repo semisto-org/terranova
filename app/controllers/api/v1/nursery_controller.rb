@@ -1,6 +1,6 @@
 module Api
   module V1
-    class NurseryController < ApplicationController
+    class NurseryController < BaseController
       def index
         render json: nursery_payload(filters: filter_params)
       end

@@ -1,6 +1,6 @@
 module Api
   module V1
-    class FoundationController < ApplicationController
+    class FoundationController < BaseController
       def routes
         render json: {
           milestone: "foundation",

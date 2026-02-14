@@ -7,6 +7,7 @@ gem "bootsnap", require: false
 gem "rack-cors"
 gem "inertia_rails"
 gem "vite_rails"
+gem "bcrypt", "~> 3.1"
 
 group :development, :test do
   gem "debug", platforms: %i[mri mingw x64_mingw]

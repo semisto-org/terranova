@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # Authentication
+  get "login", to: "sessions#new", as: :login
+  post "login", to: "sessions#create"
+  delete "logout", to: "sessions#destroy", as: :logout
+
   # Inertia-powered application frontend
   root "app#index"
   get "lab", to: "app#lab"
@@ -144,6 +149,7 @@ Rails.application.routes.draw do
       patch "design/:project_id/client/questionnaire", to: "design_studio#client_submit_questionnaire"
       post "design/:project_id/client/wishlist", to: "design_studio#client_add_wishlist_item"
       post "design/:project_id/client/journal", to: "design_studio#client_add_journal_entry"
+      post "design/:project_id/client-portal-link", to: "design_studio#generate_client_portal_link"
 
       get "academy", to: "academy#index"
       get "academy/calendar", to: "academy#calendar"
