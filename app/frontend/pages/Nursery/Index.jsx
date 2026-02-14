@@ -1,7 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
+import { useShellNav } from '../../components/shell/ShellContext'
 
 const ORDER_FLOW = ['new', 'processing', 'ready', 'picked-up', 'cancelled']
+
+const NURSERY_SECTIONS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'stock', label: 'Stock' },
+  { id: 'orders', label: 'Commandes' },
+  { id: 'mother-plants', label: 'Plants-mères' },
+  { id: 'catalog', label: 'Catalogue' },
+  { id: 'transfers', label: 'Transferts' },
+]
 
 export default function NurseryIndex() {
   const [loading, setLoading] = useState(true)
@@ -9,6 +19,7 @@ export default function NurseryIndex() {
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
   const [view, setView] = useState('dashboard')
+  useShellNav({ sections: NURSERY_SECTIONS, activeSection: view, onSectionChange: setView })
   const [filter, setFilter] = useState({ nursery_id: '', species_query: '' })
   const [payload, setPayload] = useState({
     nurseries: [],
@@ -151,25 +162,11 @@ export default function NurseryIndex() {
     rejectMotherPlant: (id) => runMutation(() => apiRequest(`/api/v1/nursery/mother-plants/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ validated_by: 'Nursery Manager', notes: 'Non conforme' }) })),
   }), [payload, runMutation])
 
-  if (loading) return <main className="min-h-screen bg-stone-50 flex items-center justify-center">Chargement Nursery...</main>
+  if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Nursery...</p></div>
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6">
+    <div className="px-4 py-4">
       <div className="max-w-7xl mx-auto space-y-4">
-        <header className="rounded-2xl border border-stone-200 bg-white p-5">
-          <p className="text-sm text-stone-500">Milestone 6</p>
-          <h1 className="text-3xl font-semibold text-stone-900">Nursery</h1>
-          <p className="text-sm text-stone-600">Stock, commandes, plants-mères, transferts et catalog multi-pépinières.</p>
-        </header>
-
-        <div className="flex flex-wrap gap-2">
-          {['dashboard', 'stock', 'orders', 'mother-plants', 'catalog', 'transfers'].map((item) => (
-            <button key={item} className={`rounded px-3 py-2 text-sm ${view === item ? 'bg-[#EF9B0D] text-stone-900' : 'bg-white border border-stone-300 text-stone-700'}`} onClick={() => setView(item)}>
-              {item}
-            </button>
-          ))}
-        </div>
-
         {view === 'dashboard' && (
           <section className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -278,6 +275,6 @@ export default function NurseryIndex() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }

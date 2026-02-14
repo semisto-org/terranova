@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
     manifest: true,
     outDir: '../../public/vite',
     rollupOptions: {
-      input: path.resolve(frontendRoot, 'entrypoints/application.js'),
+      input: path.resolve(frontendRoot, 'entrypoints/application.jsx'),
     },
   },
   resolve: {

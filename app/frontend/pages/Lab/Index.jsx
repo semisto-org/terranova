@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
+import { useShellNav } from '../../components/shell/ShellContext'
 import {
   Dashboard,
   ShapeUpWorkboard,
@@ -131,6 +132,7 @@ function DetailModal({ title, data, onClose }) {
 
 export default function LabIndex({ milestone, currentMemberId: initialMemberId }) {
   const [tab, setTab] = useState('dashboard')
+  useShellNav({ sections: SECTION_TABS, activeSection: tab, onSectionChange: setTab })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -586,54 +588,23 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
 
   if (loading) {
     return (
-      <main style={{ padding: '2rem', fontFamily: 'Inter, system-ui, sans-serif' }}>
-        <h1>{milestone}</h1>
-        <p>Chargement...</p>
-      </main>
+      <div className="flex items-center justify-center h-full p-8">
+        <p className="text-stone-500">Chargement...</p>
+      </div>
     )
   }
 
   if (error || !data) {
     return (
-      <main style={{ padding: '2rem', fontFamily: 'Inter, system-ui, sans-serif' }}>
-        <h1>{milestone}</h1>
-        <p style={{ color: '#b91c1c' }}>Erreur: {error || 'Données indisponibles'}</p>
-        <button type="button" onClick={loadOverview}>Réessayer</button>
-      </main>
+      <div className="p-8">
+        <p className="text-red-700">Erreur: {error || 'Données indisponibles'}</p>
+        <button type="button" onClick={loadOverview} className="mt-2 text-sm underline text-stone-600">Réessayer</button>
+      </div>
     )
   }
 
   return (
-    <main>
-      <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e7e5e4', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        {SECTION_TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            style={{
-              padding: '0.45rem 0.75rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #d6d3d1',
-              background: tab === item.id ? '#5B5781' : '#ffffff',
-              color: tab === item.id ? '#ffffff' : '#1c1917',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={loadOverview}
-          disabled={busy}
-          style={{ marginLeft: 'auto', padding: '0.45rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #d6d3d1', background: '#fff' }}
-        >
-          {busy ? 'Sync...' : 'Rafraîchir'}
-        </button>
-      </div>
-
+    <div className="px-4 py-4">
       {error && (
         <div style={{ padding: '0.75rem 1.25rem', background: '#fee2e2', color: '#7f1d1d', borderBottom: '1px solid #fecaca' }}>
           {error}
@@ -766,7 +737,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onClose={() => setDetailModal(null)}
         />
       )}
-    </main>
+    </div>
   )
 }
 

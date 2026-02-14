@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiRequest } from '@/lib/api'
+import { useShellNav } from '../../components/shell/ShellContext'
 import {
   ActivityFeed,
   ContributorProfile,
@@ -291,8 +292,21 @@ function ContributionModal({ modal, busy, onClose, onChange, onSubmit }) {
   )
 }
 
+const PLANT_SECTIONS = [
+  { id: 'search', label: 'Recherche' },
+  { id: 'palette', label: 'Palette' },
+  { id: 'activity', label: 'Activité' },
+]
+
 export default function PlantsIndex({ currentContributorId, initialPaletteId }) {
   const [route, setRoute] = useState(() => routeFromPath(window.location.pathname))
+  const shellSection = ['genus', 'species', 'variety', 'contributor'].includes(route.view) ? 'search' : route.view
+  const handleShellNav = useCallback((id) => {
+    const path = pathForView(id)
+    window.history.pushState({}, '', path)
+    setRoute({ view: id })
+  }, [])
+  useShellNav({ sections: PLANT_SECTIONS, activeSection: shellSection, onSectionChange: handleShellNav })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -808,19 +822,14 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
 
   if (loading || !filterOptions) {
     return (
-      <main className="min-h-screen bg-stone-50 text-stone-800 flex items-center justify-center">
-        Chargement Plant Database...
-      </main>
+      <div className="flex items-center justify-center h-full p-8">
+        <p className="text-stone-500">Chargement Plant Database...</p>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 text-stone-900">
-      <PlantTopNav
-        currentView={route.view}
-        onNavigate={(view) => navigateTo(view)}
-        onReload={refreshCurrentView}
-      />
+    <div className="text-stone-900">
 
       {error && (
         <div className="max-w-5xl mx-auto px-4 pt-4">
@@ -974,6 +983,6 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
         onChange={updateContributionValue}
         onSubmit={submitContributionModal}
       />
-    </main>
+    </div>
   )
 }

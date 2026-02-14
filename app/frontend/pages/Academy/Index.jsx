@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
+import { useShellNav } from '../../components/shell/ShellContext'
 
 const STATUSES = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
 const STATUS_LABELS = {
@@ -149,6 +150,15 @@ function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
   )
 }
 
+const ACADEMY_SECTIONS = [
+  { id: 'kanban', label: 'Kanban' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'types', label: 'Training Types' },
+  { id: 'locations', label: 'Locations' },
+  { id: 'ideas', label: 'Idea Notebook' },
+  { id: 'reporting', label: 'Reporting' },
+]
+
 export default function AcademyIndex({ initialTrainingId }) {
   const initialPath = window.location.pathname
   const [loading, setLoading] = useState(true)
@@ -156,6 +166,13 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
   const [view, setView] = useState(initialPath.includes('/academy/calendar') ? 'calendar' : 'kanban')
+  const handleViewChange = useCallback((id) => {
+    if (id === 'reporting') {
+      apiRequest('/api/v1/academy/reporting').then((payload) => setReporting(payload))
+    }
+    setView(id)
+  }, [])
+  useShellNav({ sections: ACADEMY_SECTIONS, activeSection: view, onSectionChange: handleViewChange })
   const [data, setData] = useState({
     trainingTypes: [],
     trainings: [],
@@ -380,7 +397,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     return buckets
   }, [calendarDate, calendarItems])
 
-  if (loading) return <main className="min-h-screen bg-stone-50 flex items-center justify-center">Chargement Academy...</main>
+  if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
 
   if (selectedTraining) {
     return (
@@ -399,23 +416,8 @@ export default function AcademyIndex({ initialTrainingId }) {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6">
+    <div className="px-4 py-4">
       <div className="max-w-7xl mx-auto space-y-4">
-        <header className="rounded-2xl border border-stone-200 bg-white p-5">
-          <p className="text-sm text-stone-500">Milestone 5</p>
-          <h1 className="text-3xl font-semibold text-stone-900">Academy</h1>
-          <p className="text-stone-600 text-sm">Kanban formations, sessions, inscriptions, présence, finances.</p>
-        </header>
-
-        <div className="flex flex-wrap gap-2">
-          <button className={`rounded px-3 py-2 text-sm ${view === 'kanban' ? 'bg-[#B01A19] text-white' : 'bg-white border border-stone-300'}`} onClick={() => setView('kanban')}>Kanban</button>
-          <button className={`rounded px-3 py-2 text-sm ${view === 'calendar' ? 'bg-[#B01A19] text-white' : 'bg-white border border-stone-300'}`} onClick={() => setView('calendar')}>Calendar</button>
-          <button className={`rounded px-3 py-2 text-sm ${view === 'types' ? 'bg-[#B01A19] text-white' : 'bg-white border border-stone-300'}`} onClick={() => setView('types')}>Training Types</button>
-          <button className={`rounded px-3 py-2 text-sm ${view === 'locations' ? 'bg-[#B01A19] text-white' : 'bg-white border border-stone-300'}`} onClick={() => setView('locations')}>Locations</button>
-          <button className={`rounded px-3 py-2 text-sm ${view === 'ideas' ? 'bg-[#B01A19] text-white' : 'bg-white border border-stone-300'}`} onClick={() => setView('ideas')}>Idea Notebook</button>
-          <button className={`rounded px-3 py-2 text-sm ${view === 'reporting' ? 'bg-[#B01A19] text-white' : 'bg-white border border-stone-300'}`} onClick={actions.viewReporting}>Reporting</button>
-        </div>
-
         {view === 'kanban' && (
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
             <div className="mb-4 flex flex-wrap gap-2">
@@ -575,6 +577,6 @@ export default function AcademyIndex({ initialTrainingId }) {
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
+import { useShellNav } from '../../components/shell/ShellContext'
 import { ProjectDashboard } from '../../design-studio/components'
 
 const DETAIL_TABS = [
@@ -736,7 +737,12 @@ function ProjectDetail({
   )
 }
 
+const DESIGN_SECTIONS = [
+  { id: 'projects', label: 'Projets' },
+]
+
 export default function DesignIndex({ initialProjectId }) {
+  useShellNav({ sections: DESIGN_SECTIONS, activeSection: 'projects', onSectionChange: () => {} })
   const paletteIdFromQuery = new URLSearchParams(window.location.search).get('palette_id')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -1032,7 +1038,7 @@ export default function DesignIndex({ initialProjectId }) {
   }, [currentProjectId, detailActions, paletteIdFromQuery])
 
   if (loading || !stats) {
-    return <main className="min-h-screen bg-stone-50 flex items-center justify-center">Chargement Design Studio...</main>
+    return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Design Studio...</p></div>
   }
 
   return (
