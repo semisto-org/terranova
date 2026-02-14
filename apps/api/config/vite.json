@@ -1,6 +1,7 @@
 {
   "all": {
     "sourceCodeDir": "app/frontend",
+    "packageManager": "pnpm",
     "watchAdditionalPaths": []
   },
   "development": {
