@@ -1,7 +1,7 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  config.cache_classes = true
+  config.enable_reloading = false
   config.eager_load = ENV["CI"].present?
 
   config.public_file_server.enabled = true
@@ -13,7 +13,7 @@ Rails.application.configure do
   config.action_controller.perform_caching = false
   config.cache_store = :null_store
 
-  config.action_dispatch.show_exceptions = false
+  config.action_dispatch.show_exceptions = :none
   config.action_controller.allow_forgery_protection = false
 
   config.active_storage.service = :test

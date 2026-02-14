@@ -176,7 +176,7 @@ module Api
             title: "#{orders.where(status: 'new').count} nouvelles commandes",
             description: 'Commandes à traiter',
             priority: 'high',
-            relatedId: orders.where(status: 'new').first.id.to_s,
+            relatedId: orders.where(status: 'new').order(:id).first.id.to_s,
             createdAt: Time.current.iso8601
           }
         end
@@ -187,7 +187,7 @@ module Api
             title: 'Transfert à organiser',
             description: 'Un ou plusieurs transferts en attente',
             priority: 'medium',
-            relatedId: transfers.where(status: %w[planned in-progress]).first.id.to_s,
+            relatedId: transfers.where(status: %w[planned in-progress]).order(:id).first.id.to_s,
             createdAt: Time.current.iso8601
           }
         end
@@ -198,7 +198,7 @@ module Api
             title: "#{mother_plants.where(status: 'pending').count} plants-mères en attente",
             description: 'Propositions à valider',
             priority: 'low',
-            relatedId: mother_plants.where(status: 'pending').first.id.to_s,
+            relatedId: mother_plants.where(status: 'pending').order(:id).first.id.to_s,
             createdAt: Time.current.iso8601
           }
         end

@@ -13,7 +13,7 @@ Bundler.require(*Rails.groups)
 
 module TerranovaApi
   class Application < Rails::Application
-    config.load_defaults 7.1
+    config.load_defaults 8.1
     config.api_only = false
 
     config.generators do |g|
