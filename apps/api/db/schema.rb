@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_13_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_13_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -559,6 +559,147 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_13_100000) do
     t.index ["email"], name: "index_members_on_email", unique: true
   end
 
+  create_table "nursery_containers", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "short_name", null: false
+    t.decimal "volume_liters", precision: 7, scale: 2
+    t.text "description", default: "", null: false
+    t.integer "sort_order", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "nursery_mother_plants", force: :cascade do |t|
+    t.string "species_id", null: false
+    t.string "species_name", null: false
+    t.string "variety_id", default: "", null: false
+    t.string "variety_name", default: "", null: false
+    t.string "place_id", default: "", null: false
+    t.string "place_name", default: "", null: false
+    t.string "place_address", default: "", null: false
+    t.date "planting_date", null: false
+    t.string "source", default: "member-proposal", null: false
+    t.string "project_id", default: "", null: false
+    t.string "project_name", default: "", null: false
+    t.string "member_id", default: "", null: false
+    t.string "member_name", default: "", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "validated_at"
+    t.string "validated_by", default: "", null: false
+    t.integer "quantity", default: 0, null: false
+    t.text "notes", default: "", null: false
+    t.date "last_harvest_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "nursery_nurseries", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "nursery_type", default: "semisto", null: false
+    t.string "integration", default: "platform", null: false
+    t.string "address", default: "", null: false
+    t.string "city", default: "", null: false
+    t.string "postal_code", default: "", null: false
+    t.string "country", default: "", null: false
+    t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
+    t.decimal "longitude", precision: 10, scale: 6, default: "0.0", null: false
+    t.string "contact_name", default: "", null: false
+    t.string "contact_email", default: "", null: false
+    t.string "contact_phone", default: "", null: false
+    t.string "website", default: "", null: false
+    t.text "description", default: "", null: false
+    t.jsonb "specialties", default: [], null: false
+    t.boolean "is_pickup_point", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "nursery_order_lines", force: :cascade do |t|
+    t.bigint "order_id", null: false
+    t.bigint "stock_batch_id", null: false
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", null: false
+    t.string "species_name", null: false
+    t.string "variety_name", default: "", null: false
+    t.string "container_name", null: false
+    t.integer "quantity", default: 0, null: false
+    t.decimal "unit_price_euros", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "unit_price_semos", precision: 12, scale: 2
+    t.boolean "pay_in_semos", default: false, null: false
+    t.decimal "total_euros", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "total_semos", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["nursery_id"], name: "index_nursery_order_lines_on_nursery_id"
+    t.index ["order_id"], name: "index_nursery_order_lines_on_order_id"
+    t.index ["stock_batch_id"], name: "index_nursery_order_lines_on_stock_batch_id"
+  end
+
+  create_table "nursery_orders", force: :cascade do |t|
+    t.string "order_number", null: false
+    t.string "customer_id", default: "", null: false
+    t.string "customer_name", null: false
+    t.string "customer_email", default: "", null: false
+    t.string "customer_phone", default: "", null: false
+    t.boolean "is_member", default: false, null: false
+    t.string "status", default: "new", null: false
+    t.string "price_level", default: "standard", null: false
+    t.bigint "pickup_nursery_id", null: false
+    t.decimal "subtotal_euros", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "subtotal_semos", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "total_euros", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "total_semos", precision: 12, scale: 2, default: "0.0", null: false
+    t.text "notes", default: "", null: false
+    t.datetime "prepared_at"
+    t.datetime "ready_at"
+    t.datetime "picked_up_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_number"], name: "index_nursery_orders_on_order_number", unique: true
+    t.index ["pickup_nursery_id"], name: "index_nursery_orders_on_pickup_nursery_id"
+    t.index ["status"], name: "index_nursery_orders_on_status"
+  end
+
+  create_table "nursery_stock_batches", force: :cascade do |t|
+    t.bigint "nursery_id", null: false
+    t.string "species_id", null: false
+    t.string "species_name", null: false
+    t.string "variety_id", default: "", null: false
+    t.string "variety_name", default: "", null: false
+    t.bigint "container_id", null: false
+    t.integer "quantity", default: 0, null: false
+    t.integer "available_quantity", default: 0, null: false
+    t.integer "reserved_quantity", default: 0, null: false
+    t.date "sowing_date"
+    t.string "origin", default: "", null: false
+    t.string "growth_stage", default: "young", null: false
+    t.decimal "price_euros", precision: 12, scale: 2, default: "0.0", null: false
+    t.boolean "accepts_semos", default: false, null: false
+    t.decimal "price_semos", precision: 12, scale: 2
+    t.text "notes", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["container_id"], name: "index_nursery_stock_batches_on_container_id"
+    t.index ["nursery_id"], name: "index_nursery_stock_batches_on_nursery_id"
+  end
+
+  create_table "nursery_transfers", force: :cascade do |t|
+    t.bigint "order_id", null: false
+    t.string "status", default: "planned", null: false
+    t.jsonb "stops", default: [], null: false
+    t.decimal "total_distance_km", precision: 8, scale: 2, default: "0.0", null: false
+    t.string "estimated_duration", default: "", null: false
+    t.string "driver_id", default: "", null: false
+    t.string "driver_name", default: "", null: false
+    t.string "vehicle_info", default: "", null: false
+    t.date "scheduled_date", null: false
+    t.text "notes", default: "", null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_nursery_transfers_on_order_id"
+  end
+
   create_table "pitches", force: :cascade do |t|
     t.string "title", null: false
     t.string "status", default: "raw", null: false
@@ -902,6 +1043,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_13_100000) do
   add_foreign_key "hill_chart_snapshots", "pitches"
   add_foreign_key "idea_items", "idea_lists"
   add_foreign_key "member_roles", "members"
+  add_foreign_key "nursery_order_lines", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_order_lines", "nursery_orders", column: "order_id"
+  add_foreign_key "nursery_order_lines", "nursery_stock_batches", column: "stock_batch_id"
+  add_foreign_key "nursery_orders", "nursery_nurseries", column: "pickup_nursery_id"
+  add_foreign_key "nursery_stock_batches", "nursery_containers", column: "container_id"
+  add_foreign_key "nursery_stock_batches", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_transfers", "nursery_orders", column: "order_id"
   add_foreign_key "pitches", "members", column: "author_id"
   add_foreign_key "plant_activity_items", "plant_contributors", column: "contributor_id"
   add_foreign_key "plant_notes", "plant_contributors", column: "contributor_id"

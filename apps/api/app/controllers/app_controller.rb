@@ -52,6 +52,12 @@ class AppController < ApplicationController
     }
   end
 
+  def nursery
+    render inertia: "Nursery/Index", props: {
+      milestone: "Nursery"
+    }
+  end
+
   def design_project
     render inertia: "Design/Index", props: {
       milestone: "Design Studio",

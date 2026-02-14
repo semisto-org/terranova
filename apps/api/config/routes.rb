@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   get "app/academy", to: "app#academy"
   get "app/academy/calendar", to: "app#academy"
   get "app/academy/:training_id", to: "app#academy_training"
+  get "app/nursery", to: "app#nursery"
+  get "app/nursery/orders", to: "app#nursery"
+  get "app/nursery/catalog", to: "app#nursery"
   get "app/design", to: "app#design"
   get "app/design/:project_id", to: "app#design_project"
   get "client/design/:project_id", to: "app#design_client_portal"
@@ -176,9 +179,19 @@ Rails.application.routes.draw do
       patch "academy/idea-notes/:note_id", to: "academy#update_idea_note"
       delete "academy/idea-notes/:note_id", to: "academy#destroy_idea_note"
 
-      get "nursery", to: "placeholders#show", defaults: { section: "nursery", route: "/nursery" }
-      get "nursery/orders", to: "placeholders#show", defaults: { section: "nursery", route: "/nursery/orders" }
-      get "nursery/catalog", to: "placeholders#show", defaults: { section: "nursery", route: "/nursery/catalog" }
+      get "nursery", to: "nursery#index"
+      get "nursery/dashboard", to: "nursery#dashboard"
+      get "nursery/catalog", to: "nursery#catalog"
+      post "nursery/stock-batches", to: "nursery#create_stock_batch"
+      patch "nursery/stock-batches/:batch_id", to: "nursery#update_stock_batch"
+      delete "nursery/stock-batches/:batch_id", to: "nursery#destroy_stock_batch"
+      post "nursery/orders", to: "nursery#create_order"
+      patch "nursery/orders/:order_id/process", to: "nursery#process_order"
+      patch "nursery/orders/:order_id/ready", to: "nursery#mark_order_ready"
+      patch "nursery/orders/:order_id/picked-up", to: "nursery#mark_order_picked_up"
+      patch "nursery/orders/:order_id/cancel", to: "nursery#cancel_order"
+      patch "nursery/mother-plants/:mother_plant_id/validate", to: "nursery#validate_mother_plant"
+      patch "nursery/mother-plants/:mother_plant_id/reject", to: "nursery#reject_mother_plant"
 
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"
