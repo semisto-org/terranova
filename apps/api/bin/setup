@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bundle install
+pnpm install
+bundle exec rails db:create
+bundle exec rails db:prepare
+bundle exec rails db:seed

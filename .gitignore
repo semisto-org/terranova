@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+.bundle/
+vendor/bundle/
+.gems/
 
 # Next.js
 .next/
@@ -13,12 +16,21 @@ dist/
 .env
 .env.local
 .env.*.local
+apps/website/.env
 
 # Prisma
 prisma/generated/
 
 # Turbo
 .turbo/
+
+# Ruby / Rails
+log/
+tmp/
+storage/
+db/*.sqlite3
+db/*.sqlite3-*
+coverage/
 
 # OS
 .DS_Store

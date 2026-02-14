@@ -2,12 +2,10 @@
   "name": "terranova",
   "private": true,
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint"
-  },
-  "devDependencies": {
-    "turbo": "^2.8.4"
+    "dev:app": "pnpm --dir apps/api dev",
+    "dev:website": "pnpm --filter @terranova/website dev",
+    "build:app": "pnpm --dir apps/api build",
+    "build:website": "pnpm --filter @terranova/website build"
   },
   "packageManager": "pnpm@9.15.4"
 }
