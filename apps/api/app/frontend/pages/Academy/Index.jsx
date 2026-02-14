@@ -81,7 +81,10 @@ function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
               {sessions.length === 0 ? <p className="text-sm text-stone-500">Aucune session.</p> : sessions.map((item) => (
                 <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
                   <span>{item.startDate} → {item.endDate}</span>
-                  <button className="text-red-600" onClick={() => actions.deleteSession(item.id)}>Supprimer</button>
+                  <div className="flex items-center gap-2">
+                    <button className="text-stone-700" onClick={() => actions.editSession(item.id)}>Modifier</button>
+                    <button className="text-red-600" onClick={() => actions.deleteSession(item.id)}>Supprimer</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -93,6 +96,7 @@ function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
                 <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
                   <span>{item.contactName} · {item.paymentStatus} · {item.amountPaid}€</span>
                   <div className="flex gap-2">
+                    <button className="text-stone-700" onClick={() => actions.editRegistration(item.id)}>Modifier</button>
                     <button className="text-indigo-700" onClick={() => actions.updatePaymentStatus(item.id)}>Paiement</button>
                     <button className="text-red-600" onClick={() => actions.deleteRegistration(item.id)}>Supprimer</button>
                   </div>
@@ -152,7 +156,10 @@ function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
               {expenses.map((item) => (
                 <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
                   <span>{item.date} · {item.category} · {item.amount}€</span>
-                  <button className="text-red-600" onClick={() => actions.deleteExpense(item.id)}>Supprimer</button>
+                  <div className="flex items-center gap-2">
+                    <button className="text-stone-700" onClick={() => actions.editExpense(item.id)}>Modifier</button>
+                    <button className="text-red-600" onClick={() => actions.deleteExpense(item.id)}>Supprimer</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -164,11 +171,12 @@ function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
 }
 
 export default function AcademyIndex({ initialTrainingId }) {
+  const initialPath = window.location.pathname
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
-  const [view, setView] = useState('kanban')
+  const [view, setView] = useState(initialPath.includes('/app/academy/calendar') ? 'calendar' : 'kanban')
   const [data, setData] = useState({
     trainingTypes: [],
     trainings: [],
@@ -184,6 +192,11 @@ export default function AcademyIndex({ initialTrainingId }) {
   })
   const [selectedTrainingId, setSelectedTrainingId] = useState(initialTrainingId || null)
   const [reporting, setReporting] = useState(null)
+  const [calendarView, setCalendarView] = useState('month')
+  const [calendarDate, setCalendarDate] = useState(() => new Date())
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
 
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
@@ -230,12 +243,29 @@ export default function AcademyIndex({ initialTrainingId }) {
       runMutation(() => apiRequest('/api/v1/academy/training-types', { method: 'POST', body: JSON.stringify({ name, description: '', checklist_template: ['Définir contenu'], photo_gallery: [], trainer_ids: [] }) }))
     },
     deleteTrainingType: (id) => runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'DELETE' })),
+    editTrainingType: (id) => {
+      const current = data.trainingTypes.find((item) => item.id === id)
+      if (!current) return
+      const name = window.prompt('Nom du type', current.name)
+      if (!name) return
+      const description = window.prompt('Description', current.description || '') || ''
+      runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'PATCH', body: JSON.stringify({ name, description }) }))
+    },
     createLocation: () => {
       const name = window.prompt('Nom du lieu')
       if (!name) return
       runMutation(() => apiRequest('/api/v1/academy/locations', { method: 'POST', body: JSON.stringify({ name, address: '', description: '', capacity: 20, has_accommodation: false, photo_gallery: [], compatible_training_type_ids: [] }) }))
     },
     deleteLocation: (id) => runMutation(() => apiRequest(`/api/v1/academy/locations/${id}`, { method: 'DELETE' })),
+    editLocation: (id) => {
+      const current = data.trainingLocations.find((item) => item.id === id)
+      if (!current) return
+      const name = window.prompt('Nom du lieu', current.name)
+      if (!name) return
+      const address = window.prompt('Adresse', current.address || '') || ''
+      const capacity = Number(window.prompt('Capacité', String(current.capacity || 0)) || current.capacity || 0)
+      runMutation(() => apiRequest(`/api/v1/academy/locations/${id}`, { method: 'PATCH', body: JSON.stringify({ name, address, capacity }) }))
+    },
     createTraining: () => {
       if (data.trainingTypes.length === 0) {
         setError('Créez d’abord un type de formation.')
@@ -247,8 +277,25 @@ export default function AcademyIndex({ initialTrainingId }) {
       runMutation(() => apiRequest('/api/v1/academy/trainings', { method: 'POST', body: JSON.stringify({ training_type_id: trainingTypeId, title, price: 180, max_participants: 20, requires_accommodation: false, description: '', coordinator_note: '' }) }))
     },
     deleteTraining: (id) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
+    editTraining: (id) => {
+      const current = data.trainings.find((item) => item.id === id)
+      if (!current) return
+      const title = window.prompt('Titre', current.title)
+      if (!title) return
+      const price = Number(window.prompt('Prix', String(current.price || 0)) || current.price || 0)
+      const maxParticipants = Number(window.prompt('Participants max', String(current.maxParticipants || 0)) || current.maxParticipants || 0)
+      runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'PATCH', body: JSON.stringify({ title, price, max_participants: maxParticipants }) }))
+    },
     updateTrainingStatus: (id, status) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })),
     addSession: (trainingId) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/sessions`, { method: 'POST', body: JSON.stringify({ start_date: new Date().toISOString().slice(0, 10), end_date: new Date().toISOString().slice(0, 10), description: '', location_ids: [], trainer_ids: [], assistant_ids: [] }) })),
+    editSession: (sessionId) => {
+      const current = data.trainingSessions.find((item) => item.id === sessionId)
+      if (!current) return
+      const startDate = window.prompt('Date début (YYYY-MM-DD)', current.startDate)
+      const endDate = window.prompt('Date fin (YYYY-MM-DD)', current.endDate)
+      if (!startDate || !endDate) return
+      runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'PATCH', body: JSON.stringify({ start_date: startDate, end_date: endDate, description: current.description, location_ids: current.locationIds || [], trainer_ids: current.trainerIds || [], assistant_ids: current.assistantIds || [] }) }))
+    },
     deleteSession: (sessionId) => runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'DELETE' })),
     addRegistration: (trainingId) => {
       const contactName = window.prompt('Nom du participant')
@@ -256,6 +303,14 @@ export default function AcademyIndex({ initialTrainingId }) {
       runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/registrations`, { method: 'POST', body: JSON.stringify({ contact_name: contactName, contact_email: '', amount_paid: 0, payment_status: 'pending', internal_note: '' }) }))
     },
     deleteRegistration: (registrationId) => runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'DELETE' })),
+    editRegistration: (registrationId) => {
+      const current = data.trainingRegistrations.find((item) => item.id === registrationId)
+      if (!current) return
+      const contactName = window.prompt('Nom participant', current.contactName)
+      if (!contactName) return
+      const contactEmail = window.prompt('Email', current.contactEmail || '') || ''
+      runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'PATCH', body: JSON.stringify({ contact_name: contactName, contact_email: contactEmail, amount_paid: current.amountPaid, payment_status: current.paymentStatus, internal_note: current.internalNote || '' }) }))
+    },
     updatePaymentStatus: (registrationId) => {
       const status = window.prompt('Status paiement (pending/partial/paid)', 'partial')
       const amountPaid = Number(window.prompt('Montant payé', '90') || 0)
@@ -282,11 +337,30 @@ export default function AcademyIndex({ initialTrainingId }) {
       const amount = Number(window.prompt('Montant', '120') || 0)
       runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/expenses`, { method: 'POST', body: JSON.stringify({ category: 'location', description, amount, date: new Date().toISOString().slice(0, 10) }) }))
     },
+    editExpense: (expenseId) => {
+      const current = data.trainingExpenses.find((item) => item.id === expenseId)
+      if (!current) return
+      const description = window.prompt('Description dépense', current.description || '') || ''
+      const amount = Number(window.prompt('Montant', String(current.amount || 0)) || current.amount || 0)
+      runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'PATCH', body: JSON.stringify({ category: current.category, description, amount, date: current.date }) }))
+    },
     deleteExpense: (expenseId) => runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'DELETE' })),
     createIdeaNote: () => {
       const title = window.prompt('Titre de la note idée')
       if (!title) return
       runMutation(() => apiRequest('/api/v1/academy/idea-notes', { method: 'POST', body: JSON.stringify({ category: 'subject', title, content: '', tags: [] }) }))
+    },
+    editIdeaNote: (id) => {
+      const current = data.ideaNotes.find((item) => item.id === id)
+      if (!current) return
+      const title = window.prompt('Titre', current.title)
+      if (!title) return
+      const content = window.prompt('Contenu', current.content || '') || ''
+      const tags = (window.prompt('Tags séparés par virgule', (current.tags || []).join(', ')) || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+      runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'PATCH', body: JSON.stringify({ category: current.category, title, content, tags }) }))
     },
     deleteIdeaNote: (id) => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
     viewReporting: async () => {
@@ -294,10 +368,38 @@ export default function AcademyIndex({ initialTrainingId }) {
       setReporting(payload)
       setView('reporting')
     },
-  }), [data.trainingTypes, runMutation])
+  }), [data, runMutation])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
-  const trainingsByStatus = useMemo(() => STATUSES.map((status) => ({ status, items: data.trainings.filter((item) => item.status === status) })), [data.trainings])
+  const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
+    if (statusFilter !== 'all' && item.status !== statusFilter) return false
+    if (typeFilter !== 'all' && item.trainingTypeId !== typeFilter) return false
+    if (search.trim() !== '') {
+      const query = search.trim().toLowerCase()
+      const typeName = data.trainingTypes.find((type) => type.id === item.trainingTypeId)?.name?.toLowerCase() || ''
+      const text = `${item.title} ${item.description || ''} ${item.coordinatorNote || ''} ${typeName}`.toLowerCase()
+      if (!text.includes(query)) return false
+    }
+    return true
+  }), [data.trainingTypes, data.trainings, search, statusFilter, typeFilter])
+  const trainingsByStatus = useMemo(() => STATUSES.map((status) => ({ status, items: filteredTrainings.filter((item) => item.status === status) })), [filteredTrainings])
+  const calendarItems = useMemo(() => data.trainingSessions.map((session) => {
+    const training = data.trainings.find((item) => item.id === session.trainingId)
+    return { ...session, training }
+  }), [data.trainingSessions, data.trainings])
+  const monthItems = useMemo(() => calendarItems.filter((item) => {
+    const date = new Date(item.startDate)
+    return date.getFullYear() === calendarDate.getFullYear() && date.getMonth() === calendarDate.getMonth()
+  }), [calendarDate, calendarItems])
+  const yearItems = useMemo(() => {
+    const year = calendarDate.getFullYear()
+    const buckets = Array.from({ length: 12 }, (_, index) => ({ month: index, items: [] }))
+    calendarItems.forEach((item) => {
+      const date = new Date(item.startDate)
+      if (date.getFullYear() === year) buckets[date.getMonth()].items.push(item)
+    })
+    return buckets
+  }, [calendarDate, calendarItems])
 
   if (loading) return <main className="min-h-screen bg-stone-50 flex items-center justify-center">Chargement Academy...</main>
 
@@ -337,10 +439,19 @@ export default function AcademyIndex({ initialTrainingId }) {
 
         {view === 'kanban' && (
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-4 flex gap-2">
+            <div className="mb-4 flex flex-wrap gap-2">
               <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={actions.createTraining}>Nouvelle formation</button>
+              <input className="min-w-[220px] rounded border border-stone-300 px-3 py-2 text-sm" placeholder="Rechercher une formation..." value={search} onChange={(event) => setSearch(event.target.value)} />
+              <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="all">Tous les statuts</option>
+                {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+              </select>
+              <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                <option value="all">Tous les types</option>
+                {data.trainingTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
+              </select>
             </div>
-            {data.trainings.length === 0 ? (
+            {filteredTrainings.length === 0 ? (
               <p className="text-sm text-stone-500">Aucune formation pour le moment.</p>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -357,6 +468,7 @@ export default function AcademyIndex({ initialTrainingId }) {
                               setSelectedTrainingId(item.id)
                               window.history.pushState({}, '', `/app/academy/${item.id}`)
                             }}>Ouvrir</button>
+                            <button className="text-stone-700 text-xs" onClick={() => actions.editTraining(item.id)}>Modifier</button>
                             <button className="text-red-600 text-xs" onClick={() => actions.deleteTraining(item.id)}>Supprimer</button>
                           </div>
                         </div>
@@ -371,11 +483,38 @@ export default function AcademyIndex({ initialTrainingId }) {
 
         {view === 'calendar' && (
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <p className="text-sm font-medium text-stone-800 mb-2">Calendrier formations</p>
-            {data.trainingSessions.length === 0 ? <p className="text-sm text-stone-500">Aucune session planifiée.</p> : data.trainingSessions.map((session) => {
-              const training = data.trainings.find((item) => item.id === session.trainingId)
-              return <p key={session.id} className="text-sm text-stone-700">{session.startDate} → {session.endDate} · {training?.title || 'Formation'}</p>
-            })}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-stone-800">Calendrier formations</p>
+              <button className={`rounded border px-2 py-1 text-xs ${calendarView === 'month' ? 'border-[#B01A19] text-[#B01A19]' : 'border-stone-300 text-stone-700'}`} onClick={() => setCalendarView('month')}>Mois</button>
+              <button className={`rounded border px-2 py-1 text-xs ${calendarView === 'year' ? 'border-[#B01A19] text-[#B01A19]' : 'border-stone-300 text-stone-700'}`} onClick={() => setCalendarView('year')}>Année</button>
+              <button className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}>Précédent</button>
+              <button className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}>Suivant</button>
+              <span className="text-xs text-stone-600">{calendarDate.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}</span>
+            </div>
+            {calendarItems.length === 0 ? <p className="text-sm text-stone-500">Aucune session planifiée.</p> : (
+              calendarView === 'month' ? (
+                <div className="space-y-2">
+                  {monthItems.length === 0 ? <p className="text-sm text-stone-500">Aucune session ce mois-ci.</p> : monthItems.map((item) => (
+                    <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
+                      <span>{item.startDate} → {item.endDate} · {item.training?.title || 'Formation'}</span>
+                      {item.training && <button className="text-indigo-700 text-xs" onClick={() => {
+                        setSelectedTrainingId(item.training.id)
+                        window.history.pushState({}, '', `/app/academy/${item.training.id}`)
+                      }}>Ouvrir</button>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {yearItems.map((bucket) => (
+                    <div key={bucket.month} className="rounded border border-stone-200 p-2 text-sm">
+                      <p className="font-medium">{new Date(calendarDate.getFullYear(), bucket.month, 1).toLocaleDateString('fr-FR', { month: 'long' })}</p>
+                      <p className="text-xs text-stone-500">{bucket.items.length} session(s)</p>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
           </section>
         )}
 
@@ -387,7 +526,10 @@ export default function AcademyIndex({ initialTrainingId }) {
             {data.trainingTypes.length === 0 ? <p className="text-sm text-stone-500">Aucun type de formation.</p> : data.trainingTypes.map((item) => (
               <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between mb-2">
                 <span>{item.name} · checklist {item.checklistTemplate.length}</span>
-                <button className="text-red-600" onClick={() => actions.deleteTrainingType(item.id)}>Supprimer</button>
+                <div className="flex items-center gap-2">
+                  <button className="text-stone-700" onClick={() => actions.editTrainingType(item.id)}>Modifier</button>
+                  <button className="text-red-600" onClick={() => actions.deleteTrainingType(item.id)}>Supprimer</button>
+                </div>
               </div>
             ))}
           </section>
@@ -401,7 +543,10 @@ export default function AcademyIndex({ initialTrainingId }) {
             {data.trainingLocations.length === 0 ? <p className="text-sm text-stone-500">Aucun lieu de formation.</p> : data.trainingLocations.map((item) => (
               <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between mb-2">
                 <span>{item.name} · cap. {item.capacity}</span>
-                <button className="text-red-600" onClick={() => actions.deleteLocation(item.id)}>Supprimer</button>
+                <div className="flex items-center gap-2">
+                  <button className="text-stone-700" onClick={() => actions.editLocation(item.id)}>Modifier</button>
+                  <button className="text-red-600" onClick={() => actions.deleteLocation(item.id)}>Supprimer</button>
+                </div>
               </div>
             ))}
           </section>
@@ -415,7 +560,10 @@ export default function AcademyIndex({ initialTrainingId }) {
             {data.ideaNotes.length === 0 ? <p className="text-sm text-stone-500">Aucune idée.</p> : data.ideaNotes.map((item) => (
               <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between mb-2">
                 <span>{item.category} · {item.title}</span>
-                <button className="text-red-600" onClick={() => actions.deleteIdeaNote(item.id)}>Supprimer</button>
+                <div className="flex items-center gap-2">
+                  <button className="text-stone-700" onClick={() => actions.editIdeaNote(item.id)}>Modifier</button>
+                  <button className="text-red-600" onClick={() => actions.deleteIdeaNote(item.id)}>Supprimer</button>
+                </div>
               </div>
             ))}
           </section>

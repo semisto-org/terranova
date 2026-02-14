@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   get "app", to: "app#index"
   get "app/lab", to: "app#lab"
   get "app/academy", to: "app#academy"
+  get "app/academy/calendar", to: "app#academy"
   get "app/academy/:training_id", to: "app#academy_training"
   get "app/design", to: "app#design"
   get "app/design/:project_id", to: "app#design_project"

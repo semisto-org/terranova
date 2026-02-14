@@ -401,7 +401,7 @@ module Api
           firstName: item.first_name,
           lastName: item.last_name,
           email: item.email,
-          avatar: item.avatar_url
+          avatar: item.avatar
         }
       end
 
