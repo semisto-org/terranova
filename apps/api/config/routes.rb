@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   # Inertia-powered application frontend
   get "app", to: "app#index"
   get "app/lab", to: "app#lab"
+  get "app/academy", to: "app#academy"
+  get "app/academy/:training_id", to: "app#academy_training"
   get "app/design", to: "app#design"
   get "app/design/:project_id", to: "app#design_project"
   get "client/design/:project_id", to: "app#design_client_portal"
@@ -140,9 +142,38 @@ Rails.application.routes.draw do
       post "design/:project_id/client/wishlist", to: "design_studio#client_add_wishlist_item"
       post "design/:project_id/client/journal", to: "design_studio#client_add_journal_entry"
 
-      get "academy", to: "placeholders#show", defaults: { section: "academy", route: "/academy" }
-      get "academy/:training_id", to: "placeholders#show", defaults: { section: "academy", route: "/academy/:trainingId" }
-      get "academy/calendar", to: "placeholders#show", defaults: { section: "academy", route: "/academy/calendar" }
+      get "academy", to: "academy#index"
+      get "academy/calendar", to: "academy#calendar"
+      get "academy/reporting", to: "academy#reporting"
+      post "academy/training-types", to: "academy#create_training_type"
+      patch "academy/training-types/:training_type_id", to: "academy#update_training_type"
+      delete "academy/training-types/:training_type_id", to: "academy#destroy_training_type"
+      post "academy/locations", to: "academy#create_location"
+      patch "academy/locations/:location_id", to: "academy#update_location"
+      delete "academy/locations/:location_id", to: "academy#destroy_location"
+      post "academy/trainings", to: "academy#create_training"
+      patch "academy/trainings/:training_id", to: "academy#update_training"
+      delete "academy/trainings/:training_id", to: "academy#destroy_training"
+      patch "academy/trainings/:training_id/status", to: "academy#update_training_status"
+      post "academy/trainings/:training_id/sessions", to: "academy#create_session"
+      patch "academy/sessions/:session_id", to: "academy#update_session"
+      delete "academy/sessions/:session_id", to: "academy#destroy_session"
+      post "academy/trainings/:training_id/registrations", to: "academy#create_registration"
+      patch "academy/registrations/:registration_id", to: "academy#update_registration"
+      delete "academy/registrations/:registration_id", to: "academy#destroy_registration"
+      patch "academy/registrations/:registration_id/payment-status", to: "academy#update_payment_status"
+      post "academy/attendance", to: "academy#mark_attendance"
+      post "academy/trainings/:training_id/documents", to: "academy#create_document"
+      delete "academy/documents/:document_id", to: "academy#destroy_document"
+      patch "academy/trainings/:training_id/checklist/toggle/:item_index", to: "academy#toggle_checklist_item"
+      post "academy/trainings/:training_id/checklist", to: "academy#add_checklist_item"
+      delete "academy/trainings/:training_id/checklist/:item_index", to: "academy#remove_checklist_item"
+      post "academy/trainings/:training_id/expenses", to: "academy#create_expense"
+      patch "academy/expenses/:expense_id", to: "academy#update_expense"
+      delete "academy/expenses/:expense_id", to: "academy#destroy_expense"
+      post "academy/idea-notes", to: "academy#create_idea_note"
+      patch "academy/idea-notes/:note_id", to: "academy#update_idea_note"
+      delete "academy/idea-notes/:note_id", to: "academy#destroy_idea_note"
 
       get "nursery", to: "placeholders#show", defaults: { section: "nursery", route: "/nursery" }
       get "nursery/orders", to: "placeholders#show", defaults: { section: "nursery", route: "/nursery/orders" }

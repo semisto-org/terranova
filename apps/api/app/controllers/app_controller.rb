@@ -38,6 +38,20 @@ class AppController < ApplicationController
     }
   end
 
+  def academy
+    render inertia: "Academy/Index", props: {
+      milestone: "Academy",
+      initialTrainingId: nil
+    }
+  end
+
+  def academy_training
+    render inertia: "Academy/Index", props: {
+      milestone: "Academy",
+      initialTrainingId: params[:training_id].to_s
+    }
+  end
+
   def design_project
     render inertia: "Design/Index", props: {
       milestone: "Design Studio",

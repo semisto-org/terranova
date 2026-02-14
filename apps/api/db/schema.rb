@@ -10,9 +10,119 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_12_182000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_13_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "academy_idea_notes", force: :cascade do |t|
+    t.string "category", null: false
+    t.string "title", null: false
+    t.text "content", default: "", null: false
+    t.jsonb "tags", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "academy_training_attendances", force: :cascade do |t|
+    t.bigint "registration_id", null: false
+    t.bigint "session_id", null: false
+    t.boolean "is_present", default: false, null: false
+    t.text "note", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["registration_id", "session_id"], name: "idx_academy_attendance_unique_pair", unique: true
+    t.index ["registration_id"], name: "index_academy_training_attendances_on_registration_id"
+    t.index ["session_id"], name: "index_academy_training_attendances_on_session_id"
+  end
+
+  create_table "academy_training_documents", force: :cascade do |t|
+    t.bigint "training_id", null: false
+    t.string "name", null: false
+    t.string "document_type", null: false
+    t.string "url", null: false
+    t.datetime "uploaded_at", null: false
+    t.string "uploaded_by", default: "team", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["training_id"], name: "index_academy_training_documents_on_training_id"
+  end
+
+  create_table "academy_training_expenses", force: :cascade do |t|
+    t.bigint "training_id", null: false
+    t.string "category", null: false
+    t.text "description", default: "", null: false
+    t.decimal "amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.date "date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["training_id"], name: "index_academy_training_expenses_on_training_id"
+  end
+
+  create_table "academy_training_locations", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "address", default: "", null: false
+    t.text "description", default: "", null: false
+    t.jsonb "photo_gallery", default: [], null: false
+    t.jsonb "compatible_training_type_ids", default: [], null: false
+    t.integer "capacity", default: 0, null: false
+    t.boolean "has_accommodation", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "academy_training_registrations", force: :cascade do |t|
+    t.bigint "training_id", null: false
+    t.string "contact_id", default: "", null: false
+    t.string "contact_name", null: false
+    t.string "contact_email", default: "", null: false
+    t.decimal "amount_paid", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "payment_status", default: "pending", null: false
+    t.text "internal_note", default: "", null: false
+    t.datetime "registered_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["training_id"], name: "index_academy_training_registrations_on_training_id"
+  end
+
+  create_table "academy_training_sessions", force: :cascade do |t|
+    t.bigint "training_id", null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.jsonb "location_ids", default: [], null: false
+    t.jsonb "trainer_ids", default: [], null: false
+    t.jsonb "assistant_ids", default: [], null: false
+    t.text "description", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["training_id"], name: "index_academy_training_sessions_on_training_id"
+  end
+
+  create_table "academy_training_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description", default: "", null: false
+    t.jsonb "checklist_template", default: [], null: false
+    t.jsonb "photo_gallery", default: [], null: false
+    t.jsonb "trainer_ids", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "academy_trainings", force: :cascade do |t|
+    t.bigint "training_type_id", null: false
+    t.string "title", null: false
+    t.string "status", default: "draft", null: false
+    t.decimal "price", precision: 12, scale: 2, default: "0.0", null: false
+    t.integer "max_participants", default: 0, null: false
+    t.boolean "requires_accommodation", default: false, null: false
+    t.text "description", default: "", null: false
+    t.text "coordinator_note", default: "", null: false
+    t.jsonb "checklist_items", default: [], null: false
+    t.jsonb "checked_items", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_academy_trainings_on_status"
+    t.index ["training_type_id"], name: "index_academy_trainings_on_training_type_id"
+  end
 
   create_table "bet_team_memberships", force: :cascade do |t|
     t.bigint "bet_id", null: false
@@ -744,6 +854,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_182000) do
     t.index ["member_id"], name: "index_wallets_on_member_id", unique: true
   end
 
+  add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
+  add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
+  add_foreign_key "academy_training_documents", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_training_expenses", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_training_registrations", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_training_sessions", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_trainings", "academy_training_types", column: "training_type_id"
   add_foreign_key "bet_team_memberships", "bets"
   add_foreign_key "bet_team_memberships", "members"
   add_foreign_key "bets", "cycles"
