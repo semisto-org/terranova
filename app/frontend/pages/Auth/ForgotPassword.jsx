@@ -1,16 +1,15 @@
 import React from 'react'
 import { useForm, usePage, Link } from '@inertiajs/react'
 
-export default function Login() {
+export default function ForgotPassword() {
   const { flash } = usePage().props
   const { data, setData, post, processing } = useForm({
     email: '',
-    password: '',
   })
 
   function handleSubmit(e) {
     e.preventDefault()
-    post('/login')
+    post('/forgot-password')
   }
 
   return (
@@ -22,12 +21,18 @@ export default function Login() {
               className="text-2xl font-semibold text-stone-900"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
-              Terranova
+              Mot de passe oublie
             </h1>
             <p className="text-sm text-stone-500 mt-1">
-              Connectez-vous pour continuer
+              Entrez votre adresse email pour recevoir un lien de reinitialisation
             </p>
           </div>
+
+          {flash?.notice && (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-700">
+              {flash.notice}
+            </div>
+          )}
 
           {flash?.alert && (
             <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
@@ -47,37 +52,10 @@ export default function Login() {
                 id="email"
                 type="email"
                 autoComplete="email"
+                autoFocus
                 required
                 value={data.email}
                 onChange={(e) => setData('email', e.target.value)}
-                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]
-                           focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-stone-700"
-                >
-                  Mot de passe
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-                >
-                  Mot de passe oublie ?
-                </Link>
-              </div>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={data.password}
-                onChange={(e) => setData('password', e.target.value)}
                 className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]
                            focus:border-transparent"
@@ -91,9 +69,18 @@ export default function Login() {
                          disabled:opacity-50 cursor-pointer"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              {processing ? 'Connexion...' : 'Se connecter'}
+              {processing ? 'Envoi en cours...' : 'Envoyer le lien'}
             </button>
           </form>
+
+          <div className="text-center">
+            <Link
+              href="/login"
+              className="text-sm text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              Retour a la connexion
+            </Link>
+          </div>
         </div>
       </div>
     </main>

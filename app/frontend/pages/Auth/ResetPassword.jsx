@@ -1,16 +1,17 @@
 import React from 'react'
 import { useForm, usePage, Link } from '@inertiajs/react'
 
-export default function Login() {
+export default function ResetPassword({ token }) {
   const { flash } = usePage().props
-  const { data, setData, post, processing } = useForm({
-    email: '',
+  const { data, setData, patch, processing } = useForm({
+    token: token,
     password: '',
+    password_confirmation: '',
   })
 
   function handleSubmit(e) {
     e.preventDefault()
-    post('/login')
+    patch('/reset-password')
   }
 
   return (
@@ -22,10 +23,10 @@ export default function Login() {
               className="text-2xl font-semibold text-stone-900"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
-              Terranova
+              Nouveau mot de passe
             </h1>
             <p className="text-sm text-stone-500 mt-1">
-              Connectez-vous pour continuer
+              Choisissez un nouveau mot de passe pour votre compte
             </p>
           </div>
 
@@ -38,46 +39,44 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="password"
                 className="block text-sm font-medium text-stone-700 mb-1"
               >
-                Email
+                Nouveau mot de passe
               </label>
               <input
-                id="email"
-                type="email"
-                autoComplete="email"
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                autoFocus
                 required
-                value={data.email}
-                onChange={(e) => setData('email', e.target.value)}
+                minLength={8}
+                value={data.password}
+                onChange={(e) => setData('password', e.target.value)}
                 className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]
                            focus:border-transparent"
               />
+              <p className="mt-1 text-xs text-stone-400">
+                8 caracteres minimum
+              </p>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-stone-700"
-                >
-                  Mot de passe
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-                >
-                  Mot de passe oublie ?
-                </Link>
-              </div>
+              <label
+                htmlFor="password_confirmation"
+                className="block text-sm font-medium text-stone-700 mb-1"
+              >
+                Confirmer le mot de passe
+              </label>
               <input
-                id="password"
+                id="password_confirmation"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
-                value={data.password}
-                onChange={(e) => setData('password', e.target.value)}
+                minLength={8}
+                value={data.password_confirmation}
+                onChange={(e) => setData('password_confirmation', e.target.value)}
                 className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]
                            focus:border-transparent"
@@ -91,9 +90,18 @@ export default function Login() {
                          disabled:opacity-50 cursor-pointer"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              {processing ? 'Connexion...' : 'Se connecter'}
+              {processing ? 'Reinitialisation...' : 'Reinitialiser le mot de passe'}
             </button>
           </form>
+
+          <div className="text-center">
+            <Link
+              href="/login"
+              className="text-sm text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              Retour a la connexion
+            </Link>
+          </div>
         </div>
       </div>
     </main>

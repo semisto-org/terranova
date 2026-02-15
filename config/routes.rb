@@ -4,6 +4,12 @@ Rails.application.routes.draw do
   post "login", to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
 
+  # Password reset
+  get "forgot-password", to: "password_resets#new", as: :forgot_password
+  post "forgot-password", to: "password_resets#create"
+  get "reset-password", to: "password_resets#edit", as: :reset_password
+  patch "reset-password", to: "password_resets#update"
+
   # Inertia-powered application frontend
   root "app#index"
   get "lab", to: "app#lab"
