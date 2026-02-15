@@ -77,6 +77,12 @@ Rails.application.routes.draw do
       post "lab/semos/emissions", to: "lab_management#emit_semos"
       patch "lab/semos/rates/:id", to: "lab_management#update_rate"
 
+      get "lab/contacts", to: "lab_management#list_contacts"
+      get "lab/contacts/:id", to: "lab_management#show_contact"
+      post "lab/contacts", to: "lab_management#create_contact"
+      patch "lab/contacts/:id", to: "lab_management#update_contact"
+      delete "lab/contacts/:id", to: "lab_management#destroy_contact"
+
       get "lab/timesheets", to: "lab_management#list_timesheets"
       post "lab/timesheets", to: "lab_management#create_timesheet"
       patch "lab/timesheets/:id", to: "lab_management#update_timesheet"

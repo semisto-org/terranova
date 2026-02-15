@@ -8,12 +8,16 @@ import {
   SemosDashboard,
   TimesheetList,
   CalendarView,
+  ContactList,
+  ContactDetail,
+  ContactForm,
 } from '../../lab-management/components'
 
 const SECTION_TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'shapeup', label: 'Shape Up' },
   { id: 'members', label: 'Membres' },
+  { id: 'contacts', label: 'Contacts' },
   { id: 'semos', label: 'Semos' },
   { id: 'timesheets', label: 'Timesheets' },
   { id: 'calendar', label: 'Calendrier' },
@@ -140,6 +144,8 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
 
   const [formModal, setFormModal] = useState(null)
   const [detailModal, setDetailModal] = useState(null)
+  const [contactDetailModal, setContactDetailModal] = useState(null)
+  const [contactFormModal, setContactFormModal] = useState(null)
 
   const loadOverview = useCallback(async () => {
     setLoading(true)
@@ -163,6 +169,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const events = data?.events || []
   const scopes = data?.scopes || []
   const timesheets = data?.timesheets || []
+  const contacts = data?.contacts || []
 
   const currentMemberId = useMemo(() => {
     if (initialMemberId && members.some((m) => m.id === initialMemberId)) return initialMemberId
@@ -427,6 +434,29 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
 
     onViewMember: (memberId) => showDetailFromApi('Détail membre', `/api/v1/lab/members/${memberId}`),
 
+    onCreateContact: () => setContactFormModal({ contact: null }),
+    onViewContact: async (contactId) => {
+      setBusy(true)
+      setError(null)
+      try {
+        const payload = await apiRequest(`/api/v1/lab/contacts/${contactId}`)
+        setContactDetailModal({ contact: payload.contact, linkedActivities: payload.linkedActivities })
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setBusy(false)
+      }
+    },
+    onEditContact: (contactId) => {
+      const contact = contacts.find((c) => c.id === contactId)
+      setContactFormModal({ contact: contact || null })
+    },
+    onDeleteContact: (contactId) =>
+      runAndRefresh(async () => {
+        if (!window.confirm('Supprimer ce contact ?')) return
+        await apiRequest(`/api/v1/lab/contacts/${contactId}`, { method: 'DELETE' })
+      }),
+
     onTransferSemos: (toWalletId, amount, description) =>
       runAndRefresh(() => {
         const fromWalletId = (data?.wallets || []).find((wallet) => wallet.memberId === currentMemberId)?.id
@@ -584,7 +614,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (!guild) return
       setDetailModal({ title: 'Détail guilde', data: guild })
     },
-  }), [currentMemberId, data, events, members, openForm, pitches, runAndRefresh, scopes, showDetailFromApi, timesheets])
+  }), [currentMemberId, contacts, data, events, members, openForm, pitches, runAndRefresh, scopes, showDetailFromApi, timesheets])
 
   if (loading) {
     return (
@@ -675,6 +705,16 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
+      {tab === 'contacts' && (
+        <ContactList
+          contacts={contacts}
+          onCreateContact={callbacks.onCreateContact}
+          onViewContact={callbacks.onViewContact}
+          onEditContact={callbacks.onEditContact}
+          onDeleteContact={callbacks.onDeleteContact}
+        />
+      )}
+
       {tab === 'semos' && (
         <SemosDashboard
           members={data.members}
@@ -735,6 +775,61 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           title={detailModal.title}
           data={detailModal.data}
           onClose={() => setDetailModal(null)}
+        />
+      )}
+
+      {contactDetailModal && (
+        <ContactDetail
+          contact={contactDetailModal.contact}
+          linkedActivities={contactDetailModal.linkedActivities}
+          onClose={() => setContactDetailModal(null)}
+          onEdit={() => {
+            setContactDetailModal(null)
+            callbacks.onEditContact(contactDetailModal.contact.id)
+          }}
+        />
+      )}
+
+      {contactFormModal && (
+        <ContactForm
+          contact={contactFormModal.contact}
+          organizations={contacts.filter((c) => c.contactType === 'organization')}
+          onSubmit={async (values) => {
+            const payload = {
+              contact_type: values.contactType,
+              name: values.name,
+              email: values.email,
+              phone: values.phone,
+              address: values.address,
+              organization_type: values.organizationType,
+              organization_id: values.organizationId || null,
+              notes: values.notes,
+              tag_names: values.tagNames,
+            }
+            setBusy(true)
+            setError(null)
+            try {
+              if (contactFormModal.contact) {
+                await apiRequest(`/api/v1/lab/contacts/${contactFormModal.contact.id}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify(payload),
+                })
+              } else {
+                await apiRequest('/api/v1/lab/contacts', {
+                  method: 'POST',
+                  body: JSON.stringify(payload),
+                })
+              }
+              setContactFormModal(null)
+              await loadOverview()
+            } catch (err) {
+              setError(err.message)
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onCancel={() => setContactFormModal(null)}
+          busy={busy}
         />
       )}
     </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_14_224108) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_15_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -185,6 +185,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_224108) do
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_chowder_items_on_created_by_id"
     t.index ["pitch_id"], name: "index_chowder_items_on_pitch_id"
+  end
+
+  create_table "contact_tags", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "name"], name: "index_contact_tags_on_contact_id_and_name", unique: true
+    t.index ["contact_id"], name: "index_contact_tags_on_contact_id"
+    t.index ["name"], name: "index_contact_tags_on_name"
+  end
+
+  create_table "contacts", force: :cascade do |t|
+    t.text "address", default: ""
+    t.string "contact_type", default: "person", null: false
+    t.datetime "created_at", null: false
+    t.string "email", default: ""
+    t.string "name", null: false
+    t.text "notes", default: ""
+    t.bigint "organization_id"
+    t.string "organization_type", default: ""
+    t.string "phone", default: ""
+    t.datetime "updated_at", null: false
+    t.index ["contact_type"], name: "index_contacts_on_contact_type"
+    t.index ["name"], name: "index_contacts_on_name"
+    t.index ["organization_id"], name: "index_contacts_on_organization_id"
   end
 
   create_table "cycles", force: :cascade do |t|
@@ -1042,6 +1068,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_224108) do
   add_foreign_key "bets", "pitches"
   add_foreign_key "chowder_items", "members", column: "created_by_id"
   add_foreign_key "chowder_items", "pitches"
+  add_foreign_key "contact_tags", "contacts"
+  add_foreign_key "contacts", "contacts", column: "organization_id"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_expenses", "design_projects", column: "project_id"

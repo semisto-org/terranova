@@ -231,6 +231,39 @@ export interface SemosRate {
   description: string
 }
 
+// --- Contacts (CRM) ---
+
+export type ContactType = 'person' | 'organization'
+
+export interface Contact {
+  id: string
+  contactType: ContactType
+  name: string
+  email: string
+  phone: string
+  address: string
+  organizationType: string
+  notes: string
+  organizationId: string | null
+  organization: { id: string; name: string } | null
+  tagNames: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LinkedActivities {
+  designProjects: { id: string; name: string; clientName: string; phase: string; status: string }[]
+  academyRegistrations: {
+    id: string
+    contactName: string
+    trainingId: string
+    trainingName: string
+    paymentStatus: string
+    registeredAt: string
+  }[]
+  nurseryOrders: { id: string; orderNumber: string; customerName: string; status: string }[]
+}
+
 // --- Timesheets ---
 
 export type PaymentType = 'invoice' | 'semos'
@@ -278,6 +311,7 @@ export interface LabManagementProps {
   semosEmissions: SemosEmission[]
   semosRates: SemosRate[]
   timesheets: Timesheet[]
+  contacts: Contact[]
 
   // Current user context
   currentMemberId: string
@@ -357,4 +391,14 @@ export interface LabManagementProps {
   // --- Guild actions ---
   /** Called when user wants to view a guild */
   onViewGuild?: (guildId: string) => void
+
+  // --- Contact (CRM) actions ---
+  /** Called when user wants to create a new contact */
+  onCreateContact?: () => void
+  /** Called when user wants to view a contact */
+  onViewContact?: (contactId: string) => void
+  /** Called when user wants to edit a contact */
+  onEditContact?: (contactId: string) => void
+  /** Called when user wants to delete a contact */
+  onDeleteContact?: (contactId: string) => void
 }

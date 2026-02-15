@@ -4,6 +4,7 @@ module Api
       class DomainError < StandardError; end
 
       before_action :set_member, only: [:show_member, :update_member]
+      before_action :set_contact, only: [:show_contact, :update_contact, :destroy_contact]
       before_action :set_pitch, only: [:update_pitch, :destroy_pitch, :create_scope, :add_chowder_item]
       before_action :set_scope, only: [:update_hill_position, :add_task]
       before_action :set_task, only: [:toggle_task]
@@ -26,8 +27,67 @@ module Api
           semosTransactions: serialize_transactions,
           semosEmissions: serialize_emissions,
           semosRates: serialize_rates,
-          timesheets: serialize_timesheets
+          timesheets: serialize_timesheets,
+          contacts: serialize_contacts
         }
+      end
+
+      def list_contacts
+        scope = Contact.includes(:contact_tags, :organization)
+        scope = scope.where(contact_type: params[:contact_type]) if params[:contact_type].present?
+        scope = scope.joins(:contact_tags).where(contact_tags: { name: params[:tag] }).distinct if params[:tag].present?
+        if params[:q].present?
+          q = "%#{params[:q].strip}%"
+          scope = scope.where(
+            "contacts.name ILIKE :q OR contacts.email ILIKE :q",
+            q: q
+          )
+        end
+        render json: { items: scope.order(:name).map { |c| serialize_contact(c) } }
+      end
+
+      def show_contact
+        render json: {
+          contact: serialize_contact(@contact),
+          linkedActivities: fetch_linked_activities(@contact)
+        }
+      end
+
+      def create_contact
+        contact = Contact.new(contact_params)
+
+        ActiveRecord::Base.transaction do
+          contact.save!
+          Array(contact_params[:tag_names]).each do |tag_name|
+            contact.contact_tags.find_or_create_by!(name: tag_name.strip) if tag_name.present?
+          end
+        end
+
+        render json: serialize_contact(contact.reload), status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      end
+
+      def update_contact
+        ActiveRecord::Base.transaction do
+          @contact.update!(contact_params.except(:tag_names))
+
+          if contact_params.key?(:tag_names)
+            @contact.contact_tags.destroy_all
+            Array(contact_params[:tag_names]).each do |tag_name|
+              @contact.contact_tags.create!(name: tag_name.strip) if tag_name.present?
+            end
+          end
+        end
+
+        render json: serialize_contact(@contact.reload)
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      end
+
+      def destroy_contact
+        @contact.destroy!
+        head :no_content
       end
 
       def list_cycles
@@ -428,6 +488,14 @@ module Api
         params.permit(:member_id, :date, :hours, :payment_type, :description, :category, :invoiced, :kilometers, :project_id, :course_id, :guild_id)
       end
 
+      def contact_params
+        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :organization_id, tag_names: [])
+      end
+
+      def set_contact
+        @contact = Contact.find(params.require(:id))
+      end
+
       def set_member
         @member = Member.find(params.require(:id))
       end
@@ -704,6 +772,69 @@ module Api
           projectId: timesheet.project_id,
           courseId: timesheet.course_id,
           guildId: timesheet.guild_id&.to_s
+        }
+      end
+
+      def serialize_contacts
+        Contact.includes(:contact_tags, :organization).order(:name).map { |c| serialize_contact(c) }
+      end
+
+      def serialize_contact(contact)
+        {
+          id: contact.id.to_s,
+          contactType: contact.contact_type,
+          name: contact.name,
+          email: contact.email.to_s,
+          phone: contact.phone.to_s,
+          address: contact.address.to_s,
+          organizationType: contact.organization_type.to_s,
+          notes: contact.notes.to_s,
+          organizationId: contact.organization_id&.to_s,
+          organization: contact.organization ? { id: contact.organization.id.to_s, name: contact.organization.name } : nil,
+          tagNames: contact.tag_names,
+          createdAt: contact.created_at.iso8601,
+          updatedAt: contact.updated_at.iso8601
+        }
+      end
+
+      def fetch_linked_activities(contact)
+        name_normalized = contact.name.strip.downcase
+        email_normalized = contact.email.present? ? contact.email.strip.downcase : nil
+
+        design_projects = Design::Project.where("LOWER(TRIM(client_name)) = ?", name_normalized)
+        design_projects = design_projects.or(Design::Project.where("LOWER(TRIM(client_email)) = ?", email_normalized)) if email_normalized.present?
+
+        academy_registrations = Academy::TrainingRegistration.includes(:training)
+          .where("LOWER(TRIM(contact_name)) = ?", name_normalized)
+        academy_registrations = academy_registrations.or(
+          Academy::TrainingRegistration.where("LOWER(TRIM(contact_email)) = ?", email_normalized)
+        ) if email_normalized.present?
+
+        nursery_orders = Nursery::Order.where("LOWER(TRIM(customer_name)) = ?", name_normalized)
+        nursery_orders = nursery_orders.or(Nursery::Order.where("LOWER(TRIM(customer_email)) = ?", email_normalized)) if email_normalized.present?
+
+        {
+          designProjects: design_projects.limit(20).map do |p|
+            { id: p.id.to_s, name: p.name, clientName: p.client_name, phase: p.phase, status: p.status }
+          end,
+          academyRegistrations: academy_registrations.limit(20).map do |r|
+            {
+              id: r.id.to_s,
+              contactName: r.contact_name,
+              trainingId: r.training_id.to_s,
+              trainingName: r.training&.name,
+              paymentStatus: r.payment_status,
+              registeredAt: r.registered_at&.iso8601
+            }
+          end,
+          nurseryOrders: nursery_orders.limit(20).map do |o|
+            {
+              id: o.id.to_s,
+              orderNumber: o.order_number,
+              customerName: o.customer_name,
+              status: o.status
+            }
+          end
         }
       end
     end

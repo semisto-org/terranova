@@ -269,7 +269,7 @@ export default function ProfileIndex() {
             value={fields.firstName}
             onChange={(e) => handleChange('firstName', e.target.value)}
             required
-            className="w-full rounded-xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
+            className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
           />
         </div>
 
@@ -283,7 +283,7 @@ export default function ProfileIndex() {
             value={fields.lastName}
             onChange={(e) => handleChange('lastName', e.target.value)}
             required
-            className="w-full rounded-xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
+            className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
           />
         </div>
 
@@ -297,7 +297,7 @@ export default function ProfileIndex() {
             value={fields.email}
             onChange={(e) => handleChange('email', e.target.value)}
             required
-            className="w-full rounded-xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
+            className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
           />
         </div>
 
@@ -352,7 +352,7 @@ export default function ProfileIndex() {
                 type="password"
                 value={fields.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                className="w-full rounded-xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
+                className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
                 placeholder="Laissez vide pour ne pas modifier"
               />
             </div>
@@ -365,7 +365,7 @@ export default function ProfileIndex() {
                 type="password"
                 value={fields.passwordConfirmation}
                 onChange={(e) => handleChange('passwordConfirmation', e.target.value)}
-                className="w-full rounded-xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
+                className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
                 placeholder="Confirmez le nouveau mot de passe"
               />
             </div>

@@ -135,6 +135,54 @@ Timesheet.find_or_create_by!(member: members.first, date: Date.current, descript
 end
 
 # -----------------------------
+# CRM Contacts
+# -----------------------------
+
+assoc_semisto = Contact.find_or_create_by!(name: "Association Semisto") do |c|
+  c.contact_type = "organization"
+  c.organization_type = "Association"
+  c.email = "contact@semisto.org"
+  c.phone = "+32 2 123 45 67"
+  c.address = "Rue de la Station 62, 1050 Bruxelles"
+  c.notes = "Collectif pilote du mouvement Semisto."
+end
+assoc_semisto.contact_tags.destroy_all
+%w[partenaire client].each { |tag| assoc_semisto.contact_tags.find_or_create_by!(name: tag) }
+
+contact_jean = Contact.find_or_create_by!(name: "Jean Dupont") do |c|
+  c.contact_type = "person"
+  c.email = "jean.dupont@example.com"
+  c.phone = "+32 470 10 20 30"
+  c.address = "Rue des Tilleuls 12, Namur"
+  c.notes = "Client projet jardin-foret. Tres engage sur la biodiversite."
+  c.organization = assoc_semisto
+end
+contact_jean.contact_tags.destroy_all
+%w[client].each { |tag| contact_jean.contact_tags.find_or_create_by!(name: tag) }
+
+Contact.find_or_create_by!(name: "Pepiniere Bruxelles") do |c|
+  c.contact_type = "organization"
+  c.organization_type = "Entreprise"
+  c.email = "contact@pepiniere-bruxelles.be"
+  c.phone = "+32 2 987 65 43"
+  c.address = "Chaussee de Waterloo 1234, 1180 Bruxelles"
+  c.notes = "Fournisseur plants et arbres fruitiers."
+end.tap do |contact|
+  contact.contact_tags.destroy_all
+  contact.contact_tags.find_or_create_by!(name: "fournisseur")
+end
+
+Contact.find_or_create_by!(name: "Alice Martin") do |c|
+  c.contact_type = "person"
+  c.email = "alice.martin@example.com"
+  c.phone = "+32 498 76 54 32"
+  c.notes = "Interesse par les formations Academy."
+end.tap do |contact|
+  contact.contact_tags.destroy_all
+  contact.contact_tags.find_or_create_by!(name: "partenaire")
+end
+
+# -----------------------------
 # Milestone 3: Plant Database
 # -----------------------------
 
