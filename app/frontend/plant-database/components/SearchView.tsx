@@ -112,7 +112,7 @@ export function SearchView({
           {!hasSearchCriteria && (
             <div className="text-center mb-3">
               <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Base de Données Végétale
+                Base de données végétale
               </h1>
               <p className="text-xs text-stone-500 dark:text-stone-400">
                 Genres, espèces et variétés

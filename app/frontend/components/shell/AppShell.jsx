@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
+import FeedbackButton from './FeedbackButton'
 
 function ShellLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -67,6 +68,9 @@ function ShellLayout({ children }) {
           {children}
         </main>
       </div>
+      
+      {/* Feedback button */}
+      <FeedbackButton />
     </div>
   )
 }

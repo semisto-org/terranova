@@ -36,18 +36,19 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
     <>
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-xl bg-white rounded-2xl border border-stone-200 shadow-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-stone-200">
+        <div className="w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl">
+          <div className="shrink-0 px-5 py-4 border-b border-stone-200">
             <h2 className="text-lg font-semibold text-stone-900">Nouveau projet Design Studio</h2>
           </div>
 
           <form
-            className="p-5 grid gap-3"
+            className="flex flex-col min-h-0 h-full"
             onSubmit={(event) => {
               event.preventDefault()
               onSubmit()
             }}
           >
+            <div className="flex-1 overflow-y-auto min-h-0 p-5 grid gap-3">
             <label className="grid gap-1">
               <span className="text-sm font-medium text-stone-700">Template (optionnel)</span>
               <select
@@ -98,7 +99,8 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
               </label>
             </div>
 
-            <div className="mt-2 flex justify-end gap-2">
+            </div>
+            <div className="shrink-0 px-5 py-4 border-t border-stone-200 flex justify-end gap-2">
               <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg border border-stone-300 text-sm">Annuler</button>
               <button type="submit" disabled={busy} className="px-3 py-2 rounded-lg bg-[#AFBD00] text-stone-900 text-sm font-medium disabled:opacity-60">
                 {busy ? 'Création...' : 'Créer'}

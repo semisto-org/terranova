@@ -9,6 +9,7 @@ module Api
       before_action :set_scope, only: [:update_hill_position, :add_task]
       before_action :set_task, only: [:toggle_task]
       before_action :set_event, only: [:show_event, :update_event, :destroy_event]
+      before_action :set_event_type, only: [:update_event_type, :destroy_event_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
 
       def overview
@@ -23,6 +24,7 @@ module Api
           chowderItems: serialize_chowder_items,
           ideaLists: serialize_idea_lists,
           events: serialize_events,
+          eventTypes: serialize_event_types,
           wallets: serialize_wallets,
           semosTransactions: serialize_transactions,
           semosEmissions: serialize_emissions,
@@ -300,7 +302,15 @@ module Api
       end
 
       def create_event
-        event = Event.new(event_params)
+        # Handle both event_type_id (new) and event_type_label (label-based lookup)
+        event_params_hash = event_params.to_h
+        if event_params_hash[:event_type_label].present? && event_params_hash[:event_type_id].blank?
+          event_type = EventType.find_by(label: event_params_hash[:event_type_label])
+          event_params_hash[:event_type_id] = event_type&.id
+          event_params_hash.delete(:event_type_label)
+        end
+
+        event = Event.new(event_params_hash)
 
         ActiveRecord::Base.transaction do
           event.save!
@@ -310,21 +320,60 @@ module Api
         render json: serialize_event(event), status: :created
       rescue ActiveRecord::RecordInvalid => e
         render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      rescue ActiveRecord::RecordNotFound => e
+        render json: { error: 'Type d\'événement introuvable' }, status: :unprocessable_entity
       end
 
       def update_event
+        # Handle both event_type_id (new) and event_type_label (label-based lookup)
+        event_params_hash = event_params.to_h
+        if event_params_hash[:event_type_label].present? && event_params_hash[:event_type_id].blank?
+          event_type = EventType.find_by(label: event_params_hash[:event_type_label])
+          event_params_hash[:event_type_id] = event_type&.id
+          event_params_hash.delete(:event_type_label)
+        end
+
         ActiveRecord::Base.transaction do
-          @event.update!(event_params)
+          @event.update!(event_params_hash)
           replace_event_attendees(@event, params[:attendee_ids]) if params.key?(:attendee_ids)
         end
 
         render json: serialize_event(@event)
       rescue ActiveRecord::RecordInvalid => e
         render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      rescue ActiveRecord::RecordNotFound => e
+        render json: { error: 'Type d\'événement introuvable' }, status: :unprocessable_entity
       end
 
       def destroy_event
         @event.destroy!
+        head :no_content
+      end
+
+      def list_event_types
+        render json: { items: serialize_event_types }
+      end
+
+      def create_event_type
+        event_type = EventType.new(event_type_params)
+
+        if event_type.save
+          render json: serialize_event_type(event_type), status: :created
+        else
+          render json: { error: event_type.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_event_type
+        if @event_type.update(event_type_params)
+          render json: serialize_event_type(@event_type)
+        else
+          render json: { error: @event_type.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_event_type
+        @event_type.destroy!
         head :no_content
       end
 
@@ -481,7 +530,11 @@ module Api
       end
 
       def event_params
-        params.permit(:title, :event_type, :start_date, :end_date, :location, :description, :cycle_id)
+        params.permit(:title, :event_type_label, :event_type_id, :start_date, :end_date, :location, :description, :cycle_id)
+      end
+
+      def event_type_params
+        params.permit(:label)
       end
 
       def timesheet_params
@@ -514,6 +567,10 @@ module Api
 
       def set_event
         @event = Event.find(params.require(:id))
+      end
+
+      def set_event_type
+        @event_type = EventType.find(params.require(:id))
       end
 
       def set_timesheet
@@ -682,20 +739,32 @@ module Api
       end
 
       def serialize_events
-        Event.includes(:event_attendees).order(start_date: :asc).map { |event| serialize_event(event) }
+        Event.includes(:event_attendees, :event_type).order(start_date: :asc).map { |event| serialize_event(event) }
       end
 
       def serialize_event(event)
         {
           id: event.id.to_s,
           title: event.title,
-          type: event.event_type,
+          type: event.event_type.label,
+          eventTypeId: event.event_type_id.to_s,
           startDate: event.start_date.iso8601,
           endDate: event.end_date.iso8601,
           location: event.location,
           description: event.description,
           attendeeIds: event.event_attendees.map { |ea| ea.member_id.to_s },
           cycleId: event.cycle_id&.to_s
+        }
+      end
+
+      def serialize_event_types
+        EventType.ordered.map { |et| serialize_event_type(et) }
+      end
+
+      def serialize_event_type(event_type)
+        {
+          id: event_type.id.to_s,
+          label: event_type.label
         }
       end
 

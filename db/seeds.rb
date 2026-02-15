@@ -1,5 +1,21 @@
 # frozen_string_literal: true
 
+# Seed event types
+event_types_data = [
+  { label: 'Réunion projet' },
+  { label: 'Réunion porteurs' },
+  { label: 'Design Day' },
+  { label: 'Réunion guilde' },
+  { label: 'Betting Table' },
+  { label: 'Semisto Day' },
+  { label: 'Semos Fest' },
+  { label: 'Formation' },
+]
+
+event_types_data.each do |attrs|
+  EventType.find_or_create_by!(label: attrs[:label])
+end
+
 members_data = [
   {
     first_name: "Sophie",
@@ -108,7 +124,7 @@ IdeaList.find_or_create_by!(name: "Ideas") do |record|
 end
 
 Event.find_or_create_by!(title: "Reunion de cycle") do |record|
-  record.event_type = "project_meeting"
+  record.event_type = EventType.find_by!(label: "Réunion projet")
   record.start_date = Time.current.change(hour: 9, min: 0)
   record.end_date = Time.current.change(hour: 10, min: 0)
   record.location = "Lab Bruxelles"

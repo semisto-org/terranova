@@ -6,58 +6,9 @@ interface EventCardProps {
   onView?: () => void
 }
 
-const eventTypeConfig: Record<
-  EventType,
-  { label: string; icon: string; color: string; bgColor: string }
-> = {
-  project_meeting: {
-    label: 'Réunion projet',
-    icon: '📋',
-    color: 'text-blue-700 dark:text-blue-300',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
-  },
-  stakeholder_meeting: {
-    label: 'Porteurs de projet',
-    icon: '👥',
-    color: 'text-purple-700 dark:text-purple-300',
-    bgColor: 'bg-purple-50 dark:bg-purple-900/30',
-  },
-  design_day: {
-    label: 'Design Day',
-    icon: '🎨',
-    color: 'text-lime-700 dark:text-lime-300',
-    bgColor: 'bg-lime-50 dark:bg-lime-900/30',
-  },
-  guild_meeting: {
-    label: 'Guilde',
-    icon: '⚙️',
-    color: 'text-stone-700 dark:text-stone-300',
-    bgColor: 'bg-stone-100 dark:bg-stone-800',
-  },
-  betting: {
-    label: 'Betting Table',
-    icon: '🎲',
-    color: 'text-amber-700 dark:text-amber-300',
-    bgColor: 'bg-amber-50 dark:bg-amber-900/30',
-  },
-  semisto_day: {
-    label: 'Semisto Day',
-    icon: '🌳',
-    color: 'text-emerald-700 dark:text-emerald-300',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-900/30',
-  },
-  semos_fest: {
-    label: 'Semos Fest',
-    icon: '🎉',
-    color: 'text-rose-700 dark:text-rose-300',
-    bgColor: 'bg-rose-50 dark:bg-rose-900/30',
-  },
-  training: {
-    label: 'Formation',
-    icon: '📚',
-    color: 'text-orange-700 dark:text-orange-300',
-    bgColor: 'bg-orange-50 dark:bg-orange-900/30',
-  },
+// Helper function to get event type label
+function getEventTypeLabel(type: string): string {
+  return type || 'Événement'
 }
 
 function formatEventDate(startDate: string, endDate: string): string {
@@ -88,7 +39,6 @@ function formatEventDate(startDate: string, endDate: string): string {
 }
 
 export function EventCard({ event, members, onView }: EventCardProps) {
-  const config = eventTypeConfig[event.type]
   const attendees = members.filter((m) => event.attendeeIds.includes(m.id))
 
   return (
@@ -103,14 +53,8 @@ export function EventCard({ event, members, onView }: EventCardProps) {
     >
       {/* Type badge */}
       <div className="flex items-center gap-2 mb-2">
-        <span
-          className={`
-          inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium
-          ${config.bgColor} ${config.color}
-        `}
-        >
-          <span>{config.icon}</span>
-          <span>{config.label}</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300">
+          {getEventTypeLabel(event.type)}
         </span>
       </div>
 

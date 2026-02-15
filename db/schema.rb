@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_15_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_15_161745) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -536,17 +536,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_100000) do
     t.index ["member_id"], name: "index_event_attendees_on_member_id"
   end
 
+  create_table "event_types", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "label", null: false
+    t.datetime "updated_at", null: false
+    t.index ["label"], name: "index_event_types_on_label", unique: true
+  end
+
   create_table "events", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "cycle_id"
     t.text "description", default: "", null: false
     t.datetime "end_date", null: false
-    t.string "event_type", null: false
+    t.bigint "event_type_id", null: false
     t.string "location", default: "", null: false
     t.datetime "start_date", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["cycle_id"], name: "index_events_on_cycle_id"
+    t.index ["event_type_id"], name: "index_events_on_event_type_id"
   end
 
   create_table "guild_memberships", force: :cascade do |t|
@@ -1098,6 +1106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_100000) do
   add_foreign_key "event_attendees", "events"
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
+  add_foreign_key "events", "event_types"
   add_foreign_key "guild_memberships", "guilds"
   add_foreign_key "guild_memberships", "members"
   add_foreign_key "guilds", "members", column: "leader_id"

@@ -65,6 +65,11 @@ Rails.application.routes.draw do
       post "lab/idea-items", to: "lab_management#add_idea"
       post "lab/idea-items/vote", to: "lab_management#vote_idea"
 
+      get "lab/event-types", to: "lab_management#list_event_types"
+      post "lab/event-types", to: "lab_management#create_event_type"
+      patch "lab/event-types/:id", to: "lab_management#update_event_type"
+      delete "lab/event-types/:id", to: "lab_management#destroy_event_type"
+
       get "lab/events", to: "lab_management#list_events"
       get "lab/events/:id", to: "lab_management#show_event"
       get "lab/calendar", to: "lab_management#calendar"

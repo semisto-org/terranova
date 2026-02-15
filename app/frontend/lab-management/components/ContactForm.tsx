@@ -82,7 +82,7 @@ export function ContactForm({
         className="w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl shadow-stone-900/20"
         onClick={(e) => e.stopPropagation()}
       >
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
           {/* Header */}
           <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100 dark:border-stone-800">
             <h2
@@ -97,7 +97,7 @@ export function ContactForm({
           </div>
 
           {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-6">
             {/* Type toggle */}
             <div>
               <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">

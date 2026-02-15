@@ -7,10 +7,14 @@ import {
   MemberList,
   SemosDashboard,
   TimesheetList,
+  TimesheetForm,
   CalendarView,
   ContactList,
   ContactDetail,
   ContactForm,
+  EventForm,
+  EventTypesAdmin,
+  MemberForm,
 } from '../../lab-management/components'
 
 const SECTION_TABS = [
@@ -21,6 +25,7 @@ const SECTION_TABS = [
   { id: 'semos', label: 'Semos' },
   { id: 'timesheets', label: 'Timesheets' },
   { id: 'calendar', label: 'Calendrier' },
+  { id: 'event-types', label: 'Types d\'événements' },
 ]
 
 const EVENT_TYPES = [
@@ -34,8 +39,6 @@ const EVENT_TYPES = [
   'training',
 ]
 
-const TIMESHEET_CATEGORIES = ['design', 'formation', 'administratif', 'coordination', 'communication']
-const TIMESHEET_PAYMENT_TYPES = ['invoice', 'semos']
 const APPETITES = ['2-weeks', '3-weeks', '6-weeks']
 
 function toLocalDatetimeInput(date) {
@@ -46,71 +49,77 @@ function toLocalDatetimeInput(date) {
 
 function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy }) {
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <h2 style={{ marginTop: 0 }}>{title}</h2>
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={onClose}>
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <form
           onSubmit={(event) => {
             event.preventDefault()
             onSubmit()
           }}
-          style={{ display: 'grid', gap: '0.75rem' }}
+          className="flex flex-col min-h-0 h-full"
         >
-          {fields.map((field) => (
-            <label key={field.name} style={{ display: 'grid', gap: '0.35rem' }}>
-              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{field.label}</span>
+          <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200 dark:border-stone-700">
+            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 m-0">{title}</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3">
+            {fields.map((field) => (
+              <label key={field.name} className="block space-y-1">
+                <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{field.label}</span>
 
-              {field.type === 'textarea' && (
-                <textarea
-                  rows={field.rows || 3}
-                  value={values[field.name] ?? ''}
-                  onChange={(event) => onChange(field.name, event.target.value)}
-                  style={inputStyle}
-                  required={field.required}
-                />
-              )}
+                {field.type === 'textarea' && (
+                  <textarea
+                    rows={field.rows || 3}
+                    value={values[field.name] ?? ''}
+                    onChange={(event) => onChange(field.name, event.target.value)}
+                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    required={field.required}
+                  />
+                )}
 
-              {field.type === 'select' && (
-                <select
-                  value={values[field.name] ?? ''}
-                  onChange={(event) => onChange(field.name, event.target.value)}
-                  style={inputStyle}
-                  required={field.required}
-                >
-                  {(field.options || []).map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              )}
+                {field.type === 'select' && (
+                  <select
+                    value={values[field.name] ?? ''}
+                    onChange={(event) => onChange(field.name, event.target.value)}
+                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    required={field.required}
+                  >
+                    {(field.options || []).map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                )}
 
-              {field.type === 'checkbox' && (
-                <input
-                  type="checkbox"
-                  checked={Boolean(values[field.name])}
-                  onChange={(event) => onChange(field.name, event.target.checked)}
-                  style={{ width: 20, height: 20 }}
-                />
-              )}
+                {field.type === 'checkbox' && (
+                  <input
+                    type="checkbox"
+                    checked={Boolean(values[field.name])}
+                    onChange={(event) => onChange(field.name, event.target.checked)}
+                    className="w-5 h-5"
+                  />
+                )}
 
-              {(!field.type || ['text', 'email', 'number', 'date', 'datetime-local'].includes(field.type)) && (
-                <input
-                  type={field.type || 'text'}
-                  value={values[field.name] ?? ''}
-                  onChange={(event) => onChange(field.name, event.target.value)}
-                  style={inputStyle}
-                  required={field.required}
-                />
-              )}
-            </label>
-          ))}
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '0.3rem' }}>
-            <button type="button" onClick={onClose} style={secondaryButtonStyle}>
+                {(!field.type || ['text', 'email', 'number', 'date', 'datetime-local'].includes(field.type)) && (
+                  <input
+                    type={field.type || 'text'}
+                    value={values[field.name] ?? ''}
+                    onChange={(event) => onChange(field.name, event.target.value)}
+                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    required={field.required}
+                  />
+                )}
+              </label>
+            ))}
+          </div>
+          <div className="shrink-0 px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium">
               Annuler
             </button>
-            <button type="submit" style={primaryButtonStyle} disabled={busy}>
+            <button type="submit" className="px-3 py-1.5 text-sm border border-[#5B5781] bg-[#5B5781] text-white rounded-lg font-semibold disabled:opacity-60" disabled={busy}>
               {busy ? 'En cours...' : 'Enregistrer'}
             </button>
           </div>
@@ -122,12 +131,23 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
 
 function DetailModal({ title, data, onClose }) {
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <h2 style={{ marginTop: 0 }}>{title}</h2>
-        <pre style={detailStyle}>{JSON.stringify(data, null, 2)}</pre>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={secondaryButtonStyle}>Fermer</button>
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={onClose}>
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200 dark:border-stone-700">
+          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 m-0">{title}</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4">
+          <pre className="bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-3 text-xs overflow-auto max-h-full">
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        </div>
+        <div className="shrink-0 px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex justify-end">
+          <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium">
+            Fermer
+          </button>
         </div>
       </div>
     </div>
@@ -146,6 +166,9 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [detailModal, setDetailModal] = useState(null)
   const [contactDetailModal, setContactDetailModal] = useState(null)
   const [contactFormModal, setContactFormModal] = useState(null)
+  const [timesheetFormModal, setTimesheetFormModal] = useState(null)
+  const [eventForm, setEventForm] = useState(null)
+  const [memberForm, setMemberForm] = useState(null)
 
   const loadOverview = useCallback(async () => {
     setLoading(true)
@@ -389,19 +412,11 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         })
       ),
 
-    onAddMember: () =>
-      openForm({
-        title: 'Ajouter un membre',
-        fields: [
-          { name: 'first_name', label: 'Prénom', required: true },
-          { name: 'last_name', label: 'Nom', required: true },
-          { name: 'email', label: 'Email', type: 'email', required: true },
-          { name: 'roles_csv', label: 'Roles (csv)', required: true },
-          { name: 'is_admin', label: 'Admin', type: 'checkbox' },
-        ],
-        initialValues: { roles_csv: 'designer', is_admin: false },
-        onSubmit: (values) =>
-          apiRequest('/api/v1/lab/members', {
+    onAddMember: () => {
+      setMemberForm({
+        member: null,
+        onSubmit: async (values) => {
+          await apiRequest('/api/v1/lab/members', {
             method: 'POST',
             body: JSON.stringify({
               first_name: values.first_name,
@@ -409,26 +424,32 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
               email: values.email,
               avatar: '',
               status: 'active',
-              is_admin: Boolean(values.is_admin),
+              is_admin: values.is_admin,
               joined_at: new Date().toISOString().slice(0, 10),
-              roles: values.roles_csv.split(',').map((role) => role.trim()).filter(Boolean),
+              roles: values.roles,
               guild_ids: [],
             }),
-          }),
-      }),
+          })
+        },
+      })
+    },
 
     onEditMember: (memberId) => {
       const member = members.find((item) => item.id === memberId)
       if (!member) return
-      openForm({
-        title: 'Modifier le membre',
-        fields: [{ name: 'first_name', label: 'Prénom', required: true }],
-        initialValues: { first_name: member.firstName },
-        onSubmit: (values) =>
-          apiRequest(`/api/v1/lab/members/${memberId}`, {
+      setMemberForm({
+        member,
+        onSubmit: async (values) => {
+          await apiRequest(`/api/v1/lab/members/${memberId}`, {
             method: 'PATCH',
-            body: JSON.stringify({ first_name: values.first_name }),
-          }),
+            body: JSON.stringify({
+              first_name: values.first_name,
+              last_name: values.last_name,
+              is_admin: values.is_admin,
+              roles: values.roles,
+            }),
+          })
+        },
       })
     },
 
@@ -484,53 +505,10 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         })
       ),
 
-    onCreateTimesheet: () =>
-      openForm({
-        title: 'Nouvelle prestation',
-        fields: [
-          { name: 'date', label: 'Date', type: 'date', required: true },
-          { name: 'hours', label: 'Heures', type: 'number', required: true },
-          { name: 'payment_type', label: 'Type paiement', type: 'select', options: TIMESHEET_PAYMENT_TYPES },
-          { name: 'category', label: 'Catégorie', type: 'select', options: TIMESHEET_CATEGORIES },
-          { name: 'description', label: 'Description', type: 'textarea', required: true },
-          { name: 'kilometers', label: 'Km', type: 'number' },
-        ],
-        initialValues: {
-          date: new Date().toISOString().slice(0, 10),
-          hours: 1,
-          payment_type: 'invoice',
-          category: 'design',
-          kilometers: 0,
-        },
-        onSubmit: (values) =>
-          apiRequest('/api/v1/lab/timesheets', {
-            method: 'POST',
-            body: JSON.stringify({
-              member_id: currentMemberId,
-              date: values.date,
-              hours: Number(values.hours),
-              payment_type: values.payment_type,
-              category: values.category,
-              description: values.description,
-              invoiced: false,
-              kilometers: Number(values.kilometers || 0),
-            }),
-          }),
-      }),
-
+    onCreateTimesheet: () => setTimesheetFormModal({ timesheet: null }),
     onEditTimesheet: (timesheetId) => {
       const timesheet = timesheets.find((item) => item.id === timesheetId)
-      if (!timesheet) return
-      openForm({
-        title: 'Modifier la prestation',
-        fields: [{ name: 'description', label: 'Description', type: 'textarea', required: true }],
-        initialValues: { description: timesheet.description },
-        onSubmit: (values) =>
-          apiRequest(`/api/v1/lab/timesheets/${timesheetId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ description: values.description }),
-          }),
-      })
+      if (timesheet) setTimesheetFormModal({ timesheet })
     },
 
     onDeleteTimesheet: (timesheetId) =>
@@ -545,31 +523,14 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       ),
 
     onCreateEvent: () => {
-      const now = new Date()
-      const end = new Date(now.getTime() + 60 * 60 * 1000)
-      openForm({
-        title: 'Créer un événement',
-        fields: [
-          { name: 'title', label: 'Titre', required: true },
-          { name: 'event_type', label: 'Type', type: 'select', options: EVENT_TYPES },
-          { name: 'start_date', label: 'Début', type: 'datetime-local', required: true },
-          { name: 'end_date', label: 'Fin', type: 'datetime-local', required: true },
-          { name: 'location', label: 'Lieu' },
-          { name: 'description', label: 'Description', type: 'textarea' },
-        ],
-        initialValues: {
-          event_type: 'project_meeting',
-          start_date: toLocalDatetimeInput(now),
-          end_date: toLocalDatetimeInput(end),
-          location: 'Lab',
-          description: '',
-        },
+      setEventForm({
+        event: null,
         onSubmit: (values) =>
           apiRequest('/api/v1/lab/events', {
             method: 'POST',
             body: JSON.stringify({
               title: values.title,
-              event_type: values.event_type,
+              event_type_id: values.event_type_id,
               start_date: new Date(values.start_date).toISOString(),
               end_date: new Date(values.end_date).toISOString(),
               location: values.location || '',
@@ -583,14 +544,28 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     onEditEvent: (eventId) => {
       const event = events.find((item) => item.id === eventId)
       if (!event) return
-      openForm({
-        title: 'Modifier l\'événement',
-        fields: [{ name: 'title', label: 'Titre', required: true }],
-        initialValues: { title: event.title },
+      setEventForm({
+        event: {
+          id: event.id,
+          title: event.title,
+          type: event.type,
+          eventTypeId: event.eventTypeId,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          location: event.location,
+          description: event.description,
+        },
         onSubmit: (values) =>
           apiRequest(`/api/v1/lab/events/${eventId}`, {
             method: 'PATCH',
-            body: JSON.stringify({ title: values.title }),
+            body: JSON.stringify({
+              title: values.title,
+              event_type_id: values.event_type_id,
+              start_date: new Date(values.start_date).toISOString(),
+              end_date: new Date(values.end_date).toISOString(),
+              location: values.location || '',
+              description: values.description || '',
+            }),
           }),
       })
     },
@@ -758,6 +733,10 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
+      {tab === 'event-types' && (
+        <EventTypesAdmin busy={busy} />
+      )}
+
       {formModal && (
         <FormModal
           title={formModal.title}
@@ -766,6 +745,20 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onChange={updateFormValue}
           onSubmit={submitForm}
           onClose={() => setFormModal(null)}
+          busy={busy}
+        />
+      )}
+
+      {eventForm && (
+        <EventForm
+          event={eventForm.event}
+          onSubmit={async (values) => {
+            await runAndRefresh(async () => {
+              await eventForm.onSubmit(values)
+            })
+            setEventForm(null)
+          }}
+          onCancel={() => setEventForm(null)}
           busy={busy}
         />
       )}
@@ -829,6 +822,60 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
             }
           }}
           onCancel={() => setContactFormModal(null)}
+          busy={busy}
+        />
+      )}
+
+      {timesheetFormModal && (
+        <TimesheetForm
+          timesheet={timesheetFormModal.timesheet}
+          onSubmit={async (values) => {
+            setBusy(true)
+            setError(null)
+            try {
+              if (timesheetFormModal.timesheet) {
+                await apiRequest(`/api/v1/lab/timesheets/${timesheetFormModal.timesheet.id}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ description: values.description }),
+                })
+              } else {
+                await apiRequest('/api/v1/lab/timesheets', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    member_id: currentMemberId,
+                    date: values.date,
+                    hours: Number(values.hours),
+                    payment_type: values.payment_type,
+                    category: values.category,
+                    description: values.description,
+                    invoiced: false,
+                    kilometers: Number(values.kilometers || 0),
+                  }),
+                })
+              }
+              setTimesheetFormModal(null)
+              await loadOverview()
+            } catch (err) {
+              setError(err.message)
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onCancel={() => setTimesheetFormModal(null)}
+          busy={busy}
+        />
+      )}
+
+      {memberForm && (
+        <MemberForm
+          member={memberForm.member}
+          onSubmit={async (values) => {
+            await runAndRefresh(async () => {
+              await memberForm.onSubmit(values)
+            })
+            setMemberForm(null)
+          }}
+          onCancel={() => setMemberForm(null)}
           busy={busy}
         />
       )}

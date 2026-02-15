@@ -155,20 +155,18 @@ export interface IdeaList {
 
 // --- Calendar & Events ---
 
-export type EventType =
-  | 'project_meeting'
-  | 'stakeholder_meeting'
-  | 'design_day'
-  | 'guild_meeting'
-  | 'betting'
-  | 'semisto_day'
-  | 'semos_fest'
-  | 'training'
+export type EventType = string // Label of the event type (now the identifier)
+
+export interface EventTypeConfig {
+  id: string
+  label: string
+}
 
 export interface Event {
   id: string
   title: string
-  type: EventType
+  type: EventType // label of the event type
+  eventTypeId: string // ID of the event type
   startDate: string
   endDate: string
   location: string

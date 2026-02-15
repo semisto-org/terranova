@@ -22,10 +22,10 @@ export function ContactDetail({
   return (
     <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-auto bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto min-h-0 p-6">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-[#5B5781]/15 dark:bg-[#5B5781]/25 text-[#5B5781] dark:text-[#a9a3c7] font-bold text-xl shrink-0">
