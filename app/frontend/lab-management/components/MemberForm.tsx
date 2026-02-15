@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Member } from '../types'
 
 const inputBase =
@@ -22,6 +22,8 @@ export interface MemberFormProps {
     email: string
     roles: string[]
     is_admin: boolean
+    avatar_file?: File | null
+    remove_avatar?: boolean
   }) => Promise<void>
   onCancel: () => void
   busy?: boolean
@@ -30,6 +32,7 @@ export interface MemberFormProps {
 export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberFormProps) {
   const isEdit = Boolean(member)
   const firstNameRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [firstName, setFirstName] = useState(member?.firstName ?? '')
   const [lastName, setLastName] = useState(member?.lastName ?? '')
@@ -37,6 +40,9 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
   const [selectedRoles, setSelectedRoles] = useState<string[]>(member?.roles ?? [])
   const [isAdmin, setIsAdmin] = useState(member?.isAdmin ?? false)
   const [error, setError] = useState<string | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar ?? null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [removeAvatar, setRemoveAvatar] = useState(false)
 
   // Focus first input when modal opens
   useEffect(() => {
@@ -58,6 +64,36 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onCancel])
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setError('Veuillez sélectionner un fichier image (JPG, PNG, GIF, WebP)')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("L'image ne doit pas dépasser 5 Mo")
+      return
+    }
+
+    setAvatarFile(file)
+    setRemoveAvatar(false)
+    setError(null)
+
+    const reader = new FileReader()
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }, [])
+
+  const handleRemoveAvatar = useCallback(() => {
+    setAvatarFile(null)
+    setAvatarPreview(null)
+    setRemoveAvatar(true)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
 
   const toggleRole = (roleValue: string) => {
     setSelectedRoles((prev) =>
@@ -86,6 +122,8 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
         email: email.trim(),
         roles: selectedRoles,
         is_admin: isAdmin,
+        avatar_file: avatarFile,
+        remove_avatar: removeAvatar,
       })
     } catch (err: any) {
       setError(err.message || 'Erreur lors de l\'enregistrement')
@@ -142,6 +180,65 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
               )}
 
               <div className="space-y-6">
+                {/* Avatar upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">
+                    Photo de profil
+                  </label>
+                  <div className="flex items-center gap-5">
+                    <div className="relative flex-shrink-0">
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Avatar"
+                          className="w-20 h-20 rounded-xl object-cover border-2 border-stone-200 dark:border-stone-600 ring-2 ring-stone-100 dark:ring-stone-700"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-[#5B5781]/20 to-[#5B5781]/5 dark:from-[#5B5781]/30 dark:to-[#5B5781]/10 border-2 border-dashed border-stone-300 dark:border-stone-600 flex items-center justify-center text-stone-400 dark:text-stone-500">
+                          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-3 py-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 rounded-lg border border-stone-300 dark:border-stone-600 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                        >
+                          {avatarPreview ? 'Changer l\'image' : 'Choisir une image'}
+                        </button>
+                        {avatarPreview && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveAvatar}
+                            className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
+                        JPG, PNG, GIF ou WebP. 5 Mo maximum.
+                      </p>
+                      {avatarFile && (
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                          {avatarFile.name} sélectionné
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Name fields - side by side */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

@@ -44,6 +44,7 @@ Rails.application.routes.draw do
       get "lab/members/:id", to: "lab_management#show_member"
       post "lab/members", to: "lab_management#create_member"
       patch "lab/members/:id", to: "lab_management#update_member"
+      delete "lab/members/:id/avatar", to: "lab_management#remove_member_avatar"
 
       get "lab/pitches", to: "lab_management#list_pitches"
       get "lab/pitches/:id", to: "lab_management#show_pitch"

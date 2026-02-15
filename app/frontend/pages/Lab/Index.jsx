@@ -416,20 +416,44 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       setMemberForm({
         member: null,
         onSubmit: async (values) => {
-          await apiRequest('/api/v1/lab/members', {
-            method: 'POST',
-            body: JSON.stringify({
-              first_name: values.first_name,
-              last_name: values.last_name,
-              email: values.email,
-              avatar: '',
-              status: 'active',
-              is_admin: values.is_admin,
-              joined_at: new Date().toISOString().slice(0, 10),
-              roles: values.roles,
-              guild_ids: [],
-            }),
-          })
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+
+          if (values.avatar_file) {
+            const body = new FormData()
+            body.append('first_name', values.first_name)
+            body.append('last_name', values.last_name)
+            body.append('email', values.email)
+            body.append('avatar_image', values.avatar_file)
+            body.append('status', 'active')
+            body.append('is_admin', String(values.is_admin))
+            body.append('joined_at', new Date().toISOString().slice(0, 10))
+            values.roles.forEach((role) => body.append('roles[]', role))
+
+            const response = await fetch('/api/v1/lab/members', {
+              method: 'POST',
+              headers: { 'X-CSRF-Token': csrfToken },
+              body,
+            })
+            if (!response.ok) {
+              const data = await response.json().catch(() => ({}))
+              throw new Error(data.error || `${response.status} ${response.statusText}`)
+            }
+          } else {
+            await apiRequest('/api/v1/lab/members', {
+              method: 'POST',
+              body: JSON.stringify({
+                first_name: values.first_name,
+                last_name: values.last_name,
+                email: values.email,
+                avatar: '',
+                status: 'active',
+                is_admin: values.is_admin,
+                joined_at: new Date().toISOString().slice(0, 10),
+                roles: values.roles,
+                guild_ids: [],
+              }),
+            })
+          }
         },
       })
     },
@@ -440,15 +464,48 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       setMemberForm({
         member,
         onSubmit: async (values) => {
-          await apiRequest(`/api/v1/lab/members/${memberId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
-              first_name: values.first_name,
-              last_name: values.last_name,
-              is_admin: values.is_admin,
-              roles: values.roles,
-            }),
-          })
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+
+          // If avatar needs to be removed, call the dedicated endpoint first
+          if (values.remove_avatar && !values.avatar_file) {
+            const removeResp = await fetch(`/api/v1/lab/members/${memberId}/avatar`, {
+              method: 'DELETE',
+              headers: { 'X-CSRF-Token': csrfToken },
+            })
+            if (!removeResp.ok) {
+              const data = await removeResp.json().catch(() => ({}))
+              throw new Error(data.error || 'Erreur lors de la suppression de l\'avatar')
+            }
+          }
+
+          if (values.avatar_file) {
+            const body = new FormData()
+            body.append('first_name', values.first_name)
+            body.append('last_name', values.last_name)
+            body.append('is_admin', String(values.is_admin))
+            body.append('avatar_image', values.avatar_file)
+            values.roles.forEach((role) => body.append('roles[]', role))
+
+            const response = await fetch(`/api/v1/lab/members/${memberId}`, {
+              method: 'PATCH',
+              headers: { 'X-CSRF-Token': csrfToken },
+              body,
+            })
+            if (!response.ok) {
+              const data = await response.json().catch(() => ({}))
+              throw new Error(data.error || `${response.status} ${response.statusText}`)
+            }
+          } else {
+            await apiRequest(`/api/v1/lab/members/${memberId}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                first_name: values.first_name,
+                last_name: values.last_name,
+                is_admin: values.is_admin,
+                roles: values.roles,
+              }),
+            })
+          }
         },
       })
     },

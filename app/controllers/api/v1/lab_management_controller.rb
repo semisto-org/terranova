@@ -105,23 +105,28 @@ module Api
       end
 
       def create_member
-        member = Member.new(member_params.except(:roles, :guild_ids))
+        member = Member.new(member_params.except(:roles, :guild_ids, :avatar_image))
 
         ActiveRecord::Base.transaction do
           member.save!
+          member.avatar_image.attach(params[:avatar_image]) if params[:avatar_image].present?
           Array(member_params[:roles]).each { |role| member.member_roles.create!(role: role) }
           Array(member_params[:guild_ids]).each { |guild_id| GuildMembership.create!(member_id: member.id, guild_id: guild_id) }
           Wallet.create!(member: member)
         end
 
-        render json: serialize_member(member), status: :created
+        render json: serialize_member(member.reload), status: :created
       rescue ActiveRecord::RecordInvalid => e
         render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
       end
 
       def update_member
         ActiveRecord::Base.transaction do
-          @member.update!(member_params.except(:roles, :guild_ids))
+          @member.update!(member_params.except(:roles, :guild_ids, :avatar_image))
+
+          if params[:avatar_image].present?
+            @member.avatar_image.attach(params[:avatar_image])
+          end
 
           if member_params.key?(:roles)
             @member.member_roles.delete_all
@@ -134,9 +139,16 @@ module Api
           end
         end
 
-        render json: serialize_member(@member)
+        render json: serialize_member(@member.reload)
       rescue ActiveRecord::RecordInvalid => e
         render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      end
+
+      def remove_member_avatar
+        member = Member.find(params.require(:id))
+        member.avatar_image.purge if member.avatar_image.attached?
+        member.update!(avatar: "")
+        render json: serialize_member(member.reload)
       end
 
       def list_pitches
@@ -501,7 +513,7 @@ module Api
       private
 
       def member_params
-        params.permit(:first_name, :last_name, :email, :avatar, :status, :is_admin, :joined_at, roles: [], guild_ids: [])
+        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, roles: [], guild_ids: [])
       end
 
       def pitch_params

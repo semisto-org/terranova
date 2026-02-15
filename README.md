@@ -83,15 +83,20 @@ Les assets frontend (React/Vite) sont compilees lors du deploiement via `rake as
 
 ### Variables d'environnement requises
 
-| Variable            | Description                          |
-|---------------------|--------------------------------------|
-| `RAILS_ENV`         | `production`                         |
-| `SECRET_KEY_BASE`   | Cle secrete Rails                    |
-| `PGHOST`            | Hote PostgreSQL                      |
-| `PGPORT`            | Port PostgreSQL                      |
-| `PGUSER`            | Utilisateur PostgreSQL               |
-| `PGPASSWORD`        | Mot de passe PostgreSQL              |
-| `WEBSITE_ORIGIN`    | Origine CORS du site public          |
+| Variable                    | Description                              |
+|-----------------------------|------------------------------------------|
+| `RAILS_ENV`                 | `production`                             |
+| `SECRET_KEY_BASE`           | Cle secrete Rails                        |
+| `PGHOST`                    | Hote PostgreSQL                          |
+| `PGPORT`                    | Port PostgreSQL                          |
+| `PGUSER`                    | Utilisateur PostgreSQL                   |
+| `PGPASSWORD`                | Mot de passe PostgreSQL                  |
+| `WEBSITE_ORIGIN`            | Origine CORS du site public              |
+| `AWS_SES_ACCESS_KEY_ID`     | Cle d'acces IAM pour Amazon SES          |
+| `AWS_SES_SECRET_ACCESS_KEY` | Cle secrete IAM pour Amazon SES          |
+| `AWS_SES_REGION`            | Region SES (defaut : `eu-west-1`)        |
+| `APP_HOST`                  | Hostname pour les liens dans les emails  |
+| `MAILER_FROM`               | Adresse d'expedition (defaut : `noreply@terranova.semisto.org`) |
 
 ## API
 
