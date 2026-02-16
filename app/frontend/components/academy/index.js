@@ -1,3 +1,19 @@
+// Academy components
+export { default as TrainingCard } from './TrainingCard'
+export { default as TrainingKanban } from './TrainingKanban'
+export { default as TrainingDetail } from './TrainingDetail'
+export { default as TrainingInfoTab } from './TrainingInfoTab'
+export { default as TrainingSessionsTab } from './TrainingSessionsTab'
+export { default as TrainingRegistrationsTab } from './TrainingRegistrationsTab'
+export { default as TrainingAttendancesTab } from './TrainingAttendancesTab'
+export { default as TrainingDocumentsTab } from './TrainingDocumentsTab'
+export { default as TrainingChecklistTab } from './TrainingChecklistTab'
+export { default as TrainingFinancesTab } from './TrainingFinancesTab'
+export { default as CalendarMonthView } from './CalendarMonthView'
+export { default as CalendarYearView } from './CalendarYearView'
+export { default as IdeaNotesView } from './IdeaNotesView'
+export { default as ReportingDashboard } from './ReportingDashboard'
+
 // Academy modal components
 export { TrainingFormModal } from './TrainingFormModal'
 export { RegistrationFormModal } from './RegistrationFormModal'

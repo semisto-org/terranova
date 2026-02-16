@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_163453) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,7 +43,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_163453) do
     t.datetime "updated_at", null: false
     t.datetime "uploaded_at", null: false
     t.string "uploaded_by", default: "team", null: false
-    t.string "url", null: false
+    t.string "url"
     t.index ["training_id"], name: "index_academy_training_documents_on_training_id"
   end
 

@@ -3,6 +3,12 @@ import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import LocationsMap from '../../components/academy/LocationsMap'
 import {
+  TrainingDetail,
+  TrainingKanban,
+  CalendarMonthView,
+  CalendarYearView,
+  IdeaNotesView,
+  ReportingDashboard,
   TrainingFormModal,
   RegistrationFormModal,
   PaymentStatusModal,
@@ -10,156 +16,8 @@ import {
   ExpenseFormModal,
   DocumentFormModal,
   ChecklistItemModal,
-  IdeaNoteFormModal
+  IdeaNoteFormModal,
 } from '@/components/academy'
-
-const STATUSES = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
-const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
-  registrations_open: 'Inscriptions ouvertes',
-  in_progress: 'En cours',
-  completed: 'Terminée',
-  cancelled: 'Annulée',
-}
-
-function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
-  const [tab, setTab] = useState('info')
-  const sessions = data.trainingSessions.filter((item) => item.trainingId === training.id)
-  const registrations = data.trainingRegistrations.filter((item) => item.trainingId === training.id)
-  const documents = data.trainingDocuments.filter((item) => item.trainingId === training.id)
-  const expenses = data.trainingExpenses.filter((item) => item.trainingId === training.id)
-  const attendances = data.trainingAttendances
-  const revenue = registrations.reduce((sum, item) => sum + Number(item.amountPaid || 0), 0)
-  const expenseTotal = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)
-
-  return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6">
-      <div className="max-w-6xl mx-auto space-y-4">
-        <div className="flex items-center gap-2">
-          <button className="rounded border border-stone-300 px-3 py-2 text-sm" onClick={onBack}>Retour Kanban</button>
-          <button className="rounded border border-stone-300 px-3 py-2 text-sm" onClick={onRefresh}>Rafraîchir</button>
-          {busy && <span className="text-xs text-stone-500">Synchronisation...</span>}
-        </div>
-        <header className="rounded-2xl border border-stone-200 bg-white p-5">
-          <h1 className="text-2xl font-semibold text-stone-900">{training.title}</h1>
-          <p className="text-stone-600 text-sm">{STATUS_LABELS[training.status]} · {training.price}€ · max {training.maxParticipants}</p>
-        </header>
-        <section className="rounded-2xl border border-stone-200 bg-white p-4">
-          <div className="mb-4 flex flex-wrap gap-2">
-            {['info', 'sessions', 'registrations', 'attendances', 'documents', 'checklist', 'finances'].map((item) => (
-              <button key={item} className={`rounded px-3 py-2 text-sm ${tab === item ? 'bg-[#B01A19] text-white' : 'bg-stone-100 text-stone-700'}`} onClick={() => setTab(item)}>
-                {item}
-              </button>
-            ))}
-          </div>
-          {tab === 'info' && (
-            <div className="space-y-2 text-sm text-stone-700">
-              <p>{training.description || 'Aucune description.'}</p>
-              <p>Note coordination: {training.coordinatorNote || '-'}</p>
-              <div className="flex gap-2">
-                {STATUSES.map((status) => (
-                  <button key={status} className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => actions.updateTrainingStatus(training.id, status)}>
-                    {STATUS_LABELS[status]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {tab === 'sessions' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addSession(training.id)}>Ajouter session</button>
-              {sessions.length === 0 ? <p className="text-sm text-stone-500">Aucune session.</p> : sessions.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.startDate} → {item.endDate}</span>
-                  <div className="flex items-center gap-2">
-                    <button className="text-stone-700" onClick={() => actions.editSession(item.id)}>Modifier</button>
-                    <button className="text-red-600" onClick={() => actions.deleteSession(item.id)}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'registrations' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addRegistration(training.id)}>Ajouter participant</button>
-              {registrations.length === 0 ? <p className="text-sm text-stone-500">Aucune inscription.</p> : registrations.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.contactName} · {item.paymentStatus} · {item.amountPaid}€</span>
-                  <div className="flex gap-2">
-                    <button className="text-stone-700" onClick={() => actions.editRegistration(item.id)}>Modifier</button>
-                    <button className="text-indigo-700" onClick={() => actions.updatePaymentStatus(item.id)}>Paiement</button>
-                    <button className="text-red-600" onClick={() => actions.deleteRegistration(item.id)}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'attendances' && (
-            <div className="space-y-2">
-              {registrations.length === 0 || sessions.length === 0 ? (
-                <p className="text-sm text-stone-500">Pas de grille présence (sessions ou inscriptions manquantes).</p>
-              ) : registrations.map((registration) => (
-                <div key={registration.id} className="rounded border border-stone-200 p-2 text-sm">
-                  <p className="font-medium">{registration.contactName}</p>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {sessions.map((session) => {
-                      const row = attendances.find((item) => item.registrationId === registration.id && item.sessionId === session.id)
-                      return (
-                        <button key={session.id} className={`rounded border px-2 py-1 text-xs ${row?.isPresent ? 'border-emerald-500 text-emerald-700' : 'border-stone-300 text-stone-700'}`} onClick={() => actions.markAttendance(registration.id, session.id, !row?.isPresent)}>
-                          {session.startDate}: {row?.isPresent ? 'présent' : 'absent'}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'documents' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addDocument(training.id)}>Ajouter document</button>
-              {documents.length === 0 ? <p className="text-sm text-stone-500">Aucun document.</p> : documents.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.name} · {item.type}</span>
-                  <button className="text-red-600" onClick={() => actions.deleteDocument(item.id)}>Supprimer</button>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'checklist' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addChecklistItem(training.id)}>Ajouter item</button>
-              {(training.checklistItems || []).length === 0 ? <p className="text-sm text-stone-500">Checklist vide.</p> : training.checklistItems.map((item, index) => (
-                <div key={`${item}-${index}`} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <button className={(training.checkedItems || []).includes(index) ? 'line-through text-stone-500' : ''} onClick={() => actions.toggleChecklistItem(training.id, index)}>{item}</button>
-                  <button className="text-red-600" onClick={() => actions.removeChecklistItem(training.id, index)}>Supprimer</button>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'finances' && (
-            <div className="space-y-2 text-sm">
-              <p>Recettes: {revenue}€</p>
-              <p>Dépenses: {expenseTotal}€</p>
-              <p>Rentabilité: {revenue - expenseTotal}€</p>
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addExpense(training.id)}>Ajouter dépense</button>
-              {expenses.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.date} · {item.category} · {item.amount}€</span>
-                  <div className="flex items-center gap-2">
-                    <button className="text-stone-700" onClick={() => actions.editExpense(item.id)}>Modifier</button>
-                    <button className="text-red-600" onClick={() => actions.deleteExpense(item.id)}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
-  )
-}
 
 const ACADEMY_SECTIONS = [
   { id: 'kanban', label: 'Formations' },
@@ -309,10 +167,15 @@ export default function AcademyIndex({ initialTrainingId }) {
   }, [modalData, runMutation])
 
   const handleDocumentSubmit = useCallback(async (values) => {
+    const formData = new FormData()
+    formData.append('name', values.name)
+    formData.append('document_type', values.document_type)
+    formData.append('file', values.file)
+    if (values.uploaded_by) formData.append('uploaded_by', values.uploaded_by)
     const success = await runMutation(() =>
       apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/documents`, {
         method: 'POST',
-        body: JSON.stringify(values)
+        body: formData,
       })
     )
     if (success) {
@@ -429,7 +292,16 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0 })
       setActiveModal('registration')
     },
-    updatePaymentStatus: (registrationId) => {
+    updatePaymentStatus: (registrationId, status, amountPaid) => {
+      if (status !== undefined && amountPaid !== undefined) {
+        runMutation(() =>
+          apiRequest(`/api/v1/academy/registrations/${registrationId}/payment-status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, amount_paid: amountPaid }),
+          })
+        )
+        return
+      }
       const current = data.trainingRegistrations.find((item) => item.id === registrationId)
       if (!current) return
       const training = data.trainings.find((item) => item.id === current.trainingId)
@@ -443,7 +315,16 @@ export default function AcademyIndex({ initialTrainingId }) {
     },
     deleteDocument: (id) => runMutation(() => apiRequest(`/api/v1/academy/documents/${id}`, { method: 'DELETE' })),
     toggleChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/toggle/${itemIndex}`, { method: 'PATCH' })),
-    addChecklistItem: (trainingId) => {
+    addChecklistItem: (trainingId, item) => {
+      if (item !== undefined && item !== null && item !== '') {
+        runMutation(() =>
+          apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist`, {
+            method: 'POST',
+            body: JSON.stringify({ item }),
+          })
+        )
+        return
+      }
       setModalData({ trainingId })
       setActiveModal('checklistItem')
     },
@@ -489,25 +370,6 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
     return true
   }), [data.trainingTypes, data.trainings, search, statusFilter, typeFilter])
-  const trainingsByStatus = useMemo(() => STATUSES.map((status) => ({ status, items: filteredTrainings.filter((item) => item.status === status) })), [filteredTrainings])
-  const calendarItems = useMemo(() => data.trainingSessions.map((session) => {
-    const training = data.trainings.find((item) => item.id === session.trainingId)
-    return { ...session, training }
-  }), [data.trainingSessions, data.trainings])
-  const monthItems = useMemo(() => calendarItems.filter((item) => {
-    const date = new Date(item.startDate)
-    return date.getFullYear() === calendarDate.getFullYear() && date.getMonth() === calendarDate.getMonth()
-  }), [calendarDate, calendarItems])
-  const yearItems = useMemo(() => {
-    const year = calendarDate.getFullYear()
-    const buckets = Array.from({ length: 12 }, (_, index) => ({ month: index, items: [] }))
-    calendarItems.forEach((item) => {
-      const date = new Date(item.startDate)
-      if (date.getFullYear() === year) buckets[date.getMonth()].items.push(item)
-    })
-    return buckets
-  }, [calendarDate, calendarItems])
-
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
 
   const renderModals = () => (
@@ -659,82 +521,97 @@ export default function AcademyIndex({ initialTrainingId }) {
       <div className="px-4 py-4">
       <div className="max-w-7xl mx-auto space-y-4">
         {view === 'kanban' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={actions.createTraining}>Nouvelle formation</button>
-              <input className="min-w-[220px] rounded border border-stone-300 px-3 py-2 text-sm" placeholder="Rechercher une formation..." value={search} onChange={(event) => setSearch(event.target.value)} />
-              <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                <option value="all">Tous les statuts</option>
-                {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
-              </select>
-              <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-                <option value="all">Tous les types</option>
-                {data.trainingTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
-              </select>
-            </div>
-            {filteredTrainings.length === 0 ? (
-              <p className="text-sm text-stone-500">Aucune formation pour le moment.</p>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {trainingsByStatus.map((column) => (
-                  <div key={column.status} className="rounded-xl border border-stone-200 p-3 bg-stone-50">
-                    <p className="font-medium text-sm">{STATUS_LABELS[column.status]} ({column.items.length})</p>
-                    <div className="mt-2 space-y-2">
-                      {column.items.length === 0 ? <p className="text-xs text-stone-500">Aucune formation</p> : column.items.map((item) => (
-                        <div key={item.id} className="rounded border border-stone-200 bg-white p-2 text-sm">
-                          <p className="font-medium">{item.title}</p>
-                          <p className="text-xs text-stone-500">{item.price}€ · max {item.maxParticipants}</p>
-                          <div className="mt-2 flex gap-2">
-                            <button className="text-indigo-700 text-xs" onClick={() => {
-                              setSelectedTrainingId(item.id)
-                              window.history.pushState({}, '', `/academy/${item.id}`)
-                            }}>Ouvrir</button>
-                            <button className="text-stone-700 text-xs" onClick={() => actions.editTraining(item.id)}>Modifier</button>
-                            <button className="text-red-600 text-xs" onClick={() => actions.deleteTraining(item.id)}>Supprimer</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <TrainingKanban
+            trainings={filteredTrainings}
+            trainingTypes={data.trainingTypes}
+            trainingSessions={data.trainingSessions}
+            trainingRegistrations={data.trainingRegistrations}
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            onCreateTraining={actions.createTraining}
+            onViewTraining={(id) => {
+              setSelectedTrainingId(id)
+              window.history.pushState({}, '', `/academy/${id}`)
+            }}
+            onEditTraining={actions.editTraining}
+            onDeleteTraining={actions.deleteTraining}
+            onViewCalendar={() => setView('calendar')}
+            onViewReporting={actions.viewReporting}
+          />
         )}
 
         {view === 'calendar' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <p className="text-sm font-medium text-stone-800">Calendrier formations</p>
-              <button className={`rounded border px-2 py-1 text-xs ${calendarView === 'month' ? 'border-[#B01A19] text-[#B01A19]' : 'border-stone-300 text-stone-700'}`} onClick={() => setCalendarView('month')}>Mois</button>
-              <button className={`rounded border px-2 py-1 text-xs ${calendarView === 'year' ? 'border-[#B01A19] text-[#B01A19]' : 'border-stone-300 text-stone-700'}`} onClick={() => setCalendarView('year')}>Année</button>
-              <button className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}>Précédent</button>
-              <button className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}>Suivant</button>
-              <span className="text-xs text-stone-600">{calendarDate.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}</span>
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={`rounded-lg border px-3 py-2 text-sm font-medium ${calendarView === 'month' ? 'border-[#B01A19] bg-[#B01A19] text-white' : 'border-stone-300 text-stone-700 hover:bg-stone-50'}`}
+                onClick={() => setCalendarView('month')}
+              >
+                Mois
+              </button>
+              <button
+                type="button"
+                className={`rounded-lg border px-3 py-2 text-sm font-medium ${calendarView === 'year' ? 'border-[#B01A19] bg-[#B01A19] text-white' : 'border-stone-300 text-stone-700 hover:bg-stone-50'}`}
+                onClick={() => setCalendarView('year')}
+              >
+                Année
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                onClick={() =>
+                  setCalendarDate(
+                    new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1)
+                  )
+                }
+              >
+                Précédent
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                onClick={() =>
+                  setCalendarDate(
+                    new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1)
+                  )
+                }
+              >
+                Suivant
+              </button>
+              <span className="text-sm text-stone-600">
+                {calendarDate.toLocaleDateString('fr-FR', {
+                  year: 'numeric',
+                  month: calendarView === 'year' ? undefined : 'long',
+                })}
+              </span>
             </div>
-            {calendarItems.length === 0 ? <p className="text-sm text-stone-500">Aucune session planifiée.</p> : (
-              calendarView === 'month' ? (
-                <div className="space-y-2">
-                  {monthItems.length === 0 ? <p className="text-sm text-stone-500">Aucune session ce mois-ci.</p> : monthItems.map((item) => (
-                    <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                      <span>{item.startDate} → {item.endDate} · {item.training?.title || 'Formation'}</span>
-                      {item.training && <button className="text-indigo-700 text-xs" onClick={() => {
-                        setSelectedTrainingId(item.training.id)
-                        window.history.pushState({}, '', `/academy/${item.training.id}`)
-                      }}>Ouvrir</button>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {yearItems.map((bucket) => (
-                    <div key={bucket.month} className="rounded border border-stone-200 p-2 text-sm">
-                      <p className="font-medium">{new Date(calendarDate.getFullYear(), bucket.month, 1).toLocaleDateString('fr-FR', { month: 'long' })}</p>
-                      <p className="text-xs text-stone-500">{bucket.items.length} session(s)</p>
-                    </div>
-                  ))}
-                </div>
-              )
+            {calendarView === 'month' ? (
+              <CalendarMonthView
+                currentDate={calendarDate}
+                trainings={data.trainings}
+                trainingSessions={data.trainingSessions}
+                trainingLocations={data.trainingLocations}
+                trainingRegistrations={data.trainingRegistrations}
+                onViewTraining={(id) => {
+                  setSelectedTrainingId(id)
+                  window.history.pushState({}, '', `/academy/${id}`)
+                }}
+              />
+            ) : (
+              <CalendarYearView
+                currentDate={calendarDate}
+                trainings={data.trainings}
+                trainingSessions={data.trainingSessions}
+                onViewTraining={(id) => {
+                  setSelectedTrainingId(id)
+                  window.history.pushState({}, '', `/academy/${id}`)
+                }}
+              />
             )}
           </section>
         )}
@@ -850,34 +727,16 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
 
         {view === 'ideas' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-3">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={actions.createIdeaNote}>Nouvelle idée</button>
-            </div>
-            {data.ideaNotes.length === 0 ? <p className="text-sm text-stone-500">Aucune idée.</p> : data.ideaNotes.map((item) => (
-              <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between mb-2">
-                <span>{item.category} · {item.title}</span>
-                <div className="flex items-center gap-2">
-                  <button className="text-stone-700" onClick={() => actions.editIdeaNote(item.id)}>Modifier</button>
-                  <button className="text-red-600" onClick={() => actions.deleteIdeaNote(item.id)}>Supprimer</button>
-                </div>
-              </div>
-            ))}
-          </section>
+          <IdeaNotesView
+            ideaNotes={data.ideaNotes}
+            onCreateIdeaNote={actions.createIdeaNote}
+            onEditIdeaNote={actions.editIdeaNote}
+            onDeleteIdeaNote={actions.deleteIdeaNote}
+          />
         )}
 
         {view === 'reporting' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            {!reporting ? <p className="text-sm text-stone-500">Aucune donnée reporting.</p> : (
-              <div className="text-sm space-y-1">
-                <p>Formations: {reporting.trainingsCount}</p>
-                <p>Formations terminées: {reporting.completedTrainings}</p>
-                <p>Recettes totales: {reporting.totalRevenue}€</p>
-                <p>Dépenses totales: {reporting.totalExpenses}€</p>
-                <p>Rentabilité: {reporting.profitability}€</p>
-              </div>
-            )}
-          </section>
+          <ReportingDashboard data={reporting} />
         )}
 
         {(busy || error || notice) && (

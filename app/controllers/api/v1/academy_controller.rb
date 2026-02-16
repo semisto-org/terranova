@@ -118,7 +118,11 @@ module Api
 
       def create_document
         training = Academy::Training.find(params.require(:training_id))
-        item = training.documents.create!(document_params.merge(uploaded_at: Time.current))
+        item = training.documents.build(
+          document_params.except(:file).merge(uploaded_at: Time.current, url: nil)
+        )
+        item.file.attach(params[:file]) if params[:file].present?
+        item.save!
         render json: serialize_document(item), status: :created
       end
 
@@ -200,13 +204,30 @@ module Api
         trainings = Academy::Training.includes(:registrations, :expenses)
         revenue = trainings.sum { |item| item.registrations.sum(&:amount_paid).to_f }
         expenses = trainings.sum { |item| item.expenses.sum(&:amount).to_f }
+        total_participants = trainings.sum { |item| item.registrations.size }
+
+        by_status = Academy::Training::STATUSES.index_with do |status|
+          trainings.count { |t| t.status == status }
+        end
+
+        expenses_by_category = Academy::TrainingExpense.group(:category).sum(:amount).transform_values(&:to_f)
+
+        fill_rates = trainings.filter_map do |t|
+          next if t.max_participants.to_i.zero?
+          (t.registrations.size.to_f / t.max_participants * 100).round(1)
+        end
+        average_fill_rate = fill_rates.any? ? (fill_rates.sum / fill_rates.size).round(1) : 0
 
         render json: {
           trainingsCount: trainings.size,
           completedTrainings: trainings.count { |item| item.status == 'completed' },
           totalRevenue: revenue,
           totalExpenses: expenses,
-          profitability: revenue - expenses
+          profitability: revenue - expenses,
+          byStatus: by_status,
+          expensesByCategory: expenses_by_category,
+          totalParticipants: total_participants,
+          averageFillRate: average_fill_rate
         }
       end
 
@@ -268,7 +289,7 @@ module Api
       end
 
       def document_params
-        params.permit(:name, :document_type, :url, :uploaded_by)
+        params.permit(:name, :document_type, :url, :uploaded_by, :file)
       end
 
       def expense_params
@@ -367,12 +388,18 @@ module Api
       end
 
       def serialize_document(item)
+        download_url = if item.file.attached?
+          Rails.application.routes.url_helpers.rails_blob_url(item.file, only_path: true)
+        else
+          item.url
+        end
         {
           id: item.id.to_s,
           trainingId: item.training_id.to_s,
           name: item.name,
           type: item.document_type,
-          url: item.url,
+          url: download_url,
+          filename: item.file.attached? ? item.file.filename.to_s : nil,
           uploadedAt: item.uploaded_at.iso8601,
           uploadedBy: item.uploaded_by
         }

@@ -1,21 +1,23 @@
 import { useState, useEffect, useRef } from 'react'
+import { Upload, FileText, Image, Video, File } from 'lucide-react'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 const DOCUMENT_TYPES = [
-  { value: 'pdf', label: 'PDF', icon: '📄', description: 'Document PDF' },
-  { value: 'link', label: 'Lien', icon: '🔗', description: 'Lien externe' },
-  { value: 'image', label: 'Image', icon: '🖼️', description: 'Image ou photo' },
-  { value: 'video', label: 'Vidéo', icon: '🎥', description: 'Vidéo ou enregistrement' },
+  { value: 'pdf', label: 'PDF', icon: FileText, description: 'Document PDF' },
+  { value: 'image', label: 'Image', icon: Image, description: 'Image ou photo' },
+  { value: 'video', label: 'Vidéo', icon: Video, description: 'Vidéo ou enregistrement' },
+  { value: 'other', label: 'Autre', icon: File, description: 'Autre type de fichier' },
 ]
 
 export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
   const nameRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const [name, setName] = useState('')
-  const [documentType, setDocumentType] = useState('link')
-  const [url, setUrl] = useState('')
+  const [documentType, setDocumentType] = useState('pdf')
+  const [file, setFile] = useState(null)
   const [error, setError] = useState(null)
 
   // Focus first input when modal opens
@@ -39,32 +41,17 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onCancel])
 
-  const validateUrl = (urlString) => {
-    try {
-      const parsedUrl = new URL(urlString)
-      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
-    } catch {
-      return false
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
 
-    // Validation
     if (!name.trim()) {
       setError('Veuillez saisir un nom pour le document')
       return
     }
 
-    if (!url.trim()) {
-      setError('Veuillez saisir une URL')
-      return
-    }
-
-    if (!validateUrl(url.trim())) {
-      setError('Veuillez saisir une URL valide (doit commencer par http:// ou https://)')
+    if (!file) {
+      setError('Veuillez sélectionner un fichier à envoyer')
       return
     }
 
@@ -72,10 +59,18 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
       await onSubmit({
         name: name.trim(),
         document_type: documentType,
-        url: url.trim(),
+        file,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
+    }
+  }
+
+  const handleFileChange = (e) => {
+    const chosen = e.target.files?.[0]
+    setFile(chosen || null)
+    if (chosen && !name.trim()) {
+      setName(chosen.name.replace(/\.[^.]+$/, '') || chosen.name)
     }
   }
 
@@ -101,7 +96,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                   Nouveau document
                 </h3>
                 <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-                  Ajoutez un document à la formation
+                  Envoyez un fichier depuis votre ordinateur (stockage local)
                 </p>
               </div>
               <button
@@ -135,6 +130,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                   <div className="grid grid-cols-2 gap-3">
                     {DOCUMENT_TYPES.map((type) => {
                       const isSelected = documentType === type.value
+                      const Icon = type.icon
                       return (
                         <button
                           key={type.value}
@@ -150,7 +146,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                           `}
                         >
                           <div className="flex items-start gap-3">
-                            <span className="text-2xl flex-shrink-0">{type.icon}</span>
+                            <Icon className="w-6 h-6 flex-shrink-0 text-stone-600 dark:text-stone-400" />
                             <div className="flex-1 min-w-0">
                               <div className={`font-medium text-sm ${
                                 isSelected
@@ -190,49 +186,46 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                   />
                 </div>
 
-                {/* URL */}
+                {/* File upload */}
                 <div>
-                  <label
-                    htmlFor="document-url"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
-                  >
-                    URL <span className="text-rose-500">*</span>
+                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                    Fichier <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    id="document-url"
-                    type="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    required
-                    className={inputBase}
-                    placeholder="https://example.com/document.pdf"
-                  />
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
-                    L'URL doit commencer par http:// ou https://
-                  </p>
-                </div>
-
-                {/* Preview info */}
-                {url && validateUrl(url) && (
-                  <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="text-sm text-blue-700 dark:text-blue-300">
-                        <p className="font-medium mb-1">Aperçu du lien</p>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline break-all hover:text-blue-800 dark:hover:text-blue-200"
-                        >
-                          {url}
-                        </a>
-                      </div>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`
+                      flex items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 transition-all cursor-pointer
+                      ${file
+                        ? 'border-[#B01A19]/50 bg-[#B01A19]/5 dark:bg-[#B01A19]/10'
+                        : 'border-stone-200 dark:border-stone-600 hover:border-stone-300 dark:hover:border-stone-500 bg-stone-50/50 dark:bg-stone-800/50'
+                      }
+                    `}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,image/*,video/*,.txt,.csv"
+                      onChange={handleFileChange}
+                    />
+                    <Upload className="w-8 h-8 text-stone-400 dark:text-stone-500 shrink-0" />
+                    <div className="text-center min-w-0">
+                      {file ? (
+                        <>
+                          <p className="font-medium text-stone-900 dark:text-stone-100 truncate">{file.name}</p>
+                          <p className="text-xs text-stone-500 mt-0.5">
+                            {(file.size / 1024).toFixed(1)} Ko · Cliquez pour changer
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-stone-700 dark:text-stone-300">Cliquez ou glissez un fichier</p>
+                          <p className="text-xs text-stone-500 mt-0.5">PDF, images, vidéos, etc.</p>
+                        </>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
@@ -248,7 +241,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
               </button>
               <button
                 type="submit"
-                disabled={busy || !name.trim() || !url.trim()}
+                disabled={busy || !name.trim() || !file}
                 className="px-5 py-2 rounded-xl font-medium text-white bg-[#B01A19] hover:bg-[#8f1514] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:shadow-none"
               >
                 {busy ? (
@@ -257,10 +250,10 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Enregistrement...
+                    Envoi en cours...
                   </span>
                 ) : (
-                  'Ajouter le document'
+                  'Envoyer le document'
                 )}
               </button>
             </div>

@@ -95,10 +95,14 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/academy/trainings/#{training_id}/documents", params: {
       name: 'Syllabus',
-      document_type: 'pdf',
-      url: 'https://example.com/syllabus.pdf'
-    }, as: :json
+      document_type: 'other',
+      file: fixture_file_upload('sample.txt', 'text/plain')
+    }
     assert_response :created
+    doc = JSON.parse(response.body)
+    assert doc['id'].present?
+    assert_equal 'Syllabus', doc['name']
+    assert doc['url'].present?
 
     post "/api/v1/academy/trainings/#{training_id}/expenses", params: {
       category: 'location',

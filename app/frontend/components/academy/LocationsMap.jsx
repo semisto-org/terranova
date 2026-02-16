@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { MapPin, Users, Home, Pencil, Trash2 } from 'lucide-react'
 
 /**
  * LocationsMap — An immersive Leaflet map for Academy training locations.
@@ -409,6 +410,99 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
                   </svg>
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Table of all locations */}
+        {locations.length > 0 && (
+          <div
+            className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
+            style={{ animation: 'slideUp 0.4s ease-out 0.2s both' }}
+          >
+            <div
+              className="h-1 w-full shrink-0"
+              style={{
+                background: `linear-gradient(90deg, ${ACADEMY_RED}, ${ACADEMY_RED_LIGHT}, ${ACADEMY_RED})`,
+              }}
+            />
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-stone-200 bg-stone-50/80">
+                    <th className="px-5 py-3.5 font-semibold text-stone-700">Lieu</th>
+                    <th className="px-5 py-3.5 font-semibold text-stone-700">Adresse</th>
+                    <th className="px-5 py-3.5 font-semibold text-stone-700">Capacité</th>
+                    <th className="px-5 py-3.5 font-semibold text-stone-700">Hébergement</th>
+                    <th className="px-5 py-3.5 font-semibold text-stone-700">Coordonnées</th>
+                    <th className="px-5 py-3.5 font-semibold text-stone-700 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locations.map((loc) => {
+                    const hasCoords = loc.latitude !== 0 || loc.longitude !== 0
+                    return (
+                      <tr
+                        key={loc.id}
+                        className="border-b border-stone-100 transition-colors hover:bg-stone-50/60 last:border-b-0"
+                      >
+                        <td className="px-5 py-3.5">
+                          <span className="font-medium text-stone-900">{loc.name}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-stone-600">
+                          {loc.address || '—'}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="inline-flex items-center gap-1.5 text-stone-600">
+                            <Users className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+                            {loc.capacity ?? '—'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {loc.hasAccommodation ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                              <Home className="h-3.5 w-3.5" />
+                              Oui
+                            </span>
+                          ) : (
+                            <span className="text-stone-400">Non</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {hasCoords ? (
+                            <span className="inline-flex items-center gap-1.5 text-stone-600">
+                              <MapPin className="h-3.5 w-3.5 text-[#B01A19]" />
+                              Oui
+                            </span>
+                          ) : (
+                            <span className="text-amber-600">Non renseignées</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => actions.editLocation(loc.id)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:border-stone-300 hover:bg-stone-50"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Modifier
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => actions.deleteLocation(loc.id)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 transition-colors hover:border-red-300 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Supprimer
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
