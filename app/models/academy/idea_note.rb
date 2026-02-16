@@ -1,5 +1,6 @@
 module Academy
   class IdeaNote < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'academy_idea_notes'
 
     CATEGORIES = %w[subject trainer location other].freeze

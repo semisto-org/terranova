@@ -62,8 +62,12 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
   const locations = data.trainingLocations || []
   const members = data.members || []
 
-  const revenue = registrations.reduce((sum, r) => sum + Number(r.amountPaid || 0), 0)
-  const expenseTotal = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0)
+  const vatRate = Number(training.vatRate || 0)
+  const revenue = registrations.reduce((sum, r) => {
+    const paid = Number(r.amountPaid || 0)
+    return sum + (vatRate > 0 ? paid / (1 + vatRate / 100) : paid)
+  }, 0)
+  const expenseTotal = expenses.reduce((sum, e) => sum + Number(e.totalInclVat ?? e.amount ?? 0), 0)
   const profitability = revenue - expenseTotal
   const profitabilityPercent = revenue > 0 ? Math.round((profitability / revenue) * 100) : 0
   const registrationCount = registrations.length
@@ -133,9 +137,7 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm('Supprimer cette formation ?')) actions.deleteTraining(training.id)
-                }}
+                onClick={() => actions.deleteTraining(training.id)}
                 className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100"
               >
                 <Trash2 className="w-4 h-4" />
@@ -176,14 +178,18 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
                 <Euro className="w-4 h-4 text-emerald-600" />
               </div>
               <span className="text-xs font-medium text-stone-500 uppercase tracking-wide">
-                Recettes
+                Recettes{vatRate > 0 ? ' (HT)' : ''}
               </span>
             </div>
             <div className="text-2xl font-bold text-stone-900">
               {revenue.toLocaleString('fr-FR')} €
             </div>
             <div className="text-xs text-stone-500">
-              {Number(training.price || 0).toLocaleString('fr-FR')} € / participant
+              {Number(training.price || 0).toLocaleString('fr-FR')} €
+              {Number(training.vatRate || 0) > 0 ? ' TVAC' : ''} / participant
+              {Number(training.vatRate || 0) > 0 && training.priceExclVat != null && (
+                <span> ({Number(training.priceExclVat).toLocaleString('fr-FR')} € HT)</span>
+              )}
             </div>
           </div>
           <div className="group bg-white rounded-xl p-5 border border-stone-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden">
@@ -338,6 +344,9 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
                 onToggleChecklistItem={(index) => actions.toggleChecklistItem(training.id, index)}
                 onAddChecklistItem={(item) => actions.addChecklistItem(training.id, item)}
                 onRemoveChecklistItem={(index) => actions.removeChecklistItem(training.id, index)}
+                onReorderChecklist={(newChecklistItems, newCheckedItems) =>
+                  actions.reorderChecklist(training.id, newChecklistItems, newCheckedItems)
+                }
               />
             )}
             {tab === 'finances' && (
@@ -345,6 +354,7 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
                 registrations={registrations}
                 expenses={expenses}
                 trainingPrice={Number(training.price || 0)}
+                vatRate={vatRate}
                 onAddExpense={() => actions.addExpense(training.id)}
                 onEditExpense={(id) => actions.editExpense(id)}
                 onDeleteExpense={(id) => actions.deleteExpense(id)}

@@ -19,7 +19,7 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
       Design::ProjectPaletteItem,
       Design::ProjectPalette,
       Design::SiteAnalysis,
-      Design::Expense,
+      Expense,
       Design::ProjectTimesheet,
       Design::TeamMember,
       Design::ProjectMeeting,
@@ -108,21 +108,21 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     post "/api/v1/design/#{@project.id}/expenses", params: {
-      date: Date.current,
-      amount: 120,
-      category: 'plants',
-      description: 'achat',
-      phase: 'offre',
-      member_id: 'member-1',
-      member_name: 'User',
-      status: 'pending'
+      supplier: 'Fournisseur plants',
+      status: 'processing',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'merchandise',
+      name: 'achat',
+      total_incl_vat: 120,
+      amount_excl_vat: 99.17,
+      vat_6: 0, vat_12: 0, vat_21: 20.83
     }, as: :json
     assert_response :created
     expense_id = JSON.parse(response.body)['id']
 
     patch "/api/v1/design/expenses/#{expense_id}/approve", as: :json
     assert_response :success
-    assert_equal 'approved', JSON.parse(response.body)['status']
+    assert_equal 'ready_for_payment', JSON.parse(response.body)['status']
   end
 
   test 'site analysis and palette import from plant database work' do

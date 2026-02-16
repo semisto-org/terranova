@@ -1,5 +1,6 @@
 module Design
   class QuoteLine < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_quote_lines'
 
     belongs_to :quote, class_name: 'Design::Quote'

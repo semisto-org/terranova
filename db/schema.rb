@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_204133) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -18,9 +18,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "category", null: false
     t.text "content", default: "", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.jsonb "tags", default: [], null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_idea_notes_on_deleted_at"
   end
 
   create_table "academy_training_attendances", force: :cascade do |t|
@@ -37,25 +39,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
 
   create_table "academy_training_documents", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "document_type", null: false
+    t.datetime "deleted_at"
     t.string "name", null: false
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
     t.datetime "uploaded_at", null: false
     t.string "uploaded_by", default: "team", null: false
     t.string "url"
+    t.index ["deleted_at"], name: "index_academy_training_documents_on_deleted_at"
     t.index ["training_id"], name: "index_academy_training_documents_on_training_id"
-  end
-
-  create_table "academy_training_expenses", force: :cascade do |t|
-    t.decimal "amount", precision: 12, scale: 2, default: "0.0", null: false
-    t.string "category", null: false
-    t.datetime "created_at", null: false
-    t.date "date", null: false
-    t.text "description", default: "", null: false
-    t.bigint "training_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["training_id"], name: "index_academy_training_expenses_on_training_id"
   end
 
   create_table "academy_training_locations", force: :cascade do |t|
@@ -63,6 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.integer "capacity", default: 0, null: false
     t.jsonb "compatible_training_type_ids", default: [], null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.boolean "has_accommodation", default: false, null: false
     t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
@@ -70,6 +63,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "name", null: false
     t.jsonb "photo_gallery", default: [], null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_training_locations_on_deleted_at"
   end
 
   create_table "academy_training_registrations", force: :cascade do |t|
@@ -78,6 +72,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "contact_id", default: "", null: false
     t.string "contact_name", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "departure_country", default: "", null: false
     t.string "departure_postal_code", default: "", null: false
     t.text "internal_note", default: "", null: false
@@ -86,12 +81,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.datetime "registered_at", null: false
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_training_registrations_on_deleted_at"
     t.index ["training_id"], name: "index_academy_training_registrations_on_training_id"
   end
 
   create_table "academy_training_sessions", force: :cascade do |t|
     t.jsonb "assistant_ids", default: [], null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.date "end_date", null: false
     t.jsonb "location_ids", default: [], null: false
@@ -100,17 +97,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.jsonb "trainer_ids", default: [], null: false
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_training_sessions_on_deleted_at"
     t.index ["training_id"], name: "index_academy_training_sessions_on_training_id"
   end
 
   create_table "academy_training_types", force: :cascade do |t|
     t.jsonb "checklist_template", default: [], null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.string "name", null: false
     t.jsonb "photo_gallery", default: [], null: false
     t.jsonb "trainer_ids", default: [], null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_training_types_on_deleted_at"
   end
 
   create_table "academy_trainings", force: :cascade do |t|
@@ -118,6 +118,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.jsonb "checklist_items", default: [], null: false
     t.text "coordinator_note", default: "", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.integer "max_participants", default: 0, null: false
     t.decimal "price", precision: 12, scale: 2, default: "0.0", null: false
@@ -126,6 +127,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "title", null: false
     t.bigint "training_type_id", null: false
     t.datetime "updated_at", null: false
+    t.decimal "vat_rate", precision: 5, scale: 2, default: "0.0", null: false
+    t.index ["deleted_at"], name: "index_academy_trainings_on_deleted_at"
     t.index ["status"], name: "index_academy_trainings_on_status"
     t.index ["training_type_id"], name: "index_academy_trainings_on_training_type_id"
   end
@@ -171,12 +174,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "bets", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "cycle_id", null: false
+    t.datetime "deleted_at"
     t.bigint "pitch_id", null: false
     t.datetime "placed_at", null: false
     t.bigint "placed_by_id"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["cycle_id"], name: "index_bets_on_cycle_id"
+    t.index ["deleted_at"], name: "index_bets_on_deleted_at"
     t.index ["pitch_id"], name: "index_bets_on_pitch_id"
     t.index ["placed_by_id"], name: "index_bets_on_placed_by_id"
   end
@@ -184,10 +189,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "chowder_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
+    t.datetime "deleted_at"
     t.bigint "pitch_id", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_chowder_items_on_created_by_id"
+    t.index ["deleted_at"], name: "index_chowder_items_on_deleted_at"
     t.index ["pitch_id"], name: "index_chowder_items_on_pitch_id"
   end
 
@@ -205,6 +212,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.text "address", default: ""
     t.string "contact_type", default: "person", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "email", default: ""
     t.string "name", null: false
     t.text "notes", default: ""
@@ -213,6 +221,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "phone", default: ""
     t.datetime "updated_at", null: false
     t.index ["contact_type"], name: "index_contacts_on_contact_type"
+    t.index ["deleted_at"], name: "index_contacts_on_deleted_at"
     t.index ["name"], name: "index_contacts_on_name"
     t.index ["organization_id"], name: "index_contacts_on_organization_id"
   end
@@ -234,12 +243,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "author_type", null: false
     t.text "content", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "document_id", null: false
     t.bigint "project_id", null: false
     t.boolean "resolved", default: false, null: false
     t.datetime "updated_at", null: false
     t.decimal "x", precision: 8, scale: 4, null: false
     t.decimal "y", precision: 8, scale: 4, null: false
+    t.index ["deleted_at"], name: "index_design_annotations_on_deleted_at"
     t.index ["project_id"], name: "index_design_annotations_on_project_id"
   end
 
@@ -252,22 +263,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.datetime "updated_at", null: false
     t.jsonb "wishlist", default: [], null: false
     t.index ["project_id"], name: "index_design_client_contributions_on_project_id", unique: true
-  end
-
-  create_table "design_expenses", force: :cascade do |t|
-    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
-    t.string "category", null: false
-    t.datetime "created_at", null: false
-    t.date "date", null: false
-    t.text "description", default: "", null: false
-    t.string "member_id", default: "", null: false
-    t.string "member_name", default: "", null: false
-    t.string "phase", null: false
-    t.bigint "project_id", null: false
-    t.string "receipt_url", default: "", null: false
-    t.string "status", default: "pending", null: false
-    t.datetime "updated_at", null: false
-    t.index ["project_id"], name: "index_design_expenses_on_project_id"
   end
 
   create_table "design_follow_up_visits", force: :cascade do |t|
@@ -312,6 +307,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "design_media_items", force: :cascade do |t|
     t.string "caption", default: "", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "media_type", null: false
     t.bigint "project_id", null: false
     t.datetime "taken_at", null: false
@@ -320,11 +316,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.datetime "uploaded_at", null: false
     t.string "uploaded_by", default: "team", null: false
     t.string "url", null: false
+    t.index ["deleted_at"], name: "index_design_media_items_on_deleted_at"
     t.index ["project_id"], name: "index_design_media_items_on_project_id"
   end
 
   create_table "design_plant_markers", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.integer "number", null: false
     t.bigint "palette_item_id"
     t.bigint "planting_plan_id", null: false
@@ -332,6 +330,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.datetime "updated_at", null: false
     t.decimal "x", precision: 8, scale: 4, null: false
     t.decimal "y", precision: 8, scale: 4, null: false
+    t.index ["deleted_at"], name: "index_design_plant_markers_on_deleted_at"
     t.index ["palette_item_id"], name: "index_design_plant_markers_on_palette_item_id"
     t.index ["planting_plan_id", "number"], name: "idx_design_plant_markers_number_per_plan", unique: true
     t.index ["planting_plan_id"], name: "index_design_plant_markers_on_planting_plan_id"
@@ -363,6 +362,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "design_project_documents", force: :cascade do |t|
     t.string "category", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "name", null: false
     t.bigint "project_id", null: false
     t.bigint "size", default: 0, null: false
@@ -370,17 +370,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.datetime "uploaded_at", null: false
     t.string "uploaded_by", default: "team", null: false
     t.string "url", null: false
+    t.index ["deleted_at"], name: "index_design_project_documents_on_deleted_at"
     t.index ["project_id"], name: "index_design_project_documents_on_project_id"
   end
 
   create_table "design_project_meetings", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.integer "duration_minutes", default: 60, null: false
     t.string "location", default: "", null: false
     t.bigint "project_id", null: false
     t.datetime "starts_at", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_design_project_meetings_on_deleted_at"
     t.index ["project_id"], name: "index_design_project_meetings_on_project_id"
     t.index ["starts_at"], name: "index_design_project_meetings_on_starts_at"
   end
@@ -388,6 +391,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "design_project_palette_items", force: :cascade do |t|
     t.string "common_name", default: "", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.jsonb "harvest_months", default: [], null: false
     t.jsonb "harvest_products", default: [], null: false
     t.string "layer", null: false
@@ -400,6 +404,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.datetime "updated_at", null: false
     t.string "variety_id"
     t.string "variety_name"
+    t.index ["deleted_at"], name: "index_design_project_palette_items_on_deleted_at"
     t.index ["palette_id"], name: "index_design_project_palette_items_on_palette_id"
   end
 
@@ -423,6 +428,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "design_project_timesheets", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "date", null: false
+    t.datetime "deleted_at"
     t.decimal "hours", precision: 5, scale: 2, default: "0.0", null: false
     t.string "member_id", null: false
     t.string "member_name", null: false
@@ -432,6 +438,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.bigint "project_id", null: false
     t.integer "travel_km", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_design_project_timesheets_on_deleted_at"
     t.index ["project_id"], name: "index_design_project_timesheets_on_project_id"
   end
 
@@ -443,6 +450,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "client_name", null: false
     t.string "client_phone", default: "", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.decimal "expenses_actual", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "expenses_budget", precision: 12, scale: 2, default: "0.0", null: false
     t.integer "hours_billed", default: 0, null: false
@@ -460,6 +468,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "status", default: "pending", null: false
     t.bigint "template_id"
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_design_projects_on_deleted_at"
     t.index ["phase"], name: "index_design_projects_on_phase"
     t.index ["status"], name: "index_design_projects_on_status"
     t.index ["template_id"], name: "index_design_projects_on_template_id"
@@ -468,6 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
 
   create_table "design_quote_lines", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "description", null: false
     t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
     t.bigint "quote_id", null: false
@@ -475,6 +485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "unit", default: "u", null: false
     t.decimal "unit_price", precision: 12, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_design_quote_lines_on_deleted_at"
     t.index ["quote_id"], name: "index_design_quote_lines_on_quote_id"
   end
 
@@ -483,6 +494,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "approved_by"
     t.text "client_comment"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.bigint "project_id", null: false
     t.string "status", default: "draft", null: false
     t.decimal "subtotal", precision: 12, scale: 2, default: "0.0", null: false
@@ -493,6 +505,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.decimal "vat_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "vat_rate", precision: 5, scale: 2, default: "21.0", null: false
     t.integer "version", default: 1, null: false
+    t.index ["deleted_at"], name: "index_design_quotes_on_deleted_at"
     t.index ["project_id"], name: "index_design_quotes_on_project_id"
   end
 
@@ -518,6 +531,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   create_table "design_team_members", force: :cascade do |t|
     t.datetime "assigned_at", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.boolean "is_paid", default: false, null: false
     t.string "member_avatar", default: "", null: false
     t.string "member_email", default: "", null: false
@@ -526,6 +540,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.bigint "project_id", null: false
     t.string "role", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_design_team_members_on_deleted_at"
     t.index ["project_id", "member_id", "role"], name: "idx_design_team_member_unique_role", unique: true
     t.index ["project_id"], name: "index_design_team_members_on_project_id"
   end
@@ -542,14 +557,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
 
   create_table "event_types", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "label", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_event_types_on_deleted_at"
     t.index ["label"], name: "index_event_types_on_label", unique: true
   end
 
   create_table "events", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "cycle_id"
+    t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.datetime "end_date", null: false
     t.bigint "event_type_id", null: false
@@ -558,7 +576,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["cycle_id"], name: "index_events_on_cycle_id"
+    t.index ["deleted_at"], name: "index_events_on_deleted_at"
     t.index ["event_type_id"], name: "index_events_on_event_type_id"
+  end
+
+  create_table "expenses", force: :cascade do |t|
+    t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
+    t.boolean "billable_to_client", default: false, null: false
+    t.string "billing_zone"
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.bigint "design_project_id"
+    t.decimal "eu_vat_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "eu_vat_rate"
+    t.string "expense_type", null: false
+    t.date "invoice_date"
+    t.text "name", default: "", null: false
+    t.text "notes", default: "", null: false
+    t.string "paid_by"
+    t.date "payment_date"
+    t.string "payment_type"
+    t.string "poles", default: [], array: true
+    t.string "rebilling_status"
+    t.boolean "reimbursed", default: false, null: false
+    t.date "reimbursement_date"
+    t.string "status", default: "processing", null: false
+    t.string "supplier"
+    t.bigint "supplier_contact_id"
+    t.decimal "total_incl_vat", precision: 12, scale: 2, default: "0.0", null: false
+    t.bigint "training_id"
+    t.datetime "updated_at", null: false
+    t.decimal "vat_12", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "vat_21", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "vat_rate"
+    t.index ["deleted_at"], name: "index_expenses_on_deleted_at"
+    t.index ["design_project_id"], name: "index_expenses_on_design_project_id"
+    t.index ["supplier_contact_id"], name: "index_expenses_on_supplier_contact_id"
+    t.index ["training_id"], name: "index_expenses_on_training_id"
   end
 
   create_table "guild_memberships", force: :cascade do |t|
@@ -734,6 +790,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.integer "available_quantity", default: 0, null: false
     t.bigint "container_id", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "growth_stage", default: "young", null: false
     t.text "notes", default: "", null: false
     t.bigint "nursery_id", null: false
@@ -749,6 +806,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "variety_id", default: "", null: false
     t.string "variety_name", default: "", null: false
     t.index ["container_id"], name: "index_nursery_stock_batches_on_container_id"
+    t.index ["deleted_at"], name: "index_nursery_stock_batches_on_deleted_at"
     t.index ["nursery_id"], name: "index_nursery_stock_batches_on_nursery_id"
   end
 
@@ -774,6 +832,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.bigint "author_id"
     t.jsonb "breadboard"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "fat_marker_sketch"
     t.jsonb "no_gos", default: [], null: false
     t.text "problem", null: false
@@ -783,6 +842,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["author_id"], name: "index_pitches_on_author_id"
+    t.index ["deleted_at"], name: "index_pitches_on_deleted_at"
   end
 
   create_table "plant_activity_items", force: :cascade do |t|
@@ -886,12 +946,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
 
   create_table "plant_palette_items", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.bigint "item_id", null: false
     t.string "item_type", null: false
     t.bigint "palette_id", null: false
     t.integer "position", default: 0, null: false
     t.string "strate_key", null: false
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_plant_palette_items_on_deleted_at"
     t.index ["palette_id", "item_type", "item_id"], name: "idx_on_palette_id_item_type_item_id_9890869de5", unique: true
     t.index ["palette_id"], name: "index_plant_palette_items_on_palette_id"
   end
@@ -1041,6 +1103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "course_id"
     t.datetime "created_at", null: false
     t.date "date", null: false
+    t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.bigint "guild_id"
     t.decimal "hours", precision: 5, scale: 2, null: false
@@ -1050,6 +1113,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
     t.string "payment_type", null: false
     t.string "project_id"
     t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_timesheets_on_deleted_at"
     t.index ["guild_id"], name: "index_timesheets_on_guild_id"
     t.index ["member_id"], name: "index_timesheets_on_member_id"
   end
@@ -1067,7 +1131,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_trainings", column: "training_id"
-  add_foreign_key "academy_training_expenses", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_registrations", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_sessions", "academy_trainings", column: "training_id"
   add_foreign_key "academy_trainings", "academy_training_types", column: "training_type_id"
@@ -1084,7 +1147,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   add_foreign_key "contacts", "contacts", column: "organization_id"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
-  add_foreign_key "design_expenses", "design_projects", column: "project_id"
   add_foreign_key "design_follow_up_visits", "design_projects", column: "project_id"
   add_foreign_key "design_harvest_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_interventions", "design_plant_records", column: "plant_record_id"
@@ -1111,6 +1173,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_172415) do
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
   add_foreign_key "events", "event_types"
+  add_foreign_key "expenses", "academy_trainings", column: "training_id"
+  add_foreign_key "expenses", "contacts", column: "supplier_contact_id"
+  add_foreign_key "expenses", "design_projects"
   add_foreign_key "guild_memberships", "guilds"
   add_foreign_key "guild_memberships", "members"
   add_foreign_key "guilds", "members", column: "leader_id"

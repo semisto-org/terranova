@@ -101,6 +101,11 @@ Rails.application.routes.draw do
       delete "lab/timesheets/:id", to: "lab_management#destroy_timesheet"
       patch "lab/timesheets/:id/mark-invoiced", to: "lab_management#mark_invoiced"
 
+      get "lab/expenses", to: "lab_management#list_expenses"
+      post "lab/expenses", to: "lab_management#create_expense"
+      patch "lab/expenses/:id", to: "lab_management#update_expense"
+      delete "lab/expenses/:id", to: "lab_management#destroy_expense"
+
       get "plants/filter-options", to: "plants#filter_options"
       get "plants/search", to: "plants#search"
       get "plants/genera/:id", to: "plants#genus"

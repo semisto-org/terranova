@@ -1,22 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, FileText, Image, Video, File } from 'lucide-react'
+import { Upload } from 'lucide-react'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
-
-const DOCUMENT_TYPES = [
-  { value: 'pdf', label: 'PDF', icon: FileText, description: 'Document PDF' },
-  { value: 'image', label: 'Image', icon: Image, description: 'Image ou photo' },
-  { value: 'video', label: 'Vidéo', icon: Video, description: 'Vidéo ou enregistrement' },
-  { value: 'other', label: 'Autre', icon: File, description: 'Autre type de fichier' },
-]
 
 export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
   const nameRef = useRef(null)
   const fileInputRef = useRef(null)
 
   const [name, setName] = useState('')
-  const [documentType, setDocumentType] = useState('pdf')
   const [file, setFile] = useState(null)
   const [error, setError] = useState(null)
 
@@ -58,7 +50,6 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
     try {
       await onSubmit({
         name: name.trim(),
-        document_type: documentType,
         file,
       })
     } catch (err) {
@@ -122,50 +113,6 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
               )}
 
               <div className="space-y-6">
-                {/* Document Type */}
-                <div>
-                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">
-                    Type de document <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {DOCUMENT_TYPES.map((type) => {
-                      const isSelected = documentType === type.value
-                      const Icon = type.icon
-                      return (
-                        <button
-                          key={type.value}
-                          type="button"
-                          onClick={() => setDocumentType(type.value)}
-                          className={`
-                            p-4 rounded-xl border-2 transition-all duration-200 text-left
-                            ${
-                              isSelected
-                                ? 'border-[#B01A19] bg-[#B01A19]/5 dark:bg-[#B01A19]/20 shadow-sm'
-                                : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-300 dark:hover:border-stone-600'
-                            }
-                          `}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Icon className="w-6 h-6 flex-shrink-0 text-stone-600 dark:text-stone-400" />
-                            <div className="flex-1 min-w-0">
-                              <div className={`font-medium text-sm ${
-                                isSelected
-                                  ? 'text-stone-900 dark:text-stone-100'
-                                  : 'text-stone-700 dark:text-stone-300'
-                              }`}>
-                                {type.label}
-                              </div>
-                              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                                {type.description}
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
                 {/* Name */}
                 <div>
                   <label

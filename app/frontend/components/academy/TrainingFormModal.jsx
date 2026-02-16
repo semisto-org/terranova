@@ -11,6 +11,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
   const [trainingTypeId, setTrainingTypeId] = useState(training?.trainingTypeId ?? (trainingTypes[0]?.id ?? ''))
   const [title, setTitle] = useState(training?.title ?? '')
   const [price, setPrice] = useState(training?.price ?? 180)
+  const [vatRate, setVatRate] = useState(training?.vatRate ?? 0)
   const [maxParticipants, setMaxParticipants] = useState(training?.maxParticipants ?? 20)
   const [requiresAccommodation, setRequiresAccommodation] = useState(training?.requiresAccommodation ?? false)
   const [description, setDescription] = useState(training?.description ?? '')
@@ -58,6 +59,11 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
       return
     }
 
+    if (vatRate < 0 || vatRate >= 100) {
+      setError('Le taux de TVA doit être entre 0 et 100')
+      return
+    }
+
     if (maxParticipants < 1) {
       setError('Le nombre de participants doit être au moins 1')
       return
@@ -68,6 +74,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
         training_type_id: trainingTypeId,
         title: title.trim(),
         price,
+        vat_rate: vatRate,
         max_participants: maxParticipants,
         requires_accommodation: requiresAccommodation,
         description: description === '<p></p>' ? '' : description,
@@ -171,8 +178,8 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                   />
                 </div>
 
-                {/* Price and Max Participants - side by side */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Price, TVA, Max Participants */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label
                       htmlFor="training-price"
@@ -190,8 +197,31 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                       className={inputBase}
                       placeholder="180"
                     />
+                    {vatRate > 0 && (
+                      <p className="mt-1 text-xs text-stone-500">
+                        = {(price / (1 + vatRate / 100)).toFixed(2)} € HT
+                      </p>
+                    )}
                   </div>
-
+                  <div>
+                    <label
+                      htmlFor="training-vat-rate"
+                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    >
+                      TVA (%)
+                    </label>
+                    <input
+                      id="training-vat-rate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      max="99.99"
+                      value={vatRate}
+                      onChange={(e) => setVatRate(Number(e.target.value) || 0)}
+                      className={inputBase}
+                      placeholder="0"
+                    />
+                  </div>
                   <div>
                     <label
                       htmlFor="training-max-participants"

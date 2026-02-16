@@ -1,5 +1,6 @@
 module Academy
   class TrainingSession < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'academy_training_sessions'
 
     belongs_to :training, class_name: 'Academy::Training'

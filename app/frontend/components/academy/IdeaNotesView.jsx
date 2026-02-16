@@ -153,11 +153,7 @@ export default function IdeaNotesView({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (window.confirm('Supprimer cette note ?')) {
-                            onDeleteIdeaNote?.(note.id)
-                          }
-                        }}
+                        onClick={() => onDeleteIdeaNote?.(note.id)}
                         className="rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                         title="Supprimer"
                       >

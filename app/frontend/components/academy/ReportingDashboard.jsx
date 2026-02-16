@@ -37,22 +37,32 @@ const STATUS_COLORS = {
   cancelled: 'bg-red-500',
 }
 
-const EXPENSE_CATEGORY_LABELS = {
-  location: 'Lieu',
-  material: 'Matériel',
-  food: 'Repas',
-  accommodation: 'Hébergement',
-  transport: 'Transport',
-  other: 'Autre',
-}
-
-const EXPENSE_CATEGORY_COLORS = {
-  location: 'bg-blue-500',
-  material: 'bg-purple-500',
-  food: 'bg-orange-500',
-  accommodation: 'bg-amber-500',
-  transport: 'bg-cyan-500',
-  other: 'bg-stone-500',
+// Génère une couleur de manière déterministe basée sur le nom de la catégorie
+const getCategoryColor = (categoryName) => {
+  const colors = [
+    'bg-blue-500',
+    'bg-purple-500',
+    'bg-orange-500',
+    'bg-amber-500',
+    'bg-cyan-500',
+    'bg-emerald-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-red-500',
+    'bg-teal-500',
+    'bg-yellow-500',
+    'bg-lime-500',
+    'bg-rose-500',
+    'bg-violet-500',
+    'bg-stone-500',
+  ]
+  // Hash simple pour obtenir un index de couleur déterministe
+  let hash = 0
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = ((hash << 5) - hash) + categoryName.charCodeAt(i)
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return colors[Math.abs(hash) % colors.length]
 }
 
 export default function ReportingDashboard({ data }) {
@@ -75,6 +85,7 @@ export default function ReportingDashboard({ data }) {
     expensesByCategory = {},
     totalParticipants = 0,
     averageFillRate = 0,
+    fillRatesByType = [],
   } = data
 
   const profitabilityPercent =
@@ -158,13 +169,13 @@ export default function ReportingDashboard({ data }) {
               <Euro className="w-5 h-5 text-blue-600" />
             </div>
             <span className="text-xs font-medium text-stone-500 uppercase tracking-wide">
-              Recettes
+              Recettes (HT)
             </span>
           </div>
           <div className="text-2xl font-bold text-stone-900">
             {Number(totalRevenue).toLocaleString('fr-FR')} €
           </div>
-          <div className="text-xs text-stone-500 mt-1">total encaissé</div>
+          <div className="text-xs text-stone-500 mt-1">total encaissé (HT)</div>
         </div>
         <div className="group bg-white rounded-xl p-5 border border-stone-200 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-2 mb-2">
@@ -178,7 +189,7 @@ export default function ReportingDashboard({ data }) {
           <div className="text-2xl font-bold text-stone-900">
             {Number(totalExpenses).toLocaleString('fr-FR')} €
           </div>
-          <div className="text-xs text-stone-500 mt-1">total dépensé</div>
+          <div className="text-xs text-stone-500 mt-1">total dépensé (HT)</div>
         </div>
       </div>
 
@@ -218,7 +229,7 @@ export default function ReportingDashboard({ data }) {
           </div>
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-stone-600">Taux de remplissage moyen</span>
+              <span className="text-stone-600">Taux de remplissage moyen global</span>
               <span className="font-medium text-stone-900">{averageFillRate}%</span>
             </div>
             <div className="w-full bg-stone-200 rounded-full h-3 overflow-hidden">
@@ -230,6 +241,40 @@ export default function ReportingDashboard({ data }) {
               />
             </div>
           </div>
+          {fillRatesByType.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-stone-100 space-y-3">
+              <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">
+                Par type de formation
+              </h3>
+              {fillRatesByType.map((entry) => (
+                <div key={entry.name}>
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <span className="text-stone-600 truncate mr-3">
+                      {entry.name}
+                      <span className="text-stone-400 ml-1 text-xs">
+                        ({entry.trainingsCount})
+                      </span>
+                    </span>
+                    <span
+                      className={`font-medium shrink-0 ${
+                        entry.fillRate >= 60 ? 'text-emerald-600' : 'text-red-600'
+                      }`}
+                    >
+                      {entry.fillRate}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        entry.fillRate >= 60 ? 'bg-emerald-500' : 'bg-red-400'
+                      }`}
+                      style={{ width: `${Math.min(entry.fillRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -271,7 +316,7 @@ export default function ReportingDashboard({ data }) {
       {Object.keys(expensesByCategory).length > 0 && totalExpensesSum > 0 && (
         <div className="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
           <h2 className="text-lg font-semibold text-stone-900 mb-4">
-            Dépenses par catégorie
+            Dépenses par catégorie (HT)
           </h2>
           <div className="mb-4">
             <div className="w-full bg-stone-200 rounded-full h-4 overflow-visible flex">
@@ -282,11 +327,9 @@ export default function ReportingDashboard({ data }) {
                   return (
                     <div
                       key={category}
-                      className={`h-full transition-all duration-300 ${
-                        EXPENSE_CATEGORY_COLORS[category] || EXPENSE_CATEGORY_COLORS.other
-                      } first:rounded-l-full last:rounded-r-full`}
+                      className={`h-full transition-all duration-300 ${getCategoryColor(category)} first:rounded-l-full last:rounded-r-full`}
                       style={{ width: `${percentage}%` }}
-                      title={`${EXPENSE_CATEGORY_LABELS[category] || category}: ${Number(amount).toLocaleString('fr-FR')} € (${Math.round(percentage)}%)`}
+                      title={`${category}: ${Number(amount).toLocaleString('fr-FR')} € HT (${Math.round(percentage)}%)`}
                     />
                   )
                 })}
@@ -298,15 +341,13 @@ export default function ReportingDashboard({ data }) {
               .map(([category, amount]) => (
                 <div key={category} className="flex items-center gap-2">
                   <div
-                    className={`w-3 h-3 rounded-full ${
-                      EXPENSE_CATEGORY_COLORS[category] || EXPENSE_CATEGORY_COLORS.other
-                    }`}
+                    className={`w-3 h-3 rounded-full ${getCategoryColor(category)}`}
                   />
                   <span className="text-sm font-medium text-stone-900">
-                    {EXPENSE_CATEGORY_LABELS[category] || category}
+                    {category}
                   </span>
                   <span className="text-sm text-stone-500 ml-auto">
-                    {Number(amount).toLocaleString('fr-FR')} €
+                    {Number(amount).toLocaleString('fr-FR')} € HT
                   </span>
                 </div>
               ))}

@@ -4,7 +4,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
   setup do
     [
       Academy::TrainingAttendance,
-      Academy::TrainingExpense,
+      Expense,
       Academy::TrainingDocument,
       Academy::TrainingRegistration,
       Academy::TrainingSession,
@@ -48,11 +48,15 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
       training_type_id: training_type_id,
       title: 'Formation pilote',
       price: 210,
+      vat_rate: 21,
       max_participants: 16,
       description: 'Session 1'
     }, as: :json
     assert_response :created
-    training_id = JSON.parse(response.body)['id']
+    created = JSON.parse(response.body)
+    training_id = created['id']
+    assert_equal 21.0, created['vatRate'].to_f
+    assert_in_delta 173.55, created['priceExclVat'].to_f, 0.01
 
     patch "/api/v1/academy/trainings/#{training_id}/status", params: { status: 'registrations_open' }, as: :json
     assert_response :success
@@ -95,7 +99,6 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/academy/trainings/#{training_id}/documents", params: {
       name: 'Syllabus',
-      document_type: 'other',
       file: fixture_file_upload('sample.txt', 'text/plain')
     }
     assert_response :created
@@ -105,10 +108,14 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert doc['url'].present?
 
     post "/api/v1/academy/trainings/#{training_id}/expenses", params: {
-      category: 'location',
-      description: 'Location salle',
-      amount: 100,
-      date: Date.current.iso8601
+      supplier: 'Salle Test',
+      status: 'processing',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'services_and_goods',
+      name: 'Location salle',
+      total_incl_vat: 100,
+      amount_excl_vat: 82.64,
+      vat_6: 0, vat_12: 0, vat_21: 17.36
     }, as: :json
     assert_response :created
 
@@ -116,8 +123,10 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
     reporting = JSON.parse(response.body)
     assert_equal 1, reporting['trainingsCount']
-    assert_equal 210.0, reporting['totalRevenue']
-    assert_equal 100.0, reporting['totalExpenses']
+    # Revenue is reported HT: 210 / 1.21 ≈ 173.55
+    assert_in_delta 173.55, reporting['totalRevenue'], 0.01
+    assert_equal 210.0, reporting['totalRevenueInclVat']
+    assert_in_delta 82.64, reporting['totalExpenses'], 0.01
   end
 
   test 'checklist idea notes and calendar endpoints work' do
@@ -249,22 +258,30 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_equal 'partial', registration['paymentStatus']
 
     post "/api/v1/academy/trainings/#{training_id}/expenses", params: {
-      category: 'material',
-      description: 'Impression supports',
-      amount: 35,
-      date: Date.current.iso8601
+      supplier: 'Fournisseur',
+      status: 'processing',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'merchandise',
+      name: 'Impression supports',
+      total_incl_vat: 35,
+      amount_excl_vat: 28.93,
+      vat_6: 0, vat_12: 0, vat_21: 6.07
     }, as: :json
     assert_response :created
     expense_id = JSON.parse(response.body)['id']
 
     patch "/api/v1/academy/expenses/#{expense_id}", params: {
-      category: 'material',
-      description: 'Supports + badges',
-      amount: 45,
-      date: Date.current.iso8601
+      supplier: 'Fournisseur',
+      status: 'processing',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'merchandise',
+      name: 'Supports + badges',
+      total_incl_vat: 45,
+      amount_excl_vat: 37.19,
+      vat_6: 0, vat_12: 0, vat_21: 7.81
     }, as: :json
     assert_response :success
-    assert_equal 45.0, JSON.parse(response.body)['amount']
+    assert_equal 45.0, JSON.parse(response.body)['totalInclVat']
   end
 
   # =============================

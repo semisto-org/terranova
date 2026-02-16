@@ -11,6 +11,7 @@ module Api
       before_action :set_event, only: [:show_event, :update_event, :destroy_event]
       before_action :set_event_type, only: [:update_event_type, :destroy_event_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
+      before_action :set_expense, only: [:update_expense, :destroy_expense]
 
       def overview
         render json: {
@@ -88,7 +89,7 @@ module Api
       end
 
       def destroy_contact
-        @contact.destroy!
+        @contact.soft_delete!
         head :no_content
       end
 
@@ -178,7 +179,7 @@ module Api
       end
 
       def destroy_pitch
-        @pitch.destroy!
+        @pitch.soft_delete!
         head :no_content
       end
 
@@ -208,7 +209,7 @@ module Api
       end
 
       def remove_bet
-        Bet.find(params.require(:id)).destroy!
+        Bet.find(params.require(:id)).soft_delete!
         head :no_content
       end
 
@@ -271,7 +272,7 @@ module Api
 
         ActiveRecord::Base.transaction do
           scope.scope_tasks.create!(title: item.title, is_nice_to_have: false, completed: false)
-          item.destroy!
+          item.soft_delete!
         end
 
         render json: { moved: true }
@@ -280,7 +281,7 @@ module Api
       end
 
       def destroy_chowder_item
-        ChowderItem.find(params.require(:id)).destroy!
+        ChowderItem.find(params.require(:id)).soft_delete!
         head :no_content
       end
 
@@ -358,7 +359,7 @@ module Api
       end
 
       def destroy_event
-        @event.destroy!
+        @event.soft_delete!
         head :no_content
       end
 
@@ -385,7 +386,7 @@ module Api
       end
 
       def destroy_event_type
-        @event_type.destroy!
+        @event_type.soft_delete!
         head :no_content
       end
 
@@ -501,13 +502,53 @@ module Api
       end
 
       def destroy_timesheet
-        @timesheet.destroy!
+        @timesheet.soft_delete!
         head :no_content
       end
 
       def mark_invoiced
         @timesheet.update!(invoiced: true)
         render json: serialize_timesheet(@timesheet)
+      end
+
+      def list_expenses
+        scope = Expense.includes(:design_project, :training)
+
+        scope = scope.where(status: params[:status]) if params[:status].present?
+        scope = scope.where(expense_type: params[:expense_type]) if params[:expense_type].present?
+        scope = scope.where(billing_zone: params[:billing_zone]) if params[:billing_zone].present?
+        scope = scope.where("? = ANY(poles)", params[:pole]) if params[:pole].present?
+        scope = scope.where(training_id: params[:training_id]) if params[:training_id].present?
+        scope = scope.where(design_project_id: params[:design_project_id]) if params[:design_project_id].present?
+
+        render json: { items: scope.order(invoice_date: :desc).map { |e| serialize_expense(e) } }
+      end
+
+      def create_expense
+        expense = Expense.new(expense_params)
+
+        if expense.save
+          expense.document.attach(params[:document]) if params[:document].present?
+          render json: serialize_expense(expense.reload), status: :created
+        else
+          render json: { error: expense.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_expense
+        @expense.assign_attributes(expense_params)
+        @expense.document.attach(params[:document]) if params[:document].present?
+
+        if @expense.save
+          render json: serialize_expense(@expense.reload)
+        else
+          render json: { error: @expense.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_expense
+        @expense.soft_delete!
+        head :no_content
       end
 
       private
@@ -587,6 +628,59 @@ module Api
 
       def set_timesheet
         @timesheet = Timesheet.find(params.require(:id))
+      end
+
+      def set_expense
+        @expense = Expense.find(params.require(:id))
+      end
+
+      def expense_params
+        params.permit(
+          :supplier, :supplier_contact_id, :status, :invoice_date, :category, :expense_type, :billing_zone,
+          :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
+          :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
+          :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
+          :name, :notes, :training_id, :design_project_id,
+          poles: []
+        )
+      end
+
+      def serialize_expense(item)
+        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document) : nil
+        {
+          id: item.id.to_s,
+          supplier: item.supplier_display_name,
+          supplierContactId: item.supplier_contact_id&.to_s,
+          status: item.status,
+          invoiceDate: item.invoice_date&.iso8601,
+          category: item.category,
+          expenseType: item.expense_type,
+          billingZone: item.billing_zone,
+          paymentDate: item.payment_date&.iso8601,
+          paymentType: item.payment_type,
+          amountExclVat: item.amount_excl_vat.to_f,
+          vatRate: item.vat_rate,
+          vat6: item.vat_6.to_f,
+          vat12: item.vat_12.to_f,
+          vat21: item.vat_21.to_f,
+          totalInclVat: item.total_incl_vat.to_f,
+          euVatRate: item.eu_vat_rate,
+          euVatAmount: item.eu_vat_amount.to_f,
+          paidBy: item.paid_by,
+          reimbursed: item.reimbursed,
+          reimbursementDate: item.reimbursement_date&.iso8601,
+          billableToClient: item.billable_to_client,
+          rebillingStatus: item.rebilling_status,
+          name: item.name,
+          notes: item.notes,
+          poles: item.poles || [],
+          trainingId: item.training_id&.to_s,
+          designProjectId: item.design_project_id&.to_s,
+          documentUrl: doc_url,
+          documentFilename: item.document.attached? ? item.document.filename.to_s : nil,
+          createdAt: item.created_at.iso8601,
+          updatedAt: item.updated_at.iso8601
+        }
       end
 
       def replace_event_attendees(event, attendee_ids)

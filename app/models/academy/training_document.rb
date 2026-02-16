@@ -1,14 +1,12 @@
 module Academy
   class TrainingDocument < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'academy_training_documents'
-
-    TYPES = %w[pdf image video other].freeze
 
     belongs_to :training, class_name: 'Academy::Training'
     has_one_attached :file
 
-    validates :name, :document_type, :uploaded_at, presence: true
-    validates :document_type, inclusion: { in: TYPES }
+    validates :name, :uploaded_at, presence: true
     validate :file_or_legacy_url_present
 
     private

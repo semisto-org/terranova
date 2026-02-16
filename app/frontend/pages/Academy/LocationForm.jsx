@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import SimpleEditor from '@/components/SimpleEditor'
 import { useShellNav } from '@/components/shell/ShellContext'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
   { id: 'kanban', label: 'Formations' },
@@ -24,6 +25,7 @@ export default function LocationForm({ locationId }) {
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
   const [geocoding, setGeocoding] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   useShellNav({
     sections: ACADEMY_SECTIONS,
@@ -135,19 +137,24 @@ export default function LocationForm({ locationId }) {
     [name, address, description, capacity, hasAccommodation, latitude, longitude, isEditing, locationId]
   )
 
-  const handleDelete = useCallback(async () => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce lieu ?')) return
-    setBusy(true)
-    setError(null)
-    try {
-      await apiRequest(`/api/v1/academy/locations/${locationId}`, { method: 'DELETE' })
-      window.location.href = '/academy?view=locations'
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }, [locationId])
+  const handleDelete = useCallback(() => {
+    setDeleteConfirm({
+      title: 'Supprimer ce lieu ?',
+      message: `Le lieu « ${name || ''} » sera supprimé définitivement.`,
+      action: async () => {
+        setBusy(true)
+        setError(null)
+        try {
+          await apiRequest(`/api/v1/academy/locations/${locationId}`, { method: 'DELETE' })
+          window.location.href = '/academy?view=locations'
+        } catch (err) {
+          setError(err.message)
+        } finally {
+          setBusy(false)
+        }
+      },
+    })
+  }, [locationId, name])
 
   if (loading) {
     return (
@@ -334,6 +341,17 @@ export default function LocationForm({ locationId }) {
           </div>
         </form>
       </div>
+      {deleteConfirm && (
+        <ConfirmDeleteModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={() => {
+            deleteConfirm.action()
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   )
 }

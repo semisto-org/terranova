@@ -197,7 +197,7 @@ module Api
       end
 
       def remove_palette_item
-        Plant::PaletteItem.find(params.require(:id)).destroy!
+        Plant::PaletteItem.find(params.require(:id)).soft_delete!
         head :no_content
       end
 

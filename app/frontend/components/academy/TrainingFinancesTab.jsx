@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React from 'react'
 import {
   DollarSign,
   Plus,
@@ -16,6 +16,14 @@ const CATEGORY_LABELS = {
   accommodation: 'Hébergement',
   transport: 'Transport',
   other: 'Autre',
+  services_and_goods: 'Services et biens divers',
+  salaries: 'Salaires',
+  merchandise: 'Marchandises',
+  corporate_tax: 'Impôts sur les sociétés',
+  exceptional_expenses: 'Dépenses exceptionnelles',
+  financial_expenses: 'Dépenses financières',
+  provisions_and_depreciation: 'Provisions et amortissements',
+  taxes_and_duties: 'Taxes et impôts',
 }
 
 const CATEGORY_COLORS = {
@@ -28,6 +36,7 @@ const CATEGORY_COLORS = {
 }
 
 function formatDate(dateStr) {
+  if (!dateStr) return '—'
   const date = new Date(dateStr)
   return date.toLocaleDateString('fr-FR', {
     day: 'numeric',
@@ -40,27 +49,41 @@ export default function TrainingFinancesTab({
   registrations = [],
   expenses = [],
   trainingPrice = 0,
+  vatRate = 0,
   onAddExpense,
   onEditExpense,
   onDeleteExpense,
 }) {
-  const totalRevenue = registrations.reduce(
+  const totalRevenueInclVat = registrations.reduce(
     (sum, r) => sum + Number(r.amountPaid || 0),
     0
   )
-  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0)
+  const totalRevenue =
+    Number(vatRate) > 0
+      ? registrations.reduce(
+          (sum, r) =>
+            sum + Number(r.amountPaid || 0) / (1 + Number(vatRate) / 100),
+          0
+        )
+      : totalRevenueInclVat
+  const totalExpenses = expenses.reduce(
+    (sum, e) => sum + Number(e.amountExclVat ?? 0),
+    0
+  )
   const profitability = totalRevenue - totalExpenses
   const profitabilityPercent =
     totalRevenue > 0 ? Math.round((profitability / totalRevenue) * 100) : 0
 
   const expensesByCategory = expenses.reduce((acc, exp) => {
-    const cat = exp.category || 'other'
-    acc[cat] = (acc[cat] || 0) + Number(exp.amount || 0)
+    const cat = exp.category ?? exp.expenseType ?? 'other'
+    acc[cat] = (acc[cat] || 0) + Number(exp.amountExclVat ?? 0)
     return acc
   }, {})
 
   const sortedExpenses = [...expenses].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) =>
+      new Date(b.invoiceDate ?? b.date ?? 0).getTime() -
+      new Date(a.invoiceDate ?? a.date ?? 0).getTime()
   )
 
   return (
@@ -86,25 +109,30 @@ export default function TrainingFinancesTab({
         <div className="bg-white rounded-lg p-6 border border-stone-200">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm text-stone-500">Recettes</span>
+            <span className="text-sm text-stone-500">
+              Recettes{Number(vatRate) > 0 ? ' (HT)' : ''}
+            </span>
           </div>
           <div className="text-2xl font-bold text-stone-900">
             {totalRevenue.toLocaleString('fr-FR')} €
           </div>
           <div className="text-xs text-stone-500 mt-1">
             {registrations.length} inscription{registrations.length !== 1 ? 's' : ''}
+            {Number(vatRate) > 0 && (
+              <> · TVAC : {totalRevenueInclVat.toLocaleString('fr-FR')} € / HT : {totalRevenue.toLocaleString('fr-FR')} €</>
+            )}
           </div>
         </div>
         <div className="bg-white rounded-lg p-6 border border-stone-200">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="w-5 h-5 text-red-600" />
-            <span className="text-sm text-stone-500">Dépenses</span>
+            <span className="text-sm text-stone-500">Dépenses (HT)</span>
           </div>
           <div className="text-2xl font-bold text-stone-900">
             {totalExpenses.toLocaleString('fr-FR')} €
           </div>
           <div className="text-xs text-stone-500 mt-1">
-            {expenses.length} dépense{expenses.length !== 1 ? 's' : ''}
+            {expenses.length} dépense{expenses.length !== 1 ? 's' : ''} · hors taxes
           </div>
         </div>
         <div className="bg-white rounded-lg p-6 border border-stone-200">
@@ -134,7 +162,7 @@ export default function TrainingFinancesTab({
       {Object.keys(expensesByCategory).length > 0 && (
         <div className="bg-white rounded-lg p-6 border border-stone-200">
           <h4 className="text-base font-semibold text-stone-900 mb-4">
-            Dépenses par catégorie
+            Dépenses par catégorie (HT)
           </h4>
           <div className="mb-4 relative">
             <div className="w-full bg-stone-200 rounded-full h-4 overflow-visible flex">
@@ -148,7 +176,7 @@ export default function TrainingFinancesTab({
                       key={category}
                       className={`${CATEGORY_COLORS[category] || CATEGORY_COLORS.other} h-full transition-all duration-300 hover:opacity-80 relative group cursor-default rounded-full first:rounded-l-full last:rounded-r-full`}
                       style={{ width: `${percentage}%` }}
-                      title={`${CATEGORY_LABELS[category] || category}: ${amount.toLocaleString('fr-FR')} € (${Math.round(percentage)}%)`}
+                      title={`${CATEGORY_LABELS[category] || category}: ${amount.toLocaleString('fr-FR')} € HT (${Math.round(percentage)}%)`}
                     />
                   )
                 })}
@@ -201,13 +229,16 @@ export default function TrainingFinancesTab({
                     Date
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">
+                    Fournisseur
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">
                     Catégorie
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">
-                    Description
+                    Libellé
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">
-                    Montant
+                    Montant TVAC
                   </th>
                   <th className="px-4 py-3 w-12" />
                 </tr>
@@ -232,25 +263,16 @@ export default function TrainingFinancesTab({
 }
 
 function ExpenseRow({ expense, formatDate, onEdit, onDelete }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef(null)
-
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
-
-  const categoryLabel = CATEGORY_LABELS[expense.category] || expense.category
-  const categoryColor = CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.other
+  const categoryLabel = expense.category || CATEGORY_LABELS[expense.expenseType] || expense.expenseType || '—'
+  const categoryColor = CATEGORY_COLORS[expense.expenseType] || CATEGORY_COLORS.other
 
   return (
     <tr className="border-b border-stone-100 hover:bg-stone-50/50">
       <td className="px-4 py-3 text-sm text-stone-600">
-        {expense.date ? formatDate(expense.date) : '—'}
+        {formatDate(expense.invoiceDate ?? expense.date)}
+      </td>
+      <td className="px-4 py-3 text-sm text-stone-900">
+        {expense.supplier || '—'}
       </td>
       <td className="px-4 py-3">
         <span
@@ -260,46 +282,32 @@ function ExpenseRow({ expense, formatDate, onEdit, onDelete }) {
         </span>
       </td>
       <td className="px-4 py-3">
-        <p className="text-sm text-stone-900">{expense.description || '—'}</p>
+        <p className="text-sm text-stone-900">{expense.name || '—'}</p>
       </td>
       <td className="px-4 py-3 text-right font-medium text-stone-900">
-        {Number(expense.amount || 0).toLocaleString('fr-FR')} €
+        {Number(expense.totalInclVat ?? expense.amount ?? 0).toLocaleString('fr-FR')} €
       </td>
-      <td className="px-4 py-3 relative" ref={menuRef}>
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-          aria-label="Actions"
-        >
-          <Edit className="w-4 h-4" />
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 py-1 w-36 bg-white rounded-lg border border-stone-200 shadow-lg z-20">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false)
-                onEdit()
-              }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
-            >
-              <Edit className="w-4 h-4" />
-              Modifier
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false)
-                onDelete()
-              }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              Supprimer
-            </button>
-          </div>
-        )}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => onEdit?.()}
+            className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+            aria-label="Modifier"
+            title="Modifier"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete?.()}
+            className="p-2 rounded-lg text-stone-400 hover:bg-red-50 hover:text-red-600"
+            aria-label="Supprimer"
+            title="Supprimer"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </td>
     </tr>
   )

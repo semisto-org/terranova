@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import {
   ActivityFeed,
   ContributorProfile,
@@ -327,6 +328,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const [contributorPayload, setContributorPayload] = useState(null)
   const [contributionModal, setContributionModal] = useState(null)
   const [notice, setNotice] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const catalogSpecies = useMemo(() => {
     const items = []
@@ -727,10 +729,14 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     )
     if (!item) return
 
-    mutateAndRefresh(async () => {
-      await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
-        method: 'DELETE',
-      })
+    setDeleteConfirm({
+      title: 'Retirer cette plante ?',
+      message: `« ${item.latinName || ''} » sera retirée de la palette.`,
+      action: () => mutateAndRefresh(async () => {
+        await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
+          method: 'DELETE',
+        })
+      }),
     })
   }, [mutateAndRefresh, palette])
 
@@ -778,13 +784,19 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const clearPalette = useCallback(() => {
     if (!palette?.strates) return
 
-    mutateAndRefresh(async () => {
-      const items = Object.values(palette.strates).flat()
-      await Promise.all(
-        items.map((item) =>
-          apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, { method: 'DELETE' })
+    const items = Object.values(palette.strates).flat()
+    if (items.length === 0) return
+
+    setDeleteConfirm({
+      title: 'Vider la palette ?',
+      message: `Les ${items.length} plante(s) seront retirées de la palette.`,
+      action: () => mutateAndRefresh(async () => {
+        await Promise.all(
+          items.map((item) =>
+            apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, { method: 'DELETE' })
+          )
         )
-      )
+      }),
     })
   }, [mutateAndRefresh, palette])
 
@@ -985,6 +997,18 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
         onChange={updateContributionValue}
         onSubmit={submitContributionModal}
       />
+
+      {deleteConfirm && (
+        <ConfirmDeleteModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={() => {
+            deleteConfirm.action()
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   )
 }

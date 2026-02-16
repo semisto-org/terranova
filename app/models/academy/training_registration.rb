@@ -1,5 +1,6 @@
 module Academy
   class TrainingRegistration < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'academy_training_registrations'
 
     PAYMENT_STATUSES = %w[pending partial paid].freeze

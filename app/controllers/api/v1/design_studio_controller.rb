@@ -53,7 +53,7 @@ module Api
       end
 
       def destroy
-        find_project.destroy!
+        find_project.soft_delete!
         head :no_content
       end
 
@@ -111,7 +111,7 @@ module Api
 
       def destroy_team_member
         project = find_project
-        project.team_members.find(params.require(:member_id)).destroy!
+        project.team_members.find(params.require(:member_id)).soft_delete!
         head :no_content
       end
 
@@ -133,31 +133,38 @@ module Api
       end
 
       def destroy_timesheet
-        Design::ProjectTimesheet.find(params.require(:timesheet_id)).destroy!
+        Design::ProjectTimesheet.find(params.require(:timesheet_id)).soft_delete!
         head :no_content
       end
 
       def create_expense
         project = find_project
         item = project.expenses.create!(expense_params)
-        project.increment!(:expenses_actual, item.amount.to_f)
-        render json: serialize_expense(item), status: :created
+        item.document.attach(params[:document]) if params[:document].present?
+        project.update!(expenses_actual: project.expenses.sum(:total_incl_vat))
+        render json: serialize_expense(item.reload), status: :created
       end
 
       def update_expense
-        item = Design::Expense.find(params.require(:expense_id))
-        item.update!(expense_update_params)
-        render json: serialize_expense(item)
+        item = Expense.find(params.require(:expense_id))
+        item.update!(expense_params)
+        item.document.attach(params[:document]) if params[:document].present?
+        project = item.design_project
+        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat))
+        render json: serialize_expense(item.reload)
       end
 
       def destroy_expense
-        Design::Expense.find(params.require(:expense_id)).destroy!
+        item = Expense.find(params.require(:expense_id))
+        project = item.design_project
+        item.soft_delete!
+        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat))
         head :no_content
       end
 
       def approve_expense
-        item = Design::Expense.find(params.require(:expense_id))
-        item.update!(status: 'approved')
+        item = Expense.find(params.require(:expense_id))
+        item.update!(status: "ready_for_payment")
         render json: serialize_expense(item)
       end
 
@@ -185,7 +192,7 @@ module Api
       end
 
       def destroy_palette_item
-        Design::ProjectPaletteItem.find(params.require(:item_id)).destroy!
+        Design::ProjectPaletteItem.find(params.require(:item_id)).soft_delete!
         head :no_content
       end
 
@@ -257,7 +264,7 @@ module Api
       def destroy_plant_marker
         marker = Design::PlantMarker.find(params.require(:marker_id))
         Design::PlantRecord.where(marker_id: marker.id).update_all(marker_id: nil)
-        marker.destroy!
+        marker.soft_delete!
         head :no_content
       end
 
@@ -359,7 +366,7 @@ module Api
       end
 
       def destroy_quote
-        Design::Quote.find(params.require(:quote_id)).destroy!
+        Design::Quote.find(params.require(:quote_id)).soft_delete!
         head :no_content
       end
 
@@ -390,7 +397,7 @@ module Api
       def destroy_quote_line
         line = Design::QuoteLine.find(params.require(:line_id))
         quote = line.quote
-        line.destroy!
+        line.soft_delete!
         recalculate_quote_totals!(quote)
 
         head :no_content
@@ -404,7 +411,7 @@ module Api
       end
 
       def destroy_document
-        Design::ProjectDocument.find(params.require(:document_id)).destroy!
+        Design::ProjectDocument.find(params.require(:document_id)).soft_delete!
         head :no_content
       end
 
@@ -416,7 +423,7 @@ module Api
       end
 
       def destroy_media
-        Design::MediaItem.find(params.require(:media_id)).destroy!
+        Design::MediaItem.find(params.require(:media_id)).soft_delete!
         head :no_content
       end
 
@@ -454,7 +461,7 @@ module Api
       end
 
       def destroy_meeting
-        Design::ProjectMeeting.find(params.require(:meeting_id)).destroy!
+        Design::ProjectMeeting.find(params.require(:meeting_id)).soft_delete!
         head :no_content
       end
 
@@ -472,7 +479,7 @@ module Api
       end
 
       def destroy_annotation
-        Design::Annotation.find(params.require(:annotation_id)).destroy!
+        Design::Annotation.find(params.require(:annotation_id)).soft_delete!
         head :no_content
       end
 
@@ -606,7 +613,7 @@ module Api
           project: serialize_project(project),
           teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) },
           timesheets: project.timesheets.order(date: :desc).map { |item| serialize_timesheet(item) },
-          expenses: project.expenses.order(date: :desc).map { |item| serialize_expense(item) },
+          expenses: project.expenses.order(invoice_date: :desc).map { |item| serialize_expense(item) },
           siteAnalysis: serialize_site_analysis(project.site_analysis),
           plantPalette: serialize_project_palette(palette),
           plantingPlan: serialize_planting_plan(planting_plan),
@@ -645,11 +652,14 @@ module Api
       end
 
       def expense_params
-        params.permit(:date, :amount, :category, :description, :phase, :member_id, :member_name, :receipt_url, :status)
-      end
-
-      def expense_update_params
-        params.permit(:date, :amount, :category, :description, :phase, :receipt_url, :status)
+        params.permit(
+          :supplier, :supplier_contact_id, :status, :invoice_date, :category, :expense_type, :billing_zone,
+          :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
+          :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
+          :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
+          :name, :notes, :training_id, :design_project_id,
+          poles: []
+        )
       end
 
       def site_analysis_params
@@ -749,7 +759,7 @@ module Api
           completed.to_f / projects.size
         end
 
-        upcoming_meetings = Design::ProjectMeeting.includes(:project).where('starts_at >= ?', Time.current).order(starts_at: :asc).limit(6).map { |meeting| serialize_upcoming_meeting(meeting) }
+        upcoming_meetings = Design::ProjectMeeting.includes(:project).where(project_id: Design::Project.select(:id)).where('starts_at >= ?', Time.current).order(starts_at: :asc).limit(6).map { |meeting| serialize_upcoming_meeting(meeting) }
 
         {
           activeProjects: active_projects,
@@ -916,18 +926,40 @@ module Api
       end
 
       def serialize_expense(item)
+        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document) : nil
         {
           id: item.id.to_s,
-          projectId: item.project_id.to_s,
-          date: item.date.iso8601,
-          amount: item.amount.to_f,
+          trainingId: item.training_id&.to_s,
+          designProjectId: item.design_project_id&.to_s,
+          supplier: item.supplier_display_name,
+          supplierContactId: item.supplier_contact_id&.to_s,
+          status: item.status,
+          invoiceDate: item.invoice_date&.iso8601,
           category: item.category,
-          description: item.description,
-          phase: item.phase,
-          memberId: item.member_id,
-          memberName: item.member_name,
-          receiptUrl: item.receipt_url,
-          status: item.status
+          expenseType: item.expense_type,
+          billingZone: item.billing_zone,
+          paymentDate: item.payment_date&.iso8601,
+          paymentType: item.payment_type,
+          amountExclVat: item.amount_excl_vat.to_f,
+          vatRate: item.vat_rate,
+          vat6: item.vat_6.to_f,
+          vat12: item.vat_12.to_f,
+          vat21: item.vat_21.to_f,
+          totalInclVat: item.total_incl_vat.to_f,
+          euVatRate: item.eu_vat_rate,
+          euVatAmount: item.eu_vat_amount.to_f,
+          paidBy: item.paid_by,
+          reimbursed: item.reimbursed,
+          reimbursementDate: item.reimbursement_date&.iso8601,
+          billableToClient: item.billable_to_client,
+          rebillingStatus: item.rebilling_status,
+          name: item.name,
+          notes: item.notes,
+          poles: item.poles || [],
+          documentUrl: doc_url,
+          documentFilename: item.document.attached? ? item.document.filename.to_s : nil,
+          createdAt: item.created_at.iso8601,
+          updatedAt: item.updated_at.iso8601
         }
       end
 

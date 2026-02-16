@@ -14,6 +14,7 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
       SemosTransaction,
       SemosEmission,
       SemosRate,
+      Expense,
       Timesheet,
       EventAttendee,
       Event,
@@ -190,5 +191,48 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
     ].each do |key|
       assert body.key?(key), "Missing key #{key}"
     end
+  end
+
+  test 'lab expenses list create update delete' do
+    get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body.key?('items')
+    assert_equal 0, body['items'].size
+
+    post '/api/v1/lab/expenses', params: {
+      supplier: 'Test Supplier',
+      status: 'processing',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'services_and_goods',
+      name: 'Lab expense',
+      total_incl_vat: 100,
+      amount_excl_vat: 82.64,
+      vat_6: 0, vat_12: 0, vat_21: 17.36
+    }, as: :json
+    assert_response :created
+    expense_id = JSON.parse(response.body)['id']
+
+    get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    assert_equal 1, JSON.parse(response.body)['items'].size
+
+    patch "/api/v1/lab/expenses/#{expense_id}", params: {
+      supplier: 'Test Supplier',
+      status: 'paid',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'services_and_goods',
+      name: 'Updated',
+      total_incl_vat: 100
+    }, as: :json
+    assert_response :success
+    assert_equal 'paid', JSON.parse(response.body)['status']
+
+    delete "/api/v1/lab/expenses/#{expense_id}", as: :json
+    assert_response :no_content
+
+    get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    assert_equal 0, JSON.parse(response.body)['items'].size
   end
 end

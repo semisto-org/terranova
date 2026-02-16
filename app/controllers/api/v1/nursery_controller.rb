@@ -29,7 +29,7 @@ module Api
       end
 
       def destroy_stock_batch
-        Nursery::StockBatch.find(params.require(:batch_id)).destroy!
+        Nursery::StockBatch.find(params.require(:batch_id)).soft_delete!
         head :no_content
       end
 

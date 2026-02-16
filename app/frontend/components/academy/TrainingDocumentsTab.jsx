@@ -4,23 +4,7 @@ import {
   Plus,
   Trash2,
   ExternalLink,
-  Image,
-  Video,
 } from 'lucide-react'
-
-const DOCUMENT_ICONS = {
-  pdf: FileText,
-  image: Image,
-  video: Video,
-  other: FileText,
-}
-
-const DOCUMENT_LABELS = {
-  pdf: 'PDF',
-  image: 'Image',
-  video: 'Vidéo',
-  other: 'Autre',
-}
 
 function formatDate(dateStr) {
   const date = new Date(dateStr)
@@ -70,28 +54,21 @@ export default function TrainingDocumentsTab({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {documents.map((document) => {
-            const Icon = DOCUMENT_ICONS[document.type] || FileText
-            const typeLabel = DOCUMENT_LABELS[document.type] || document.type
-
-            return (
+          {documents.map((document) => (
               <DocumentCard
                 key={document.id}
                 document={document}
-                Icon={Icon}
-                typeLabel={typeLabel}
                 formatDate={formatDate}
                 onDelete={() => onDeleteDocument?.(document.id)}
               />
-            )
-          })}
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-function DocumentCard({ document: doc, Icon, typeLabel, formatDate, onDelete }) {
+function DocumentCard({ document: doc, formatDate, onDelete }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -109,18 +86,13 @@ function DocumentCard({ document: doc, Icon, typeLabel, formatDate, onDelete }) 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="p-2 bg-stone-100 rounded-lg shrink-0">
-            <Icon className="w-5 h-5 text-stone-600" />
+            <FileText className="w-5 h-5 text-stone-600" />
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-medium text-stone-900 mb-1 break-words">{doc.name}</h4>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="rounded border border-stone-300 px-2 py-0.5 text-xs">
-                {typeLabel}
-              </span>
-              <span className="text-xs text-stone-500">
-                Ajouté le {doc.uploadedAt ? formatDate(doc.uploadedAt) : '—'}
-              </span>
-            </div>
+            <span className="text-xs text-stone-500">
+              Ajouté le {doc.uploadedAt ? formatDate(doc.uploadedAt) : '—'}
+            </span>
             {doc.url && (
               <a
                 href={doc.url}

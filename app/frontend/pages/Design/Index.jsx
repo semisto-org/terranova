@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { ProjectDashboard } from '../../design-studio/components'
+import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const DETAIL_TABS = [
   { id: 'overview', label: 'Overview' },
@@ -126,6 +128,7 @@ function ProjectDetail({
   onAddExpense,
   onApproveExpense,
   onDeleteExpense,
+  onExpenseSubmit,
   onSaveSiteAnalysis,
   onAddPaletteItem,
   onDeletePaletteItem,
@@ -161,7 +164,7 @@ function ProjectDetail({
   const [tab, setTab] = useState('overview')
   const [teamForm, setTeamForm] = useState({ member_name: '', member_email: '', role: 'designer', is_paid: true })
   const [timesheetForm, setTimesheetForm] = useState({ member_name: '', hours: 2, phase: detail.project.phase, mode: 'billed', travel_km: 0, notes: '' })
-  const [expenseForm, setExpenseForm] = useState({ amount: 50, category: 'plants', description: '', phase: detail.project.phase, member_name: '' })
+  const [expenseModal, setExpenseModal] = useState(null)
   const [analysisForm, setAnalysisForm] = useState({ hardinessZone: detail.siteAnalysis?.climate?.hardinessZone || '', soilType: detail.siteAnalysis?.soil?.type || '', notes: detail.siteAnalysis?.climate?.notes || '' })
   const [paletteForm, setPaletteForm] = useState({ species_id: '', species_name: '', common_name: '', layer: 'shrub', quantity: 1, unit_price: 0 })
   const [quoteLineForm, setQuoteLineForm] = useState({ description: '', quantity: 1, unit: 'u', unit_price: 0 })
@@ -283,28 +286,89 @@ function ProjectDetail({
 
           {tab === 'expenses' && (
             <div className="space-y-3">
-              <form className="grid sm:grid-cols-6 gap-2" onSubmit={(event) => { event.preventDefault(); onAddExpense(expenseForm); setExpenseForm((p) => ({ ...p, description: '' })) }}>
-                <input type="number" min="0" step="0.01" className="rounded border border-stone-300 px-2 py-1 text-sm" value={expenseForm.amount} onChange={(e) => setExpenseForm((p) => ({ ...p, amount: Number(e.target.value || 0) }))} />
-                <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={expenseForm.category} onChange={(e) => setExpenseForm((p) => ({ ...p, category: e.target.value }))}>
-                  <option value="plants">plants</option><option value="material">material</option><option value="travel">travel</option><option value="services">services</option><option value="other">other</option>
-                </select>
-                <select className="rounded border border-stone-300 px-2 py-1 text-sm" value={expenseForm.phase} onChange={(e) => setExpenseForm((p) => ({ ...p, phase: e.target.value }))}>
-                  <option>offre</option><option>pre-projet</option><option>projet-detaille</option><option>mise-en-oeuvre</option><option>co-gestion</option>
-                </select>
-                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Membre" value={expenseForm.member_name} onChange={(e) => setExpenseForm((p) => ({ ...p, member_name: e.target.value }))} />
-                <input className="rounded border border-stone-300 px-2 py-1 text-sm" placeholder="Description" value={expenseForm.description} onChange={(e) => setExpenseForm((p) => ({ ...p, description: e.target.value }))} required />
-                <button className="rounded bg-[#AFBD00] px-2 py-1 text-sm font-medium">Ajouter</button>
-              </form>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-stone-700">Dépenses du projet</h3>
+                <button
+                  type="button"
+                  onClick={() => setExpenseModal({ expense: null })}
+                  className="rounded bg-[#AFBD00] px-3 py-2 text-sm font-medium text-stone-900 hover:opacity-90"
+                >
+                  Ajouter une dépense
+                </button>
+              </div>
 
-              {detail.expenses.length === 0 ? <p className="text-sm text-stone-500">Aucune dépense.</p> : detail.expenses.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 flex items-center justify-between text-sm gap-2">
-                  <span>{item.date} · {item.amount}€ · {item.category} · {item.status}</span>
-                  <div className="flex items-center gap-2">
-                    {item.status !== 'approved' && <button className="text-emerald-700" onClick={() => onApproveExpense(item.id)}>Approuver</button>}
-                    <button className="text-red-600" onClick={() => onDeleteExpense(item.id)}>Supprimer</button>
-                  </div>
+              {detail.expenses.length === 0 ? (
+                <p className="text-sm text-stone-500">Aucune dépense.</p>
+              ) : (
+                <div className="rounded border border-stone-200 overflow-hidden">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-stone-200 bg-stone-50">
+                        <th className="px-3 py-2 font-semibold text-stone-600">Date</th>
+                        <th className="px-3 py-2 font-semibold text-stone-600">Fournisseur</th>
+                        <th className="px-3 py-2 font-semibold text-stone-600">Type</th>
+                        <th className="px-3 py-2 font-semibold text-stone-600 text-right">Montant TVAC</th>
+                        <th className="px-3 py-2 font-semibold text-stone-600">Statut</th>
+                        <th className="px-3 py-2 w-28" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detail.expenses.map((item) => (
+                        <tr key={item.id} className="border-b border-stone-100 hover:bg-stone-50/50">
+                          <td className="px-3 py-2 text-stone-600">
+                            {item.invoiceDate ? new Date(item.invoiceDate).toLocaleDateString('fr-FR') : (item.date || '—')}
+                          </td>
+                          <td className="px-3 py-2 font-medium text-stone-900">{item.supplier || '—'}</td>
+                          <td className="px-3 py-2 text-stone-700">{item.expenseType || item.category || '—'}</td>
+                          <td className="px-3 py-2 text-right font-medium">
+                            {Number(item.totalInclVat ?? item.amount ?? 0).toLocaleString('fr-FR')} €
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">
+                              {item.status === 'paid' ? 'Payé' : item.status === 'ready_for_payment' ? 'Prêt pour paiement' : item.status === 'planned' ? 'Prévue' : 'En cours'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <button type="button" className="text-stone-600 hover:text-stone-900" onClick={() => setExpenseModal({ expense: item })}>Modifier</button>
+                              {item.status !== 'ready_for_payment' && item.status !== 'paid' && (
+                                <button type="button" className="text-emerald-700 hover:underline" onClick={() => onApproveExpense(item.id)}>Approuver</button>
+                              )}
+                              <button type="button" className="text-red-600 hover:underline" onClick={() => onDeleteExpense(item.id)}>Supprimer</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
+              )}
+
+              {expenseModal && (
+                <ExpenseFormModal
+                  expense={expenseModal.expense}
+                  defaultDesignProjectId={project?.id}
+                  fetchContacts={() => apiRequest('/api/v1/lab/contacts')}
+                  onCreateContact={async ({ name, contact_type }) => {
+                    const contact = await apiRequest('/api/v1/lab/contacts', {
+                      method: 'POST',
+                      body: JSON.stringify({ name, contact_type }),
+                    })
+                    return { id: contact.id, name: contact.name, contactType: contact.contactType }
+                  }}
+                  trainingOptions={[]}
+                  designProjectOptions={[]}
+                  showTrainingLink={true}
+                  showDesignProjectLink={true}
+                  accentColor="#AFBD00"
+                  onSubmit={async (payload) => {
+                    await onExpenseSubmit(payload)
+                    setExpenseModal(null)
+                  }}
+                  onCancel={() => setExpenseModal(null)}
+                  busy={busy}
+                />
+              )}
             </div>
           )}
 
@@ -761,6 +825,7 @@ export default function DesignIndex({ initialProjectId }) {
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [projectForm, setProjectForm] = useState(defaultProjectForm)
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const loadDashboard = useCallback(async () => {
     const payload = await apiRequest('/api/v1/design')
@@ -875,17 +940,20 @@ export default function DesignIndex({ initialProjectId }) {
   }, [loadProject, runMutation])
 
   const deleteProject = useCallback((projectId) => {
-    if (!window.confirm('Supprimer ce projet ?')) return
-
-    runMutation(async () => {
-      await apiRequest(`/api/v1/design/${projectId}`, { method: 'DELETE' })
-      if (projectDetail?.project?.id === projectId) {
-        setProjectDetail(null)
-        window.history.pushState({}, '', '/design')
-      }
-      setNotice('Projet supprimé.')
+    const project = projects.find((p) => p.id === projectId)
+    setDeleteConfirm({
+      title: 'Supprimer ce projet ?',
+      message: `Le projet « ${project?.name || ''} » sera supprimé définitivement.`,
+      action: () => runMutation(async () => {
+        await apiRequest(`/api/v1/design/${projectId}`, { method: 'DELETE' })
+        if (projectDetail?.project?.id === projectId) {
+          setProjectDetail(null)
+          window.history.pushState({}, '', '/design')
+        }
+        setNotice('Projet supprimé.')
+      }),
     })
-  }, [projectDetail?.project?.id, runMutation])
+  }, [projects, projectDetail?.project?.id, runMutation])
 
   const duplicateProject = useCallback((projectId) => {
     runMutation(async () => {
@@ -943,7 +1011,14 @@ export default function DesignIndex({ initialProjectId }) {
         role: values.role,
         is_paid: values.is_paid,
       }) }), { refreshProjectId: currentProjectId }),
-      removeTeamMember: (id) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/team-members/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      removeTeamMember: (id) => {
+        const member = projectDetail?.teamMembers?.find((m) => m.id === id)
+        setDeleteConfirm({
+          title: 'Supprimer ce membre d\u2019équipe ?',
+          message: `« ${member?.memberName || ''} » sera retiré de l\u2019équipe définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/team-members/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addTimesheet: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/timesheets`, { method: 'POST', body: JSON.stringify({
         member_id: `member-${Math.random().toString(36).slice(2, 8)}`,
         member_name: values.member_name,
@@ -954,19 +1029,72 @@ export default function DesignIndex({ initialProjectId }) {
         travel_km: values.travel_km,
         notes: values.notes,
       }) }), { refreshProjectId: currentProjectId }),
-      deleteTimesheet: (id) => runMutation(() => apiRequest(`/api/v1/design/timesheets/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
-      addExpense: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/expenses`, { method: 'POST', body: JSON.stringify({
-        date: new Date().toISOString().slice(0, 10),
-        amount: values.amount,
-        category: values.category,
-        description: values.description,
-        phase: values.phase,
-        member_id: `member-${Math.random().toString(36).slice(2, 8)}`,
-        member_name: values.member_name,
-        status: 'pending',
-      }) }), { refreshProjectId: currentProjectId }),
+      deleteTimesheet: (id) => {
+        const ts = projectDetail?.timesheets?.find((t) => t.id === id)
+        setDeleteConfirm({
+          title: 'Supprimer cette prestation ?',
+          message: `La prestation de « ${ts?.memberName || ''} » sera supprimée définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/timesheets/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
+      addExpense: () => {},
+      expenseSubmit: async (payload) => {
+        const isEdit = Boolean(payload.id)
+        const documentFile = payload.document
+        const body = {
+          supplier: payload.supplier,
+          supplier_contact_id: payload.supplier_contact_id,
+          status: payload.status,
+          invoice_date: payload.invoice_date,
+          category: payload.category,
+          expense_type: payload.expense_type,
+          billing_zone: payload.billing_zone,
+          payment_date: payload.payment_date || null,
+          payment_type: payload.payment_type || null,
+          amount_excl_vat: payload.amount_excl_vat,
+          vat_rate: payload.vat_rate || null,
+          vat_6: payload.vat_6,
+          vat_12: payload.vat_12,
+          vat_21: payload.vat_21,
+          total_incl_vat: payload.total_incl_vat,
+          eu_vat_rate: payload.eu_vat_rate || null,
+          eu_vat_amount: payload.eu_vat_amount,
+          paid_by: payload.paid_by || null,
+          reimbursed: payload.reimbursed,
+          reimbursement_date: payload.reimbursement_date || null,
+          billable_to_client: payload.billable_to_client,
+          rebilling_status: payload.rebilling_status || null,
+          description: payload.description || '',
+          notes: payload.notes || '',
+          poles: payload.poles || [],
+          training_id: payload.training_id || null,
+          design_project_id: payload.design_project_id || currentProjectId || null,
+        }
+        const url = isEdit
+          ? `/api/v1/design/expenses/${payload.id}`
+          : `/api/v1/design/${currentProjectId}/expenses`
+        if (documentFile) {
+          const formData = new FormData()
+          Object.entries(body).forEach(([k, v]) => {
+            if (v === null || v === undefined) return
+            if (Array.isArray(v)) v.forEach((x) => formData.append(`${k}[]`, x))
+            else formData.append(k, v)
+          })
+          if (documentFile instanceof File) formData.append('document', documentFile)
+          await runMutation(() => apiRequest(url, { method: isEdit ? 'PATCH' : 'POST', body: formData }), { refreshProjectId: currentProjectId })
+        } else {
+          await runMutation(() => apiRequest(url, { method: isEdit ? 'PATCH' : 'POST', body: JSON.stringify(body) }), { refreshProjectId: currentProjectId })
+        }
+      },
       approveExpense: (id) => runMutation(() => apiRequest(`/api/v1/design/expenses/${id}/approve`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
-      deleteExpense: (id) => runMutation(() => apiRequest(`/api/v1/design/expenses/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteExpense: (id) => {
+        const expense = projectDetail?.expenses?.find((e) => e.id === id)
+        setDeleteConfirm({
+          title: 'Supprimer cette dépense ?',
+          message: `La dépense « ${expense?.supplier || ''} » sera supprimée définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/expenses/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       saveSiteAnalysis: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/site-analysis`, { method: 'PATCH', body: JSON.stringify({
         climate: { hardinessZone: values.hardinessZone, notes: values.notes },
         soil: { type: values.soilType },
@@ -982,7 +1110,14 @@ export default function DesignIndex({ initialProjectId }) {
         harvest_months: [],
         harvest_products: [],
       }) }), { refreshProjectId: currentProjectId }),
-      deletePaletteItem: (id) => runMutation(() => apiRequest(`/api/v1/design/palette-items/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deletePaletteItem: (id) => {
+        const item = projectDetail?.plantPalette?.items?.find((i) => i.id === id)
+        setDeleteConfirm({
+          title: 'Supprimer cet élément de palette ?',
+          message: `« ${item?.speciesName || ''} » sera supprimé définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/palette-items/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       importPlantPalette: (paletteId) => {
         if (!paletteId) return
         return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette/import/${paletteId}`, { method: 'POST' }), { refreshProjectId: currentProjectId })
@@ -994,29 +1129,77 @@ export default function DesignIndex({ initialProjectId }) {
       }, { refreshDashboard: false, refreshProjectId: null }),
       addPlantMarker: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan/markers`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       movePlantMarker: (markerId, values) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
-      deletePlantMarker: (markerId) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deletePlantMarker: (markerId) => {
+        const marker = (projectDetail?.plantingPlan?.markers || []).find((m) => m.id === markerId)
+        setDeleteConfirm({
+          title: 'Supprimer ce marqueur ?',
+          message: `Le marqueur « ${marker?.speciesName || ''} » sera supprimé définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       createQuote: () => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/quotes`, { method: 'POST' }), { refreshProjectId: currentProjectId }),
       sendQuote: (quoteId) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}/send`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
-      deleteQuote: (quoteId) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteQuote: (quoteId) => {
+        const quote = projectDetail?.quotes?.find((q) => q.id === quoteId)
+        setDeleteConfirm({
+          title: 'Supprimer ce devis ?',
+          message: `Le devis « ${quote?.title || ''} » sera supprimé définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addQuoteLine: (quoteId, values) => runMutation(() => apiRequest(`/api/v1/design/quotes/${quoteId}/lines`, { method: 'POST', body: JSON.stringify({
         description: values.description,
         quantity: values.quantity,
         unit: values.unit,
         unit_price: values.unit_price,
       }) }), { refreshProjectId: currentProjectId }),
-      deleteQuoteLine: (lineId) => runMutation(() => apiRequest(`/api/v1/design/quote-lines/${lineId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteQuoteLine: (lineId) => {
+        setDeleteConfirm({
+          title: 'Supprimer cette ligne de devis ?',
+          message: 'Cette ligne de devis sera supprimée définitivement.',
+          action: () => runMutation(() => apiRequest(`/api/v1/design/quote-lines/${lineId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addDocument: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/documents`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
-      deleteDocument: (documentId) => runMutation(() => apiRequest(`/api/v1/design/documents/${documentId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteDocument: (documentId) => {
+        const doc = projectDetail?.documents?.find((d) => d.id === documentId)
+        setDeleteConfirm({
+          title: 'Supprimer ce document ?',
+          message: `Le document « ${doc?.name || ''} » sera supprimé définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/documents/${documentId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addMedia: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/media`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
-      deleteMedia: (mediaId) => runMutation(() => apiRequest(`/api/v1/design/media/${mediaId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteMedia: (mediaId) => {
+        const media = projectDetail?.mediaItems?.find((m) => m.id === mediaId)
+        setDeleteConfirm({
+          title: 'Supprimer ce média ?',
+          message: `Le média « ${media?.caption || ''} » sera supprimé définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/media/${mediaId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addMeeting: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/meetings`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
-      deleteMeeting: (meetingId) => runMutation(() => apiRequest(`/api/v1/design/meetings/${meetingId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteMeeting: (meetingId) => {
+        const meeting = projectDetail?.meetings?.find((m) => m.id === meetingId)
+        setDeleteConfirm({
+          title: 'Supprimer cette réunion ?',
+          message: `La réunion « ${meeting?.title || ''} » sera supprimée définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/meetings/${meetingId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addAnnotation: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/annotations`, { method: 'POST', body: JSON.stringify({
         ...values,
         author_id: `member-${Math.random().toString(36).slice(2, 8)}`,
       }) }), { refreshProjectId: currentProjectId }),
       resolveAnnotation: (annotationId) => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}/resolve`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
-      deleteAnnotation: (annotationId) => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+      deleteAnnotation: (annotationId) => {
+        const annotation = projectDetail?.annotations?.find((a) => a.id === annotationId)
+        setDeleteConfirm({
+          title: 'Supprimer cette annotation ?',
+          message: `L\u2019annotation « ${annotation?.content?.slice(0, 40) || ''} » sera supprimée définitivement.`,
+          action: () => runMutation(() => apiRequest(`/api/v1/design/annotations/${annotationId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
       addPlantRecord: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/plant-records`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       updatePlantRecord: (recordId, values) => runMutation(() => apiRequest(`/api/v1/design/plant-records/${recordId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       addFollowUpVisit: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/follow-up-visits`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
@@ -1032,7 +1215,7 @@ export default function DesignIndex({ initialProjectId }) {
         setSearchResults(payload.results || [])
       },
     }
-  }, [currentProjectId, editProject, runMutation, loadProject])
+  }, [currentProjectId, editProject, projectDetail, runMutation, loadProject])
 
   useEffect(() => {
     if (!paletteIdFromQuery || !currentProjectId || !detailActions) return
@@ -1062,6 +1245,7 @@ export default function DesignIndex({ initialProjectId }) {
           onAddExpense={detailActions?.addExpense || (() => {})}
           onApproveExpense={detailActions?.approveExpense || (() => {})}
           onDeleteExpense={detailActions?.deleteExpense || (() => {})}
+          onExpenseSubmit={detailActions?.expenseSubmit || (async () => {})}
           onSaveSiteAnalysis={detailActions?.saveSiteAnalysis || (() => {})}
           onAddPaletteItem={detailActions?.addPaletteItem || (() => {})}
           onDeletePaletteItem={detailActions?.deletePaletteItem || (() => {})}
@@ -1121,6 +1305,18 @@ export default function DesignIndex({ initialProjectId }) {
         onClose={() => setProjectModalOpen(false)}
         onSubmit={submitCreate}
       />
+
+      {deleteConfirm && (
+        <ConfirmDeleteModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={() => {
+            deleteConfirm.action()
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </>
   )
 }

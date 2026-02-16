@@ -1,4 +1,5 @@
 class Event < ApplicationRecord
+  include SoftDeletable
   belongs_to :cycle, optional: true
   belongs_to :event_type
   has_many :event_attendees, dependent: :destroy

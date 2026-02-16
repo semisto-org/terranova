@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import LocationsMap from '../../components/academy/LocationsMap'
@@ -13,11 +14,12 @@ import {
   RegistrationFormModal,
   PaymentStatusModal,
   SessionFormModal,
-  ExpenseFormModal,
   DocumentFormModal,
   ChecklistItemModal,
   IdeaNoteFormModal,
 } from '@/components/academy'
+import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
   { id: 'kanban', label: 'Formations' },
@@ -66,6 +68,7 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [activeModal, setActiveModal] = useState(null)
   const [modalData, setModalData] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
     setData(payload)
@@ -197,16 +200,53 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
   }, [modalData, runMutation])
 
-  const handleExpenseSubmit = useCallback(async (values) => {
-    const success = await runMutation(() =>
-      apiRequest(
-        modalData.isEdit ? `/api/v1/academy/expenses/${modalData.expense.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/expenses`,
-        {
-          method: modalData.isEdit ? 'PATCH' : 'POST',
-          body: JSON.stringify(values)
-        }
-      )
-    )
+  const handleExpenseSubmit = useCallback(async (payload) => {
+    const isEdit = Boolean(modalData?.isEdit && modalData?.expense?.id)
+    const trainingId = modalData?.trainingId || modalData?.expense?.trainingId
+    const documentFile = payload.document
+    const body = {
+      supplier: payload.supplier,
+      supplier_contact_id: payload.supplier_contact_id,
+      status: payload.status,
+      invoice_date: payload.invoice_date,
+      category: payload.category,
+      expense_type: payload.expense_type,
+      billing_zone: payload.billing_zone,
+      payment_date: payload.payment_date || null,
+      payment_type: payload.payment_type || null,
+      amount_excl_vat: payload.amount_excl_vat,
+      vat_rate: payload.vat_rate || null,
+      vat_6: payload.vat_6,
+      vat_12: payload.vat_12,
+      vat_21: payload.vat_21,
+      total_incl_vat: payload.total_incl_vat,
+      eu_vat_rate: payload.eu_vat_rate || null,
+      eu_vat_amount: payload.eu_vat_amount,
+      paid_by: payload.paid_by || null,
+      reimbursed: payload.reimbursed,
+      reimbursement_date: payload.reimbursement_date || null,
+      billable_to_client: payload.billable_to_client,
+      rebilling_status: payload.rebilling_status || null,
+      description: payload.description || '',
+      notes: payload.notes || '',
+      poles: payload.poles || [],
+      training_id: payload.training_id || trainingId || null,
+      design_project_id: payload.design_project_id || null,
+    }
+    const url = isEdit ? `/api/v1/academy/expenses/${modalData.expense.id}` : `/api/v1/academy/trainings/${trainingId}/expenses`
+    let success = false
+    if (documentFile) {
+      const formData = new FormData()
+      Object.entries(body).forEach(([k, v]) => {
+        if (v === null || v === undefined) return
+        if (Array.isArray(v)) v.forEach((x) => formData.append(`${k}[]`, x))
+        else formData.append(k, v)
+      })
+      if (documentFile instanceof File) formData.append('document', documentFile)
+      success = await runMutation(() => apiRequest(url, { method: isEdit ? 'PATCH' : 'POST', body: formData }))
+    } else {
+      success = await runMutation(() => apiRequest(url, { method: isEdit ? 'PATCH' : 'POST', body: JSON.stringify(body) }))
+    }
     if (success) {
       setActiveModal(null)
       setModalData(null)
@@ -234,9 +274,12 @@ export default function AcademyIndex({ initialTrainingId }) {
       window.location.href = '/academy/training-types/new'
     },
     deleteTrainingType: (id) => {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer ce type de formation ?')) {
-        runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'DELETE' }))
-      }
+      const trainingType = data.trainingTypes.find(t => t.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer ce type de formation ?',
+        message: `Le type « ${trainingType?.name || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'DELETE' })),
+      })
     },
     editTrainingType: (id) => {
       window.location.href = `/academy/training-types/${id}/edit`
@@ -245,9 +288,12 @@ export default function AcademyIndex({ initialTrainingId }) {
       window.location.href = '/academy/locations/new'
     },
     deleteLocation: (id) => {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer ce lieu ?')) {
-        runMutation(() => apiRequest(`/api/v1/academy/locations/${id}`, { method: 'DELETE' }))
-      }
+      const location = data.trainingLocations.find(l => l.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer ce lieu ?',
+        message: `Le lieu « ${location?.name || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/locations/${id}`, { method: 'DELETE' })),
+      })
     },
     editLocation: (id) => {
       window.location.href = `/academy/locations/${id}/edit`
@@ -260,7 +306,14 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ isEdit: false })
       setActiveModal('training')
     },
-    deleteTraining: (id) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
+    deleteTraining: (id) => {
+      const training = data.trainings.find(t => t.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer cette formation ?',
+        message: `La formation « ${training?.title || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
+      })
+    },
     editTraining: (id) => {
       const current = data.trainings.find((item) => item.id === id)
       if (!current) return
@@ -278,13 +331,28 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ isEdit: true, session: current })
       setActiveModal('session')
     },
-    deleteSession: (sessionId) => runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'DELETE' })),
+    deleteSession: (sessionId) => {
+      const session = data.trainingSessions.find(s => s.id === sessionId)
+      const sessionDate = session?.date ? new Date(session.date).toLocaleDateString('fr-FR') : ''
+      setDeleteConfirm({
+        title: 'Supprimer cette session ?',
+        message: `La session${sessionDate ? ` du ${sessionDate}` : ''} sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'DELETE' })),
+      })
+    },
     addRegistration: (trainingId) => {
       const training = data.trainings.find((item) => item.id === trainingId)
       setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0 })
       setActiveModal('registration')
     },
-    deleteRegistration: (registrationId) => runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'DELETE' })),
+    deleteRegistration: (registrationId) => {
+      const registration = data.trainingRegistrations.find(r => r.id === registrationId)
+      setDeleteConfirm({
+        title: 'Supprimer cette inscription ?',
+        message: `L'inscription de « ${registration?.participantName || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'DELETE' })),
+      })
+    },
     editRegistration: (registrationId) => {
       const current = data.trainingRegistrations.find((item) => item.id === registrationId)
       if (!current) return
@@ -313,7 +381,14 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ trainingId })
       setActiveModal('document')
     },
-    deleteDocument: (id) => runMutation(() => apiRequest(`/api/v1/academy/documents/${id}`, { method: 'DELETE' })),
+    deleteDocument: (id) => {
+      const doc = data.trainingDocuments.find(d => d.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer ce document ?',
+        message: `Le document « ${doc?.name || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/documents/${id}`, { method: 'DELETE' })),
+      })
+    },
     toggleChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/toggle/${itemIndex}`, { method: 'PATCH' })),
     addChecklistItem: (trainingId, item) => {
       if (item !== undefined && item !== null && item !== '') {
@@ -329,6 +404,13 @@ export default function AcademyIndex({ initialTrainingId }) {
       setActiveModal('checklistItem')
     },
     removeChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/${itemIndex}`, { method: 'DELETE' })),
+    reorderChecklist: (trainingId, checklistItems, checkedItems) =>
+      runMutation(() =>
+        apiRequest(`/api/v1/academy/trainings/${trainingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ checklist_items: checklistItems, checked_items: checkedItems }),
+        })
+      ),
     addExpense: (trainingId) => {
       setModalData({ isEdit: false, trainingId })
       setActiveModal('expense')
@@ -336,10 +418,17 @@ export default function AcademyIndex({ initialTrainingId }) {
     editExpense: (expenseId) => {
       const current = data.trainingExpenses.find((item) => item.id === expenseId)
       if (!current) return
-      setModalData({ isEdit: true, expense: current })
+      setModalData({ isEdit: true, expense: current, trainingId: current.trainingId })
       setActiveModal('expense')
     },
-    deleteExpense: (expenseId) => runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'DELETE' })),
+    deleteExpense: (expenseId) => {
+      const expense = data.trainingExpenses.find(e => e.id === expenseId)
+      setDeleteConfirm({
+        title: 'Supprimer cette dépense ?',
+        message: `La dépense « ${expense?.supplier || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'DELETE' })),
+      })
+    },
     createIdeaNote: () => {
       setModalData({ isEdit: false })
       setActiveModal('ideaNote')
@@ -350,13 +439,20 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ isEdit: true, note: current })
       setActiveModal('ideaNote')
     },
-    deleteIdeaNote: (id) => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
+    deleteIdeaNote: (id) => {
+      const note = data.ideaNotes.find(n => n.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer cette note ?',
+        message: `La note « ${note?.title || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
+      })
+    },
     viewReporting: async () => {
       const payload = await apiRequest('/api/v1/academy/reporting')
       setReporting(payload)
       setView('reporting')
     },
-  }), [data, runMutation])
+  }), [data, runMutation, setDeleteConfirm])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
   const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
@@ -452,6 +548,20 @@ export default function AcademyIndex({ initialTrainingId }) {
       {activeModal === 'expense' && (
         <ExpenseFormModal
           expense={modalData?.isEdit ? modalData.expense : null}
+          defaultTrainingId={modalData?.trainingId}
+          fetchContacts={() => apiRequest('/api/v1/lab/contacts')}
+          onCreateContact={async ({ name, contact_type }) => {
+            const contact = await apiRequest('/api/v1/lab/contacts', {
+              method: 'POST',
+              body: JSON.stringify({ name, contact_type }),
+            })
+            return { id: contact.id, name: contact.name, contactType: contact.contactType }
+          }}
+          trainingOptions={data.trainings.map((t) => ({ value: t.id, label: t.title }))}
+          designProjectOptions={[]}
+          showTrainingLink={true}
+          showDesignProjectLink={true}
+          accentColor="#B01A19"
           onSubmit={handleExpenseSubmit}
           onCancel={() => {
             setActiveModal(null)
@@ -490,6 +600,17 @@ export default function AcademyIndex({ initialTrainingId }) {
           actions={actions}
         />
         {renderModals()}
+        {deleteConfirm && (
+          <ConfirmDeleteModal
+            title={deleteConfirm.title}
+            message={deleteConfirm.message}
+            onConfirm={() => {
+              deleteConfirm.action()
+              setDeleteConfirm(null)
+            }}
+            onCancel={() => setDeleteConfirm(null)}
+          />
+        )}
       </>
     )
   }
@@ -546,49 +667,80 @@ export default function AcademyIndex({ initialTrainingId }) {
 
         {view === 'calendar' && (
           <section className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className={`rounded-lg border px-3 py-2 text-sm font-medium ${calendarView === 'month' ? 'border-[#B01A19] bg-[#B01A19] text-white' : 'border-stone-300 text-stone-700 hover:bg-stone-50'}`}
-                onClick={() => setCalendarView('month')}
-              >
-                Mois
-              </button>
-              <button
-                type="button"
-                className={`rounded-lg border px-3 py-2 text-sm font-medium ${calendarView === 'year' ? 'border-[#B01A19] bg-[#B01A19] text-white' : 'border-stone-300 text-stone-700 hover:bg-stone-50'}`}
-                onClick={() => setCalendarView('year')}
-              >
-                Année
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-                onClick={() =>
-                  setCalendarDate(
-                    new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1)
-                  )
-                }
-              >
-                Précédent
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-                onClick={() =>
-                  setCalendarDate(
-                    new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1)
-                  )
-                }
-              >
-                Suivant
-              </button>
-              <span className="text-sm text-stone-600">
-                {calendarDate.toLocaleDateString('fr-FR', {
-                  year: 'numeric',
-                  month: calendarView === 'year' ? undefined : 'long',
-                })}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-lg border border-stone-200 bg-stone-50 p-0.5">
+                  <button
+                    type="button"
+                    className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${calendarView === 'month' ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
+                    onClick={() => setCalendarView('month')}
+                  >
+                    Mois
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${calendarView === 'year' ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
+                    onClick={() => setCalendarView('year')}
+                  >
+                    Année
+                  </button>
+                </div>
+
+                <div className="h-5 w-px bg-stone-200 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 active:scale-[0.97]"
+                  onClick={() => setCalendarDate(new Date())}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Aujourd'hui
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-stone-200 bg-white text-stone-500 transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 active:scale-[0.93]"
+                  onClick={() =>
+                    setCalendarDate(
+                      calendarView === 'year'
+                        ? new Date(calendarDate.getFullYear() - 1, calendarDate.getMonth(), 1)
+                        : new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1)
+                    )
+                  }
+                  title={calendarView === 'year' ? 'Année précédente' : 'Mois précédent'}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <span className="min-w-[140px] text-center text-sm font-semibold text-stone-800 capitalize select-none">
+                  {calendarView === 'year'
+                    ? calendarDate.getFullYear()
+                    : calendarDate.toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                      })
+                  }
+                </span>
+
+                <button
+                  type="button"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-stone-200 bg-white text-stone-500 transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 active:scale-[0.93]"
+                  onClick={() =>
+                    setCalendarDate(
+                      calendarView === 'year'
+                        ? new Date(calendarDate.getFullYear() + 1, calendarDate.getMonth(), 1)
+                        : new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1)
+                    )
+                  }
+                  title={calendarView === 'year' ? 'Année suivante' : 'Mois suivant'}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             {calendarView === 'month' ? (
               <CalendarMonthView
@@ -755,6 +907,17 @@ export default function AcademyIndex({ initialTrainingId }) {
     </div>
 
     {renderModals()}
+    {deleteConfirm && (
+      <ConfirmDeleteModal
+        title={deleteConfirm.title}
+        message={deleteConfirm.message}
+        onConfirm={() => {
+          deleteConfirm.action()
+          setDeleteConfirm(null)
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
+    )}
     </>
   )
 }

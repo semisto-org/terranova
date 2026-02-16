@@ -144,8 +144,10 @@ function SessionCard({
             </div>
           </div>
 
-          {session.description && (
-            <p className="text-sm text-stone-600 mb-3">{session.description}</p>
+          {(session.topic || session.description) && (
+            <p className="text-sm text-stone-600 mb-3">
+              {session.topic?.trim() ? session.topic : session.description}
+            </p>
           )}
 
           {locationIds.length > 0 && (

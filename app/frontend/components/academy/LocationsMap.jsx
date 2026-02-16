@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { MapPin, Users, Home, Pencil, Trash2 } from 'lucide-react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { Users, Home, Pencil, Trash2 } from 'lucide-react'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 /**
  * LocationsMap — An immersive Leaflet map for Academy training locations.
@@ -88,6 +89,12 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
   const [mapReady, setMapReady] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+
+  const requestDelete = useCallback((id) => {
+    const location = locations.find((l) => l.id === id)
+    setDeleteConfirm({ id, name: location?.name || 'ce lieu' })
+  }, [locations])
 
   // Initialize map
   useEffect(() => {
@@ -191,7 +198,7 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
             const action = btn.dataset.action
             const id = btn.dataset.id
             if (action === 'edit') actions.editLocation(id)
-            if (action === 'delete') actions.deleteLocation(id)
+            if (action === 'delete') requestDelete(id)
           })
         })
 
@@ -427,20 +434,17 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
               }}
             />
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
+              <table className="w-full min-w-[400px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-stone-200 bg-stone-50/80">
                     <th className="px-5 py-3.5 font-semibold text-stone-700">Lieu</th>
-                    <th className="px-5 py-3.5 font-semibold text-stone-700">Adresse</th>
                     <th className="px-5 py-3.5 font-semibold text-stone-700">Capacité</th>
                     <th className="px-5 py-3.5 font-semibold text-stone-700">Hébergement</th>
-                    <th className="px-5 py-3.5 font-semibold text-stone-700">Coordonnées</th>
-                    <th className="px-5 py-3.5 font-semibold text-stone-700 text-right">Actions</th>
+                    <th className="px-5 py-3.5 font-semibold text-stone-700 text-right"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {locations.map((loc) => {
-                    const hasCoords = loc.latitude !== 0 || loc.longitude !== 0
                     return (
                       <tr
                         key={loc.id}
@@ -448,9 +452,6 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
                       >
                         <td className="px-5 py-3.5">
                           <span className="font-medium text-stone-900">{loc.name}</span>
-                        </td>
-                        <td className="px-5 py-3.5 text-stone-600">
-                          {loc.address || '—'}
                         </td>
                         <td className="px-5 py-3.5">
                           <span className="inline-flex items-center gap-1.5 text-stone-600">
@@ -468,16 +469,6 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
                             <span className="text-stone-400">Non</span>
                           )}
                         </td>
-                        <td className="px-5 py-3.5">
-                          {hasCoords ? (
-                            <span className="inline-flex items-center gap-1.5 text-stone-600">
-                              <MapPin className="h-3.5 w-3.5 text-[#B01A19]" />
-                              Oui
-                            </span>
-                          ) : (
-                            <span className="text-amber-600">Non renseignées</span>
-                          )}
-                        </td>
                         <td className="px-5 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
@@ -490,7 +481,7 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
                             </button>
                             <button
                               type="button"
-                              onClick={() => actions.deleteLocation(loc.id)}
+                              onClick={() => requestDelete(loc.id)}
                               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 transition-colors hover:border-red-300 hover:bg-red-50"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -505,6 +496,17 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
               </table>
             </div>
           </div>
+        )}
+        {deleteConfirm && (
+          <ConfirmDeleteModal
+            title="Supprimer ce lieu ?"
+            message={`Le lieu « ${deleteConfirm.name} » sera supprimé définitivement.`}
+            onConfirm={() => {
+              actions.deleteLocation(deleteConfirm.id)
+              setDeleteConfirm(null)
+            }}
+            onCancel={() => setDeleteConfirm(null)}
+          />
         )}
       </section>
     </>

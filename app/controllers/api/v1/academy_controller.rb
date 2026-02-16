@@ -17,7 +17,7 @@ module Api
       end
 
       def destroy_training_type
-        Academy::TrainingType.find(params.require(:training_type_id)).destroy!
+        Academy::TrainingType.find(params.require(:training_type_id)).soft_delete!
         head :no_content
       end
 
@@ -33,7 +33,7 @@ module Api
       end
 
       def destroy_location
-        Academy::TrainingLocation.find(params.require(:location_id)).destroy!
+        Academy::TrainingLocation.find(params.require(:location_id)).soft_delete!
         head :no_content
       end
 
@@ -55,7 +55,7 @@ module Api
       end
 
       def destroy_training
-        Academy::Training.find(params.require(:training_id)).destroy!
+        Academy::Training.find(params.require(:training_id)).soft_delete!
         head :no_content
       end
 
@@ -78,7 +78,7 @@ module Api
       end
 
       def destroy_session
-        Academy::TrainingSession.find(params.require(:session_id)).destroy!
+        Academy::TrainingSession.find(params.require(:session_id)).soft_delete!
         head :no_content
       end
 
@@ -95,7 +95,7 @@ module Api
       end
 
       def destroy_registration
-        Academy::TrainingRegistration.find(params.require(:registration_id)).destroy!
+        Academy::TrainingRegistration.find(params.require(:registration_id)).soft_delete!
         head :no_content
       end
 
@@ -127,7 +127,7 @@ module Api
       end
 
       def destroy_document
-        Academy::TrainingDocument.find(params.require(:document_id)).destroy!
+        Academy::TrainingDocument.find(params.require(:document_id)).soft_delete!
         head :no_content
       end
 
@@ -165,17 +165,19 @@ module Api
       def create_expense
         training = Academy::Training.find(params.require(:training_id))
         item = training.expenses.create!(expense_params)
-        render json: serialize_expense(item), status: :created
+        item.document.attach(params[:document]) if params[:document].present?
+        render json: serialize_expense(item.reload), status: :created
       end
 
       def update_expense
-        item = Academy::TrainingExpense.find(params.require(:expense_id))
+        item = Expense.find(params.require(:expense_id))
         item.update!(expense_params)
-        render json: serialize_expense(item)
+        item.document.attach(params[:document]) if params[:document].present?
+        render json: serialize_expense(item.reload)
       end
 
       def destroy_expense
-        Academy::TrainingExpense.find(params.require(:expense_id)).destroy!
+        Expense.find(params.require(:expense_id)).soft_delete!
         head :no_content
       end
 
@@ -191,7 +193,7 @@ module Api
       end
 
       def destroy_idea_note
-        Academy::IdeaNote.find(params.require(:note_id)).destroy!
+        Academy::IdeaNote.find(params.require(:note_id)).soft_delete!
         head :no_content
       end
 
@@ -201,16 +203,23 @@ module Api
       end
 
       def reporting
-        trainings = Academy::Training.includes(:registrations, :expenses)
-        revenue = trainings.sum { |item| item.registrations.sum(&:amount_paid).to_f }
-        expenses = trainings.sum { |item| item.expenses.sum(&:amount).to_f }
+        trainings = Academy::Training.includes(:registrations, :expenses, :training_type)
+        revenue_incl_vat = trainings.sum { |item| item.registrations.sum(&:amount_paid).to_f }
+        revenue = trainings.sum do |item|
+          item.registrations.sum do |r|
+            vr = item.vat_rate.to_f
+            vr > 0 ? (r.amount_paid.to_f / (1 + vr / 100.0)).round(2) : r.amount_paid.to_f
+          end
+        end
+        expenses = trainings.sum { |item| item.expenses.sum(&:amount_excl_vat).to_f }
         total_participants = trainings.sum { |item| item.registrations.size }
 
         by_status = Academy::Training::STATUSES.index_with do |status|
           trainings.count { |t| t.status == status }
         end
 
-        expenses_by_category = Academy::TrainingExpense.group(:category).sum(:amount).transform_values(&:to_f)
+        training_ids = trainings.map(&:id)
+        expenses_by_category = Expense.where(training_id: training_ids).where.not(category: nil).group(:category).sum(:amount_excl_vat).transform_values(&:to_f)
 
         fill_rates = trainings.filter_map do |t|
           next if t.max_participants.to_i.zero?
@@ -218,16 +227,27 @@ module Api
         end
         average_fill_rate = fill_rates.any? ? (fill_rates.sum / fill_rates.size).round(1) : 0
 
+        fill_rates_by_type = trainings.group_by { |t| t.training_type&.name || "Sans type" }.filter_map do |type_name, type_trainings|
+          rates = type_trainings.filter_map do |t|
+            next if t.max_participants.to_i.zero?
+            (t.registrations.size.to_f / t.max_participants * 100).round(1)
+          end
+          next if rates.empty?
+          { name: type_name, fillRate: (rates.sum / rates.size).round(1), trainingsCount: type_trainings.size }
+        end.sort_by { |entry| -entry[:fillRate] }
+
         render json: {
           trainingsCount: trainings.size,
           completedTrainings: trainings.count { |item| item.status == 'completed' },
           totalRevenue: revenue,
+          totalRevenueInclVat: revenue_incl_vat,
           totalExpenses: expenses,
           profitability: revenue - expenses,
           byStatus: by_status,
           expensesByCategory: expenses_by_category,
           totalParticipants: total_participants,
-          averageFillRate: average_fill_rate
+          averageFillRate: average_fill_rate,
+          fillRatesByType: fill_rates_by_type
         }
       end
 
@@ -239,9 +259,9 @@ module Api
         sessions = Academy::TrainingSession.order(start_date: :asc)
         locations = Academy::TrainingLocation.order(:name)
         registrations = Academy::TrainingRegistration.order(registered_at: :desc)
-        attendances = Academy::TrainingAttendance.order(updated_at: :desc)
+        attendances = Academy::TrainingAttendance.where(registration_id: Academy::TrainingRegistration.select(:id)).order(updated_at: :desc)
         documents = Academy::TrainingDocument.order(uploaded_at: :desc)
-        expenses = Academy::TrainingExpense.order(date: :desc)
+        expenses = Expense.where.not(training_id: nil).order(invoice_date: :desc)
         idea_notes = Academy::IdeaNote.order(created_at: :desc)
         members = Member.order(:first_name, :last_name)
 
@@ -269,11 +289,11 @@ module Api
       end
 
       def training_params
-        params.permit(:title, :status, :price, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
       end
 
       def training_update_params
-        params.permit(:title, :status, :price, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
       end
 
       def session_params
@@ -289,11 +309,18 @@ module Api
       end
 
       def document_params
-        params.permit(:name, :document_type, :url, :uploaded_by, :file)
+        params.permit(:name, :url, :uploaded_by, :file)
       end
 
       def expense_params
-        params.permit(:category, :description, :amount, :date)
+        params.permit(
+          :supplier, :supplier_contact_id, :status, :invoice_date, :category, :expense_type, :billing_zone,
+          :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
+          :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
+          :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
+          :name, :notes, :training_id, :design_project_id,
+          poles: []
+        )
       end
 
       def idea_note_params
@@ -335,6 +362,8 @@ module Api
           title: item.title,
           status: item.status,
           price: item.price.to_f,
+          vatRate: item.vat_rate.to_f,
+          priceExclVat: item.price_excl_vat,
           maxParticipants: item.max_participants,
           requiresAccommodation: item.requires_accommodation,
           description: item.description,
@@ -397,7 +426,6 @@ module Api
           id: item.id.to_s,
           trainingId: item.training_id.to_s,
           name: item.name,
-          type: item.document_type,
           url: download_url,
           filename: item.file.attached? ? item.file.filename.to_s : nil,
           uploadedAt: item.uploaded_at.iso8601,
@@ -406,14 +434,40 @@ module Api
       end
 
       def serialize_expense(item)
+        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document) : nil
         {
           id: item.id.to_s,
-          trainingId: item.training_id.to_s,
+          trainingId: item.training_id&.to_s,
+          designProjectId: item.design_project_id&.to_s,
+          supplier: item.supplier_display_name,
+          supplierContactId: item.supplier_contact_id&.to_s,
+          status: item.status,
+          invoiceDate: item.invoice_date&.iso8601,
           category: item.category,
-          description: item.description,
-          amount: item.amount.to_f,
-          date: item.date.iso8601,
-          createdAt: item.created_at.iso8601
+          expenseType: item.expense_type,
+          billingZone: item.billing_zone,
+          paymentDate: item.payment_date&.iso8601,
+          paymentType: item.payment_type,
+          amountExclVat: item.amount_excl_vat.to_f,
+          vatRate: item.vat_rate,
+          vat6: item.vat_6.to_f,
+          vat12: item.vat_12.to_f,
+          vat21: item.vat_21.to_f,
+          totalInclVat: item.total_incl_vat.to_f,
+          euVatRate: item.eu_vat_rate,
+          euVatAmount: item.eu_vat_amount.to_f,
+          paidBy: item.paid_by,
+          reimbursed: item.reimbursed,
+          reimbursementDate: item.reimbursement_date&.iso8601,
+          billableToClient: item.billable_to_client,
+          rebillingStatus: item.rebilling_status,
+          name: item.name,
+          notes: item.notes,
+          poles: item.poles || [],
+          documentUrl: doc_url,
+          documentFilename: item.document.attached? ? item.document.filename.to_s : nil,
+          createdAt: item.created_at.iso8601,
+          updatedAt: item.updated_at.iso8601
         }
       end
 

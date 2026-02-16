@@ -1,4 +1,5 @@
 class Pitch < ApplicationRecord
+  include SoftDeletable
   belongs_to :author, class_name: "Member", optional: true
 
   has_many :bets, dependent: :destroy

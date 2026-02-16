@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ORDER_FLOW = ['new', 'processing', 'ready', 'picked-up', 'cancelled']
 
@@ -20,6 +21,7 @@ export default function NurseryIndex() {
   const [notice, setNotice] = useState(null)
   const [view, setView] = useState('dashboard')
   useShellNav({ sections: NURSERY_SECTIONS, activeSection: view, onSectionChange: setView })
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [filter, setFilter] = useState({ nursery_id: '', species_query: '' })
   const [payload, setPayload] = useState({
     nurseries: [],
@@ -128,7 +130,14 @@ export default function NurseryIndex() {
         }),
       }))
     },
-    deleteStockBatch: (batchId) => runMutation(() => apiRequest(`/api/v1/nursery/stock-batches/${batchId}`, { method: 'DELETE' })),
+    deleteStockBatch: (batchId) => {
+      const batch = payload.stockBatches.find((item) => item.id === batchId)
+      setDeleteConfirm({
+        title: 'Supprimer ce lot ?',
+        message: `Le lot « ${batch?.speciesName || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/nursery/stock-batches/${batchId}`, { method: 'DELETE' })),
+      })
+    },
     createOrder: () => {
       const pickupNurseryId = window.prompt(`Pickup nursery ID (${payload.nurseries.map((n) => n.id).join(', ')})`, payload.nurseries[0]?.id || '')
       const customerName = window.prompt('Nom client', 'Client test')
@@ -273,6 +282,18 @@ export default function NurseryIndex() {
               </div>
             )}
           </div>
+        )}
+
+        {deleteConfirm && (
+          <ConfirmDeleteModal
+            title={deleteConfirm.title}
+            message={deleteConfirm.message}
+            onConfirm={() => {
+              deleteConfirm.action()
+              setDeleteConfirm(null)
+            }}
+            onCancel={() => setDeleteConfirm(null)}
+          />
         )}
       </div>
     </div>

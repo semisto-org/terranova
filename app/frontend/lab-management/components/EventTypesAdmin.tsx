@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { apiRequest } from '@/lib/api'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import type { EventTypeConfig } from '../types'
 
 const inputBase =
@@ -19,6 +20,11 @@ export function EventTypesAdmin({ busy: externalBusy = false }: EventTypesAdminP
   const [formValues, setFormValues] = useState({
     label: '',
   })
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    title: string
+    message: string
+    action: () => void
+  } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const loadEventTypes = async () => {
@@ -112,20 +118,25 @@ export function EventTypesAdmin({ busy: externalBusy = false }: EventTypesAdminP
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer ce type d\'événement ?')) return
-    setBusy(true)
-    setError(null)
-    try {
-      await apiRequest(`/api/v1/lab/event-types/${id}`, {
-        method: 'DELETE',
-      })
-      await loadEventTypes()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la suppression')
-    } finally {
-      setBusy(false)
-    }
+  const handleDelete = (type: EventTypeConfig) => {
+    setDeleteConfirm({
+      title: 'Supprimer ce type d\'événement ?',
+      message: `Le type « ${type.label} » sera supprimé définitivement.`,
+      action: async () => {
+        setBusy(true)
+        setError(null)
+        try {
+          await apiRequest(`/api/v1/lab/event-types/${type.id}`, {
+            method: 'DELETE',
+          })
+          await loadEventTypes()
+        } catch (err: any) {
+          setError(err.message || 'Erreur lors de la suppression')
+        } finally {
+          setBusy(false)
+        }
+      },
+    })
   }
 
   if (loading) {
@@ -276,6 +287,18 @@ export function EventTypesAdmin({ busy: externalBusy = false }: EventTypesAdminP
         </>
       )}
 
+      {deleteConfirm && (
+        <ConfirmDeleteModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={() => {
+            deleteConfirm.action()
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
+
       {/* List */}
       <div className="space-y-2">
         {eventTypes.length === 0 ? (
@@ -303,7 +326,7 @@ export function EventTypesAdmin({ busy: externalBusy = false }: EventTypesAdminP
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete(type.id)}
+                  onClick={() => handleDelete(type)}
                   disabled={busy || externalBusy}
                   className="px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-60"
                 >
