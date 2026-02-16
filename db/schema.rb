@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_204133) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -159,6 +159,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_204133) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "album_media_items", force: :cascade do |t|
+    t.bigint "album_id", null: false
+    t.string "caption", default: ""
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.string "device_make", default: ""
+    t.string "device_model", default: ""
+    t.jsonb "exif_data", default: {}
+    t.integer "height"
+    t.string "media_type", null: false
+    t.datetime "taken_at"
+    t.datetime "updated_at", null: false
+    t.string "uploaded_by", default: "team", null: false
+    t.integer "width"
+    t.index ["album_id"], name: "index_album_media_items_on_album_id"
+    t.index ["deleted_at"], name: "index_album_media_items_on_deleted_at"
+    t.index ["taken_at"], name: "index_album_media_items_on_taken_at"
+  end
+
+  create_table "albums", force: :cascade do |t|
+    t.bigint "albumable_id"
+    t.string "albumable_type"
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.text "description", default: ""
+    t.string "status", default: "active", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["albumable_type", "albumable_id"], name: "index_albums_on_albumable_type_and_albumable_id", unique: true, where: "((albumable_type IS NOT NULL) AND (albumable_id IS NOT NULL))"
+    t.index ["deleted_at"], name: "index_albums_on_deleted_at"
   end
 
   create_table "bet_team_memberships", force: :cascade do |t|
@@ -1136,6 +1168,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_204133) do
   add_foreign_key "academy_trainings", "academy_training_types", column: "training_type_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "album_media_items", "albums"
   add_foreign_key "bet_team_memberships", "bets"
   add_foreign_key "bet_team_memberships", "members"
   add_foreign_key "bets", "cycles"

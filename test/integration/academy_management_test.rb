@@ -3,6 +3,8 @@ require 'test_helper'
 class AcademyManagementTest < ActionDispatch::IntegrationTest
   setup do
     [
+      AlbumMediaItem,
+      Album,
       Academy::TrainingAttendance,
       Expense,
       Academy::TrainingDocument,
@@ -23,6 +25,34 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_equal 0, body['trainings'].size
     assert_equal 0, body['trainingTypes'].size
     assert_equal 0, body['trainingLocations'].size
+  end
+
+  test 'when training status is set to planned an album is auto-created and included in payload' do
+    type = Academy::TrainingType.create!(name: 'Initiation', description: 'Base')
+    training = Academy::Training.create!(
+      training_type: type,
+      title: 'Session planifiée',
+      status: 'draft'
+    )
+    assert training.album.blank?
+
+    patch "/api/v1/academy/trainings/#{training.id}/status", params: { status: 'planned' }, as: :json
+    assert_response :success
+
+    training.reload
+    assert training.album.present?
+    assert_equal 'Session planifiée', training.album.title
+    assert_equal training.id, training.album.albumable_id
+    assert_equal 'Academy::Training', training.album.albumable_type
+
+    get '/api/v1/academy', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    t = body['trainings'].find { |x| x['id'] == training.id.to_s }
+    assert t.present?
+    assert t['album'].present?
+    assert_equal training.album.id.to_s, t['album']['id']
+    assert_equal 0, t['album']['mediaCount']
   end
 
   test 'create training from type and manage registrations attendance and reporting' do

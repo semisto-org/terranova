@@ -16,6 +16,7 @@ import {
   EventTypesAdmin,
   MemberForm,
   ExpenseList,
+  AlbumList,
 } from '../../lab-management/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
@@ -29,6 +30,7 @@ const SECTION_TABS = [
   { id: 'timesheets', label: 'Timesheets' },
   { id: 'expenses', label: 'Dépenses' },
   { id: 'calendar', label: 'Calendrier' },
+  { id: 'albums', label: 'Albums' },
   { id: 'event-types', label: 'Types d\'événements' },
 ]
 
@@ -178,8 +180,8 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [expenseFormModal, setExpenseFormModal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
-  const loadOverview = useCallback(async () => {
-    setLoading(true)
+  const loadOverview = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     setError(null)
     try {
       const payload = await apiRequest('/api/v1/lab/overview')
@@ -187,7 +189,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
   }, [])
 
@@ -855,6 +857,13 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onViewEvent={callbacks.onViewEvent}
           onEditEvent={callbacks.onEditEvent}
           onDeleteEvent={callbacks.onDeleteEvent}
+        />
+      )}
+
+      {tab === 'albums' && (
+        <AlbumList
+          albums={data?.albums ?? []}
+          onRefresh={() => loadOverview(false)}
         />
       )}
 

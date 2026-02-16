@@ -255,7 +255,7 @@ module Api
 
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
-        trainings = Academy::Training.order(updated_at: :desc)
+        trainings = Academy::Training.includes(:album).order(updated_at: :desc)
         sessions = Academy::TrainingSession.order(start_date: :asc)
         locations = Academy::TrainingLocation.order(:name)
         registrations = Academy::TrainingRegistration.order(registered_at: :desc)
@@ -370,8 +370,17 @@ module Api
           coordinatorNote: item.coordinator_note,
           checklistItems: item.checklist_items,
           checkedItems: item.checked_items,
+          album: item.album ? serialize_training_album(item.album) : nil,
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
+        }
+      end
+
+      def serialize_training_album(album)
+        {
+          id: album.id.to_s,
+          title: album.title,
+          mediaCount: album.media_count
         }
       end
 

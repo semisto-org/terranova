@@ -13,6 +13,7 @@ import {
   Calendar,
   FileText,
   CheckSquare,
+  Camera,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -21,6 +22,7 @@ import TrainingAttendancesTab from './TrainingAttendancesTab'
 import TrainingDocumentsTab from './TrainingDocumentsTab'
 import TrainingChecklistTab from './TrainingChecklistTab'
 import TrainingFinancesTab from './TrainingFinancesTab'
+import TrainingAlbumTab from './TrainingAlbumTab'
 
 const STATUS_LABELS = {
   draft: 'Brouillon',
@@ -46,6 +48,7 @@ const TABS = [
   { id: 'registrations', label: 'Inscriptions', icon: Users },
   { id: 'attendances', label: 'Présences', icon: Users },
   { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'album', label: 'Album', icon: Camera },
   { id: 'checklist', label: 'Checklist', icon: CheckSquare },
   { id: 'finances', label: 'Finances', icon: DollarSign },
 ]
@@ -335,6 +338,12 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
                 documents={documents}
                 onUploadDocument={() => actions.addDocument(training.id)}
                 onDeleteDocument={(id) => actions.deleteDocument(id)}
+              />
+            )}
+            {tab === 'album' && (
+              <TrainingAlbumTab
+                training={training}
+                onRefresh={onRefresh}
               />
             )}
             {tab === 'checklist' && (

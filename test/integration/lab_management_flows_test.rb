@@ -3,6 +3,8 @@ require 'test_helper'
 class LabManagementFlowsTest < ActionDispatch::IntegrationTest
   setup do
     [
+      AlbumMediaItem,
+      Album,
       BetTeamMembership,
       Bet,
       ScopeTask,
@@ -232,6 +234,49 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
     assert_response :no_content
 
     get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    assert_equal 0, JSON.parse(response.body)['items'].size
+  end
+
+  test 'lab albums CRUD and media list' do
+    get '/api/v1/lab/albums', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body.key?('items')
+    assert_equal 0, body['items'].size
+
+    post '/api/v1/lab/albums', params: {
+      title: 'Album test',
+      description: 'Description test'
+    }, as: :json
+    assert_response :created
+    album = JSON.parse(response.body)
+    album_id = album['id']
+    assert_equal 'Album test', album['title']
+    assert_equal 'Description test', album['description']
+    assert_equal 0, album['mediaCount']
+
+    get "/api/v1/lab/albums/#{album_id}/media", as: :json
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)['items']
+
+    patch "/api/v1/lab/albums/#{album_id}", params: {
+      title: 'Album mis à jour',
+      description: 'Nouvelle description'
+    }, as: :json
+    assert_response :success
+    updated = JSON.parse(response.body)
+    assert_equal 'Album mis à jour', updated['title']
+    assert_equal 'Nouvelle description', updated['description']
+
+    get '/api/v1/lab/albums', as: :json
+    assert_response :success
+    assert_equal 1, JSON.parse(response.body)['items'].size
+
+    delete "/api/v1/lab/albums/#{album_id}", as: :json
+    assert_response :no_content
+
+    get '/api/v1/lab/albums', as: :json
     assert_response :success
     assert_equal 0, JSON.parse(response.body)['items'].size
   end

@@ -12,6 +12,7 @@ module Api
       before_action :set_event_type, only: [:update_event_type, :destroy_event_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
       before_action :set_expense, only: [:update_expense, :destroy_expense]
+      before_action :set_album, only: [:update_album, :destroy_album, :album_media, :upload_album_media, :delete_album_media]
 
       def overview
         render json: {
@@ -31,7 +32,8 @@ module Api
           semosEmissions: serialize_emissions,
           semosRates: serialize_rates,
           timesheets: serialize_timesheets,
-          contacts: serialize_contacts
+          contacts: serialize_contacts,
+          albums: Album.includes(:albumable).order(updated_at: :desc).map { |a| serialize_album(a) }
         }
       end
 
@@ -551,6 +553,65 @@ module Api
         head :no_content
       end
 
+      def list_albums
+        scope = Album.includes(:albumable).order(updated_at: :desc)
+        scope = scope.where(albumable_type: params[:albumable_type]) if params[:albumable_type].present?
+        scope = scope.where(albumable_id: params[:albumable_id]) if params[:albumable_id].present?
+        render json: { items: scope.map { |a| serialize_album(a) } }
+      end
+
+      def create_album
+        album = Album.new(album_params)
+        if album.save
+          render json: serialize_album(album), status: :created
+        else
+          render json: { error: album.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_album
+        if @album.update(album_params)
+          render json: serialize_album(@album)
+        else
+          render json: { error: @album.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_album
+        @album.soft_delete!
+        head :no_content
+      end
+
+      def album_media
+        items = @album.media_items.order(Arel.sql("taken_at ASC NULLS LAST"), created_at: :asc)
+        render json: { items: items.map { |m| serialize_album_media_item(m) } }
+      end
+
+      def upload_album_media
+        uploaded_by = params[:uploaded_by].presence || "team"
+        file_list = params[:files].present? ? Array(params[:files]) : []
+        file_list = [params[:file]] if file_list.empty? && params[:file].present?
+
+        created = []
+        file_list.each do |file_obj|
+          next if file_obj.blank?
+
+          item = @album.media_items.build(uploaded_by: uploaded_by)
+          item.file.attach(file_obj)
+          created << serialize_album_media_item(item) if item.save
+        end
+
+        render json: { items: created }, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      end
+
+      def delete_album_media
+        item = @album.media_items.find(params[:media_id])
+        item.soft_delete!
+        head :no_content
+      end
+
       private
 
       def member_params
@@ -634,6 +695,22 @@ module Api
         @expense = Expense.find(params.require(:id))
       end
 
+      def set_album
+        @album = Album.find(params.require(:id))
+      end
+
+      def active_storage_url_options
+        if Rails.env.development?
+          { host: "localhost", port: 3000, protocol: "http" }
+        else
+          { host: request.host_with_port, protocol: request.scheme }
+        end
+      end
+
+      def album_params
+        params.permit(:title, :description, :status, :albumable_type, :albumable_id)
+      end
+
       def expense_params
         params.permit(
           :supplier, :supplier_contact_id, :status, :invoice_date, :category, :expense_type, :billing_zone,
@@ -643,6 +720,52 @@ module Api
           :name, :notes, :training_id, :design_project_id,
           poles: []
         )
+      end
+
+      def serialize_album(album)
+        routes = Rails.application.routes.url_helpers
+        url_opts = active_storage_url_options
+        cover = album.cover_media_item
+        cover_url = if cover&.file&.attached?
+          routes.rails_blob_url(cover.file, url_opts)
+        end
+        {
+          id: album.id.to_s,
+          title: album.title,
+          description: album.description.to_s,
+          status: album.status,
+          albumableType: album.albumable_type,
+          albumableId: album.albumable_id&.to_s,
+          mediaCount: album.media_count,
+          coverUrl: cover_url,
+          createdAt: album.created_at.iso8601,
+          updatedAt: album.updated_at.iso8601
+        }
+      end
+
+      def serialize_album_media_item(item)
+        routes = Rails.application.routes.url_helpers
+        url_opts = active_storage_url_options
+        blob = item.file.blob
+        file_url = blob ? routes.rails_blob_url(blob, url_opts) : nil
+        # Use blob URL for thumbnail too (no variant) so images load without libvips/ImageMagick
+        thumbnail_url = file_url
+        {
+          id: item.id.to_s,
+          mediaType: item.media_type,
+          caption: item.caption.to_s,
+          uploadedBy: item.uploaded_by.to_s,
+          takenAt: item.taken_at&.iso8601,
+          deviceMake: item.device_make.to_s,
+          deviceModel: item.device_model.to_s,
+          deviceDisplayName: item.device_display_name,
+          width: item.width,
+          height: item.height,
+          exifData: item.exif_data || {},
+          fileUrl: file_url,
+          thumbnailUrl: thumbnail_url,
+          createdAt: item.created_at.iso8601
+        }
       end
 
       def serialize_expense(item)

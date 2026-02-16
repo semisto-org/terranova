@@ -106,6 +106,14 @@ Rails.application.routes.draw do
       patch "lab/expenses/:id", to: "lab_management#update_expense"
       delete "lab/expenses/:id", to: "lab_management#destroy_expense"
 
+      get "lab/albums", to: "lab_management#list_albums"
+      post "lab/albums", to: "lab_management#create_album"
+      patch "lab/albums/:id", to: "lab_management#update_album"
+      delete "lab/albums/:id", to: "lab_management#destroy_album"
+      get "lab/albums/:id/media", to: "lab_management#album_media"
+      post "lab/albums/:id/media", to: "lab_management#upload_album_media"
+      delete "lab/albums/:id/media/:media_id", to: "lab_management#delete_album_media"
+
       get "plants/filter-options", to: "plants#filter_options"
       get "plants/search", to: "plants#search"
       get "plants/genera/:id", to: "plants#genus"
