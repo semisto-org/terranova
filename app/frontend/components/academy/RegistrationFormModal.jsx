@@ -15,6 +15,9 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
 
   const [contactName, setContactName] = useState(registration?.contactName ?? '')
   const [contactEmail, setContactEmail] = useState(registration?.contactEmail ?? '')
+  const [phone, setPhone] = useState(registration?.phone ?? '')
+  const [departurePostalCode, setDeparturePostalCode] = useState(registration?.departurePostalCode ?? '')
+  const [departureCountry, setDepartureCountry] = useState(registration?.departureCountry ?? '')
   const [amountPaid, setAmountPaid] = useState(registration?.amountPaid ?? 0)
   const [paymentStatus, setPaymentStatus] = useState(registration?.paymentStatus ?? 'pending')
   const [internalNote, setInternalNote] = useState(registration?.internalNote ?? '')
@@ -71,6 +74,9 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
       await onSubmit({
         contact_name: contactName.trim(),
         contact_email: contactEmail.trim(),
+        phone: phone.trim(),
+        departure_postal_code: departurePostalCode.trim(),
+        departure_country: departureCountry.trim(),
         amount_paid: amountPaid,
         payment_status: paymentStatus,
         internal_note: internalNote.trim(),
@@ -168,6 +174,61 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                   />
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
                     Optionnel - pour envoyer la confirmation d'inscription
+                  </p>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                  >
+                    Téléphone
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={inputBase}
+                    placeholder="ex: +32 470 12 34 56"
+                  />
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
+                    Optionnel - utile pour le contact le jour de la formation
+                  </p>
+                </div>
+
+                {/* Departure location - for carpooling */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                    Lieu de départ (covoiturage)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <input
+                        id="departure-postal-code"
+                        type="text"
+                        value={departurePostalCode}
+                        onChange={(e) => setDeparturePostalCode(e.target.value)}
+                        className={inputBase}
+                        placeholder="ex: 1000"
+                      />
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">Code postal</p>
+                    </div>
+                    <div>
+                      <input
+                        id="departure-country"
+                        type="text"
+                        value={departureCountry}
+                        onChange={(e) => setDepartureCountry(e.target.value)}
+                        className={inputBase}
+                        placeholder="ex: Belgique"
+                      />
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">Pays</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
+                    Optionnel - facilite l'organisation du covoiturage entre participants
                   </p>
                 </div>
 

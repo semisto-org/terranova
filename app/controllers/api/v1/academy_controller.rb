@@ -260,11 +260,11 @@ module Api
       end
 
       def registration_params
-        params.permit(:contact_id, :contact_name, :contact_email, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_postal_code, :departure_country, :amount_paid, :payment_status, :internal_note)
       end
 
       def registration_update_params
-        params.permit(:contact_name, :contact_email, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_name, :contact_email, :phone, :departure_postal_code, :departure_country, :amount_paid, :payment_status, :internal_note)
       end
 
       def document_params
@@ -346,6 +346,9 @@ module Api
           contactId: item.contact_id,
           contactName: item.contact_name,
           contactEmail: item.contact_email,
+          phone: item.phone,
+          departurePostalCode: item.departure_postal_code,
+          departureCountry: item.departure_country,
           amountPaid: item.amount_paid.to_f,
           paymentStatus: item.payment_status,
           internalNote: item.internal_note,
