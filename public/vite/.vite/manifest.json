@@ -1,11 +1,27 @@
 {
+  "../../node_modules/leaflet/dist/leaflet.css": {
+    "file": "assets/leaflet-CIGW-MKW.css",
+    "src": "../../node_modules/leaflet/dist/leaflet.css"
+  },
+  "_leaflet-src-DkJFhrpH.js": {
+    "file": "assets/leaflet-src-DkJFhrpH.js",
+    "name": "leaflet-src",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.jsx"
+    ]
+  },
   "entrypoints/application.jsx": {
-    "file": "assets/application-Bye2V0aH.js",
+    "file": "assets/application-wwaUFdpz.js",
     "name": "application",
     "src": "entrypoints/application.jsx",
     "isEntry": true,
+    "dynamicImports": [
+      "_leaflet-src-DkJFhrpH.js",
+      "_leaflet-src-DkJFhrpH.js"
+    ],
     "css": [
-      "assets/application-BepIdR0r.css"
+      "assets/application-B4HWl-sj.css"
     ]
   }
 }

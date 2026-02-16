@@ -256,7 +256,7 @@ module Api
       end
 
       def session_params
-        params.permit(:start_date, :end_date, :description, location_ids: [], trainer_ids: [], assistant_ids: [])
+        params.permit(:start_date, :end_date, :description, :topic, location_ids: [], trainer_ids: [], assistant_ids: [])
       end
 
       def registration_params
@@ -334,7 +334,8 @@ module Api
           locationIds: item.location_ids,
           trainerIds: item.trainer_ids,
           assistantIds: item.assistant_ids,
-          description: item.description
+          description: item.description,
+          topic: item.topic
         }
       end
 

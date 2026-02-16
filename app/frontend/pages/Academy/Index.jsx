@@ -2,6 +2,16 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import LocationsMap from '../../components/academy/LocationsMap'
+import {
+  TrainingFormModal,
+  RegistrationFormModal,
+  PaymentStatusModal,
+  SessionFormModal,
+  ExpenseFormModal,
+  DocumentFormModal,
+  ChecklistItemModal,
+  IdeaNoteFormModal
+} from '@/components/academy'
 
 const STATUSES = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
 const STATUS_LABELS = {
@@ -196,6 +206,8 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [activeModal, setActiveModal] = useState(null)
+  const [modalData, setModalData] = useState(null)
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
     setData(payload)
@@ -234,6 +246,126 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
   }, [loadAcademy])
 
+  // Modal submission handlers
+  const handleTrainingSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/trainings/${modalData.training.id}` : '/api/v1/academy/trainings',
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleSessionSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/sessions/${modalData.session.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/sessions`,
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleRegistrationSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/registrations/${modalData.registration.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/registrations`,
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handlePaymentStatusSubmit = useCallback(async (status, amountPaid) => {
+    const success = await runMutation(() =>
+      apiRequest(`/api/v1/academy/registrations/${modalData.registrationId}/payment-status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, amount_paid: amountPaid })
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleDocumentSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/documents`, {
+        method: 'POST',
+        body: JSON.stringify(values)
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleChecklistItemSubmit = useCallback(async (item) => {
+    const success = await runMutation(() =>
+      apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/checklist`, {
+        method: 'POST',
+        body: JSON.stringify({ item })
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleExpenseSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/expenses/${modalData.expense.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/expenses`,
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleIdeaNoteSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/idea-notes/${modalData.note.id}` : '/api/v1/academy/idea-notes',
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
   const actions = useMemo(() => ({
     createTrainingType: () => {
       window.location.href = '/academy/training-types/new'
@@ -259,99 +391,83 @@ export default function AcademyIndex({ initialTrainingId }) {
     },
     createTraining: () => {
       if (data.trainingTypes.length === 0) {
-        setError('Créez d’abord un type de formation.')
+        setError('Créez d\'abord un type de formation.')
         return
       }
-      const trainingTypeId = window.prompt(`Type ID (${data.trainingTypes.map((item) => item.id).join(', ')})`, data.trainingTypes[0].id)
-      const title = window.prompt('Titre de la formation')
-      if (!trainingTypeId || !title) return
-      runMutation(() => apiRequest('/api/v1/academy/trainings', { method: 'POST', body: JSON.stringify({ training_type_id: trainingTypeId, title, price: 180, max_participants: 20, requires_accommodation: false, description: '', coordinator_note: '' }) }))
+      setModalData({ isEdit: false })
+      setActiveModal('training')
     },
     deleteTraining: (id) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
     editTraining: (id) => {
       const current = data.trainings.find((item) => item.id === id)
       if (!current) return
-      const title = window.prompt('Titre', current.title)
-      if (!title) return
-      const price = Number(window.prompt('Prix', String(current.price || 0)) || current.price || 0)
-      const maxParticipants = Number(window.prompt('Participants max', String(current.maxParticipants || 0)) || current.maxParticipants || 0)
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'PATCH', body: JSON.stringify({ title, price, max_participants: maxParticipants }) }))
+      setModalData({ isEdit: true, training: current })
+      setActiveModal('training')
     },
     updateTrainingStatus: (id, status) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })),
-    addSession: (trainingId) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/sessions`, { method: 'POST', body: JSON.stringify({ start_date: new Date().toISOString().slice(0, 10), end_date: new Date().toISOString().slice(0, 10), description: '', location_ids: [], trainer_ids: [], assistant_ids: [] }) })),
+    addSession: (trainingId) => {
+      setModalData({ isEdit: false, trainingId })
+      setActiveModal('session')
+    },
     editSession: (sessionId) => {
       const current = data.trainingSessions.find((item) => item.id === sessionId)
       if (!current) return
-      const startDate = window.prompt('Date début (YYYY-MM-DD)', current.startDate)
-      const endDate = window.prompt('Date fin (YYYY-MM-DD)', current.endDate)
-      if (!startDate || !endDate) return
-      runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'PATCH', body: JSON.stringify({ start_date: startDate, end_date: endDate, description: current.description, location_ids: current.locationIds || [], trainer_ids: current.trainerIds || [], assistant_ids: current.assistantIds || [] }) }))
+      setModalData({ isEdit: true, session: current })
+      setActiveModal('session')
     },
     deleteSession: (sessionId) => runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'DELETE' })),
     addRegistration: (trainingId) => {
-      const contactName = window.prompt('Nom du participant')
-      if (!contactName) return
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/registrations`, { method: 'POST', body: JSON.stringify({ contact_name: contactName, contact_email: '', amount_paid: 0, payment_status: 'pending', internal_note: '' }) }))
+      const training = data.trainings.find((item) => item.id === trainingId)
+      setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0 })
+      setActiveModal('registration')
     },
     deleteRegistration: (registrationId) => runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'DELETE' })),
     editRegistration: (registrationId) => {
       const current = data.trainingRegistrations.find((item) => item.id === registrationId)
       if (!current) return
-      const contactName = window.prompt('Nom participant', current.contactName)
-      if (!contactName) return
-      const contactEmail = window.prompt('Email', current.contactEmail || '') || ''
-      runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'PATCH', body: JSON.stringify({ contact_name: contactName, contact_email: contactEmail, amount_paid: current.amountPaid, payment_status: current.paymentStatus, internal_note: current.internalNote || '' }) }))
+      const training = data.trainings.find((item) => item.id === current.trainingId)
+      setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0 })
+      setActiveModal('registration')
     },
     updatePaymentStatus: (registrationId) => {
-      const status = window.prompt('Status paiement (pending/partial/paid)', 'partial')
-      const amountPaid = Number(window.prompt('Montant payé', '90') || 0)
-      if (!status) return
-      runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}/payment-status`, { method: 'PATCH', body: JSON.stringify({ status, amount_paid: amountPaid }) }))
+      const current = data.trainingRegistrations.find((item) => item.id === registrationId)
+      if (!current) return
+      const training = data.trainings.find((item) => item.id === current.trainingId)
+      setModalData({ registrationId, registration: current, trainingPrice: training?.price || 0 })
+      setActiveModal('paymentStatus')
     },
     markAttendance: (registrationId, sessionId, isPresent) => runMutation(() => apiRequest('/api/v1/academy/attendance', { method: 'POST', body: JSON.stringify({ registration_id: registrationId, session_id: sessionId, is_present: isPresent, note: '' }) })),
     addDocument: (trainingId) => {
-      const name = window.prompt('Nom du document')
-      const url = window.prompt('URL du document')
-      if (!name || !url) return
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/documents`, { method: 'POST', body: JSON.stringify({ name, document_type: 'link', url }) }))
+      setModalData({ trainingId })
+      setActiveModal('document')
     },
     deleteDocument: (id) => runMutation(() => apiRequest(`/api/v1/academy/documents/${id}`, { method: 'DELETE' })),
     toggleChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/toggle/${itemIndex}`, { method: 'PATCH' })),
     addChecklistItem: (trainingId) => {
-      const item = window.prompt('Nouvel item checklist')
-      if (!item) return
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist`, { method: 'POST', body: JSON.stringify({ item }) }))
+      setModalData({ trainingId })
+      setActiveModal('checklistItem')
     },
     removeChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/${itemIndex}`, { method: 'DELETE' })),
     addExpense: (trainingId) => {
-      const description = window.prompt('Description dépense', 'Location salle')
-      const amount = Number(window.prompt('Montant', '120') || 0)
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/expenses`, { method: 'POST', body: JSON.stringify({ category: 'location', description, amount, date: new Date().toISOString().slice(0, 10) }) }))
+      setModalData({ isEdit: false, trainingId })
+      setActiveModal('expense')
     },
     editExpense: (expenseId) => {
       const current = data.trainingExpenses.find((item) => item.id === expenseId)
       if (!current) return
-      const description = window.prompt('Description dépense', current.description || '') || ''
-      const amount = Number(window.prompt('Montant', String(current.amount || 0)) || current.amount || 0)
-      runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'PATCH', body: JSON.stringify({ category: current.category, description, amount, date: current.date }) }))
+      setModalData({ isEdit: true, expense: current })
+      setActiveModal('expense')
     },
     deleteExpense: (expenseId) => runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'DELETE' })),
     createIdeaNote: () => {
-      const title = window.prompt('Titre de la note idée')
-      if (!title) return
-      runMutation(() => apiRequest('/api/v1/academy/idea-notes', { method: 'POST', body: JSON.stringify({ category: 'subject', title, content: '', tags: [] }) }))
+      setModalData({ isEdit: false })
+      setActiveModal('ideaNote')
     },
     editIdeaNote: (id) => {
       const current = data.ideaNotes.find((item) => item.id === id)
       if (!current) return
-      const title = window.prompt('Titre', current.title)
-      if (!title) return
-      const content = window.prompt('Contenu', current.content || '') || ''
-      const tags = (window.prompt('Tags séparés par virgule', (current.tags || []).join(', ')) || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-      runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'PATCH', body: JSON.stringify({ category: current.category, title, content, tags }) }))
+      setModalData({ isEdit: true, note: current })
+      setActiveModal('ideaNote')
     },
     deleteIdeaNote: (id) => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
     viewReporting: async () => {
@@ -394,19 +510,125 @@ export default function AcademyIndex({ initialTrainingId }) {
 
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
 
+  const renderModals = () => (
+    <>
+      {activeModal === 'training' && (
+        <TrainingFormModal
+          training={modalData?.isEdit ? modalData.training : null}
+          trainingTypes={data.trainingTypes}
+          onSubmit={handleTrainingSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'session' && (
+        <SessionFormModal
+          session={modalData?.isEdit ? modalData.session : null}
+          locations={data.trainingLocations}
+          members={data.members}
+          onSubmit={handleSessionSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'registration' && (
+        <RegistrationFormModal
+          registration={modalData?.isEdit ? modalData.registration : null}
+          trainingPrice={modalData?.trainingPrice || 0}
+          onSubmit={handleRegistrationSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'paymentStatus' && modalData?.registration && (
+        <PaymentStatusModal
+          registration={modalData.registration}
+          trainingPrice={modalData.trainingPrice}
+          onSubmit={handlePaymentStatusSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'document' && (
+        <DocumentFormModal
+          onSubmit={handleDocumentSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'checklistItem' && (
+        <ChecklistItemModal
+          onSubmit={handleChecklistItemSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'expense' && (
+        <ExpenseFormModal
+          expense={modalData?.isEdit ? modalData.expense : null}
+          onSubmit={handleExpenseSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'ideaNote' && (
+        <IdeaNoteFormModal
+          note={modalData?.isEdit ? modalData.note : null}
+          onSubmit={handleIdeaNoteSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+    </>
+  )
+
   if (selectedTraining) {
     return (
-      <TrainingDetail
-        training={selectedTraining}
-        data={data}
-        busy={busy}
-        onBack={() => {
-          setSelectedTrainingId(null)
-          window.history.pushState({}, '', '/academy')
-        }}
-        onRefresh={loadAcademy}
-        actions={actions}
-      />
+      <>
+        <TrainingDetail
+          training={selectedTraining}
+          data={data}
+          busy={busy}
+          onBack={() => {
+            setSelectedTrainingId(null)
+            window.history.pushState({}, '', '/academy')
+          }}
+          onRefresh={loadAcademy}
+          actions={actions}
+        />
+        {renderModals()}
+      </>
     )
   }
 
@@ -672,6 +894,8 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
       </div>
     </div>
+
+    {renderModals()}
     </>
   )
 }

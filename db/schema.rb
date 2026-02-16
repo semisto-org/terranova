@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_15_161745) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_161409) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -93,6 +93,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_161745) do
     t.date "end_date", null: false
     t.jsonb "location_ids", default: [], null: false
     t.date "start_date", null: false
+    t.string "topic"
     t.jsonb "trainer_ids", default: [], null: false
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
