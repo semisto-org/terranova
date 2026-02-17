@@ -371,15 +371,15 @@ export function CalendarView({
   }, [weekDays])
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
               Calendrier
             </h1>
-            <p className="text-stone-500 dark:text-stone-400 mt-1">
+            <p className="text-stone-500 mt-1">
               Cycles, réunions et événements du Lab
             </p>
           </div>
@@ -396,13 +396,13 @@ export function CalendarView({
         </div>
 
         {/* Calendar navigation */}
-        <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           {/* Month/Week navigation */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-stone-200 dark:border-stone-700 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-stone-200 gap-4">
             <div className="flex items-center gap-2">
               <button
                 onClick={viewMode === 'month' ? goToPreviousMonth : goToPreviousWeek}
-                className="p-2 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-stone-700 transition-colors"
+                className="p-2 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -410,20 +410,20 @@ export function CalendarView({
               </button>
               <button
                 onClick={viewMode === 'month' ? goToNextMonth : goToNextWeek}
-                className="p-2 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-stone-700 transition-colors"
+                className="p-2 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
-              <h2 className="text-lg font-semibold text-stone-800 dark:text-stone-100 ml-2">
+              <h2 className="text-lg font-semibold text-stone-800 ml-2">
                 {viewMode === 'month'
                   ? `${MONTHS_FR[currentDate.getMonth()]} ${currentDate.getFullYear()}`
                   : `Semaine ${getWeekNumber(currentDate)}`
                 }
               </h2>
               {viewMode === 'week' && (
-                <span className="text-sm text-stone-500 dark:text-stone-400 ml-2 hidden md:inline">
+                <span className="text-sm text-stone-500 ml-2 hidden md:inline">
                   {weekRangeText}
                 </span>
               )}
@@ -431,14 +431,14 @@ export function CalendarView({
 
             <div className="flex items-center gap-3">
               {/* View mode toggle */}
-              <div className="flex bg-stone-100 dark:bg-stone-700 rounded-lg p-1">
+              <div className="flex bg-stone-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('month')}
                   className={`
                     px-3 py-1.5 text-sm font-medium rounded-md transition-all
                     ${viewMode === 'month'
-                      ? 'bg-white dark:bg-stone-600 text-stone-900 dark:text-stone-100 shadow-sm'
-                      : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-600 hover:text-stone-900'
                     }
                   `}
                 >
@@ -449,8 +449,8 @@ export function CalendarView({
                   className={`
                     px-3 py-1.5 text-sm font-medium rounded-md transition-all
                     ${viewMode === 'week'
-                      ? 'bg-white dark:bg-stone-600 text-stone-900 dark:text-stone-100 shadow-sm'
-                      : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-600 hover:text-stone-900'
                     }
                   `}
                 >
@@ -460,7 +460,7 @@ export function CalendarView({
 
               <button
                 onClick={goToToday}
-                className="px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
               >
                 Aujourd'hui
               </button>
@@ -468,8 +468,8 @@ export function CalendarView({
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-2 p-4 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/30">
-            <span className="text-xs text-stone-500 dark:text-stone-400 self-center mr-2">Filtres:</span>
+          <div className="flex flex-wrap gap-2 p-4 border-b border-stone-200 bg-stone-50">
+            <span className="text-xs text-stone-500 self-center mr-2">Filtres:</span>
             {/* Note: Filter by event types from events list */}
             {Array.from(new Set(events.map(e => e.type))).map((type) => {
               const isActive = filterTypes.length === 0 || filterTypes.includes(type as EventType)
@@ -481,8 +481,8 @@ export function CalendarView({
                     inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all
                     ${
                       isActive
-                        ? 'bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300'
-                        : 'bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 opacity-50'
+                        ? 'bg-stone-100 text-stone-700'
+                        : 'bg-stone-200 text-stone-400 opacity-50'
                     }
                   `}
                 >
@@ -493,7 +493,7 @@ export function CalendarView({
             {filterTypes.length > 0 && (
               <button
                 onClick={() => setFilterTypes([])}
-                className="text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 underline ml-2"
+                className="text-xs text-stone-500 hover:text-stone-700 underline ml-2"
               >
                 Réinitialiser
               </button>
@@ -501,14 +501,14 @@ export function CalendarView({
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 px-4 py-2 border-b border-stone-200 dark:border-stone-700 text-xs">
+          <div className="flex items-center gap-4 px-4 py-2 border-b border-stone-200 text-xs">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-[#c8bfd2]/40 dark:bg-[#5B5781]/30"></span>
-              <span className="text-stone-500 dark:text-stone-400">Cycle travail</span>
+              <span className="w-3 h-3 rounded bg-[#c8bfd2]/40"></span>
+              <span className="text-stone-500">Cycle travail</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-900/50"></span>
-              <span className="text-stone-500 dark:text-stone-400">Cooldown</span>
+              <span className="w-3 h-3 rounded bg-amber-200"></span>
+              <span className="text-stone-500">Cooldown</span>
             </div>
           </div>
 
@@ -583,15 +583,15 @@ function MonthView({
   const getBgClass = (date: Date, isCurrentMonth: boolean) => {
     const cyclePhase = getCyclePhase(date)
     if (cyclePhase === 'work') {
-      return 'bg-[#c8bfd2]/20 dark:bg-[#5B5781]/15'
+      return 'bg-[#c8bfd2]/20'
     }
     if (cyclePhase === 'cooldown') {
-      return 'bg-amber-100 dark:bg-amber-900/30'
+      return 'bg-amber-100'
     }
     if (isCurrentMonth) {
-      return 'bg-white dark:bg-stone-800/50'
+      return 'bg-white'
     }
-    return 'bg-stone-50 dark:bg-stone-900/50'
+    return 'bg-stone-50'
   }
 
   // Group calendar days into weeks (each week is 7 days)
@@ -610,7 +610,7 @@ function MonthView({
         {DAYS_FR.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-stone-500 dark:text-stone-400 py-2"
+            className="text-center text-xs font-medium text-stone-500 py-2"
           >
             {day}
           </div>
@@ -618,7 +618,7 @@ function MonthView({
       </div>
 
       {/* Weeks */}
-      <div className="bg-stone-200 dark:bg-stone-700 rounded-lg overflow-hidden">
+      <div className="bg-stone-200 rounded-lg overflow-hidden">
         {weeks.map((week, weekIndex) => {
           const weekDates = week.map(d => d.date)
           const spanningEvents = getSpanningEventsForWeekDates(weekDates)
@@ -640,7 +640,7 @@ function MonthView({
                     className={`
                       absolute z-10 text-left px-1.5 py-0.5 text-[10px] font-medium truncate
                       transition-opacity hover:opacity-80
-                      bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300
+                      bg-stone-100 text-stone-700
                       ${!spanEvent.continuesFromPrevWeek ? 'rounded-l' : 'rounded-l-none'}
                       ${!spanEvent.continuesToNextWeek ? 'rounded-r' : 'rounded-r-none'}
                     `}
@@ -678,8 +678,8 @@ function MonthView({
                         className={`
                           w-7 h-7 flex items-center justify-center text-sm rounded-full
                           ${isTodayDate ? 'bg-[#5B5781] text-white font-bold' : ''}
-                          ${!isTodayDate && dayInfo.isCurrentMonth ? 'text-stone-700 dark:text-stone-300' : ''}
-                          ${!isTodayDate && !dayInfo.isCurrentMonth ? 'text-stone-400 dark:text-stone-600' : ''}
+                          ${!isTodayDate && dayInfo.isCurrentMonth ? 'text-stone-700' : ''}
+                          ${!isTodayDate && !dayInfo.isCurrentMonth ? 'text-stone-400' : ''}
                         `}
                       >
                         {dayInfo.date.getDate()}
@@ -701,7 +701,7 @@ function MonthView({
                             className={`
                               w-full text-left px-1.5 py-0.5 text-[10px] font-medium truncate
                               transition-opacity hover:opacity-80 rounded
-                              bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300
+                              bg-stone-100 text-stone-700
                             `}
                             title={singleEvent.event.title}
                           >
@@ -710,7 +710,7 @@ function MonthView({
                         )
                       })}
                       {singleDayEvents.length > 3 && (
-                        <p className="text-[10px] text-stone-400 dark:text-stone-500 px-1">
+                        <p className="text-[10px] text-stone-400 px-1">
                           +{singleDayEvents.length - 3} autres
                         </p>
                       )}
@@ -806,12 +806,12 @@ function WeekView({
   const getBgClass = (date: Date) => {
     const cyclePhase = getCyclePhase(date)
     if (cyclePhase === 'work') {
-      return 'bg-[#c8bfd2]/10 dark:bg-[#5B5781]/10'
+      return 'bg-[#c8bfd2]/10'
     }
     if (cyclePhase === 'cooldown') {
-      return 'bg-amber-50 dark:bg-amber-900/20'
+      return 'bg-amber-50'
     }
-    return 'bg-white dark:bg-stone-800/30'
+    return 'bg-white'
   }
 
   // Check if a day has a spanning event (for indentation)
@@ -833,7 +833,7 @@ function WeekView({
             onClick={() => onSelectEvent(spanEvent.event.id)}
             className={`
               absolute left-[108px] w-8 z-10 transition-all hover:opacity-80 hover:scale-[1.02]
-              bg-stone-100 dark:bg-stone-700
+              bg-stone-100
               ${!spanEvent.continuesFromPrevWeek ? 'rounded-t-lg' : 'rounded-t-none'}
               ${!spanEvent.continuesToNextWeek ? 'rounded-b-lg' : 'rounded-b-none'}
             `}
@@ -845,7 +845,7 @@ function WeekView({
             title={spanEvent.event.title}
           >
             <div
-              className="h-full flex items-center justify-center text-stone-700 dark:text-stone-300"
+              className="h-full flex items-center justify-center text-stone-700"
             >
               <span
                 className="text-[11px] font-semibold whitespace-nowrap px-1"
@@ -887,20 +887,20 @@ function WeekView({
                   ${isTodayDate
                     ? 'bg-[#5B5781] text-white'
                     : cyclePhase === 'work'
-                      ? 'bg-[#c8bfd2]/30 dark:bg-[#5B5781]/20'
+                      ? 'bg-[#c8bfd2]/30'
                       : cyclePhase === 'cooldown'
-                        ? 'bg-amber-100 dark:bg-amber-900/30'
-                        : 'bg-stone-100 dark:bg-stone-700/50'
+                        ? 'bg-amber-100'
+                        : 'bg-stone-100'
                   }
                 `}
               >
-                <p className={`text-xs font-medium ${isTodayDate ? 'text-white/70' : 'text-stone-500 dark:text-stone-400'}`}>
+                <p className={`text-xs font-medium ${isTodayDate ? 'text-white/70' : 'text-stone-500'}`}>
                   {DAYS_FR_FULL[dayIndex]}
                 </p>
-                <p className={`text-2xl font-bold ${isTodayDate ? 'text-white' : 'text-stone-800 dark:text-stone-100'}`}>
+                <p className={`text-2xl font-bold ${isTodayDate ? 'text-white' : 'text-stone-800'}`}>
                   {date.getDate()}
                 </p>
-                <p className={`text-xs ${isTodayDate ? 'text-white/70' : 'text-stone-400 dark:text-stone-500'}`}>
+                <p className={`text-xs ${isTodayDate ? 'text-white/70' : 'text-stone-400'}`}>
                   {MONTHS_FR[date.getMonth()].slice(0, 3)}
                 </p>
               </div>
@@ -923,18 +923,18 @@ function WeekView({
                         <button
                           key={singleEvent.event.id}
                           onClick={() => onSelectEvent(singleEvent.event.id)}
-                          className="relative overflow-hidden text-left p-3 rounded-lg transition-all hover:shadow-md hover:scale-[1.02] w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px] bg-stone-100 dark:bg-stone-700 border border-transparent hover:border-stone-200 dark:hover:border-stone-600"
+                          className="relative overflow-hidden text-left p-3 rounded-lg transition-all hover:shadow-md hover:scale-[1.02] w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px] bg-stone-100 border border-transparent hover:border-stone-200"
                         >
                           <div>
-                            <p className="text-[10px] font-medium text-stone-500 dark:text-stone-400 opacity-70">
+                            <p className="text-[10px] font-medium text-stone-500 opacity-70">
                               {formatTime(singleEvent.event.startDate)}
                             </p>
                             <div className="flex items-start gap-1.5 mt-1">
-                              <p className="text-xs font-semibold text-stone-700 dark:text-stone-300 line-clamp-2">
+                              <p className="text-xs font-semibold text-stone-700 line-clamp-2">
                                 {singleEvent.event.title}
                               </p>
                             </div>
-                            <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1.5 truncate">
+                            <p className="text-[10px] text-stone-500 mt-1.5 truncate">
                               {singleEvent.event.location}
                             </p>
                             {attendees.length > 0 && (
@@ -945,13 +945,13 @@ function WeekView({
                                       key={member.id}
                                       src={member.avatar}
                                       alt={member.firstName}
-                                      className="w-5 h-5 rounded-full border-2 border-white dark:border-stone-700"
+                                      className="w-5 h-5 rounded-full border-2 border-white"
                                       title={`${member.firstName} ${member.lastName}`}
                                     />
                                   ))}
                                 </div>
                                 {attendees.length > 3 && (
-                                  <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                                  <span className="text-[10px] text-stone-400">
                                     +{attendees.length - 3}
                                   </span>
                                 )}
@@ -1007,23 +1007,23 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-stone-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="shrink-0 px-6 py-4 bg-stone-100 dark:bg-stone-700">
+        <div className="shrink-0 px-6 py-4 bg-stone-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div>
-                <span className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                <span className="text-xs font-medium uppercase tracking-wide text-stone-500">
                   {getEventTypeLabel(event.type)}
                 </span>
-                <h2 className="text-lg font-semibold text-stone-800 dark:text-stone-100 mt-0.5">
+                <h2 className="text-lg font-semibold text-stone-800 mt-0.5">
                   {event.title}
                 </h2>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-black/10 dark:text-stone-400 dark:hover:text-stone-200 transition-colors"
+              className="p-1.5 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-black/10 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1036,16 +1036,16 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
         <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-4">
           {/* Date & Time */}
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-700 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-stone-500 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <p className="font-medium text-stone-800 dark:text-stone-100 capitalize">
+              <p className="font-medium text-stone-800 capitalize">
                 {formatDate(startDate)}
               </p>
-              <p className="text-sm text-stone-500 dark:text-stone-400">
+              <p className="text-sm text-stone-500">
                 {isMultiDay ? (
                   <>
                     {formatTime(startDate)} → {formatDate(endDate)} {formatTime(endDate)}
@@ -1061,53 +1061,53 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
 
           {/* Location */}
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-700 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-stone-500 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div>
-              <p className="font-medium text-stone-800 dark:text-stone-100">{event.location}</p>
+              <p className="font-medium text-stone-800">{event.location}</p>
             </div>
           </div>
 
           {/* Description */}
           {event.description && (
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-700 flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4 text-stone-500 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                 </svg>
               </div>
-              <p className="text-stone-600 dark:text-stone-300 text-sm">{event.description}</p>
+              <p className="text-stone-600 text-sm">{event.description}</p>
             </div>
           )}
 
           {/* Attendees */}
           {attendees.length > 0 && (
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-700 flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4 text-stone-500 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mb-2">
+                <p className="text-sm text-stone-500 mb-2">
                   {attendees.length} participant{attendees.length > 1 ? 's' : ''}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {attendees.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center gap-2 px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded-full"
+                      className="flex items-center gap-2 px-2 py-1 bg-stone-100 rounded-full"
                     >
                       <img
                         src={member.avatar}
                         alt={`${member.firstName} ${member.lastName}`}
                         className="w-5 h-5 rounded-full bg-stone-200"
                       />
-                      <span className="text-xs text-stone-600 dark:text-stone-300">
+                      <span className="text-xs text-stone-600">
                         {member.firstName}
                       </span>
                     </div>
@@ -1119,11 +1119,11 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
         </div>
 
         {/* Actions */}
-        <div className="shrink-0 px-6 py-4 bg-stone-50 dark:bg-stone-800/50 border-t border-stone-200 dark:border-stone-700 flex items-center justify-end gap-2">
+        <div className="shrink-0 px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-2">
           {onDelete && (
             <button
               onClick={onDelete}
-              className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               Supprimer
             </button>

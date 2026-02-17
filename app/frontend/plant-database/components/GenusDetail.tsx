@@ -22,6 +22,10 @@ interface GenusDetailWithFiltersProps extends GenusDetailProps {
   allCommonNames?: CommonName[]
   /** Called when user selects another genus */
   onGenusSelect?: (genusId: string) => void
+  /** Called when user wants to add a species to this genus */
+  onAddSpecies?: () => void
+  /** Called when user wants to edit this genus */
+  onEdit?: () => void
 }
 
 export function GenusDetail({
@@ -43,6 +47,8 @@ export function GenusDetail({
   allGenera = [],
   allCommonNames = [],
   onGenusSelect,
+  onAddSpecies,
+  onEdit,
 }: GenusDetailWithFiltersProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
@@ -167,20 +173,34 @@ export function GenusDetail({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <div className="bg-white dark:bg-stone-800/50 border-b border-stone-200 dark:border-stone-700">
+      <div className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
           <div className="mb-4">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-2">
-              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 dark:text-stone-100 flex-1 min-w-0">
-                <span className="italic">{genus.latinName}</span>
-                {primaryCommonName && (
-                  <span className="ml-3 font-normal text-stone-600 dark:text-stone-400">
-                    {primaryCommonName}
-                  </span>
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 flex-1 min-w-0">
+                  <span className="italic">{genus.latinName}</span>
+                  {primaryCommonName && (
+                    <span className="ml-3 font-normal text-stone-600">
+                      {primaryCommonName}
+                    </span>
+                  )}
+                </h1>
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="shrink-0 mt-1.5 p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 transition-colors"
+                    aria-label="Modifier le genre"
+                    title="Modifier"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
                 )}
-              </h1>
+              </div>
 
               {/* Search field */}
               {allGenera.length > 0 && onGenusSelect && (
@@ -197,10 +217,10 @@ export function GenusDetail({
                           setShowSearchResults(true)
                         }
                       }}
-                      className="w-full px-4 py-2 pl-10 pr-4 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500"
+                      className="w-full px-4 py-2 pl-10 pr-4 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent text-stone-900 placeholder-stone-400"
                     />
                     <svg
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -218,7 +238,7 @@ export function GenusDetail({
                   {showSearchResults && searchResults.length > 0 && (
                     <div
                       ref={searchResultsRef}
-                      className="absolute top-full mt-1 w-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+                      className="absolute top-full mt-1 w-full bg-white border border-stone-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
                     >
                       {searchResults.map((result, index) => {
                         const resultCommonName = allCommonNames.find(
@@ -234,23 +254,23 @@ export function GenusDetail({
                               setSearchQuery('')
                               setShowSearchResults(false)
                             }}
-                            className={`w-full text-left px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors ${
+                            className={`w-full text-left px-4 py-2 hover:bg-stone-50 transition-colors ${
                               index === focusedIndex
-                                ? 'bg-stone-50 dark:bg-stone-700'
+                                ? 'bg-stone-50'
                                 : ''
                             } ${index === 0 ? 'rounded-t-lg' : ''} ${
                               index === searchResults.length - 1 ? 'rounded-b-lg' : ''
                             }`}
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-[#5B5781] dark:text-[#AFBD00] bg-[#5B5781]/10 dark:bg-[#AFBD00]/10 px-2 py-0.5 rounded">
+                              <span className="text-xs font-medium text-[#5B5781] bg-[#5B5781]/10 px-2 py-0.5 rounded">
                                 G
                               </span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                                <p className="text-sm font-medium text-stone-900">
                                   <span className="italic">{result.latinName}</span>
                                   {resultCommonName && (
-                                    <span className="ml-2 font-normal text-stone-600 dark:text-stone-400">
+                                    <span className="ml-2 font-normal text-stone-600">
                                       {resultCommonName}
                                     </span>
                                   )}
@@ -269,14 +289,14 @@ export function GenusDetail({
             {/* Other common names */}
             {otherCommonNames.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="text-sm text-stone-500 dark:text-stone-400">Aussi appelé :</span>
+                <span className="text-sm text-stone-500">Aussi appelé :</span>
                 {otherCommonNames.map((cn) => (
                   <span
                     key={cn.id}
-                    className="text-sm text-stone-600 dark:text-stone-400 font-medium"
+                    className="text-sm text-stone-600 font-medium"
                   >
                     {cn.name}
-                    <span className="text-xs text-stone-400 dark:text-stone-500 ml-1">
+                    <span className="text-xs text-stone-400 ml-1">
                       ({cn.language})
                     </span>
                   </span>
@@ -287,7 +307,7 @@ export function GenusDetail({
 
           {/* Description */}
           {genus.description && (
-            <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
+            <p className="text-stone-700 leading-relaxed">
               {genus.description}
             </p>
           )}
@@ -297,12 +317,12 @@ export function GenusDetail({
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Species List */}
-        {species.length > 0 && (
+        {species.length > 0 ? (
           <CollapsibleSection title="Espèces" icon="🌿" badge={species.length} defaultOpen={true}>
             <div className="space-y-4">
               {Object.entries(speciesByType).map(([type, typeSpecies]) => (
                 <div key={type}>
-                  <h3 className="text-sm font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                     {getTypeIcon(type)}
                     {getTypeLabel(type)} ({typeSpecies.length})
                   </h3>
@@ -316,20 +336,20 @@ export function GenusDetail({
                         <button
                           key={sp.id}
                           onClick={() => onSpeciesSelect?.(sp.id)}
-                          className="w-full text-left p-4 bg-white dark:bg-stone-800/50 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 transition-colors group"
+                          className="w-full text-left p-4 bg-white hover:bg-stone-50 rounded-xl border border-stone-200 transition-colors group"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-stone-900 dark:text-stone-100 group-hover:text-[#5B5781] dark:group-hover:text-[#AFBD00] transition-colors">
+                              <p className="font-medium text-stone-900 group-hover:text-[#5B5781] transition-colors">
                                 <span className="italic">{sp.latinName}</span>
                                 {spCommonName && (
-                                  <span className="ml-2 font-normal text-stone-600 dark:text-stone-400">
+                                  <span className="ml-2 font-normal text-stone-600">
                                     {spCommonName}
                                   </span>
                                 )}
                               </p>
                               {sp.origin && (
-                                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                                <p className="text-sm text-stone-500 mt-1">
                                   Origine : {sp.origin}
                                 </p>
                               )}
@@ -355,8 +375,32 @@ export function GenusDetail({
                 </div>
               ))}
             </div>
+            {onAddSpecies && (
+              <button
+                onClick={onAddSpecies}
+                className="mt-4 w-full py-2.5 rounded-xl border-2 border-dashed border-stone-200 text-sm font-medium text-stone-500 hover:border-[#5B5781] hover:text-[#5B5781] hover:bg-[#5B5781]/5 transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Ajouter une espèce à ce genre
+              </button>
+            )}
           </CollapsibleSection>
-        )}
+        ) : onAddSpecies ? (
+          <div className="text-center py-8 bg-white rounded-xl border border-stone-200">
+            <p className="text-stone-500 mb-3">Aucune espèce dans ce genre</p>
+            <button
+              onClick={onAddSpecies}
+              className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-[#5B5781] hover:bg-[#4a4770] transition-colors inline-flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter la première espèce
+            </button>
+          </div>
+        ) : null}
 
         {/* Photos */}
         {photos.length > 0 && (
@@ -397,11 +441,11 @@ export function GenusDetail({
 
         {/* Empty states */}
         {species.length === 0 && photos.length === 0 && notes.length === 0 && references.length === 0 && (
-          <div className="text-center py-12 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700">
-            <div className="w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl mx-auto mb-4">
+          <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
+            <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-3xl mx-auto mb-4">
               🌿
             </div>
-            <p className="text-stone-500 dark:text-stone-400">
+            <p className="text-stone-500">
               Aucune information supplémentaire disponible pour ce genre
             </p>
           </div>

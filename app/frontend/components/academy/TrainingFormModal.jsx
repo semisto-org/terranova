@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import SimpleEditor from '@/components/SimpleEditor'
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(training)
@@ -96,17 +96,17 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-2xl bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="shrink-0 px-6 py-5 border-b border-stone-200 dark:border-stone-700 bg-gradient-to-br from-red-50 to-white dark:from-stone-800 dark:to-stone-900">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-200 bg-gradient-to-br from-red-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
                   {isEdit ? 'Modifier la formation' : 'Nouvelle formation'}
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   {isEdit
                     ? 'Mettez à jour les informations de la formation'
                     : 'Créez une nouvelle formation Academy'}
@@ -115,7 +115,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
               <button
                 type="button"
                 onClick={onCancel}
-                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
                 aria-label="Fermer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -129,7 +129,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
             <div className="flex-1 overflow-y-auto min-h-0 p-6">
               {error && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm animate-in slide-in-from-top-2 duration-200">
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-in slide-in-from-top-2 duration-200">
                   {error}
                 </div>
               )}
@@ -139,7 +139,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                 <div>
                   <label
                     htmlFor="training-type"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Type de formation <span className="text-rose-500">*</span>
                   </label>
@@ -162,7 +162,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                 <div>
                   <label
                     htmlFor="training-title"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Titre <span className="text-rose-500">*</span>
                   </label>
@@ -183,7 +183,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                   <div>
                     <label
                       htmlFor="training-price"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       Prix (€)
                     </label>
@@ -206,7 +206,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                   <div>
                     <label
                       htmlFor="training-vat-rate"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       TVA (%)
                     </label>
@@ -225,7 +225,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                   <div>
                     <label
                       htmlFor="training-max-participants"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       Participants max
                     </label>
@@ -254,7 +254,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                       <div
                         className={`
                           w-11 h-6 rounded-full transition-colors duration-200 flex items-center
-                          ${requiresAccommodation ? 'bg-[#B01A19]' : 'bg-stone-300 dark:bg-stone-600'}
+                          ${requiresAccommodation ? 'bg-[#B01A19]' : 'bg-stone-300'}
                         `}
                       >
                         <div
@@ -266,10 +266,10 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                       </div>
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <div className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                      <div className="font-medium text-sm text-stone-900">
                         Hébergement requis
                       </div>
-                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                      <p className="text-xs text-stone-500 mt-0.5">
                         La formation nécessite un hébergement sur place
                       </p>
                     </div>
@@ -279,7 +279,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                 {/* Description */}
                 <div>
                   <label
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Description
                   </label>
@@ -293,7 +293,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                 {/* Coordinator Note */}
                 <div>
                   <label
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Note coordinateur
                   </label>
@@ -307,12 +307,12 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 flex items-center justify-end gap-3">
+            <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="px-4 py-2 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>

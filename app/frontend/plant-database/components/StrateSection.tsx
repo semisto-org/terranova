@@ -80,7 +80,7 @@ export function StrateSection({
 
   return (
     <div
-      className={`border-b border-stone-200 dark:border-stone-700 last:border-b-0 transition-colors ${
+      className={`border-b border-stone-200 last:border-b-0 transition-colors ${
         isDropActive ? 'bg-[#AFBD00]/10' : ''
       }`}
       onDragOver={handleDragOver}
@@ -90,10 +90,10 @@ export function StrateSection({
       {/* Header */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition-colors"
       >
         <span className="text-xl">{icon}</span>
-        <span className="flex-1 text-left font-medium text-stone-900 dark:text-stone-100">
+        <span className="flex-1 text-left font-medium text-stone-900">
           {title}
         </span>
         <span
@@ -117,7 +117,7 @@ export function StrateSection({
         <div className="px-4 pb-3">
           {items.length === 0 ? (
             <div className="py-4 text-center">
-              <p className="text-sm text-stone-400 dark:text-stone-500 italic">
+              <p className="text-sm text-stone-400 italic">
                 Glissez des plantes ici ou utilisez le bouton "+"
               </p>
             </div>
@@ -128,7 +128,7 @@ export function StrateSection({
                 return (
                   <div
                     key={`${item.type}:${item.id}`}
-                    className="group flex items-center gap-3 p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                    className="group flex items-center gap-3 p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors"
                     draggable
                     onDragStart={(event) => {
                       event.dataTransfer.setData(
@@ -152,10 +152,10 @@ export function StrateSection({
                       onClick={() => onItemClick?.(item.id, item.type)}
                       className="flex-1 text-left"
                     >
-                      <p className="text-sm font-medium text-stone-900 dark:text-stone-100 italic">
+                      <p className="text-sm font-medium text-stone-900 italic">
                         {details.latinName}
                       </p>
-                      <p className="text-xs text-stone-500 dark:text-stone-400">
+                      <p className="text-xs text-stone-500">
                         {item.type === 'variety' ? 'Variété' : 'Espèce'} • {details.exposures.join(', ')}
                       </p>
                     </button>
@@ -163,7 +163,7 @@ export function StrateSection({
                     {/* Remove button */}
                     <button
                       onClick={() => onRemoveItem?.(item.paletteItemId || item.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-400 hover:text-red-500 transition-all"
                       title="Retirer de la palette"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -110,8 +110,8 @@ export function ExpenseList({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Dépenses</h3>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+          <h3 className="text-lg font-semibold text-stone-900">Dépenses</h3>
+          <p className="text-sm text-stone-500 mt-1">
             Toutes les dépenses consolidées (Lab, Academy, Design)
           </p>
         </div>
@@ -129,7 +129,7 @@ export function ExpenseList({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm px-3 py-1.5"
+          className="rounded-lg border border-stone-300 bg-white text-stone-900 text-sm px-3 py-1.5"
         >
           <option value="all">Tous les statuts</option>
           {statuses.map((s) => (
@@ -139,7 +139,7 @@ export function ExpenseList({
         <select
           value={poleFilter}
           onChange={(e) => setPoleFilter(e.target.value)}
-          className="rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm px-3 py-1.5"
+          className="rounded-lg border border-stone-300 bg-white text-stone-900 text-sm px-3 py-1.5"
         >
           <option value="all">Tous les pôles</option>
           {poles.map((p) => (
@@ -149,7 +149,7 @@ export function ExpenseList({
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm px-3 py-1.5"
+          className="rounded-lg border border-stone-300 bg-white text-stone-900 text-sm px-3 py-1.5"
         >
           <option value="all">Tous les types</option>
           {types.map((t) => (
@@ -159,7 +159,7 @@ export function ExpenseList({
         <select
           value={zoneFilter}
           onChange={(e) => setZoneFilter(e.target.value)}
-          className="rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm px-3 py-1.5"
+          className="rounded-lg border border-stone-300 bg-white text-stone-900 text-sm px-3 py-1.5"
         >
           <option value="all">Toutes les zones</option>
           {zones.map((z) => (
@@ -171,31 +171,31 @@ export function ExpenseList({
       {loading ? (
         <div className="py-12 text-center text-stone-500">Chargement...</div>
       ) : sorted.length === 0 ? (
-        <div className="rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 p-12 text-center">
-          <FileText className="w-12 h-12 text-stone-300 dark:text-stone-600 mx-auto mb-4" />
-          <p className="text-stone-500 dark:text-stone-400 mb-4">Aucune dépense</p>
+        <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-12 text-center">
+          <FileText className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+          <p className="text-stone-500 mb-4">Aucune dépense</p>
           <button
             type="button"
             onClick={onCreateExpense}
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
           >
             <Plus className="w-4 h-4" />
             Ajouter une dépense
           </button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900">
+        <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase">Date</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase">Fournisseur</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase">Type</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase text-right">HTVA</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase text-right">TVAC</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase">Statut</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase">Pôles</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase">Liens</th>
+              <tr className="border-b border-stone-200 bg-stone-50">
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Date</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Fournisseur</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Type</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">HTVA</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">TVAC</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Statut</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Pôles</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Liens</th>
                 <th className="px-4 py-3 w-12" />
               </tr>
             </thead>
@@ -256,45 +256,45 @@ function ExpenseRow({
   const linksText = linkLabels.length ? linkLabels.join(' · ') : '—'
 
   return (
-    <tr className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50/50 dark:hover:bg-stone-800/50">
-      <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400">{formatDate(expense.invoiceDate)}</td>
-      <td className="px-4 py-3 text-sm font-medium text-stone-900 dark:text-stone-100">{expense.supplier}</td>
-      <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">
+    <tr className="border-b border-stone-100 hover:bg-stone-50/50">
+      <td className="px-4 py-3 text-sm text-stone-600">{formatDate(expense.invoiceDate)}</td>
+      <td className="px-4 py-3 text-sm font-medium text-stone-900">{expense.supplier}</td>
+      <td className="px-4 py-3 text-sm text-stone-700">
         {EXPENSE_TYPE_LABELS[expense.expenseType] ?? expense.expenseType}
       </td>
-      <td className="px-4 py-3 text-sm text-right text-stone-700 dark:text-stone-300">
+      <td className="px-4 py-3 text-sm text-right text-stone-700">
         {Number(expense.amountExclVat).toLocaleString('fr-FR')} €
       </td>
-      <td className="px-4 py-3 text-sm text-right font-medium text-stone-900 dark:text-stone-100">
+      <td className="px-4 py-3 text-sm text-right font-medium text-stone-900">
         {Number(expense.totalInclVat).toLocaleString('fr-FR')} €
       </td>
       <td className="px-4 py-3">
-        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300">
+        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-stone-100 text-stone-700">
           {STATUS_LABELS[expense.status] ?? expense.status}
         </span>
       </td>
-      <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400">{poleLabels}</td>
-      <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400 max-w-[140px] truncate" title={linksText}>
+      <td className="px-4 py-3 text-sm text-stone-600">{poleLabels}</td>
+      <td className="px-4 py-3 text-sm text-stone-600 max-w-[140px] truncate" title={linksText}>
         {linksText}
       </td>
       <td className="px-4 py-3 relative" ref={menuRef}>
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
+          className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-700"
           aria-label="Actions"
         >
           <Edit className="w-4 h-4" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 py-1 w-36 bg-white dark:bg-stone-800 rounded-lg border border-stone-200 dark:border-stone-700 shadow-lg z-20">
+          <div className="absolute right-0 top-full mt-1 py-1 w-36 bg-white rounded-lg border border-stone-200 shadow-lg z-20">
             <button
               type="button"
               onClick={() => {
                 setMenuOpen(false)
                 onEdit()
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
             >
               <Edit className="w-4 h-4" />
               Modifier
@@ -305,7 +305,7 @@ function ExpenseRow({
                 setMenuOpen(false)
                 onDelete()
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
               Supprimer

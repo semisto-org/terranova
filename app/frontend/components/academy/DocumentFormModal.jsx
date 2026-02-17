@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Upload } from 'lucide-react'
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
   const nameRef = useRef(null)
@@ -76,24 +76,24 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-lg bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-lg bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="shrink-0 px-6 py-5 border-b border-stone-200 dark:border-stone-700 bg-gradient-to-br from-red-50 to-white dark:from-stone-800 dark:to-stone-900">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-200 bg-gradient-to-br from-red-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
                   Nouveau document
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   Envoyez un fichier depuis votre ordinateur (stockage local)
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onCancel}
-                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
                 aria-label="Fermer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,7 +107,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
             <div className="flex-1 overflow-y-auto min-h-0 p-6">
               {error && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm animate-in slide-in-from-top-2 duration-200">
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-in slide-in-from-top-2 duration-200">
                   {error}
                 </div>
               )}
@@ -117,7 +117,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                 <div>
                   <label
                     htmlFor="document-name"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Nom du document <span className="text-rose-500">*</span>
                   </label>
@@ -135,7 +135,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
 
                 {/* File upload */}
                 <div>
-                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
                     Fichier <span className="text-rose-500">*</span>
                   </label>
                   <div
@@ -143,8 +143,8 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                     className={`
                       flex items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 transition-all cursor-pointer
                       ${file
-                        ? 'border-[#B01A19]/50 bg-[#B01A19]/5 dark:bg-[#B01A19]/10'
-                        : 'border-stone-200 dark:border-stone-600 hover:border-stone-300 dark:hover:border-stone-500 bg-stone-50/50 dark:bg-stone-800/50'
+                        ? 'border-[#B01A19]/50 bg-[#B01A19]/5'
+                        : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
                       }
                     `}
                   >
@@ -155,18 +155,18 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                       accept=".pdf,.doc,.docx,image/*,video/*,.txt,.csv"
                       onChange={handleFileChange}
                     />
-                    <Upload className="w-8 h-8 text-stone-400 dark:text-stone-500 shrink-0" />
+                    <Upload className="w-8 h-8 text-stone-400 shrink-0" />
                     <div className="text-center min-w-0">
                       {file ? (
                         <>
-                          <p className="font-medium text-stone-900 dark:text-stone-100 truncate">{file.name}</p>
+                          <p className="font-medium text-stone-900 truncate">{file.name}</p>
                           <p className="text-xs text-stone-500 mt-0.5">
                             {(file.size / 1024).toFixed(1)} Ko · Cliquez pour changer
                           </p>
                         </>
                       ) : (
                         <>
-                          <p className="font-medium text-stone-700 dark:text-stone-300">Cliquez ou glissez un fichier</p>
+                          <p className="font-medium text-stone-700">Cliquez ou glissez un fichier</p>
                           <p className="text-xs text-stone-500 mt-0.5">PDF, images, vidéos, etc.</p>
                         </>
                       )}
@@ -177,12 +177,12 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 flex items-center justify-end gap-3">
+            <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="px-4 py-2 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>

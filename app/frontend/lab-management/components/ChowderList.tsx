@@ -19,27 +19,27 @@ export function ChowderList({ items, members, onMoveToScope, onDelete, onAdd }: 
   const getMember = (memberId: string) => members.find((m) => m.id === memberId)
 
   return (
-    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50 overflow-hidden">
+    <div className="bg-amber-50 rounded-xl border border-amber-200 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 bg-amber-100/50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800/50">
+      <div className="px-4 py-3 bg-amber-100/50 border-b border-amber-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">🍲</span>
-            <h3 className="font-semibold text-amber-800 dark:text-amber-200">Chowder</h3>
-            <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-200/50 dark:bg-amber-800/50 px-1.5 py-0.5 rounded-full">
+            <h3 className="font-semibold text-amber-800">Chowder</h3>
+            <span className="text-xs text-amber-600 bg-amber-200/50 px-1.5 py-0.5 rounded-full">
               {items.length}
             </span>
           </div>
           {onAdd && (
             <button
               onClick={onAdd}
-              className="text-xs text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 font-medium transition-colors"
+              className="text-xs text-amber-700 hover:text-amber-900 font-medium transition-colors"
             >
               + Ajouter
             </button>
           )}
         </div>
-        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+        <p className="text-xs text-amber-600 mt-1">
           Tâches découvertes en cours de route, pas encore assignées à un scope
         </p>
       </div>
@@ -47,7 +47,7 @@ export function ChowderList({ items, members, onMoveToScope, onDelete, onAdd }: 
       {/* Items list */}
       <div className="p-2">
         {items.length === 0 ? (
-          <p className="text-sm text-amber-600/70 dark:text-amber-400/70 text-center py-4">
+          <p className="text-sm text-amber-600/70 text-center py-4">
             Aucune tâche dans le chowder
           </p>
         ) : (
@@ -57,11 +57,11 @@ export function ChowderList({ items, members, onMoveToScope, onDelete, onAdd }: 
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/50 dark:bg-stone-800/30 hover:bg-white dark:hover:bg-stone-800/50 transition-colors group"
+                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/50 hover:bg-white transition-colors group"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-amber-500">•</span>
-                    <span className="text-sm text-stone-700 dark:text-stone-300 truncate">
+                    <span className="text-sm text-stone-700 truncate">
                       {item.title}
                     </span>
                   </div>
@@ -74,7 +74,7 @@ export function ChowderList({ items, members, onMoveToScope, onDelete, onAdd }: 
                         title={`Ajouté par ${creator.firstName} ${creator.lastName}`}
                       />
                     )}
-                    <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                    <span className="text-[10px] text-stone-400">
                       {formatDate(item.createdAt)}
                     </span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

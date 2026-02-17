@@ -171,16 +171,16 @@ export function TimesheetList({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with date range */}
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
                 Timesheets
               </h1>
-              <p className="text-stone-500 dark:text-stone-400 mt-1">
+              <p className="text-stone-500 mt-1">
                 {isAdmin ? 'Gestion des prestations du Lab' : 'Mes prestations'}
               </p>
             </div>
@@ -198,20 +198,20 @@ export function TimesheetList({
 
           {/* Date range selector */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Période :</span>
+            <span className="text-sm text-stone-500">Période :</span>
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                className="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
+                className="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
               />
-              <span className="text-stone-400 dark:text-stone-500">—</span>
+              <span className="text-stone-400">—</span>
               <input
                 type="date"
                 value={dateRange.end}
                 onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                className="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
+                className="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -225,13 +225,13 @@ export function TimesheetList({
                     end: today.toISOString().split('T')[0],
                   })
                 }}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-md transition-colors"
+                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
               >
                 7 jours
               </button>
               <button
                 onClick={() => setDateRange(getDefaultDateRange())}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-md transition-colors"
+                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
               >
                 30 jours
               </button>
@@ -245,7 +245,7 @@ export function TimesheetList({
                     end: today.toISOString().split('T')[0],
                   })
                 }}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-md transition-colors"
+                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
               >
                 3 mois
               </button>
@@ -258,7 +258,7 @@ export function TimesheetList({
                     end: today.toISOString().split('T')[0],
                   })
                 }}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-md transition-colors"
+                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
               >
                 Cette année
               </button>
@@ -295,10 +295,10 @@ export function TimesheetList({
         {/* Timesheets list */}
         <div className="mt-6">
           {sortedTimesheets.length === 0 ? (
-            <div className="bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 dark:bg-stone-700 flex items-center justify-center">
+            <div className="bg-white rounded-2xl border border-stone-200 p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
                 <svg
-                  className="w-8 h-8 text-stone-400 dark:text-stone-500"
+                  className="w-8 h-8 text-stone-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -311,10 +311,10 @@ export function TimesheetList({
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-stone-700 dark:text-stone-300 mb-2">
+              <h3 className="text-lg font-medium text-stone-700 mb-2">
                 {hasActiveFilters ? 'Aucun résultat' : 'Aucune prestation'}
               </h3>
-              <p className="text-stone-500 dark:text-stone-400 mb-6 max-w-sm mx-auto">
+              <p className="text-stone-500 mb-6 max-w-sm mx-auto">
                 {hasActiveFilters
                   ? 'Aucune prestation ne correspond à vos critères de recherche.'
                   : "Commencez par saisir votre première prestation pour suivre votre temps de travail."}
@@ -322,7 +322,7 @@ export function TimesheetList({
               {hasActiveFilters ? (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-[#5B5781] hover:text-[#4a4670] dark:text-[#c8bfd2] font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -362,10 +362,10 @@ export function TimesheetList({
                   <section key={monthKey}>
                     {/* Month header */}
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-serif font-semibold text-stone-700 dark:text-stone-200 capitalize">
+                      <h2 className="text-lg font-serif font-semibold text-stone-700 capitalize">
                         {formatMonthLabel(monthKey)}
                       </h2>
-                      <div className="flex items-center gap-4 text-sm text-stone-500 dark:text-stone-400">
+                      <div className="flex items-center gap-4 text-sm text-stone-500">
                         <span className="flex items-center gap-1.5">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path
@@ -390,14 +390,14 @@ export function TimesheetList({
                             {monthKm} km
                           </span>
                         )}
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
                           {invoicedCount}/{monthTimesheets.length} facturées
                         </span>
                       </div>
                     </div>
 
                     {/* Timesheets for this month */}
-                    <div className="bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden divide-y divide-stone-100 dark:divide-stone-700/50">
+                    <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden divide-y divide-stone-100">
                       {monthTimesheets.map((timesheet) => {
                         const member = members.find((m) => m.id === timesheet.memberId)
                         const guild = timesheet.guildId
@@ -429,8 +429,8 @@ export function TimesheetList({
 
         {/* Footer summary */}
         {sortedTimesheets.length > 0 && (
-          <div className="mt-8 py-4 border-t border-stone-200 dark:border-stone-700">
-            <p className="text-sm text-stone-500 dark:text-stone-400 text-center">
+          <div className="mt-8 py-4 border-t border-stone-200">
+            <p className="text-sm text-stone-500 text-center">
               {sortedTimesheets.length} prestation{sortedTimesheets.length > 1 ? 's' : ''} affichée
               {sortedTimesheets.length > 1 ? 's' : ''}
               {hasActiveFilters && (

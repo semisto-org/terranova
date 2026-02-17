@@ -17,26 +17,26 @@ export function StatsCard({
 }: StatsCardProps) {
   const accentColors = {
     primary: {
-      bg: 'bg-[#e1e6d8] dark:bg-[#AFBD00]/10',
+      bg: 'bg-[#e1e6d8]',
       icon: 'text-[#AFBD00]',
       border: 'border-[#AFBD00]/20'
     },
     secondary: {
-      bg: 'bg-[#c8bfd2] dark:bg-[#5B5781]/10',
-      icon: 'text-[#5B5781] dark:text-[#8B84B0]',
+      bg: 'bg-[#c8bfd2]',
+      icon: 'text-[#5B5781]',
       border: 'border-[#5B5781]/20'
     },
     neutral: {
-      bg: 'bg-stone-100 dark:bg-stone-800',
-      icon: 'text-stone-500 dark:text-stone-400',
-      border: 'border-stone-200 dark:border-stone-700'
+      bg: 'bg-stone-100',
+      icon: 'text-stone-500',
+      border: 'border-stone-200'
     }
   }
 
   const colors = accentColors[accent]
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border ${colors.border} bg-white dark:bg-stone-900 p-4 sm:p-5`}>
+    <div className={`relative overflow-hidden rounded-2xl border ${colors.border} bg-white p-4 sm:p-5`}>
       {/* Subtle gradient overlay */}
       <div className={`absolute inset-0 opacity-30 ${colors.bg}`} />
 
@@ -47,12 +47,12 @@ export function StatsCard({
         </div>
 
         {/* Value */}
-        <div className="text-2xl sm:text-3xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">
-          {value}{suffix && <span className="text-lg text-stone-500 dark:text-stone-400 font-normal">{suffix}</span>}
+        <div className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">
+          {value}{suffix && <span className="text-lg text-stone-500 font-normal">{suffix}</span>}
         </div>
 
         {/* Label */}
-        <div className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+        <div className="text-sm text-stone-500 mt-0.5">
           {label}
         </div>
       </div>

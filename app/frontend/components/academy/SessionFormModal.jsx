@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import SimpleEditor from '@/components/SimpleEditor'
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 export function SessionFormModal({ session, locations, members, onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(session)
@@ -103,17 +103,17 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-3xl bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-3xl bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="shrink-0 px-6 py-5 border-b border-stone-200 dark:border-stone-700 bg-gradient-to-br from-red-50 to-white dark:from-stone-800 dark:to-stone-900">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-200 bg-gradient-to-br from-red-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
                   {isEdit ? 'Modifier la session' : 'Nouvelle session'}
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   {isEdit
                     ? 'Mettez à jour les informations de la session'
                     : 'Créez une nouvelle session de formation'}
@@ -122,7 +122,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
               <button
                 type="button"
                 onClick={onCancel}
-                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
                 aria-label="Fermer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -136,7 +136,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
             <div className="flex-1 overflow-y-auto min-h-0 p-6">
               {error && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm animate-in slide-in-from-top-2 duration-200">
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-in slide-in-from-top-2 duration-200">
                   {error}
                 </div>
               )}
@@ -147,7 +147,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                   <div>
                     <label
                       htmlFor="start-date"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       Date de début <span className="text-rose-500">*</span>
                     </label>
@@ -165,7 +165,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                   <div>
                     <label
                       htmlFor="end-date"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       Date de fin <span className="text-rose-500">*</span>
                     </label>
@@ -184,7 +184,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                 <div>
                   <label
                     htmlFor="session-topic"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Thématique
                   </label>
@@ -196,7 +196,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                     className={inputBase}
                     placeholder="ex: Les guildes végétales, La taille douce..."
                   />
-                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
+                  <p className="text-xs text-stone-400 mt-1">
                     Optionnel — utile pour les formations de plusieurs jours avec des thèmes différents par session
                   </p>
                 </div>
@@ -204,7 +204,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                 {/* Locations */}
                 {locations && locations.length > 0 && (
                   <div>
-                    <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">
+                    <label className="block text-sm font-semibold text-stone-700 mb-3">
                       Lieux
                     </label>
                     <div className="space-y-2">
@@ -219,8 +219,8 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                               w-full p-3 rounded-xl border-2 transition-all duration-200 text-left flex items-center gap-3
                               ${
                                 isSelected
-                                  ? 'border-[#B01A19] bg-[#B01A19]/5 dark:bg-[#B01A19]/20'
-                                  : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-300 dark:hover:border-stone-600'
+                                  ? 'border-[#B01A19] bg-[#B01A19]/5'
+                                  : 'border-stone-200 bg-white hover:border-stone-300'
                               }
                             `}
                           >
@@ -230,7 +230,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                                 ${
                                   isSelected
                                     ? 'border-[#B01A19] bg-[#B01A19]'
-                                    : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
+                                    : 'border-stone-300 bg-white'
                                 }
                               `}
                             >
@@ -240,7 +240,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                                 </svg>
                               )}
                             </div>
-                            <span className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                            <span className="font-medium text-sm text-stone-900">
                               {location.name}
                             </span>
                           </button>
@@ -253,7 +253,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                 {/* Trainers */}
                 {members && members.length > 0 && (
                   <div>
-                    <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">
+                    <label className="block text-sm font-semibold text-stone-700 mb-3">
                       Formateurs
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -268,8 +268,8 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                               p-3 rounded-xl border-2 transition-all duration-200 text-left flex items-center gap-3
                               ${
                                 isSelected
-                                  ? 'border-[#B01A19] bg-[#B01A19]/5 dark:bg-[#B01A19]/20'
-                                  : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-300 dark:hover:border-stone-600'
+                                  ? 'border-[#B01A19] bg-[#B01A19]/5'
+                                  : 'border-stone-200 bg-white hover:border-stone-300'
                               }
                             `}
                           >
@@ -279,7 +279,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                                 ${
                                   isSelected
                                     ? 'border-[#B01A19] bg-[#B01A19]'
-                                    : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
+                                    : 'border-stone-300 bg-white'
                                 }
                               `}
                             >
@@ -289,7 +289,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                                 </svg>
                               )}
                             </div>
-                            <span className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                            <span className="font-medium text-sm text-stone-900">
                               {member.firstName} {member.lastName}
                             </span>
                           </button>
@@ -302,7 +302,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                 {/* Assistants */}
                 {members && members.length > 0 && (
                   <div>
-                    <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">
+                    <label className="block text-sm font-semibold text-stone-700 mb-3">
                       Assistants
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -317,8 +317,8 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                               p-3 rounded-xl border-2 transition-all duration-200 text-left flex items-center gap-3
                               ${
                                 isSelected
-                                  ? 'border-[#B01A19] bg-[#B01A19]/5 dark:bg-[#B01A19]/20'
-                                  : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-300 dark:hover:border-stone-600'
+                                  ? 'border-[#B01A19] bg-[#B01A19]/5'
+                                  : 'border-stone-200 bg-white hover:border-stone-300'
                               }
                             `}
                           >
@@ -328,7 +328,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                                 ${
                                   isSelected
                                     ? 'border-[#B01A19] bg-[#B01A19]'
-                                    : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
+                                    : 'border-stone-300 bg-white'
                                 }
                               `}
                             >
@@ -338,7 +338,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                                 </svg>
                               )}
                             </div>
-                            <span className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                            <span className="font-medium text-sm text-stone-900">
                               {member.firstName} {member.lastName}
                             </span>
                           </button>
@@ -351,7 +351,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                 {/* Description */}
                 <div>
                   <label
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Description
                   </label>
@@ -365,12 +365,12 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 flex items-center justify-end gap-3">
+            <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="px-4 py-2 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>

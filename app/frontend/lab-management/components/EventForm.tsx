@@ -23,7 +23,7 @@ function addMinutes(date: Date, minutes: number): Date {
 }
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
 
 export interface EventFormProps {
   event?: {
@@ -113,7 +113,7 @@ export function EventForm({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-stone prose-sm max-w-none px-4 py-3 focus:outline-none dark:prose-invert min-h-[120px]',
+        class: 'prose prose-stone prose-sm max-w-none px-4 py-3 focus:outline-none min-h-[120px]',
         'data-placeholder': 'Ajoutez des détails, un ordre du jour, ou des notes importantes...',
       },
     },
@@ -164,19 +164,19 @@ export function EventForm({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl shadow-stone-900/20 animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/20 animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
           {/* Header */}
-          <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100 dark:border-stone-800">
+          <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100">
             <h2
-              className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight"
+              className="text-xl font-bold text-stone-900 tracking-tight"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isEdit ? 'Modifier l\'événement' : 'Créer un événement'}
             </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+            <p className="text-sm text-stone-500 mt-0.5">
               {isEdit
                 ? 'Mettez à jour les détails de l\'événement'
                 : 'Planifiez un nouvel événement pour le calendrier'}
@@ -189,7 +189,7 @@ export function EventForm({
             <div>
               <label
                 htmlFor="event-title"
-                className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2"
+                className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2"
               >
                 Titre <span className="text-rose-500">*</span>
               </label>
@@ -209,12 +209,12 @@ export function EventForm({
             <div>
               <label
                 htmlFor="event-type"
-                className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2"
+                className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2"
               >
                 Type d'événement <span className="text-rose-500">*</span>
               </label>
               {loadingTypes ? (
-                <div className="px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-500 dark:text-stone-400 text-sm">
+                <div className="px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-500 text-sm">
                   Chargement des types...
                 </div>
               ) : (
@@ -265,7 +265,7 @@ export function EventForm({
                 <div>
                   <label
                     htmlFor="event-start"
-                    className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
                   >
                     Début <span className="text-rose-500">*</span>
                   </label>
@@ -283,7 +283,7 @@ export function EventForm({
                 <div>
                   <label
                     htmlFor="event-end"
-                    className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
                   >
                     Fin <span className="text-rose-500">*</span>
                   </label>
@@ -303,7 +303,7 @@ export function EventForm({
             <div>
               <label
                 htmlFor="event-location"
-                className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2"
+                className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2"
               >
                 Lieu
               </label>
@@ -321,22 +321,22 @@ export function EventForm({
             <div>
               <label
                 htmlFor="event-description"
-                className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2"
+                className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2"
               >
                 Description
               </label>
-              <div className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-900/50 transition-all focus-within:border-[#5B5781] focus-within:ring-2 focus-within:ring-[#5B5781]/30">
+              <div className="overflow-hidden rounded-xl border border-stone-200 bg-stone-50 transition-all focus-within:border-[#5B5781] focus-within:ring-2 focus-within:ring-[#5B5781]/30">
                 {editor && (
                   <>
                     {/* Toolbar */}
-                    <div className="flex flex-wrap items-center gap-1 border-b border-stone-200 dark:border-stone-700 px-3 py-2 bg-white dark:bg-stone-900/50">
+                    <div className="flex flex-wrap items-center gap-1 border-b border-stone-200 px-3 py-2 bg-white">
                       <button
                         type="button"
                         onClick={() => editor.chain().focus().toggleBold().run()}
                         className={`rounded px-2 py-1 text-sm transition-colors ${
                           editor.isActive('bold')
                             ? 'bg-[#5B5781] text-white'
-                            : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-200'
+                            : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                         }`}
                         title="Gras"
                       >
@@ -348,20 +348,20 @@ export function EventForm({
                         className={`rounded px-2 py-1 text-sm transition-colors ${
                           editor.isActive('italic')
                             ? 'bg-[#5B5781] text-white'
-                            : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-200'
+                            : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                         }`}
                         title="Italique"
                       >
                         <em>I</em>
                       </button>
-                      <div className="mx-1 h-5 w-px bg-stone-200 dark:bg-stone-700" />
+                      <div className="mx-1 h-5 w-px bg-stone-200" />
                       <button
                         type="button"
                         onClick={() => editor.chain().focus().toggleBulletList().run()}
                         className={`rounded px-2 py-1 text-sm transition-colors ${
                           editor.isActive('bulletList')
                             ? 'bg-[#5B5781] text-white'
-                            : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-200'
+                            : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                         }`}
                         title="Liste à puces"
                       >
@@ -375,7 +375,7 @@ export function EventForm({
                         className={`rounded px-2 py-1 text-sm transition-colors ${
                           editor.isActive('orderedList')
                             ? 'bg-[#5B5781] text-white'
-                            : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-200'
+                            : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                         }`}
                         title="Liste numérotée"
                       >
@@ -388,7 +388,7 @@ export function EventForm({
                     <div className="relative">
                       <EditorContent editor={editor} />
                       {editor?.isEmpty && (
-                        <div className="absolute top-3 left-4 pointer-events-none text-stone-400 dark:text-stone-500 text-sm">
+                        <div className="absolute top-3 left-4 pointer-events-none text-stone-400 text-sm">
                           Ajoutez des détails, un ordre du jour, ou des notes importantes...
                         </div>
                       )}
@@ -400,11 +400,11 @@ export function EventForm({
           </div>
 
           {/* Footer Actions */}
-          <div className="shrink-0 px-6 py-4 border-t border-stone-100 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/50 flex justify-end gap-3">
+          <div className="shrink-0 px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex justify-end gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2.5 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="px-4 py-2.5 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors"
             >
               Annuler
             </button>

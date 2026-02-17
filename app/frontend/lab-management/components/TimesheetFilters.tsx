@@ -57,12 +57,12 @@ export function TimesheetFilters({
   const activeMembers = members.filter((m) => m.status === 'active')
 
   return (
-    <div className="bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-4 sm:p-6">
+    <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-6">
       {/* Search bar */}
       <div className="relative mb-4">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <svg
-            className="w-5 h-5 text-stone-400 dark:text-stone-500"
+            className="w-5 h-5 text-stone-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -80,12 +80,12 @@ export function TimesheetFilters({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Rechercher dans les descriptions..."
-          className="w-full pl-12 pr-4 py-3 bg-stone-50 dark:bg-stone-700/50 border border-stone-200 dark:border-stone-600 rounded-xl text-stone-800 dark:text-stone-200 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] dark:focus:ring-[#5B5781]/30 dark:focus:border-[#5B5781] transition-colors"
+          className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange('')}
-            className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-400 hover:text-stone-600"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -98,13 +98,13 @@ export function TimesheetFilters({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Category filter */}
         <div>
-          <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5 uppercase tracking-wide">
+          <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">
             Catégorie
           </label>
           <select
             value={categoryFilter}
             onChange={(e) => onCategoryChange(e.target.value as TimesheetCategory | 'all')}
-            className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-700/50 border border-stone-200 dark:border-stone-600 rounded-lg text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] dark:focus:ring-[#5B5781]/30 dark:focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
+            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: 'right 0.5rem center',
@@ -123,13 +123,13 @@ export function TimesheetFilters({
 
         {/* Payment type filter */}
         <div>
-          <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5 uppercase tracking-wide">
+          <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">
             Type
           </label>
           <select
             value={paymentFilter}
             onChange={(e) => onPaymentChange(e.target.value as PaymentType | 'all')}
-            className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-700/50 border border-stone-200 dark:border-stone-600 rounded-lg text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] dark:focus:ring-[#5B5781]/30 dark:focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
+            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: 'right 0.5rem center',
@@ -148,13 +148,13 @@ export function TimesheetFilters({
 
         {/* Invoiced status filter */}
         <div>
-          <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5 uppercase tracking-wide">
+          <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">
             Statut
           </label>
           <select
             value={invoicedFilter}
             onChange={(e) => onInvoicedChange(e.target.value as 'all' | 'invoiced' | 'pending')}
-            className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-700/50 border border-stone-200 dark:border-stone-600 rounded-lg text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] dark:focus:ring-[#5B5781]/30 dark:focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
+            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: 'right 0.5rem center',
@@ -174,13 +174,13 @@ export function TimesheetFilters({
         {/* Member filter (admin only) */}
         {showMemberFilter && (
           <div>
-            <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5 uppercase tracking-wide">
+            <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">
               Membre
             </label>
             <select
               value={memberFilter}
               onChange={(e) => onMemberChange(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-700/50 border border-stone-200 dark:border-stone-600 rounded-lg text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] dark:focus:ring-[#5B5781]/30 dark:focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
+              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                 backgroundPosition: 'right 0.5rem center',
@@ -202,10 +202,10 @@ export function TimesheetFilters({
 
       {/* Clear filters button */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-stone-200 dark:border-stone-700">
+        <div className="mt-4 pt-4 border-t border-stone-200">
           <button
             onClick={onClearFilters}
-            className="inline-flex items-center gap-2 text-sm text-[#5B5781] hover:text-[#4a4670] dark:text-[#c8bfd2] dark:hover:text-white font-medium transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

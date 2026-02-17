@@ -110,11 +110,11 @@ export function ProjectDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
+    <div className="min-h-screen bg-stone-50">
       {/* Header with organic gradient accent */}
-      <header className="relative overflow-hidden border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900">
+      <header className="relative overflow-hidden border-b border-stone-200 bg-white">
         {/* Decorative gradient inspired by forest layers */}
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
+        <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute inset-0 bg-gradient-to-br from-[#AFBD00] via-transparent to-[#5B5781]" />
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#AFBD00]/20 to-transparent" />
         </div>
@@ -124,11 +124,11 @@ export function ProjectDashboard({
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-2 h-8 rounded-full bg-[#AFBD00]" />
-                <h1 className="text-3xl sm:text-4xl font-serif font-medium text-stone-900 dark:text-stone-100 tracking-tight">
+                <h1 className="text-3xl sm:text-4xl font-serif font-medium text-stone-900 tracking-tight">
                   Design Studio
                 </h1>
               </div>
-              <p className="text-stone-600 dark:text-stone-400 ml-5">
+              <p className="text-stone-600 ml-5">
                 {stats.totalProjects} projet{stats.totalProjects > 1 ? 's' : ''} · {stats.activeProjects} en cours
               </p>
             </div>
@@ -148,9 +148,9 @@ export function ProjectDashboard({
               {/* Template dropdown on hover */}
               {templates.length > 0 && (
                 <div className="absolute right-0 mt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
-                  <div className="bg-white dark:bg-stone-800 rounded-xl shadow-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-stone-100 dark:border-stone-700">
-                      <span className="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                  <div className="bg-white rounded-xl shadow-xl border border-stone-200 overflow-hidden">
+                    <div className="px-4 py-2 border-b border-stone-100">
+                      <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
                         Depuis un template
                       </span>
                     </div>
@@ -158,12 +158,12 @@ export function ProjectDashboard({
                       <button
                         key={template.id}
                         onClick={() => onCreateProject?.(template.id)}
-                        className="w-full px-4 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-700/50 transition-colors"
+                        className="w-full px-4 py-3 text-left hover:bg-stone-50 transition-colors"
                       >
-                        <div className="font-medium text-stone-900 dark:text-stone-100">
+                        <div className="font-medium text-stone-900">
                           {template.name}
                         </div>
-                        <div className="text-sm text-stone-500 dark:text-stone-400">
+                        <div className="text-sm text-stone-500">
                           {template.description}
                         </div>
                       </button>
@@ -223,7 +223,7 @@ export function ProjectDashboard({
         {/* Upcoming meetings */}
         {stats.upcomingMeetings.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-4">
+            <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wider mb-4">
               Prochaines réunions
             </h2>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
@@ -231,21 +231,21 @@ export function ProjectDashboard({
                 <button
                   key={meeting.id}
                   onClick={() => onViewProject?.(meeting.projectId)}
-                  className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-[#AFBD00] dark:hover:border-[#AFBD00] transition-colors group"
+                  className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-stone-200 hover:border-[#AFBD00] transition-colors group"
                 >
-                  <div className="w-12 h-12 rounded-lg bg-[#e1e6d8] dark:bg-[#AFBD00]/20 flex flex-col items-center justify-center">
-                    <span className="text-xs font-medium text-[#7A8500] dark:text-[#AFBD00]">
+                  <div className="w-12 h-12 rounded-lg bg-[#e1e6d8] flex flex-col items-center justify-center">
+                    <span className="text-xs font-medium text-[#7A8500]">
                       {new Date(meeting.date).toLocaleDateString('fr-BE', { day: 'numeric' })}
                     </span>
-                    <span className="text-[10px] text-stone-600 dark:text-stone-400 uppercase">
+                    <span className="text-[10px] text-stone-600 uppercase">
                       {new Date(meeting.date).toLocaleDateString('fr-BE', { month: 'short' })}
                     </span>
                   </div>
                   <div className="text-left">
-                    <div className="font-medium text-stone-900 dark:text-stone-100 group-hover:text-[#AFBD00] transition-colors">
+                    <div className="font-medium text-stone-900 group-hover:text-[#AFBD00] transition-colors">
                       {meeting.title}
                     </div>
-                    <div className="text-sm text-stone-500 dark:text-stone-400">
+                    <div className="text-sm text-stone-500">
                       {meeting.projectName} · {meeting.time}
                     </div>
                   </div>
@@ -270,7 +270,7 @@ export function ProjectDashboard({
                   placeholder="Rechercher un projet, client, lieu..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent transition-shadow"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent transition-shadow"
                 />
               </div>
 
@@ -278,7 +278,7 @@ export function ProjectDashboard({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-4 py-2.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent cursor-pointer"
+                className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent cursor-pointer"
               >
                 <option value="date">Activité récente</option>
                 <option value="name">Nom A-Z</option>
@@ -289,7 +289,7 @@ export function ProjectDashboard({
 
             {/* Phase filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-stone-500 dark:text-stone-400 mr-1">Phase :</span>
+              <span className="text-sm text-stone-500 mr-1">Phase :</span>
               {phaseOrder.map(phase => (
                 <button
                   key={phase}
@@ -297,7 +297,7 @@ export function ProjectDashboard({
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                     selectedPhases.includes(phase)
                       ? 'bg-[#AFBD00] text-stone-900'
-                      : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 hover:border-[#AFBD00] dark:hover:border-[#AFBD00]'
+                      : 'bg-white text-stone-600 border border-stone-200 hover:border-[#AFBD00]'
                   }`}
                 >
                   <PhaseIndicator phase={phase} small />
@@ -306,12 +306,12 @@ export function ProjectDashboard({
               ))}
 
               {/* Status filter */}
-              <div className="w-px h-6 bg-stone-200 dark:bg-stone-700 mx-2 hidden sm:block" />
+              <div className="w-px h-6 bg-stone-200 mx-2 hidden sm:block" />
 
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as ProjectStatus | 'all')}
-                className="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-sm text-stone-600 dark:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent cursor-pointer"
+                className="px-3 py-1.5 bg-white border border-stone-200 rounded-full text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent cursor-pointer"
               >
                 <option value="all">Tous statuts</option>
                 <option value="active">En cours</option>
@@ -323,7 +323,7 @@ export function ProjectDashboard({
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-stone-500 hover:text-stone-700 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -336,7 +336,7 @@ export function ProjectDashboard({
 
           {/* Results count */}
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-stone-500">
               {filteredProjects.length} projet{filteredProjects.length > 1 ? 's' : ''}
               {hasActiveFilters && ` sur ${projects.filter(p => p.status !== 'archived').length}`}
             </p>
@@ -358,15 +358,15 @@ export function ProjectDashboard({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-stone-900 dark:text-stone-100 mb-1">
+              <h3 className="text-lg font-medium text-stone-900 mb-1">
                 Aucun projet trouvé
               </h3>
-              <p className="text-stone-500 dark:text-stone-400 mb-4">
+              <p className="text-stone-500 mb-4">
                 Essayez de modifier vos filtres ou votre recherche
               </p>
               <button

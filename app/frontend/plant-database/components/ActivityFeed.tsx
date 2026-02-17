@@ -87,7 +87,7 @@ function ActivityItemComponent({
       <div className="flex-shrink-0">
         <button
           onClick={handleContributorClick}
-          className="w-10 h-10 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-700 hover:border-[#AFBD00] dark:hover:border-[#AFBD00] transition-colors cursor-pointer"
+          className="w-10 h-10 rounded-full overflow-hidden border-2 border-stone-200 hover:border-[#AFBD00] transition-colors cursor-pointer"
         >
           {contributor?.avatarUrl ? (
             <img
@@ -104,20 +104,20 @@ function ActivityItemComponent({
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 pb-6 border-l-2 border-stone-200 dark:border-stone-700 pl-4 relative">
+      <div className="flex-1 min-w-0 pb-6 border-l-2 border-stone-200 pl-4 relative">
         {/* Timeline dot */}
-        <div className="absolute -left-[7px] top-2 w-3 h-3 rounded-full bg-[#AFBD00] border-2 border-white dark:border-stone-900" />
+        <div className="absolute -left-[7px] top-2 w-3 h-3 rounded-full bg-[#AFBD00] border-2 border-white" />
 
         {/* Activity content */}
         <div className="space-y-1">
           <div className="flex items-start gap-2 flex-wrap">
             <button
               onClick={handleContributorClick}
-              className="font-medium text-stone-900 dark:text-stone-100 hover:text-[#5B5781] dark:hover:text-[#AFBD00] transition-colors cursor-pointer"
+              className="font-medium text-stone-900 hover:text-[#5B5781] transition-colors cursor-pointer"
             >
               {contributor?.name || 'Contributeur inconnu'}
             </button>
-            <span className="text-stone-600 dark:text-stone-400">
+            <span className="text-stone-600">
               {getActivityLabel(activity.type)}
             </span>
             <span className="text-2xl leading-none">{getActivityIcon(activity.type)}</span>
@@ -125,13 +125,13 @@ function ActivityItemComponent({
 
           <button
             onClick={handleTargetClick}
-            className="text-[#5B5781] dark:text-[#AFBD00] hover:text-[#AFBD00] dark:hover:text-[#5B5781] font-medium transition-colors cursor-pointer text-left"
+            className="text-[#5B5781] hover:text-[#AFBD00] font-medium transition-colors cursor-pointer text-left"
           >
             {activity.targetName}
           </button>
 
           {/* Timestamp */}
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">
+          <p className="text-xs text-stone-400 mt-2">
             {new Date(activity.timestamp).toLocaleTimeString('fr-FR', {
               hour: '2-digit',
               minute: '2-digit',
@@ -170,14 +170,14 @@ export function ActivityFeed({
   if (activities.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-        <div className="bg-stone-50 dark:bg-stone-800/50 rounded-2xl p-12 text-center border border-stone-200 dark:border-stone-700">
-          <div className="w-16 h-16 rounded-2xl bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-4xl mx-auto mb-4">
+        <div className="bg-stone-50 rounded-2xl p-12 text-center border border-stone-200">
+          <div className="w-16 h-16 rounded-2xl bg-stone-200 flex items-center justify-center text-4xl mx-auto mb-4">
             🌿
           </div>
-          <p className="text-stone-600 dark:text-stone-400 font-medium text-lg mb-2">
+          <p className="text-stone-600 font-medium text-lg mb-2">
             Aucune activité récente
           </p>
-          <p className="text-stone-400 dark:text-stone-500 text-sm">
+          <p className="text-stone-400 text-sm">
             Les contributions de la communauté apparaîtront ici
           </p>
         </div>
@@ -189,10 +189,10 @@ export function ActivityFeed({
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-2">
+        <h1 className="text-3xl font-serif font-bold text-stone-900 mb-2">
           Flux d'activité
         </h1>
-        <p className="text-stone-500 dark:text-stone-400">
+        <p className="text-stone-500">
           Découvrez les dernières contributions de la communauté
         </p>
       </div>
@@ -206,8 +206,8 @@ export function ActivityFeed({
           return (
             <div key={dateKey} className="space-y-6">
               {/* Date header */}
-              <div className="sticky top-0 z-10 bg-white dark:bg-stone-900 py-2 border-b-2 border-stone-200 dark:border-stone-700">
-                <h2 className="text-sm font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wide">
+              <div className="sticky top-0 z-10 bg-white py-2 border-b-2 border-stone-200">
+                <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">
                   {formatDate(date)}
                 </h2>
               </div>
@@ -234,7 +234,7 @@ export function ActivityFeed({
         <div className="mt-8 text-center">
           <button
             onClick={onLoadMore}
-            className="px-6 py-3 bg-[#5B5781] hover:bg-[#4a4669] dark:bg-[#AFBD00] dark:hover:bg-[#8fa000] text-white font-medium rounded-lg transition-colors"
+            className="px-6 py-3 bg-[#5B5781] hover:bg-[#4a4669] text-white font-medium rounded-lg transition-colors"
           >
             Charger plus d'activités
           </button>

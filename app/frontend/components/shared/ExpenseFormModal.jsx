@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import SimpleEditor from '../SimpleEditor'
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)]'
 
 // Selects: extra right padding so the dropdown arrow has breathing room and isn't flush to the border
 const selectBase =
-  'w-full pl-4 pr-10 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)] cursor-pointer appearance-none bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat'
+  'w-full pl-4 pr-10 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)] cursor-pointer appearance-none bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat'
 // Custom chevron via SVG data URI so we control spacing; Tailwind 4 doesn't have dropdown arrow by default
 const selectChevronStyle = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23787573' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
@@ -307,24 +307,24 @@ export function ExpenseFormModal({
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-2xl bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
           style={{ '--expense-accent': accent }}
         >
-          <div className="shrink-0 px-6 py-5 border-b border-stone-200 dark:border-stone-700 bg-gradient-to-br from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-200 bg-gradient-to-br from-stone-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
                   {isEdit ? 'Modifier la dépense' : 'Nouvelle dépense'}
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   {isEdit ? 'Mettez à jour les informations' : 'Enregistrez une nouvelle dépense'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onCancel}
-                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
                 aria-label="Fermer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -337,7 +337,7 @@ export function ExpenseFormModal({
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
             <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-6">
               {error && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
                   {error}
                 </div>
               )}
@@ -345,9 +345,9 @@ export function ExpenseFormModal({
               <section>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Fournisseur *</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Fournisseur *</label>
                     {showNewContactForm ? (
-                      <div className="space-y-3 rounded-xl border border-stone-200 dark:border-stone-600 p-4 bg-stone-50/50 dark:bg-stone-800/50">
+                      <div className="space-y-3 rounded-xl border border-stone-200 p-4 bg-stone-50/50">
                         <div>
                           <label className="block text-xs font-medium text-stone-500 mb-1">Nom</label>
                           <input
@@ -384,7 +384,7 @@ export function ExpenseFormModal({
                           <button
                             type="button"
                             onClick={() => { setShowNewContactForm(false); setNewContactName('') }}
-                            className="px-4 py-2 rounded-xl font-medium text-stone-600 border border-stone-300 dark:border-stone-600"
+                            className="px-4 py-2 rounded-xl font-medium text-stone-600 border border-stone-300"
                           >
                             Annuler
                           </button>
@@ -420,7 +420,7 @@ export function ExpenseFormModal({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Catégorie</label>
+                      <label className="block text-sm font-medium text-stone-600 mb-1">Catégorie</label>
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
@@ -434,7 +434,7 @@ export function ExpenseFormModal({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Type *</label>
+                      <label className="block text-sm font-medium text-stone-600 mb-1">Type *</label>
                       <select
                         value={expenseType}
                         onChange={(e) => setExpenseType(e.target.value)}
@@ -448,7 +448,7 @@ export function ExpenseFormModal({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Libellé</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Libellé</label>
                     <input
                       type="text"
                       value={name}
@@ -461,7 +461,7 @@ export function ExpenseFormModal({
               </section>
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Notes</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Notes</h4>
                 <SimpleEditor
                   key={`expense-notes-${expense?.id ?? 'new'}`}
                   content={notes}
@@ -473,7 +473,7 @@ export function ExpenseFormModal({
 
               {POLE_OPTIONS.length > 0 && (
                 <section>
-                  <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Pôles concernés</h4>
+                  <h4 className="text-sm font-semibold text-stone-700 mb-3">Pôles concernés</h4>
                   <div className="flex flex-wrap gap-2">
                     {POLE_OPTIONS.map((o) => (
                       <label key={o.value} className="inline-flex items-center gap-2 cursor-pointer">
@@ -483,7 +483,7 @@ export function ExpenseFormModal({
                           onChange={() => togglePole(o.value)}
                           className="rounded border-stone-300"
                         />
-                        <span className="text-sm text-stone-700 dark:text-stone-300">{o.label}</span>
+                        <span className="text-sm text-stone-700">{o.label}</span>
                       </label>
                     ))}
                   </div>
@@ -491,10 +491,10 @@ export function ExpenseFormModal({
               )}
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Facturation</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Facturation</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">
+                    <label className="block text-sm font-medium text-stone-600 mb-1">
                       Date facture{status === 'planned' ? ' (optionnelle)' : ' *'}
                     </label>
                     <input
@@ -505,7 +505,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Zone de facturation</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Zone de facturation</label>
                     <select
                       value={billingZone}
                       onChange={(e) => setBillingZone(e.target.value)}
@@ -522,10 +522,10 @@ export function ExpenseFormModal({
               </section>
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Montants</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Montants</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Montant HTVA (€)</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Montant HTVA (€)</label>
                     <input
                       type="number"
                       min="0"
@@ -536,7 +536,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Taux TVA</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Taux TVA</label>
                     <select value={vatRate} onChange={(e) => setVatRate(e.target.value)} className={selectBase} style={selectChevronStyle}>
                       <option value="">—</option>
                       {VAT_RATE_OPTIONS.map((o) => (
@@ -545,7 +545,7 @@ export function ExpenseFormModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">TVA 6% (€)</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA 6% (€)</label>
                     <input
                       type="number"
                       min="0"
@@ -556,7 +556,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">TVA 12% (€)</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA 12% (€)</label>
                     <input
                       type="number"
                       min="0"
@@ -567,7 +567,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">TVA 21% (€)</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA 21% (€)</label>
                     <input
                       type="number"
                       min="0"
@@ -578,7 +578,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Total TVAC (€)</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Total TVAC (€)</label>
                     <input
                       type="number"
                       min="0"
@@ -589,7 +589,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Taux TVA UE</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Taux TVA UE</label>
                     <select value={euVatRate} onChange={(e) => setEuVatRate(e.target.value)} className={selectBase} style={selectChevronStyle}>
                       <option value="">—</option>
                       {EU_VAT_RATE_OPTIONS.map((o) => (
@@ -598,7 +598,7 @@ export function ExpenseFormModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">TVA UE (€)</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA UE (€)</label>
                     <input
                       type="number"
                       min="0"
@@ -612,10 +612,10 @@ export function ExpenseFormModal({
               </section>
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Paiement</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Paiement</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Statut</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Statut</label>
                     <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectBase} style={selectChevronStyle}>
                       {STATUS_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -623,7 +623,7 @@ export function ExpenseFormModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Type de paiement</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Type de paiement</label>
                     <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className={selectBase} style={selectChevronStyle}>
                       <option value="">—</option>
                       {PAYMENT_TYPE_OPTIONS.map((o) => (
@@ -632,7 +632,7 @@ export function ExpenseFormModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Date de paiement</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Date de paiement</label>
                     <input
                       type="date"
                       value={paymentDate}
@@ -641,7 +641,7 @@ export function ExpenseFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Payé par</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Payé par</label>
                     <input
                       type="text"
                       value={paidBy}
@@ -654,7 +654,7 @@ export function ExpenseFormModal({
               </section>
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Remboursement</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Remboursement</h4>
                 <div className="flex flex-wrap items-center gap-4">
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -663,11 +663,11 @@ export function ExpenseFormModal({
                       onChange={(e) => setReimbursed(e.target.checked)}
                       className="rounded border-stone-300"
                     />
-                    <span className="text-sm text-stone-700 dark:text-stone-300">Remboursé</span>
+                    <span className="text-sm text-stone-700">Remboursé</span>
                   </label>
                   {reimbursed && (
                     <div>
-                      <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Date de remboursement</label>
+                      <label className="block text-sm font-medium text-stone-600 mb-1">Date de remboursement</label>
                       <input
                         type="date"
                         value={reimbursementDate}
@@ -681,11 +681,11 @@ export function ExpenseFormModal({
 
               {(showTrainingLink || showDesignProjectLink) && (
                 <section>
-                  <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Liens</h4>
+                  <h4 className="text-sm font-semibold text-stone-700 mb-3">Liens</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {showTrainingLink && (
                       <div>
-                        <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Formation concernée</label>
+                        <label className="block text-sm font-medium text-stone-600 mb-1">Formation concernée</label>
                         <select
                           value={trainingId}
                           onChange={(e) => setTrainingId(e.target.value)}
@@ -701,7 +701,7 @@ export function ExpenseFormModal({
                     )}
                     {showDesignProjectLink && (
                       <div>
-                        <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Projet design concerné</label>
+                        <label className="block text-sm font-medium text-stone-600 mb-1">Projet design concerné</label>
                         <select
                           value={designProjectId}
                           onChange={(e) => setDesignProjectId(e.target.value)}
@@ -720,7 +720,7 @@ export function ExpenseFormModal({
               )}
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Refacturation client</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Refacturation client</h4>
                 <div className="flex flex-wrap items-center gap-4">
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -729,11 +729,11 @@ export function ExpenseFormModal({
                       onChange={(e) => setBillableToClient(e.target.checked)}
                       className="rounded border-stone-300"
                     />
-                    <span className="text-sm text-stone-700 dark:text-stone-300">A facturer au client</span>
+                    <span className="text-sm text-stone-700">A facturer au client</span>
                   </label>
                   {billableToClient && (
                     <div>
-                      <label className="block text-sm font-medium text-stone-600 dark:text-stone-400 mb-1">Statut de refacturation</label>
+                      <label className="block text-sm font-medium text-stone-600 mb-1">Statut de refacturation</label>
                       <select value={rebillingStatus} onChange={(e) => setRebillingStatus(e.target.value)} className={selectBase} style={selectChevronStyle}>
                         <option value="">—</option>
                         {REBILLING_STATUS_OPTIONS.map((o) => (
@@ -746,12 +746,12 @@ export function ExpenseFormModal({
               </section>
 
               <section>
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">Document</h4>
+                <h4 className="text-sm font-semibold text-stone-700 mb-3">Document</h4>
                 <input
                   type="file"
                   accept=".pdf,image/*"
                   onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)}
-                  className="block w-full text-sm text-stone-600 dark:text-stone-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-stone-100 file:text-stone-800 dark:file:bg-stone-800 dark:file:text-stone-200"
+                  className="block w-full text-sm text-stone-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-stone-100 file:text-stone-800"
                 />
                 {expense?.documentFilename && !documentFile && (
                   <p className="mt-2 text-sm text-stone-500">Fichier actuel : {expense.documentFilename}</p>
@@ -759,12 +759,12 @@ export function ExpenseFormModal({
               </section>
             </div>
 
-            <div className="shrink-0 px-6 py-4 border-t border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 flex items-center justify-end gap-3">
+            <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="px-4 py-2 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>

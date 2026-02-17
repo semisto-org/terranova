@@ -104,25 +104,25 @@ export function SearchView({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950">
+    <div className="min-h-screen flex flex-col bg-stone-50">
       {/* Sticky Header with Search */}
-      <header className="sticky top-0 z-20 bg-stone-50/95 dark:bg-stone-950/95 backdrop-blur-sm border-b border-stone-200/50 dark:border-stone-800/50">
+      <header className="sticky top-0 z-20 bg-stone-50/95 backdrop-blur-sm border-b border-stone-200/50">
         <div className="max-w-3xl mx-auto px-4 py-3">
           {/* Compact title - only shown when no search */}
           {!hasSearchCriteria && (
             <div className="text-center mb-3">
-              <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              <h1 className="text-lg font-semibold text-stone-900">
                 Base de données végétale
               </h1>
-              <p className="text-xs text-stone-500 dark:text-stone-400">
+              <p className="text-xs text-stone-500">
                 Genres, espèces et variétés
               </p>
             </div>
           )}
 
           {/* Search Input - always prominent */}
-          <div className="relative flex items-center bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800">
-            <div className="pl-3 text-stone-400 dark:text-stone-500">
+          <div className="relative flex items-center bg-white rounded-xl shadow-sm border border-stone-200">
+            <div className="pl-3 text-stone-400">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -133,13 +133,13 @@ export function SearchView({
               value={filters.query}
               onChange={(e) => onSearchChange?.(e.target.value)}
               placeholder="Rechercher par nom..."
-              className="flex-1 px-3 py-2.5 text-base bg-transparent text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none"
+              className="flex-1 px-3 py-2.5 text-base bg-transparent text-stone-900 placeholder-stone-400 focus:outline-none"
               aria-label="Rechercher des plantes"
             />
             {filters.query && (
               <button
                 onClick={() => onSearchChange?.('')}
-                className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+                className="p-2 text-stone-400 hover:text-stone-600"
                 aria-label="Effacer"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -152,8 +152,8 @@ export function SearchView({
               onClick={() => setShowFilters(!showFilters)}
               className={`mr-1 p-2 rounded-lg transition-colors ${
                 showFilters || activeFilterCount > 0
-                  ? 'text-[#5B5781] dark:text-[#AFBD00] bg-[#5B5781]/10 dark:bg-[#AFBD00]/10'
-                  : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'
+                  ? 'text-[#5B5781] bg-[#5B5781]/10'
+                  : 'text-stone-400 hover:text-stone-600'
               }`}
               aria-label="Filtres"
             >
@@ -181,7 +181,7 @@ export function SearchView({
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearAllFilters}
-                  className="mt-2 text-xs text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
+                  className="mt-2 text-xs text-stone-500 hover:text-stone-700"
                 >
                   Effacer tous les filtres
                 </button>
@@ -196,11 +196,11 @@ export function SearchView({
         <div className="max-w-3xl mx-auto px-4 py-2">
           {/* Results count */}
           {hasSearchCriteria && (
-            <div className="flex items-center justify-between py-2 text-xs text-stone-500 dark:text-stone-400">
+            <div className="flex items-center justify-between py-2 text-xs text-stone-500">
               <span>
                 {results.length > 0 ? (
                   <>
-                    <span className="font-medium text-stone-700 dark:text-stone-300">{results.length}</span>
+                    <span className="font-medium text-stone-700">{results.length}</span>
                     {' '}résultat{results.length > 1 ? 's' : ''}
                   </>
                 ) : (
@@ -226,7 +226,7 @@ export function SearchView({
           )}
 
           {/* Results List */}
-          <div ref={resultsRef} className="divide-y divide-stone-100 dark:divide-stone-800/50">
+          <div ref={resultsRef} className="divide-y divide-stone-100">
             {results.length > 0 ? (
               results.map((result, index) => (
                 <div key={result.id} data-result-item>
@@ -245,7 +245,7 @@ export function SearchView({
               ))
             ) : hasSearchCriteria ? (
               <div className="py-12 text-center">
-                <p className="text-stone-500 dark:text-stone-400 text-sm">
+                <p className="text-stone-500 text-sm">
                   Aucune plante ne correspond à vos critères
                 </p>
                 <button
@@ -253,19 +253,19 @@ export function SearchView({
                     onSearchChange?.('')
                     clearAllFilters()
                   }}
-                  className="mt-2 text-sm text-[#5B5781] dark:text-[#AFBD00] font-medium"
+                  className="mt-2 text-sm text-[#5B5781] font-medium"
                 >
                   Réinitialiser la recherche
                 </button>
               </div>
             ) : (
               <div className="py-12 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 mb-3 rounded-full bg-stone-100 dark:bg-stone-800">
+                <div className="inline-flex items-center justify-center w-12 h-12 mb-3 rounded-full bg-stone-100">
                   <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <p className="text-stone-500 dark:text-stone-400 text-sm">
+                <p className="text-stone-500 text-sm">
                   Tapez un nom ou utilisez les filtres
                 </p>
               </div>
@@ -275,10 +275,10 @@ export function SearchView({
       </main>
 
       {/* Keyboard shortcuts - only on desktop, minimal */}
-      <div className="hidden lg:block fixed bottom-3 right-3 text-[10px] text-stone-400 dark:text-stone-600">
-        <kbd className="px-1 py-0.5 bg-stone-100 dark:bg-stone-800 rounded">↑↓</kbd> naviguer
+      <div className="hidden lg:block fixed bottom-3 right-3 text-[10px] text-stone-400">
+        <kbd className="px-1 py-0.5 bg-stone-100 rounded">↑↓</kbd> naviguer
         <span className="mx-1">·</span>
-        <kbd className="px-1 py-0.5 bg-stone-100 dark:bg-stone-800 rounded">↵</kbd> ouvrir
+        <kbd className="px-1 py-0.5 bg-stone-100 rounded">↵</kbd> ouvrir
       </div>
     </div>
   )

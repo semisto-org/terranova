@@ -201,6 +201,147 @@ module Api
         head :no_content
       end
 
+      def create_genus
+        genus = Plant::Genus.create!(genus_params)
+
+        # Create common names if provided
+        Array(params[:common_names]).each do |cn|
+          Plant::CommonName.create!(
+            target_type: 'genus',
+            target_id: genus.id,
+            language: cn[:language] || 'fr',
+            name: cn[:name]
+          )
+        end
+
+        if params[:contributor_id].present?
+          contributor = Plant::Contributor.find(params[:contributor_id])
+          create_activity!(
+            activity_type: 'species_created',
+            contributor: contributor,
+            target_type: 'genus',
+            target_id: genus.id,
+            target_name: genus.latin_name
+          )
+        end
+
+        render json: serialize_genus(genus), status: :created
+      end
+
+      def update_genus
+        genus = Plant::Genus.find(params.require(:id))
+        genus.update!(genus_params)
+
+        # Replace common names if provided
+        if params.key?(:common_names)
+          Plant::CommonName.where(target_type: 'genus', target_id: genus.id).destroy_all
+          Array(params[:common_names]).each do |cn|
+            Plant::CommonName.create!(
+              target_type: 'genus',
+              target_id: genus.id,
+              language: cn[:language] || 'fr',
+              name: cn[:name]
+            )
+          end
+        end
+
+        render json: serialize_genus(genus)
+      end
+
+      def create_species
+        species = Plant::Species.create!(species_params)
+
+        # Create common names if provided
+        Array(params[:common_names]).each do |cn|
+          Plant::CommonName.create!(
+            target_type: 'species',
+            target_id: species.id,
+            language: cn[:language] || 'fr',
+            name: cn[:name]
+          )
+        end
+
+        if params[:contributor_id].present?
+          contributor = Plant::Contributor.find(params[:contributor_id])
+          increment_contributor_counter(contributor, :species_created)
+          create_activity!(
+            activity_type: 'species_created',
+            contributor: contributor,
+            target_type: 'species',
+            target_id: species.id,
+            target_name: species.latin_name
+          )
+        end
+
+        render json: serialize_species(species), status: :created
+      end
+
+      def update_species
+        species = Plant::Species.find(params.require(:id))
+        species.update!(species_params)
+
+        if params.key?(:common_names)
+          Plant::CommonName.where(target_type: 'species', target_id: species.id).destroy_all
+          Array(params[:common_names]).each do |cn|
+            Plant::CommonName.create!(
+              target_type: 'species',
+              target_id: species.id,
+              language: cn[:language] || 'fr',
+              name: cn[:name]
+            )
+          end
+        end
+
+        render json: serialize_species(species)
+      end
+
+      def create_variety
+        variety = Plant::Variety.create!(variety_params)
+
+        # Create common names if provided
+        Array(params[:common_names]).each do |cn|
+          Plant::CommonName.create!(
+            target_type: 'variety',
+            target_id: variety.id,
+            language: cn[:language] || 'fr',
+            name: cn[:name]
+          )
+        end
+
+        if params[:contributor_id].present?
+          contributor = Plant::Contributor.find(params[:contributor_id])
+          increment_contributor_counter(contributor, :varieties_created)
+          create_activity!(
+            activity_type: 'variety_created',
+            contributor: contributor,
+            target_type: 'variety',
+            target_id: variety.id,
+            target_name: variety.latin_name
+          )
+        end
+
+        render json: serialize_variety(variety), status: :created
+      end
+
+      def update_variety
+        variety = Plant::Variety.find(params.require(:id))
+        variety.update!(variety_params)
+
+        if params.key?(:common_names)
+          Plant::CommonName.where(target_type: 'variety', target_id: variety.id).destroy_all
+          Array(params[:common_names]).each do |cn|
+            Plant::CommonName.create!(
+              target_type: 'variety',
+              target_id: variety.id,
+              language: cn[:language] || 'fr',
+              name: cn[:name]
+            )
+          end
+        end
+
+        render json: serialize_variety(variety)
+      end
+
       def create_note
         item = Plant::Note.create!(note_params)
         increment_contributor_counter(item.contributor, :notes_written)
@@ -275,6 +416,33 @@ module Api
 
       def build_options(values)
         values.map { |value| { id: value, label: value.to_s.tr('-', ' ').capitalize } }
+      end
+
+      def genus_params
+        params.permit(:latin_name, :description)
+      end
+
+      def species_params
+        params.permit(
+          :genus_id, :latin_name, :plant_type, :hardiness, :life_cycle,
+          :fertility, :origin, :foliage_type, :foliage_color, :fragrance,
+          :growth_rate, :forest_garden_zone, :pollination_type, :root_system,
+          :soil_moisture, :soil_richness, :watering_need, :is_invasive,
+          :therapeutic_properties, :toxic_elements, :additional_notes,
+          edible_parts: [], interests: [], ecosystem_needs: [], exposures: [],
+          flower_colors: [], flowering_months: [], fruiting_months: [],
+          harvest_months: [], planting_seasons: [], propagation_methods: [],
+          native_countries: [], soil_types: [], fodder_qualities: [],
+          transformations: []
+        )
+      end
+
+      def variety_params
+        params.permit(
+          :species_id, :latin_name, :productivity, :taste_rating,
+          :fruit_size, :storage_life, :maturity, :disease_resistance,
+          :additional_notes
+        )
       end
 
       def palette_params
@@ -355,7 +523,9 @@ module Api
             id: item.id.to_s,
             type: 'variety',
             latinName: item.latin_name,
-            commonName: first_common_name('variety', item.id)
+            commonName: first_common_name('variety', item.id),
+            speciesId: item.species_id.to_s,
+            speciesName: item.species&.latin_name
           }
         end
       end
@@ -564,7 +734,8 @@ module Api
           foliageColor: item.foliage_color,
           fragrance: item.fragrance,
           transformations: item.transformations,
-          fodderQualities: item.fodder_qualities
+          fodderQualities: item.fodder_qualities,
+          additionalNotes: item.additional_notes
         }
       end
 
@@ -578,7 +749,8 @@ module Api
           tasteRating: item.taste_rating,
           storageLife: item.storage_life,
           maturity: item.maturity,
-          diseaseResistance: item.disease_resistance
+          diseaseResistance: item.disease_resistance,
+          additionalNotes: item.additional_notes
         }
       end
 

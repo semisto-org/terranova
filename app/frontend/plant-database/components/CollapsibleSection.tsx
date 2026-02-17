@@ -18,22 +18,22 @@ export function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <div className="border-b border-stone-200 dark:border-stone-700 last:border-b-0">
+    <div className="border-b border-stone-200 last:border-b-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between py-4 text-left group"
       >
         <div className="flex items-center gap-3">
           {icon && (
-            <span className="text-stone-400 dark:text-stone-500 group-hover:text-[#5B5781] dark:group-hover:text-[#a89ec4] transition-colors">
+            <span className="text-stone-400 group-hover:text-[#5B5781] transition-colors">
               {icon}
             </span>
           )}
-          <span className="font-medium text-stone-900 dark:text-stone-100">
+          <span className="font-medium text-stone-900">
             {title}
           </span>
           {badge !== undefined && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-stone-100 text-stone-600 rounded-full">
               {badge}
             </span>
           )}

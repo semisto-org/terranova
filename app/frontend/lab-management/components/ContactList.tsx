@@ -45,15 +45,15 @@ export function ContactList({
   const orgCount = contacts.filter((c) => c.contactType === 'organization').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-800/50">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
+              <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 tracking-tight">
                 CRM Contacts
               </h1>
-              <p className="mt-2 text-stone-600 dark:text-stone-400">
+              <p className="mt-2 text-stone-600">
                 Personnes et organisations
               </p>
             </div>
@@ -79,18 +79,18 @@ export function ContactList({
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{personCount}</span>
-              <span className="text-sm text-stone-500 dark:text-stone-400">personnes</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm">
+              <span className="text-sm font-medium text-stone-900">{personCount}</span>
+              <span className="text-sm text-stone-500">personnes</span>
             </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{orgCount}</span>
-              <span className="text-sm text-stone-500 dark:text-stone-400">organisations</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm">
+              <span className="text-sm font-medium text-stone-900">{orgCount}</span>
+              <span className="text-sm text-stone-500">organisations</span>
             </div>
           </div>
         </div>
 
-        <div className="mb-8 p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 shadow-sm">
+        <div className="mb-8 p-4 rounded-2xl bg-white border border-stone-200 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -114,9 +114,9 @@ export function ContactList({
                   onChange={(e) => setSearch(e.target.value)}
                   className="
                     w-full pl-10 pr-4 py-2.5 rounded-xl
-                    bg-stone-50 dark:bg-stone-900/50
-                    border border-stone-200 dark:border-stone-600
-                    text-stone-900 dark:text-stone-100
+                    bg-stone-50
+                    border border-stone-200
+                    text-stone-900
                     placeholder:text-stone-400
                     focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                     transition-colors
@@ -131,9 +131,9 @@ export function ContactList({
                 onChange={(e) => setTypeFilter(e.target.value as 'all' | 'person' | 'organization')}
                 className="
                   w-full px-4 py-2.5 rounded-xl appearance-none
-                  bg-stone-50 dark:bg-stone-900/50
-                  border border-stone-200 dark:border-stone-600
-                  text-stone-900 dark:text-stone-100
+                  bg-stone-50
+                  border border-stone-200
+                  text-stone-900
                   focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                   transition-colors cursor-pointer
                 "
@@ -151,9 +151,9 @@ export function ContactList({
                   onChange={(e) => setTagFilter(e.target.value)}
                   className="
                     w-full px-4 py-2.5 rounded-xl appearance-none
-                    bg-stone-50 dark:bg-stone-900/50
-                    border border-stone-200 dark:border-stone-600
-                    text-stone-900 dark:text-stone-100
+                    bg-stone-50
+                    border border-stone-200
+                    text-stone-900
                     focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                     transition-colors cursor-pointer
                   "
@@ -170,12 +170,12 @@ export function ContactList({
           </div>
 
           {(search || typeFilter !== 'all' || tagFilter !== 'all') && (
-            <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-700/50 flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-stone-500 dark:text-stone-400">Filtres actifs:</span>
+            <div className="mt-4 pt-4 border-t border-stone-100 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-stone-500">Filtres actifs:</span>
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   &quot;{search}&quot;
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -186,7 +186,7 @@ export function ContactList({
               {typeFilter !== 'all' && (
                 <button
                   onClick={() => setTypeFilter('all')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   {typeFilter === 'person' ? 'Personnes' : 'Organisations'}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,7 +197,7 @@ export function ContactList({
               {tagFilter !== 'all' && (
                 <button
                   onClick={() => setTagFilter('all')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   {tagFilter}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -211,7 +211,7 @@ export function ContactList({
                   setTypeFilter('all')
                   setTagFilter('all')
                 }}
-                className="text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 underline underline-offset-2"
+                className="text-xs text-stone-500 hover:text-stone-700 underline underline-offset-2"
               >
                 Tout effacer
               </button>
@@ -219,36 +219,36 @@ export function ContactList({
           )}
         </div>
 
-        <div className="mb-4 text-sm text-stone-500 dark:text-stone-400">
+        <div className="mb-4 text-sm text-stone-500">
           {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} trouvé
           {filteredContacts.length !== 1 ? 's' : ''}
         </div>
 
         {filteredContacts.length > 0 ? (
-          <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 overflow-hidden shadow-sm">
+          <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/80">
-                    <th className="text-left text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3">
+                  <tr className="border-b border-stone-200 bg-stone-50">
+                    <th className="text-left text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3">
                       Nom
                     </th>
-                    <th className="text-left text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3 w-28">
+                    <th className="text-left text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3 w-28">
                       Type
                     </th>
-                    <th className="text-left text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                    <th className="text-left text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                       Email
                     </th>
-                    <th className="text-left text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3 hidden xl:table-cell">
+                    <th className="text-left text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3 hidden xl:table-cell">
                       Téléphone
                     </th>
-                    <th className="text-left text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                    <th className="text-left text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3 hidden md:table-cell">
                       Tags
                     </th>
-                    <th className="text-left text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3 hidden xl:table-cell">
+                    <th className="text-left text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3 hidden xl:table-cell">
                       Organisation
                     </th>
-                    <th className="text-right text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-4 py-3 w-28">
+                    <th className="text-right text-xs font-semibold text-stone-500 uppercase tracking-wider px-4 py-3 w-28">
                       Actions
                     </th>
                   </tr>
@@ -257,27 +257,27 @@ export function ContactList({
                   {filteredContacts.map((contact) => (
                     <tr
                       key={contact.id}
-                      className="group border-b border-stone-100 dark:border-stone-700/50 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
+                      className="group border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <button
                           onClick={() => onViewContact?.(contact.id)}
-                          className="text-left font-medium text-stone-900 dark:text-stone-100 hover:text-[#5B5781] dark:hover:text-[#a9a3c7] transition-colors"
+                          className="text-left font-medium text-stone-900 hover:text-[#5B5781] transition-colors"
                         >
                           {contact.name}
                         </button>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-stone-100 text-stone-600">
                           {contact.contactType === 'person' ? 'Personne' : 'Organisation'}
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-sm text-stone-600 dark:text-stone-400 truncate max-w-[200px] block">
+                        <span className="text-sm text-stone-600 truncate max-w-[200px] block">
                           {contact.email || '—'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 hidden xl:table-cell text-sm text-stone-600 dark:text-stone-400">
+                      <td className="px-4 py-3 hidden xl:table-cell text-sm text-stone-600">
                         {contact.phone || '—'}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
@@ -286,29 +286,29 @@ export function ContactList({
                             contact.tagNames.slice(0, 3).map((tag) => (
                               <span
                                 key={tag}
-                                className="inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7]"
+                                className="inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#5B5781]/10 text-[#5B5781]"
                               >
                                 {tag}
                               </span>
                             ))
                           ) : (
-                            <span className="text-stone-400 dark:text-stone-500 text-sm">—</span>
+                            <span className="text-stone-400 text-sm">—</span>
                           )}
                           {contact.tagNames.length > 3 && (
-                            <span className="text-xs text-stone-400 dark:text-stone-500">
+                            <span className="text-xs text-stone-400">
                               +{contact.tagNames.length - 3}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 hidden xl:table-cell text-sm text-stone-600 dark:text-stone-400">
+                      <td className="px-4 py-3 hidden xl:table-cell text-sm text-stone-600">
                         {contact.organization?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-0.5">
                           <button
                             onClick={() => onViewContact?.(contact.id)}
-                            className="p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 dark:hover:text-[#a9a3c7] dark:hover:bg-[#5B5781]/20 transition-colors"
+                            className="p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 transition-colors"
                             title="Voir la fiche"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -318,7 +318,7 @@ export function ContactList({
                           </button>
                           <button
                             onClick={() => onEditContact?.(contact.id)}
-                            className="p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 dark:hover:text-[#a9a3c7] dark:hover:bg-[#5B5781]/20 transition-colors"
+                            className="p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 transition-colors"
                             title="Modifier"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -327,7 +327,7 @@ export function ContactList({
                           </button>
                           <button
                             onClick={() => onDeleteContact?.(contact.id)}
-                            className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-900/20 transition-colors"
+                            className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="Supprimer"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -344,7 +344,7 @@ export function ContactList({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-4">
               <svg
                 className="w-8 h-8 text-stone-400"
                 fill="none"
@@ -359,10 +359,10 @@ export function ContactList({
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-stone-900 dark:text-stone-100 mb-1">
+            <h3 className="text-lg font-medium text-stone-900 mb-1">
               Aucun contact trouvé
             </h3>
-            <p className="text-stone-500 dark:text-stone-400 max-w-sm">
+            <p className="text-stone-500 max-w-sm">
               Aucun contact ne correspond aux critères. Essayez de modifier vos filtres ou créez un nouveau contact.
             </p>
           </div>

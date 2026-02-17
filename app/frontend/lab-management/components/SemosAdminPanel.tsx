@@ -106,7 +106,7 @@ export function SemosAdminPanel({
   }
 
   return (
-    <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
       {/* Header with tabs */}
       <div className="bg-gradient-to-r from-[#5B5781] to-[#4a4670] px-6 py-4">
         <div className="flex items-center gap-3 mb-4">
@@ -156,14 +156,14 @@ export function SemosAdminPanel({
           <form onSubmit={handleEmit} className="space-y-5">
             {/* Member selection */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Destinataire
               </label>
               <div className="relative">
                 <select
                   value={selectedMemberId}
                   onChange={(e) => setSelectedMemberId(e.target.value)}
-                  className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 appearance-none cursor-pointer hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
+                  className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 appearance-none cursor-pointer hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
                 >
                   <option value="">Sélectionner un membre...</option>
                   {activeMembers.map((member) => (
@@ -177,7 +177,7 @@ export function SemosAdminPanel({
                 </div>
               </div>
               {selectedMember && selectedWallet && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+                <div className="mt-2 flex items-center gap-2 text-sm text-stone-500">
                   <img src={selectedMember.avatar} alt="" className="w-5 h-5 rounded-full" />
                   <span>Solde actuel: {formatAmount(selectedWallet.balance)}S</span>
                 </div>
@@ -186,7 +186,7 @@ export function SemosAdminPanel({
 
             {/* Reason selection */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Motif d'émission
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -200,7 +200,7 @@ export function SemosAdminPanel({
                       ${
                         emissionReason === reason.value
                           ? 'bg-[#5B5781]/10 border-[#5B5781] text-[#5B5781]'
-                          : 'bg-stone-50 dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600'
+                          : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                       }
                     `}
                   >
@@ -213,7 +213,7 @@ export function SemosAdminPanel({
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Montant à émettre
               </label>
               <div className="relative">
@@ -224,9 +224,9 @@ export function SemosAdminPanel({
                   placeholder="0"
                   min="0.1"
                   step="0.1"
-                  className="w-full px-4 py-3 pr-16 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 text-2xl font-bold tabular-nums placeholder:text-stone-300 dark:placeholder:text-stone-600 hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
+                  className="w-full px-4 py-3 pr-16 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-2xl font-bold tabular-nums placeholder:text-stone-300 hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 font-medium">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 font-medium">
                   Semos
                 </div>
               </div>
@@ -237,7 +237,7 @@ export function SemosAdminPanel({
                     key={rate.id}
                     type="button"
                     onClick={() => setEmissionAmount(rate.amount.toString())}
-                    className="px-3 py-1.5 bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 rounded-lg text-xs hover:bg-stone-200 dark:hover:bg-stone-600 transition-colors"
+                    className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-lg text-xs hover:bg-stone-200 transition-colors"
                   >
                     {rate.amount}{rate.type.includes('percentage') ? '%' : 'S'}
                   </button>
@@ -247,7 +247,7 @@ export function SemosAdminPanel({
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Description
               </label>
               <textarea
@@ -255,14 +255,14 @@ export function SemosAdminPanel({
                 onChange={(e) => setEmissionDescription(e.target.value)}
                 placeholder="Ex: Cotisation annuelle membre actif, Participation chantier..."
                 rows={2}
-                className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 resize-none hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
+                className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 placeholder:text-stone-400 resize-none hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
               />
             </div>
 
             {/* Summary */}
             {canEmit && selectedMember && (
               <div className="bg-[#AFBD00]/10 rounded-xl p-4 border border-[#AFBD00]/20">
-                <p className="text-sm text-stone-600 dark:text-stone-300">
+                <p className="text-sm text-stone-600">
                   Création de <span className="font-bold text-[#AFBD00]">{formatAmount(numAmount)} Semos</span> pour{' '}
                   <span className="font-medium">{selectedMember.firstName} {selectedMember.lastName}</span>
                   <span className="text-stone-400"> ({EMISSION_REASONS.find(r => r.value === emissionReason)?.label})</span>
@@ -279,7 +279,7 @@ export function SemosAdminPanel({
                 ${
                   canEmit
                     ? 'bg-gradient-to-r from-[#AFBD00] to-[#8a9600] text-white hover:shadow-lg hover:shadow-[#AFBD00]/25 active:scale-[0.98]'
-                    : 'bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 cursor-not-allowed'
+                    : 'bg-stone-200 text-stone-400 cursor-not-allowed'
                 }
               `}
             >
@@ -288,23 +288,23 @@ export function SemosAdminPanel({
           </form>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">
+            <p className="text-sm text-stone-500 mb-4">
               Tarifs de référence pour les émissions automatiques et les calculs.
             </p>
             {rates.map((rate) => (
               <div
                 key={rate.id}
-                className="flex items-center justify-between p-4 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700"
+                className="flex items-center justify-between p-4 bg-stone-50 rounded-xl border border-stone-200"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-[#5B5781]/10 flex items-center justify-center text-[#5B5781] font-medium">
                     {getRateIcon(rate.type)}
                   </div>
                   <div>
-                    <p className="font-medium text-stone-900 dark:text-stone-100">
+                    <p className="font-medium text-stone-900">
                       {rate.description}
                     </p>
-                    <p className="text-xs text-stone-500 dark:text-stone-400">
+                    <p className="text-xs text-stone-500">
                       {rate.type.replace(/_/g, ' ')}
                     </p>
                   </div>
@@ -315,7 +315,7 @@ export function SemosAdminPanel({
                       type="number"
                       value={editingRateValue}
                       onChange={(e) => setEditingRateValue(e.target.value)}
-                      className="w-20 px-2 py-1 text-right font-bold text-[#5B5781] bg-white dark:bg-stone-800 border border-[#5B5781] rounded-lg outline-none"
+                      className="w-20 px-2 py-1 text-right font-bold text-[#5B5781] bg-white border border-[#5B5781] rounded-lg outline-none"
                       autoFocus
                     />
                     <button
@@ -326,7 +326,7 @@ export function SemosAdminPanel({
                     </button>
                     <button
                       onClick={() => setEditingRateId(null)}
-                      className="p-2 bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-300 dark:hover:bg-stone-600"
+                      className="p-2 bg-stone-200 text-stone-600 rounded-lg hover:bg-stone-300"
                     >
                       ✕
                     </button>
@@ -337,7 +337,7 @@ export function SemosAdminPanel({
                       setEditingRateId(rate.id)
                       setEditingRateValue(rate.amount.toString())
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg hover:border-[#5B5781]/50 transition-colors group"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-stone-200 rounded-lg hover:border-[#5B5781]/50 transition-colors group"
                   >
                     <span className="text-lg font-bold text-[#5B5781] tabular-nums">
                       {rate.amount}
@@ -345,7 +345,7 @@ export function SemosAdminPanel({
                         {rate.type.includes('percentage') ? '%' : 'S'}
                       </span>
                     </span>
-                    <span className="text-stone-300 dark:text-stone-600 group-hover:text-[#5B5781]">✎</span>
+                    <span className="text-stone-300 group-hover:text-[#5B5781]">✎</span>
                   </button>
                 )}
               </div>

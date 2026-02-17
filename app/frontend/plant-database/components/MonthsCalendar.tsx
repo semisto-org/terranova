@@ -11,21 +11,21 @@ export function MonthsCalendar({ activeMonths, label, color = 'green' }: MonthsC
   const colors = {
     green: {
       active: 'bg-[#AFBD00] text-white',
-      inactive: 'bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-600'
+      inactive: 'bg-stone-100 text-stone-400'
     },
     pink: {
       active: 'bg-pink-500 text-white',
-      inactive: 'bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-600'
+      inactive: 'bg-stone-100 text-stone-400'
     },
     orange: {
       active: 'bg-orange-500 text-white',
-      inactive: 'bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-600'
+      inactive: 'bg-stone-100 text-stone-400'
     }
   }
 
   return (
     <div>
-      <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">{label}</p>
+      <p className="text-xs text-stone-500 mb-2">{label}</p>
       <div className="flex gap-1">
         {monthIds.map((monthId, index) => {
           const isActive = activeMonths.includes(monthId)

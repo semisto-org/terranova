@@ -13,47 +13,47 @@ interface PitchCardProps {
 const appetiteLabels: Record<Appetite, { label: string; color: string }> = {
   '2-weeks': {
     label: '2 semaines',
-    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    color: 'bg-emerald-100 text-emerald-700',
   },
   '3-weeks': {
     label: '3 semaines',
-    color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    color: 'bg-amber-100 text-amber-700',
   },
   '6-weeks': {
     label: '6 semaines',
-    color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+    color: 'bg-violet-100 text-violet-700',
   },
 }
 
 const statusLabels: Record<string, { label: string; color: string; icon: string }> = {
   raw: {
     label: 'Brouillon',
-    color: 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300',
+    color: 'bg-stone-100 text-stone-600',
     icon: '📝',
   },
   shaped: {
     label: 'Cadré',
-    color: 'bg-[#AFBD00]/20 text-[#7a8200] dark:bg-[#AFBD00]/30 dark:text-[#AFBD00]',
+    color: 'bg-[#AFBD00]/20 text-[#7a8200]',
     icon: '✅',
   },
   betting: {
     label: 'En évaluation',
-    color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    color: 'bg-amber-100 text-amber-700',
     icon: '🎲',
   },
   building: {
     label: 'En construction',
-    color: 'bg-[#5B5781]/20 text-[#5B5781] dark:bg-[#5B5781]/30 dark:text-[#c8bfd2]',
+    color: 'bg-[#5B5781]/20 text-[#5B5781]',
     icon: '🏗️',
   },
   completed: {
     label: 'Terminé',
-    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    color: 'bg-emerald-100 text-emerald-700',
     icon: '🎉',
   },
   cancelled: {
     label: 'Annulé',
-    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    color: 'bg-red-100 text-red-700',
     icon: '❌',
   },
 }
@@ -82,12 +82,12 @@ export function PitchCard({
     return (
       <div
         onClick={onView}
-        className="bg-white dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-700 p-3 hover:border-stone-300 dark:hover:border-stone-600 transition-all cursor-pointer"
+        className="bg-white rounded-lg border border-stone-200 p-3 hover:border-stone-300 transition-all cursor-pointer"
       >
         <div className="flex items-start gap-3">
           <span className="text-lg">{statusConfig.icon}</span>
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-stone-800 dark:text-stone-100 truncate">
+            <h4 className="font-medium text-stone-800 truncate">
               {pitch.title}
             </h4>
             <div className="flex items-center gap-2 mt-1">
@@ -95,7 +95,7 @@ export function PitchCard({
                 {appetiteConfig.label}
               </span>
               {author && (
-                <span className="text-xs text-stone-400 dark:text-stone-500">
+                <span className="text-xs text-stone-400">
                   {author.firstName}
                 </span>
               )}
@@ -107,12 +107,12 @@ export function PitchCard({
   }
 
   return (
-    <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden hover:border-stone-300 dark:hover:border-stone-600 transition-all">
+    <div className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:border-stone-300 transition-all">
       {/* Header */}
-      <div className="p-4 border-b border-stone-100 dark:border-stone-700/50">
+      <div className="p-4 border-b border-stone-100">
         <div className="flex items-start justify-between gap-3">
           <button onClick={onView} className="flex-1 text-left hover:opacity-80 transition-opacity">
-            <h3 className="font-semibold text-stone-800 dark:text-stone-100 line-clamp-2">
+            <h3 className="font-semibold text-stone-800 line-clamp-2">
               {pitch.title}
             </h3>
           </button>
@@ -135,13 +135,13 @@ export function PitchCard({
                 alt={`${author.firstName} ${author.lastName}`}
                 className="w-6 h-6 rounded-full bg-stone-100"
               />
-              <span className="text-sm text-stone-500 dark:text-stone-400">
+              <span className="text-sm text-stone-500">
                 {author.firstName} {author.lastName}
               </span>
-              <span className="text-stone-300 dark:text-stone-600">•</span>
+              <span className="text-stone-300">•</span>
             </>
           )}
-          <span className="text-sm text-stone-400 dark:text-stone-500">
+          <span className="text-sm text-stone-400">
             {new Date(pitch.createdAt).toLocaleDateString('fr-FR', {
               day: 'numeric',
               month: 'short',
@@ -155,12 +155,12 @@ export function PitchCard({
       <div className="p-4">
         {/* Problem preview */}
         <div className="mb-4">
-          <h4 className="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-1">
+          <h4 className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">
             Problème
           </h4>
-          <p className="text-sm text-stone-600 dark:text-stone-300 line-clamp-3">
+          <p className="text-sm text-stone-600 line-clamp-3">
             {pitch.problem || (
-              <span className="text-stone-400 dark:text-stone-500 italic">Non défini</span>
+              <span className="text-stone-400 italic">Non défini</span>
             )}
           </p>
         </div>
@@ -180,8 +180,8 @@ export function PitchCard({
                 flex flex-col items-center p-2 rounded-lg text-center
                 ${
                   item.filled
-                    ? 'bg-[#AFBD00]/10 text-[#7a8200] dark:bg-[#AFBD00]/20 dark:text-[#AFBD00]'
-                    : 'bg-stone-50 text-stone-400 dark:bg-stone-800 dark:text-stone-500'
+                    ? 'bg-[#AFBD00]/10 text-[#7a8200]'
+                    : 'bg-stone-50 text-stone-400'
                 }
               `}
             >
@@ -198,8 +198,8 @@ export function PitchCard({
               flex items-center gap-1.5 px-2 py-1 rounded text-xs
               ${
                 pitch.breadboard
-                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'bg-stone-50 text-stone-400 dark:bg-stone-800 dark:text-stone-500'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'bg-stone-50 text-stone-400'
               }
             `}
           >
@@ -218,8 +218,8 @@ export function PitchCard({
               flex items-center gap-1.5 px-2 py-1 rounded text-xs
               ${
                 pitch.fatMarkerSketch
-                  ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
-                  : 'bg-stone-50 text-stone-400 dark:bg-stone-800 dark:text-stone-500'
+                  ? 'bg-purple-50 text-purple-600'
+                  : 'bg-stone-50 text-stone-400'
               }
             `}
           >
@@ -238,17 +238,17 @@ export function PitchCard({
 
       {/* Actions */}
       {showActions && (
-        <div className="px-4 py-3 bg-stone-50 dark:bg-stone-800/30 border-t border-stone-100 dark:border-stone-700/50 flex items-center justify-end gap-2">
+        <div className="px-4 py-3 bg-stone-50 border-t border-stone-100 flex items-center justify-end gap-2">
           <button
             onClick={onView}
-            className="px-3 py-1.5 text-sm text-stone-600 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-sm text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
           >
             Voir détails
           </button>
           {onEdit && pitch.status !== 'building' && pitch.status !== 'completed' && (
             <button
               onClick={onEdit}
-              className="px-3 py-1.5 text-sm text-[#5B5781] dark:text-[#c8bfd2] font-medium hover:bg-[#5B5781]/10 rounded-lg transition-colors"
+              className="px-3 py-1.5 text-sm text-[#5B5781] font-medium hover:bg-[#5B5781]/10 rounded-lg transition-colors"
             >
               Modifier
             </button>
@@ -256,7 +256,7 @@ export function PitchCard({
           {onDelete && pitch.status === 'raw' && (
             <button
               onClick={onDelete}
-              className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               Supprimer
             </button>

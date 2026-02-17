@@ -70,10 +70,10 @@ export function SearchResultItem({
         onClick={onSelect}
         className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-all duration-150 ${
           isInPalette
-            ? 'bg-[#AFBD00]/8 dark:bg-[#AFBD00]/15'
+            ? 'bg-[#AFBD00]/8'
             : isFocused
-              ? 'bg-[#5B5781]/10 dark:bg-[#AFBD00]/10'
-              : 'hover:bg-stone-100 dark:hover:bg-stone-800/50'
+              ? 'bg-[#5B5781]/10'
+              : 'hover:bg-stone-100'
         } ${justAdded ? 'scale-[1.01]' : ''}`}
       >
         {/* Type indicator - single letter badge */}
@@ -87,13 +87,13 @@ export function SearchResultItem({
         <span className="flex-1 min-w-0 flex items-baseline gap-2 truncate">
           <span className={`font-medium italic truncate transition-colors ${
             isInPalette
-              ? 'text-[#AFBD00] dark:text-[#AFBD00]'
-              : 'text-stone-900 dark:text-stone-100'
+              ? 'text-[#AFBD00]'
+              : 'text-stone-900'
           }`}>
             {result.latinName}
           </span>
           {result.commonName && (
-            <span className="text-sm text-stone-400 dark:text-stone-500 truncate hidden sm:inline">
+            <span className="text-sm text-stone-400 truncate hidden sm:inline">
               {result.commonName}
             </span>
           )}
@@ -108,7 +108,7 @@ export function SearchResultItem({
                 ? 'bg-[#AFBD00] text-white cursor-default'
                 : showStrateMenu
                   ? 'bg-[#AFBD00] text-white'
-                  : 'text-stone-300 dark:text-stone-600 hover:text-[#AFBD00] hover:bg-[#AFBD00]/10 opacity-0 group-hover:opacity-100'
+                  : 'text-stone-300 hover:text-[#AFBD00] hover:bg-[#AFBD00]/10 opacity-0 group-hover:opacity-100'
             }`}
             aria-label={isInPalette ? 'Dans la palette' : 'Ajouter à la palette'}
             disabled={isInPalette}
@@ -127,7 +127,7 @@ export function SearchResultItem({
 
         {/* Arrow */}
         <svg
-          className="w-4 h-4 text-stone-300 dark:text-stone-600 shrink-0"
+          className="w-4 h-4 text-stone-300 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -144,7 +144,7 @@ export function SearchResultItem({
             className="fixed inset-0 z-10"
             onClick={() => setShowStrateMenu(false)}
           />
-          <div className="absolute right-12 top-0 z-20 py-1 bg-white dark:bg-stone-800 rounded-lg shadow-xl border border-stone-200 dark:border-stone-700 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute right-12 top-0 z-20 py-1 bg-white rounded-lg shadow-xl border border-stone-200 animate-in fade-in zoom-in-95 duration-100">
             {strateOptions.map((strate) => (
               <button
                 key={strate.id}
@@ -152,7 +152,7 @@ export function SearchResultItem({
                   e.stopPropagation()
                   handleStrateSelect(strate.id)
                 }}
-                className="w-full px-3 py-1.5 text-left text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700/50 transition-colors whitespace-nowrap"
+                className="w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-50 transition-colors whitespace-nowrap"
               >
                 {strate.label}
               </button>

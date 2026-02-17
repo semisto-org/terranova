@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 const PAYMENT_STATUSES = [
   { value: 'pending', label: 'En attente', description: 'Aucun paiement reçu' },
@@ -83,24 +83,24 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-lg bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-lg bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="shrink-0 px-6 py-5 border-b border-stone-200 dark:border-stone-700 bg-gradient-to-br from-red-50 to-white dark:from-stone-800 dark:to-stone-900">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-200 bg-gradient-to-br from-red-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
                   Modifier le paiement
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   {registration.contactName}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onCancel}
-                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
                 aria-label="Fermer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -114,16 +114,16 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
             <div className="flex-1 overflow-y-auto min-h-0 p-6">
               {error && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm animate-in slide-in-from-top-2 duration-200">
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-in slide-in-from-top-2 duration-200">
                   {error}
                 </div>
               )}
 
               <div className="space-y-6">
                 {/* Training price info */}
-                <div className="p-4 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
-                  <div className="text-sm text-stone-600 dark:text-stone-400 mb-1">Prix de la formation</div>
-                  <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                <div className="p-4 rounded-xl bg-stone-100 border border-stone-200">
+                  <div className="text-sm text-stone-600 mb-1">Prix de la formation</div>
+                  <div className="text-2xl font-bold text-stone-900">
                     {trainingPrice.toFixed(2)} €
                   </div>
                 </div>
@@ -132,7 +132,7 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                 <div>
                   <label
                     htmlFor="payment-status"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3"
+                    className="block text-sm font-semibold text-stone-700 mb-3"
                   >
                     Statut du paiement
                   </label>
@@ -148,8 +148,8 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                             w-full p-4 rounded-xl border-2 transition-all duration-200 text-left
                             ${
                               isSelected
-                                ? 'border-[#B01A19] bg-[#B01A19]/5 dark:bg-[#B01A19]/20 shadow-sm'
-                                : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-300 dark:hover:border-stone-600'
+                                ? 'border-[#B01A19] bg-[#B01A19]/5 shadow-sm'
+                                : 'border-stone-200 bg-white hover:border-stone-300'
                             }
                           `}
                         >
@@ -160,7 +160,7 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                                 ${
                                   isSelected
                                     ? 'border-[#B01A19] bg-[#B01A19]'
-                                    : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
+                                    : 'border-stone-300 bg-white'
                                 }
                               `}
                             >
@@ -171,12 +171,12 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                             <div className="flex-1">
                               <div className={`font-medium text-sm ${
                                 isSelected
-                                  ? 'text-stone-900 dark:text-stone-100'
-                                  : 'text-stone-700 dark:text-stone-300'
+                                  ? 'text-stone-900'
+                                  : 'text-stone-700'
                               }`}>
                                 {statusOption.label}
                               </div>
-                              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                              <p className="text-xs text-stone-500 mt-0.5">
                                 {statusOption.description}
                               </p>
                             </div>
@@ -191,7 +191,7 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                 <div>
                   <label
                     htmlFor="amount-paid"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Montant payé (€)
                   </label>
@@ -211,15 +211,15 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                 {amountPaid > 0 && (
                   <div className={`p-4 rounded-xl border ${
                     remainingAmount === 0
-                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
-                      : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                      ? 'bg-emerald-50 border-emerald-200'
+                      : 'bg-amber-50 border-amber-200'
                   }`}>
                     <div className="flex items-start gap-3">
                       <svg
                         className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
                           remainingAmount === 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-amber-600 dark:text-amber-400'
+                            ? 'text-emerald-600'
+                            : 'text-amber-600'
                         }`}
                         fill="none"
                         viewBox="0 0 24 24"
@@ -233,8 +233,8 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                       </svg>
                       <div className={`text-sm ${
                         remainingAmount === 0
-                          ? 'text-emerald-700 dark:text-emerald-300'
-                          : 'text-amber-700 dark:text-amber-300'
+                          ? 'text-emerald-700'
+                          : 'text-amber-700'
                       }`}>
                         {remainingAmount === 0 ? (
                           <p className="font-medium">Paiement complet</p>
@@ -254,12 +254,12 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 flex items-center justify-end gap-3">
+            <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="px-4 py-2 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>

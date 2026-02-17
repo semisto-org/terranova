@@ -29,8 +29,8 @@ export function ScopeCard({
   return (
     <div
       className={`
-        bg-white dark:bg-stone-800/50 rounded-xl border-2 transition-all
-        ${isSelected ? 'border-[#5B5781] shadow-lg' : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600'}
+        bg-white rounded-xl border-2 transition-all
+        ${isSelected ? 'border-[#5B5781] shadow-lg' : 'border-stone-200 hover:border-stone-300'}
       `}
     >
       {/* Header */}
@@ -45,25 +45,25 @@ export function ScopeCard({
               style={{ backgroundColor: color }}
             />
             <div className="min-w-0">
-              <h3 className="font-semibold text-stone-800 dark:text-stone-100 truncate">
+              <h3 className="font-semibold text-stone-800 truncate">
                 {scope.name}
               </h3>
-              <p className="text-sm text-stone-500 dark:text-stone-400 line-clamp-2 mt-0.5">
+              <p className="text-sm text-stone-500 line-clamp-2 mt-0.5">
                 {scope.description}
               </p>
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100">
+            <p className="text-lg font-bold text-stone-800">
               {completedTasks}/{totalTasks}
             </p>
-            <p className="text-[10px] text-stone-400 dark:text-stone-500">tâches</p>
+            <p className="text-[10px] text-stone-400">tâches</p>
           </div>
         </div>
 
         {/* Progress bar */}
         <div className="mt-3">
-          <div className="h-1.5 bg-stone-100 dark:bg-stone-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${progressPercent}%`, backgroundColor: color }}
@@ -77,14 +77,14 @@ export function ScopeCard({
             className={`
               inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium
               ${phase === 'uphill'
-                ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
-                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}
+                ? 'bg-violet-100 text-violet-700'
+                : 'bg-emerald-100 text-emerald-700'}
             `}
           >
             <span>{phase === 'uphill' ? '⛰️' : '🏃'}</span>
             {phaseLabel}
           </span>
-          <span className="text-xs text-stone-400 dark:text-stone-500">
+          <span className="text-xs text-stone-400">
             Position: {scope.hillPosition}%
           </span>
         </div>
@@ -92,7 +92,7 @@ export function ScopeCard({
 
       {/* Expanded task list */}
       {isSelected && (
-        <div className="border-t border-stone-200 dark:border-stone-700 p-4">
+        <div className="border-t border-stone-200 p-4">
           <TaskList
             tasks={scope.tasks}
             onToggleTask={onToggleTask}

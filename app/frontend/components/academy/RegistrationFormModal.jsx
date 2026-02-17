@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 const PAYMENT_STATUSES = [
   { value: 'pending', label: 'En attente' },
@@ -97,17 +97,17 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-2xl bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="shrink-0 px-6 py-5 border-b border-stone-200 dark:border-stone-700 bg-gradient-to-br from-red-50 to-white dark:from-stone-800 dark:to-stone-900">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-200 bg-gradient-to-br from-red-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
                   {isEdit ? 'Modifier l\'inscription' : 'Nouvelle inscription'}
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   {isEdit
                     ? 'Mettez à jour les informations du participant'
                     : 'Inscrivez un nouveau participant à la formation'}
@@ -116,7 +116,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
               <button
                 type="button"
                 onClick={onCancel}
-                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                className="ml-4 p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
                 aria-label="Fermer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,7 +130,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
             <div className="flex-1 overflow-y-auto min-h-0 p-6">
               {error && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm animate-in slide-in-from-top-2 duration-200">
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-in slide-in-from-top-2 duration-200">
                   {error}
                 </div>
               )}
@@ -140,7 +140,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                 <div>
                   <label
                     htmlFor="contact-name"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Nom du participant <span className="text-rose-500">*</span>
                   </label>
@@ -160,7 +160,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                 <div>
                   <label
                     htmlFor="contact-email"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Email du participant
                   </label>
@@ -172,7 +172,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                     className={inputBase}
                     placeholder="ex: marie.dupont@example.com"
                   />
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
+                  <p className="text-xs text-stone-500 mt-1.5">
                     Optionnel - pour envoyer la confirmation d'inscription
                   </p>
                 </div>
@@ -181,7 +181,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                 <div>
                   <label
                     htmlFor="phone"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Téléphone
                   </label>
@@ -193,14 +193,14 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                     className={inputBase}
                     placeholder="ex: +32 470 12 34 56"
                   />
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
+                  <p className="text-xs text-stone-500 mt-1.5">
                     Optionnel - utile pour le contact le jour de la formation
                   </p>
                 </div>
 
                 {/* Departure location - for carpooling */}
                 <div>
-                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
                     Lieu de départ (covoiturage)
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -213,7 +213,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                         className={inputBase}
                         placeholder="ex: 1000"
                       />
-                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">Code postal</p>
+                      <p className="text-xs text-stone-500 mt-1.5">Code postal</p>
                     </div>
                     <div>
                       <input
@@ -224,10 +224,10 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                         className={inputBase}
                         placeholder="ex: Belgique"
                       />
-                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">Pays</p>
+                      <p className="text-xs text-stone-500 mt-1.5">Pays</p>
                     </div>
                   </div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1.5">
+                  <p className="text-xs text-stone-500 mt-1.5">
                     Optionnel - facilite l'organisation du covoiturage entre participants
                   </p>
                 </div>
@@ -237,7 +237,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                   <div>
                     <label
                       htmlFor="payment-status"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       Statut du paiement
                     </label>
@@ -258,7 +258,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                   <div>
                     <label
                       htmlFor="amount-paid"
-                      className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
                     >
                       Montant payé (€)
                     </label>
@@ -277,12 +277,12 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
 
                 {/* Payment info */}
                 {trainingPrice > 0 && (
-                  <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
                     <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <div className="text-sm text-blue-700 dark:text-blue-300">
+                      <div className="text-sm text-blue-700">
                         <p className="font-medium">Prix de la formation : {trainingPrice.toFixed(2)} €</p>
                         {amountPaid > 0 && (
                           <p className="mt-1">
@@ -298,7 +298,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                 <div>
                   <label
                     htmlFor="internal-note"
-                    className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Note interne
                   </label>
@@ -315,12 +315,12 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 flex items-center justify-end gap-3">
+            <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="px-4 py-2 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>

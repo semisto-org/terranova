@@ -2,17 +2,17 @@ import { useState, useEffect, useMemo } from 'react'
 import type { Timesheet, TimesheetCategory, PaymentType } from '../types'
 
 const CATEGORIES: { value: TimesheetCategory; label: string; color: string }[] = [
-  { value: 'design', label: 'Design', color: 'bg-[#AFBD00]/15 text-[#8a9600] dark:bg-[#AFBD00]/25 dark:text-[#c8d44a] border-[#AFBD00]/30' },
-  { value: 'formation', label: 'Formation', color: 'bg-[#B01A19]/15 text-[#B01A19] dark:bg-[#B01A19]/25 dark:text-[#e47777] border-[#B01A19]/30' },
-  { value: 'administratif', label: 'Administratif', color: 'bg-[#5B5781]/15 text-[#5B5781] dark:bg-[#5B5781]/25 dark:text-[#c8bfd2] border-[#5B5781]/30' },
-  { value: 'coordination', label: 'Coordination', color: 'bg-[#234766]/15 text-[#234766] dark:bg-[#234766]/25 dark:text-[#7badd4] border-[#234766]/30' },
-  { value: 'communication', label: 'Communication', color: 'bg-[#EF9B0D]/15 text-[#c47f00] dark:bg-[#EF9B0D]/25 dark:text-[#f5b84d] border-[#EF9B0D]/30' },
+  { value: 'design', label: 'Design', color: 'bg-[#AFBD00]/15 text-[#8a9600] border-[#AFBD00]/30' },
+  { value: 'formation', label: 'Formation', color: 'bg-[#B01A19]/15 text-[#B01A19] border-[#B01A19]/30' },
+  { value: 'administratif', label: 'Administratif', color: 'bg-[#5B5781]/15 text-[#5B5781] border-[#5B5781]/30' },
+  { value: 'coordination', label: 'Coordination', color: 'bg-[#234766]/15 text-[#234766] border-[#234766]/30' },
+  { value: 'communication', label: 'Communication', color: 'bg-[#EF9B0D]/15 text-[#c47f00] border-[#EF9B0D]/30' },
 ]
 
 const HOURS_PRESETS = [0.5, 1, 2, 4, 6, 8]
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
 
 export interface TimesheetFormValues {
   date: string
@@ -88,18 +88,18 @@ export function TimesheetForm({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl shadow-stone-900/20"
+        className="w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/20"
         onClick={(e) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
-          <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100 dark:border-stone-800">
+          <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100">
             <h2
-              className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight"
+              className="text-xl font-bold text-stone-900 tracking-tight"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isEdit ? 'Modifier la prestation' : 'Nouvelle prestation'}
             </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+            <p className="text-sm text-stone-500 mt-0.5">
               {isEdit
                 ? 'Mettez à jour la description'
                 : 'Enregistrez vos heures travaillées'}
@@ -111,7 +111,7 @@ export function TimesheetForm({
               <>
                 {/* Date — quick picks + picker */}
                 <div>
-                  <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+                  <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                     Date
                   </span>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -119,7 +119,7 @@ export function TimesheetForm({
                       type="button"
                       onClick={() => setQuickDate(-1)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        date === yesterday ? 'bg-[#5B5781] text-white' : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                        date === yesterday ? 'bg-[#5B5781] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                       }`}
                     >
                       Hier
@@ -128,7 +128,7 @@ export function TimesheetForm({
                       type="button"
                       onClick={() => setQuickDate(0)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        date === today ? 'bg-[#5B5781] text-white' : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                        date === today ? 'bg-[#5B5781] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                       }`}
                     >
                       Aujourd&apos;hui
@@ -145,7 +145,7 @@ export function TimesheetForm({
 
                 {/* Hours — presets + input */}
                 <div>
-                  <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+                  <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                     Heures
                   </span>
                   <div className="flex flex-wrap gap-2 mb-2">
@@ -157,7 +157,7 @@ export function TimesheetForm({
                         className={`min-w-[3rem] px-3 py-2 rounded-xl text-sm font-semibold tabular-nums transition-all ${
                           hours === h
                             ? 'bg-[#5B5781] text-white shadow-sm'
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
                         }`}
                       >
                         {h}h
@@ -177,13 +177,13 @@ export function TimesheetForm({
 
                 {/* Payment type */}
                 <div>
-                  <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+                  <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                     Rémunération
                   </span>
                   <div
                     role="group"
                     aria-label="Rémunération"
-                    className="inline-flex p-1 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200/60 dark:border-stone-600/60"
+                    className="inline-flex p-1 rounded-xl bg-stone-100 border border-stone-200/60"
                   >
                     <button
                       type="button"
@@ -191,7 +191,7 @@ export function TimesheetForm({
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         paymentType === 'invoice'
                           ? 'text-white shadow-sm bg-emerald-600'
-                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
+                          : 'text-stone-600 hover:text-stone-900'
                       }`}
                     >
                       Facture
@@ -202,7 +202,7 @@ export function TimesheetForm({
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         paymentType === 'semos'
                           ? 'text-white shadow-sm bg-amber-500'
-                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
+                          : 'text-stone-600 hover:text-stone-900'
                       }`}
                     >
                       Semos
@@ -212,7 +212,7 @@ export function TimesheetForm({
 
                 {/* Category — chips */}
                 <div>
-                  <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+                  <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                     Catégorie
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -223,8 +223,8 @@ export function TimesheetForm({
                         onClick={() => setCategory(cat.value)}
                         className={`px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
                           category === cat.value
-                            ? `${cat.color} ring-2 ring-[#5B5781]/40 ring-offset-2 dark:ring-offset-stone-900`
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-transparent hover:bg-stone-200 dark:hover:bg-stone-700'
+                            ? `${cat.color} ring-2 ring-[#5B5781]/40 ring-offset-2`
+                            : 'bg-stone-100 text-stone-600 border-transparent hover:bg-stone-200'
                         }`}
                       >
                         {cat.label}
@@ -235,7 +235,7 @@ export function TimesheetForm({
 
                 {/* Kilometers — compact, optional */}
                 <div>
-                  <label htmlFor="timesheet-km" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                  <label htmlFor="timesheet-km" className="block text-sm font-medium text-stone-700 mb-1.5">
                     Kilomètres (optionnel)
                   </label>
                   <input
@@ -256,7 +256,7 @@ export function TimesheetForm({
             <div>
               <label
                 htmlFor="timesheet-description"
-                className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2"
+                className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2"
               >
                 Description <span className="text-rose-500">*</span>
               </label>
@@ -273,11 +273,11 @@ export function TimesheetForm({
             </div>
           </div>
 
-          <div className="shrink-0 px-6 py-4 border-t border-stone-100 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/50 flex justify-end gap-3">
+          <div className="shrink-0 px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex justify-end gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2.5 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="px-4 py-2.5 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors"
             >
               Annuler
             </button>

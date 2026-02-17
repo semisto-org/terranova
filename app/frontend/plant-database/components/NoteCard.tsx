@@ -26,7 +26,7 @@ export function NoteCard({ note, contributor, onContributorSelect }: NoteCardPro
   }
 
   return (
-    <div className="bg-white dark:bg-stone-800/50 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+    <div className="bg-white rounded-xl p-4 border border-stone-200">
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         {contributor && (
@@ -43,12 +43,12 @@ export function NoteCard({ note, contributor, onContributorSelect }: NoteCardPro
           {contributor && (
             <button
               onClick={() => onContributorSelect?.(contributor.id)}
-              className="font-medium text-stone-900 dark:text-stone-100 hover:text-[#5B5781] dark:hover:text-[#a89ec4] transition-colors text-left"
+              className="font-medium text-stone-900 hover:text-[#5B5781] transition-colors text-left"
             >
               {contributor.name}
             </button>
           )}
-          <div className="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+          <div className="flex items-center gap-2 text-sm text-stone-500">
             <span>{formatDate(note.createdAt)}</span>
             <span className="text-xs">{languageFlags[note.language] || note.language}</span>
           </div>
@@ -56,7 +56,7 @@ export function NoteCard({ note, contributor, onContributorSelect }: NoteCardPro
       </div>
 
       {/* Content */}
-      <p className="text-stone-700 dark:text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">
+      <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">
         {note.content}
       </p>
 
@@ -66,7 +66,7 @@ export function NoteCard({ note, contributor, onContributorSelect }: NoteCardPro
           {note.photos.map((photoUrl, index) => (
             <div
               key={index}
-              className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-stone-100 dark:bg-stone-700"
+              className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-stone-100"
             >
               <img src={photoUrl} alt="" className="w-full h-full object-cover" />
             </div>

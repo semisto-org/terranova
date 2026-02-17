@@ -43,9 +43,9 @@ export function AddToPaletteButton({ onAddToPalette }: AddToPaletteButtonProps) 
           />
 
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 z-50 w-56 bg-white dark:bg-stone-800 rounded-xl shadow-xl border border-stone-200 dark:border-stone-700 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="px-3 py-2 border-b border-stone-100 dark:border-stone-700">
-              <p className="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+          <div className="absolute top-full left-0 mt-2 z-50 w-56 bg-white rounded-xl shadow-xl border border-stone-200 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="px-3 py-2 border-b border-stone-100">
+              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">
                 Choisir une strate
               </p>
             </div>
@@ -54,10 +54,10 @@ export function AddToPaletteButton({ onAddToPalette }: AddToPaletteButtonProps) 
                 <button
                   key={strate.id}
                   onClick={() => handleSelect(strate.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-stone-50 dark:hover:bg-stone-700/50 transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-stone-50 transition-colors"
                 >
                   <span className="text-lg">{strate.icon}</span>
-                  <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                  <span className="text-sm font-medium text-stone-700">
                     {strate.label}
                   </span>
                 </button>

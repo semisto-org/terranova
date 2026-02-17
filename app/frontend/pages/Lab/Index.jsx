@@ -57,7 +57,7 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={onClose}>
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <form
@@ -67,20 +67,20 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
           }}
           className="flex flex-col min-h-0 h-full"
         >
-          <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200 dark:border-stone-700">
-            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 m-0">{title}</h2>
+          <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
+            <h2 className="text-xl font-bold text-stone-900 m-0">{title}</h2>
           </div>
           <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3">
             {fields.map((field) => (
               <label key={field.name} className="block space-y-1">
-                <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{field.label}</span>
+                <span className="text-sm font-semibold text-stone-700">{field.label}</span>
 
                 {field.type === 'textarea' && (
                   <textarea
                     rows={field.rows || 3}
                     value={values[field.name] ?? ''}
                     onChange={(event) => onChange(field.name, event.target.value)}
-                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-900"
                     required={field.required}
                   />
                 )}
@@ -89,7 +89,7 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
                   <select
                     value={values[field.name] ?? ''}
                     onChange={(event) => onChange(field.name, event.target.value)}
-                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-900"
                     required={field.required}
                   >
                     {(field.options || []).map((option) => (
@@ -114,15 +114,15 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
                     type={field.type || 'text'}
                     value={values[field.name] ?? ''}
                     onChange={(event) => onChange(field.name, event.target.value)}
-                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-900"
                     required={field.required}
                   />
                 )}
               </label>
             ))}
           </div>
-          <div className="shrink-0 px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium">
+          <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 rounded-lg bg-white text-stone-700 font-medium">
               Annuler
             </button>
             <button type="submit" className="px-3 py-1.5 text-sm border border-[#5B5781] bg-[#5B5781] text-white rounded-lg font-semibold disabled:opacity-60" disabled={busy}>
@@ -139,19 +139,19 @@ function DetailModal({ title, data, onClose }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={onClose}>
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200 dark:border-stone-700">
-          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 m-0">{title}</h2>
+        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
+          <h2 className="text-xl font-bold text-stone-900 m-0">{title}</h2>
         </div>
         <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4">
-          <pre className="bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-3 text-xs overflow-auto max-h-full">
+          <pre className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-xs overflow-auto max-h-full">
             {JSON.stringify(data, null, 2)}
           </pre>
         </div>
-        <div className="shrink-0 px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex justify-end">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium">
+        <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex justify-end">
+          <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 rounded-lg bg-white text-stone-700 font-medium">
             Fermer
           </button>
         </div>

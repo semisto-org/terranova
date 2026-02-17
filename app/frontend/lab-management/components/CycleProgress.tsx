@@ -53,7 +53,7 @@ export function CycleProgress({ cycle, onViewCycle }: CycleProgressProps) {
   return (
     <button
       onClick={onViewCycle}
-      className="w-full text-left bg-white dark:bg-stone-800/50 rounded-xl p-5 border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-all hover:shadow-sm"
+      className="w-full text-left bg-white rounded-xl p-5 border border-stone-200 hover:border-stone-300 transition-all hover:shadow-sm"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -64,30 +64,30 @@ export function CycleProgress({ cycle, onViewCycle }: CycleProgressProps) {
               inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide
               ${
                 progress.phase === 'work'
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-amber-100 text-amber-700'
               }
             `}
             >
               {progress.phase === 'work' ? 'En cours' : 'Cooldown'}
             </span>
           </div>
-          <h3 className="text-lg font-semibold text-stone-800 dark:text-stone-100 mt-1">
+          <h3 className="text-lg font-semibold text-stone-800 mt-1">
             {cycle.name}
           </h3>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-bold text-stone-800 dark:text-stone-100">
+          <p className="text-2xl font-bold text-stone-800">
             {progress.daysRemaining}
           </p>
-          <p className="text-xs text-stone-500 dark:text-stone-400">jours restants</p>
+          <p className="text-xs text-stone-500">jours restants</p>
         </div>
       </div>
 
       {/* Timeline */}
       <div className="relative">
         {/* Full timeline bar */}
-        <div className="h-3 bg-stone-100 dark:bg-stone-700 rounded-full overflow-hidden flex">
+        <div className="h-3 bg-stone-100 rounded-full overflow-hidden flex">
           {/* Work phase section (75% of bar) */}
           <div className="w-3/4 relative">
             {progress.phase === 'work' && (
@@ -101,7 +101,7 @@ export function CycleProgress({ cycle, onViewCycle }: CycleProgressProps) {
             )}
           </div>
           {/* Cooldown section (25% of bar) */}
-          <div className="w-1/4 relative border-l-2 border-white dark:border-stone-800">
+          <div className="w-1/4 relative border-l-2 border-white">
             {progress.phase === 'cooldown' && (
               <div
                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-r-full transition-all"
@@ -112,10 +112,10 @@ export function CycleProgress({ cycle, onViewCycle }: CycleProgressProps) {
         </div>
 
         {/* Timeline labels */}
-        <div className="flex justify-between mt-2 text-[10px] text-stone-400 dark:text-stone-500">
+        <div className="flex justify-between mt-2 text-[10px] text-stone-400">
           <span>{formatDate(cycle.startDate)}</span>
           <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-stone-300 dark:bg-stone-600" />
+            <span className="w-1.5 h-1.5 rounded-full bg-stone-300" />
             {formatDate(cycle.cooldownStart)}
           </span>
           <span>{formatDate(cycle.cooldownEnd)}</span>
@@ -123,7 +123,7 @@ export function CycleProgress({ cycle, onViewCycle }: CycleProgressProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 text-xs text-stone-500 dark:text-stone-400">
+      <div className="flex items-center gap-4 mt-3 text-xs text-stone-500">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#5B5781]" />
           Travail (6 sem.)
