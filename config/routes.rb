@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   get "academy/training-types/:id/edit", to: "app#academy_training_type_form"
   get "academy/locations/new", to: "app#academy_location_form"
   get "academy/locations/:id/edit", to: "app#academy_location_form"
+  get "academy/:training_id/register", to: "app#academy_registration"
   get "academy/:training_id", to: "app#academy_training"
   get "nursery", to: "app#nursery"
   get "nursery/orders", to: "app#nursery"
@@ -196,6 +197,11 @@ Rails.application.routes.draw do
       post "design/:project_id/client/wishlist", to: "design_studio#client_add_wishlist_item"
       post "design/:project_id/client/journal", to: "design_studio#client_add_journal_entry"
       post "design/:project_id/client-portal-link", to: "design_studio#generate_client_portal_link"
+
+      # Public academy registration (no auth required)
+      get "public/academy/trainings/:training_id", to: "public/academy_registrations#training_info"
+      post "public/academy/trainings/:training_id/payment-intent", to: "public/academy_registrations#create_payment_intent"
+      post "public/stripe-webhooks", to: "public/stripe_webhooks#create"
 
       get "academy", to: "academy#index"
       get "academy/calendar", to: "academy#calendar"

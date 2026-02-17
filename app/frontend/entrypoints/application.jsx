@@ -4,7 +4,7 @@ import React from 'react'
 import AppShell from '../components/shell/AppShell'
 import '../styles/application.css'
 
-const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPassword', 'Design/ClientPortal']
+const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPassword', 'Design/ClientPortal', 'Academy/Registration']
 
 createInertiaApp({
   resolve: (name) => {

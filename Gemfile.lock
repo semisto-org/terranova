@@ -253,6 +253,7 @@ GEM
       io-console (~> 0.5)
     securerandom (0.4.1)
     stringio (3.2.0)
+    stripe (18.3.1)
     thor (1.5.0)
     timeout (0.6.0)
     tsort (0.2.0)
@@ -299,6 +300,7 @@ DEPENDENCIES
   puma (>= 6.4)
   rack-cors
   rails (~> 8.1.2)
+  stripe (~> 18.3)
   vite_rails
 
 BUNDLED WITH

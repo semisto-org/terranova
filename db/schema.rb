@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_065012) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_100001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,20 +68,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_065012) do
 
   create_table "academy_training_registrations", force: :cascade do |t|
     t.decimal "amount_paid", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "carpooling", default: "none", null: false
     t.string "contact_email", default: "", null: false
     t.string "contact_id", default: "", null: false
     t.string "contact_name", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.string "departure_city", default: "", null: false
     t.string "departure_country", default: "", null: false
     t.string "departure_postal_code", default: "", null: false
     t.text "internal_note", default: "", null: false
+    t.decimal "payment_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.string "payment_status", default: "pending", null: false
     t.string "phone", default: "", null: false
     t.datetime "registered_at", null: false
+    t.string "stripe_payment_intent_id"
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_academy_training_registrations_on_deleted_at"
+    t.index ["stripe_payment_intent_id"], name: "idx_academy_registrations_stripe_pi", unique: true, where: "(stripe_payment_intent_id IS NOT NULL)"
     t.index ["training_id"], name: "index_academy_training_registrations_on_training_id"
   end
 
@@ -119,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_065012) do
     t.text "coordinator_note", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.decimal "deposit_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.text "description", default: "", null: false
     t.integer "max_participants", default: 0, null: false
     t.decimal "price", precision: 12, scale: 2, default: "0.0", null: false

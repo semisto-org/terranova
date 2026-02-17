@@ -1,5 +1,5 @@
 class AppController < ApplicationController
-  before_action :require_authentication, except: [:design_client_portal]
+  before_action :require_authentication, except: [:design_client_portal, :academy_registration]
   before_action :verify_client_portal_token!, only: [:design_client_portal]
 
   def index
@@ -50,6 +50,14 @@ class AppController < ApplicationController
     render inertia: "Academy/Index", props: {
       milestone: "Academy",
       initialTrainingId: params[:training_id].to_s
+    }
+  end
+
+  def academy_registration
+    render inertia: "Academy/Registration", props: {
+      milestone: "Academy",
+      trainingId: params[:training_id].to_s,
+      stripePublicKey: ENV.fetch("STRIPE_PUBLISHABLE_KEY", "")
     }
   end
 
