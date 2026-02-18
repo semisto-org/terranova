@@ -41,7 +41,7 @@ export default function IdeaNotesView({
               Bloc-notes
             </h1>
             <p className="text-sm text-stone-600 mt-2 font-medium">
-              Idées, contacts et pistes pour vos futures formations
+              Notes, idées et pistes pour nos futures formations
             </p>
           </div>
         </div>
@@ -80,12 +80,9 @@ export default function IdeaNotesView({
             className="inline-flex items-center gap-2 rounded-xl bg-[#B01A19] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#8f1514] shadow-md active:scale-[0.98] transition-all"
           >
             <Plus className="w-4 h-4" />
-            Nouvelle idée
+            Nouvelle note
           </button>
         </div>
-        <p className="text-sm text-stone-500 mt-3">
-          {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''}
-        </p>
       </div>
 
       {filteredNotes.length === 0 ? (
@@ -95,7 +92,7 @@ export default function IdeaNotesView({
           </div>
           <p className="text-base font-medium text-stone-700">
             {categoryFilter === 'all'
-              ? 'Aucune idée pour le moment'
+              ? 'Aucune note pour le moment'
               : `Aucune note dans la catégorie "${CATEGORIES.find((c) => c.id === categoryFilter)?.label}"`}
           </p>
           <p className="mt-1 text-sm text-stone-500">
@@ -109,7 +106,7 @@ export default function IdeaNotesView({
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#B01A19] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#8f1514]"
           >
             <Plus className="w-4 h-4" />
-            Nouvelle idée
+            Nouvelle note
           </button>
         </div>
       ) : (

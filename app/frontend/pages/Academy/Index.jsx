@@ -574,6 +574,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       {activeModal === 'ideaNote' && (
         <IdeaNoteFormModal
           note={modalData?.isEdit ? modalData.note : null}
+          existingTags={[...new Set(data.ideaNotes.flatMap(n => n.tags || []))].sort()}
           onSubmit={handleIdeaNoteSubmit}
           onCancel={() => {
             setActiveModal(null)
