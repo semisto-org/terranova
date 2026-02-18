@@ -90,6 +90,206 @@ module Api
         render json: serialize_mother_plant(item)
       end
 
+      # --- Nurseries CRUD ---
+
+      def create_nursery
+        item = Nursery::Nursery.create!(nursery_params)
+        render json: serialize_nursery(item), status: :created
+      end
+
+      def update_nursery
+        item = Nursery::Nursery.find(params.require(:nursery_id))
+        item.update!(nursery_params)
+        render json: serialize_nursery(item)
+      end
+
+      def destroy_nursery
+        Nursery::Nursery.find(params.require(:nursery_id)).destroy!
+        head :no_content
+      end
+
+      # --- Containers CRUD ---
+
+      def create_container
+        item = Nursery::Container.create!(container_params)
+        render json: serialize_container(item), status: :created
+      end
+
+      def update_container
+        item = Nursery::Container.find(params.require(:container_id))
+        item.update!(container_params)
+        render json: serialize_container(item)
+      end
+
+      def destroy_container
+        Nursery::Container.find(params.require(:container_id)).destroy!
+        head :no_content
+      end
+
+      # --- Orders ---
+
+      def show_order
+        order = Nursery::Order.includes(:lines, :pickup_nursery).find(params.require(:order_id))
+        render json: serialize_order(order)
+      end
+
+      # --- Transfers ---
+
+      def create_transfer
+        order = Nursery::Order.find(params.require(:order_id))
+        transfer = Nursery::Transfer.create!(
+          order: order,
+          status: 'planned',
+          scheduled_date: params.require(:scheduled_date),
+          stops: params[:stops] || [],
+          total_distance_km: params[:total_distance_km] || 0,
+          estimated_duration: params[:estimated_duration] || '',
+          driver_id: params[:driver_id] || '',
+          driver_name: params[:driver_name] || '',
+          vehicle_info: params[:vehicle_info] || '',
+          notes: params[:notes] || ''
+        )
+        render json: serialize_transfer(transfer), status: :created
+      end
+
+      def start_transfer
+        transfer = Nursery::Transfer.find(params.require(:transfer_id))
+        transfer.update!(status: 'in-progress')
+        render json: serialize_transfer(transfer)
+      end
+
+      def complete_transfer
+        transfer = Nursery::Transfer.find(params.require(:transfer_id))
+        transfer.update!(status: 'completed', completed_at: Time.current)
+        render json: serialize_transfer(transfer)
+      end
+
+      def cancel_transfer
+        transfer = Nursery::Transfer.find(params.require(:transfer_id))
+        transfer.update!(status: 'cancelled')
+        render json: serialize_transfer(transfer)
+      end
+
+      # --- Team Members ---
+
+      def list_team_members
+        members = Nursery::TeamMember.order(:name)
+        members = members.where(nursery_id: params[:nursery_id]) if params[:nursery_id].present?
+        render json: members.map { |m| serialize_team_member(m) }
+      end
+
+      def create_team_member
+        nursery = Nursery::Nursery.find(params.require(:nursery_id))
+        member = Nursery::TeamMember.create!(
+          team_member_params.merge(nursery: nursery, nursery_name: nursery.name)
+        )
+        render json: serialize_team_member(member), status: :created
+      end
+
+      def update_team_member
+        member = Nursery::TeamMember.find(params.require(:member_id))
+        member.update!(team_member_params)
+        render json: serialize_team_member(member)
+      end
+
+      def destroy_team_member
+        Nursery::TeamMember.find(params.require(:member_id)).destroy!
+        head :no_content
+      end
+
+      # --- Schedule ---
+
+      def list_schedule
+        slots = Nursery::ScheduleSlot.order(:date, :start_time)
+        slots = slots.where(nursery_id: params[:nursery_id]) if params[:nursery_id].present?
+        if params[:week_start].present?
+          start_date = Date.parse(params[:week_start])
+          slots = slots.where(date: start_date..(start_date + 6))
+        end
+        render json: slots.map { |s| serialize_schedule_slot(s) }
+      end
+
+      def create_schedule_slot
+        member = Nursery::TeamMember.find(params.require(:member_id))
+        nursery = member.nursery
+        slot = Nursery::ScheduleSlot.create!(
+          schedule_slot_params.merge(
+            member: member, member_name: member.name, member_role: member.role,
+            nursery: nursery, nursery_name: nursery.name
+          )
+        )
+        render json: serialize_schedule_slot(slot), status: :created
+      end
+
+      def update_schedule_slot
+        slot = Nursery::ScheduleSlot.find(params.require(:slot_id))
+        slot.update!(schedule_slot_params)
+        render json: serialize_schedule_slot(slot)
+      end
+
+      def destroy_schedule_slot
+        Nursery::ScheduleSlot.find(params.require(:slot_id)).destroy!
+        head :no_content
+      end
+
+      # --- Documentation ---
+
+      def list_documentation
+        entries = Nursery::DocumentationEntry.order(published_at: :desc)
+        entries = entries.where(nursery_id: params[:nursery_id]) if params[:nursery_id].present?
+        entries = entries.where(entry_type: params[:type]) if params[:type].present?
+        render json: entries.map { |e| serialize_documentation_entry(e) }
+      end
+
+      def create_documentation
+        entry = Nursery::DocumentationEntry.create!(documentation_params.merge(published_at: Time.current))
+        render json: serialize_documentation_entry(entry), status: :created
+      end
+
+      def update_documentation
+        entry = Nursery::DocumentationEntry.find(params.require(:doc_id))
+        entry.update!(documentation_params)
+        render json: serialize_documentation_entry(entry)
+      end
+
+      def destroy_documentation
+        Nursery::DocumentationEntry.find(params.require(:doc_id)).destroy!
+        head :no_content
+      end
+
+      # --- Timesheets ---
+
+      def list_timesheets
+        entries = Nursery::TimesheetEntry.order(date: :desc)
+        entries = entries.where(nursery_id: params[:nursery_id]) if params[:nursery_id].present?
+        entries = entries.where(member_id: params[:member_id]) if params[:member_id].present?
+        entries = entries.where(category: params[:category]) if params[:category].present?
+        render json: entries.map { |e| serialize_timesheet_entry(e) }
+      end
+
+      def create_timesheet
+        member = Nursery::TeamMember.find(params.require(:member_id))
+        nursery = member.nursery
+        entry = Nursery::TimesheetEntry.create!(
+          timesheet_params.merge(
+            member: member, member_name: member.name,
+            nursery: nursery, nursery_name: nursery.name
+          )
+        )
+        render json: serialize_timesheet_entry(entry), status: :created
+      end
+
+      def update_timesheet
+        entry = Nursery::TimesheetEntry.find(params.require(:entry_id))
+        entry.update!(timesheet_params)
+        render json: serialize_timesheet_entry(entry)
+      end
+
+      def destroy_timesheet
+        Nursery::TimesheetEntry.find(params.require(:entry_id)).destroy!
+        head :no_content
+      end
+
       private
 
       def filter_params
@@ -106,6 +306,30 @@ module Api
 
       def order_params
         params.permit(:customer_id, :customer_name, :customer_email, :customer_phone, :is_member, :price_level, :notes)
+      end
+
+      def nursery_params
+        params.permit(:name, :nursery_type, :integration, :address, :city, :postal_code, :country, :latitude, :longitude, :contact_name, :contact_email, :contact_phone, :website, :description, :is_pickup_point, specialties: [])
+      end
+
+      def container_params
+        params.permit(:name, :short_name, :volume_liters, :description, :sort_order)
+      end
+
+      def team_member_params
+        params.permit(:name, :email, :role, :phone, :avatar_url, :start_date, :end_date)
+      end
+
+      def schedule_slot_params
+        params.permit(:date, :start_time, :end_time, :activity, :notes)
+      end
+
+      def documentation_params
+        params.permit(:entry_type, :title, :content, :video_url, :thumbnail_url, :author_id, :author_name, :nursery_id, :nursery_name, tags: [])
+      end
+
+      def timesheet_params
+        params.permit(:date, :category, :hours, :description)
       end
 
       def order_lines_params
@@ -127,6 +351,11 @@ module Api
         orders = orders.where(status: filters[:order_status]) if filters[:order_status].present?
         mother_plants = mother_plants.where(status: filters[:mother_status]) if filters[:mother_status].present?
 
+        team_members = Nursery::TeamMember.order(:name)
+        schedule_slots = Nursery::ScheduleSlot.order(:date, :start_time)
+        documentation = Nursery::DocumentationEntry.order(published_at: :desc)
+        timesheets = Nursery::TimesheetEntry.order(date: :desc)
+
         {
           nurseries: nurseries.map { |item| serialize_nursery(item) },
           containers: containers.map { |item| serialize_container(item) },
@@ -134,6 +363,10 @@ module Api
           motherPlants: mother_plants.map { |item| serialize_mother_plant(item) },
           orders: orders.map { |item| serialize_order(item) },
           transfers: transfers.map { |item| serialize_transfer(item) },
+          teamMembers: team_members.map { |item| serialize_team_member(item) },
+          schedule: schedule_slots.map { |item| serialize_schedule_slot(item) },
+          documentation: documentation.map { |item| serialize_documentation_entry(item) },
+          timesheets: timesheets.map { |item| serialize_timesheet_entry(item) },
           catalog: build_catalog(filters: catalog_filter_params),
           dashboard: build_dashboard
         }
@@ -453,6 +686,70 @@ module Api
           notes: item.notes.presence,
           createdAt: item.created_at.iso8601,
           completedAt: item.completed_at&.iso8601
+        }
+      end
+
+      def serialize_team_member(item)
+        {
+          id: item.id.to_s,
+          name: item.name,
+          email: item.email,
+          role: item.role,
+          nurseryId: item.nursery_id.to_s,
+          nurseryName: item.nursery_name,
+          avatarUrl: item.avatar_url.presence,
+          phone: item.phone.presence,
+          startDate: item.start_date.iso8601,
+          endDate: item.end_date&.iso8601
+        }
+      end
+
+      def serialize_schedule_slot(item)
+        {
+          id: item.id.to_s,
+          memberId: item.member_id.to_s,
+          memberName: item.member_name,
+          memberRole: item.member_role,
+          nurseryId: item.nursery_id.to_s,
+          nurseryName: item.nursery_name,
+          date: item.date.iso8601,
+          startTime: item.start_time,
+          endTime: item.end_time,
+          activity: item.activity.presence,
+          notes: item.notes.presence
+        }
+      end
+
+      def serialize_documentation_entry(item)
+        {
+          id: item.id.to_s,
+          type: item.entry_type,
+          title: item.title,
+          content: item.content.presence,
+          videoUrl: item.video_url.presence,
+          thumbnailUrl: item.thumbnail_url.presence,
+          authorId: item.author_id,
+          authorName: item.author_name,
+          nurseryId: item.nursery_id&.to_s,
+          nurseryName: item.nursery_name.presence,
+          tags: item.tags,
+          publishedAt: item.published_at.iso8601,
+          updatedAt: item.updated_at.iso8601
+        }
+      end
+
+      def serialize_timesheet_entry(item)
+        {
+          id: item.id.to_s,
+          memberId: item.member_id.to_s,
+          memberName: item.member_name,
+          nurseryId: item.nursery_id.to_s,
+          nurseryName: item.nursery_name,
+          date: item.date.iso8601,
+          category: item.category,
+          hours: item.hours.to_f,
+          description: item.description.presence,
+          createdAt: item.created_at.iso8601
         }
       end
     end

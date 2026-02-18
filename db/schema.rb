@@ -765,6 +765,70 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_161745) do
     t.index ["order_id"], name: "index_nursery_transfers_on_order_id"
   end
 
+  create_table "nursery_team_members", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "role", default: "employee", null: false
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", default: "", null: false
+    t.string "avatar_url", default: ""
+    t.string "phone", default: ""
+    t.date "start_date", null: false
+    t.date "end_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["nursery_id"], name: "index_nursery_team_members_on_nursery_id"
+  end
+
+  create_table "nursery_schedule_slots", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.string "member_name", default: "", null: false
+    t.string "member_role", default: "employee", null: false
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", default: "", null: false
+    t.date "date", null: false
+    t.string "start_time", null: false
+    t.string "end_time", null: false
+    t.string "activity", default: ""
+    t.text "notes", default: ""
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_nursery_schedule_slots_on_member_id"
+    t.index ["nursery_id"], name: "index_nursery_schedule_slots_on_nursery_id"
+  end
+
+  create_table "nursery_documentation_entries", force: :cascade do |t|
+    t.string "entry_type", default: "journal", null: false
+    t.string "title", null: false
+    t.text "content", default: ""
+    t.string "video_url", default: ""
+    t.string "thumbnail_url", default: ""
+    t.string "author_id", null: false
+    t.string "author_name", null: false
+    t.bigint "nursery_id"
+    t.string "nursery_name", default: ""
+    t.jsonb "tags", default: [], null: false
+    t.datetime "published_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["nursery_id"], name: "index_nursery_documentation_entries_on_nursery_id"
+  end
+
+  create_table "nursery_timesheet_entries", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.string "member_name", default: "", null: false
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", default: "", null: false
+    t.date "date", null: false
+    t.string "category", default: "other", null: false
+    t.decimal "hours", precision: 5, scale: 2, default: "0.0", null: false
+    t.text "description", default: ""
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_nursery_timesheet_entries_on_member_id"
+    t.index ["nursery_id"], name: "index_nursery_timesheet_entries_on_nursery_id"
+  end
+
   create_table "pitches", force: :cascade do |t|
     t.string "appetite", null: false
     t.bigint "author_id"
@@ -1136,4 +1200,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_161745) do
   add_foreign_key "timesheets", "guilds"
   add_foreign_key "timesheets", "members"
   add_foreign_key "wallets", "members"
+  add_foreign_key "nursery_team_members", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_schedule_slots", "nursery_team_members", column: "member_id"
+  add_foreign_key "nursery_schedule_slots", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_documentation_entries", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_timesheet_entries", "nursery_team_members", column: "member_id"
+  add_foreign_key "nursery_timesheet_entries", "nursery_nurseries", column: "nursery_id"
 end
