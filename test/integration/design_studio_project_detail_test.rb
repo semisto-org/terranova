@@ -350,44 +350,52 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     assert_response :created
     quote_id = JSON.parse(response.body)['id']
 
-    patch "/api/v1/design/client/quotes/#{quote_id}/approve", params: {
-      approved_by: 'client-portal',
-      comment: 'Ok pour moi'
-    }, as: :json
+    client_token = Rails.application.message_verifier(:client_portal).generate(
+      { project_id: @project.id.to_s },
+      purpose: :client_portal_access
+    )
+    client_headers = { "X-Client-Token" => client_token }
+
+    patch "/api/v1/design/client/quotes/#{quote_id}/approve",
+      params: { approved_by: 'client-portal', comment: 'Ok pour moi' },
+      headers: client_headers,
+      as: :json
     assert_response :success
     quote = JSON.parse(response.body)
     assert_equal 'approved', quote['status']
     assert_equal 'client-portal', quote['approvedBy']
 
-    patch "/api/v1/design/#{@project.id}/client/questionnaire", params: {
-      sun_observations: 'plein sud',
-      wet_areas: 'fond du terrain',
-      wind_patterns: 'nord-est',
-      soil_history: 'ancien potager',
-      existing_wildlife: 'hérissons'
-    }, as: :json
+    patch "/api/v1/design/#{@project.id}/client/questionnaire",
+      params: {
+        sun_observations: 'plein sud',
+        wet_areas: 'fond du terrain',
+        wind_patterns: 'nord-est',
+        soil_history: 'ancien potager',
+        existing_wildlife: 'hérissons'
+      },
+      headers: client_headers,
+      as: :json
     assert_response :success
     contribution = JSON.parse(response.body)
     assert_equal 'plein sud', contribution['terrainQuestionnaire']['responses']['sunObservations']
 
-    post "/api/v1/design/#{@project.id}/client/wishlist", params: {
-      item_type: 'plant',
-      description: 'Ajouter des petits fruits'
-    }, as: :json
+    post "/api/v1/design/#{@project.id}/client/wishlist",
+      params: { item_type: 'plant', description: 'Ajouter des petits fruits' },
+      headers: client_headers,
+      as: :json
     assert_response :success
     contribution = JSON.parse(response.body)
     assert_equal 1, contribution['wishlist'].size
 
-    post "/api/v1/design/#{@project.id}/client/journal", params: {
-      plant_id: 'plant-1',
-      species_name: 'Malus domestica',
-      text: 'Bonne reprise'
-    }, as: :json
+    post "/api/v1/design/#{@project.id}/client/journal",
+      params: { plant_id: 'plant-1', species_name: 'Malus domestica', text: 'Bonne reprise' },
+      headers: client_headers,
+      as: :json
     assert_response :success
     contribution = JSON.parse(response.body)
     assert_equal 1, contribution['plantJournal'].size
 
-    get "/api/v1/design/#{@project.id}/client-portal", as: :json
+    get "/api/v1/design/#{@project.id}/client-portal", headers: client_headers, as: :json
     assert_response :success
     portal = JSON.parse(response.body)
     assert_equal @project.id.to_s, portal['project']['id']

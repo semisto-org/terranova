@@ -1,3 +1,5 @@
 export { ProjectDashboard } from './ProjectDashboard'
 export { ProjectCard } from './ProjectCard'
 export { StatsCard } from './StatsCard'
+export { ProjectDetailView } from './ProjectDetail'
+export type { ProjectDetailPayload, ProjectDetailActions } from './ProjectDetail'
