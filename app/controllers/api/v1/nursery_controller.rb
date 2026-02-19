@@ -90,6 +90,23 @@ module Api
         render json: serialize_mother_plant(item)
       end
 
+      def create_nursery
+        item = Nursery::Nursery.create!(nursery_params)
+        render json: serialize_nursery(item), status: :created
+      end
+
+      def update_nursery
+        item = Nursery::Nursery.find(params.require(:nursery_id))
+        item.update!(nursery_params)
+        render json: serialize_nursery(item)
+      end
+
+      def destroy_nursery
+        item = Nursery::Nursery.find(params.require(:nursery_id))
+        item.destroy!
+        head :no_content
+      end
+
       private
 
       def filter_params
@@ -102,6 +119,10 @@ module Api
 
       def stock_batch_params
         params.permit(:nursery_id, :species_id, :species_name, :variety_id, :variety_name, :container_id, :quantity, :available_quantity, :reserved_quantity, :sowing_date, :origin, :growth_stage, :price_euros, :accepts_semos, :price_semos, :notes)
+      end
+
+      def nursery_params
+        params.permit(:name, :nursery_type, :integration, :address, :city, :postal_code, :country, :latitude, :longitude, :contact_name, :contact_email, :contact_phone, :website, :description, :is_pickup_point, specialties: [])
       end
 
       def order_params

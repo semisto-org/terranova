@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
+import { NurseryList } from '../../nursery/components/NurseryList'
+import { NurseryForm } from '../../nursery/components/NurseryForm'
 
 const ORDER_FLOW = ['new', 'processing', 'ready', 'picked-up', 'cancelled']
 
@@ -12,6 +14,7 @@ const NURSERY_SECTIONS = [
   { id: 'mother-plants', label: 'Plants-mères' },
   { id: 'catalog', label: 'Catalogue' },
   { id: 'transfers', label: 'Transferts' },
+  { id: 'nurseries', label: 'Pépinières' },
 ]
 
 export default function NurseryIndex() {
@@ -22,6 +25,7 @@ export default function NurseryIndex() {
   const [view, setView] = useState('dashboard')
   useShellNav({ sections: NURSERY_SECTIONS, activeSection: view, onSectionChange: setView })
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [nurseryForm, setNurseryForm] = useState(null) // null=closed, 'new' or nursery object
   const [filter, setFilter] = useState({ nursery_id: '', species_query: '' })
   const [payload, setPayload] = useState({
     nurseries: [],
@@ -169,6 +173,20 @@ export default function NurseryIndex() {
     },
     validateMotherPlant: (id) => runMutation(() => apiRequest(`/api/v1/nursery/mother-plants/${id}/validate`, { method: 'PATCH', body: JSON.stringify({ validated_by: 'Nursery Manager' }) })),
     rejectMotherPlant: (id) => runMutation(() => apiRequest(`/api/v1/nursery/mother-plants/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ validated_by: 'Nursery Manager', notes: 'Non conforme' }) })),
+    saveNursery: (data, editId) => {
+      if (editId) {
+        return runMutation(() => apiRequest(`/api/v1/nursery/nurseries/${editId}`, { method: 'PATCH', body: JSON.stringify(data) }))
+      }
+      return runMutation(() => apiRequest('/api/v1/nursery/nurseries', { method: 'POST', body: JSON.stringify(data) }))
+    },
+    deleteNursery: (id) => {
+      const n = payload.nurseries.find((item) => item.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer cette pépinière ?',
+        message: `La pépinière « ${n?.name || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/nursery/nurseries/${id}`, { method: 'DELETE' })),
+      })
+    },
   }), [payload, runMutation])
 
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Nursery...</p></div>
@@ -269,6 +287,27 @@ export default function NurseryIndex() {
               </div>
             ))}
           </section>
+        )}
+
+        {view === 'nurseries' && (
+          <NurseryList
+            nurseries={payload.nurseries}
+            onCreate={() => setNurseryForm('new')}
+            onEdit={(id) => setNurseryForm(payload.nurseries.find((n) => n.id === id) || 'new')}
+            onDelete={(id) => actions.deleteNursery(id)}
+          />
+        )}
+
+        {nurseryForm && (
+          <NurseryForm
+            nursery={nurseryForm === 'new' ? null : nurseryForm}
+            onCancel={() => setNurseryForm(null)}
+            onSave={async (data) => {
+              const editId = nurseryForm !== 'new' ? nurseryForm.id : null
+              const ok = await actions.saveNursery(data, editId)
+              if (ok) setNurseryForm(null)
+            }}
+          />
         )}
 
         {(busy || error || notice) && (

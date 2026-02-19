@@ -243,6 +243,9 @@ Rails.application.routes.draw do
       patch "nursery/orders/:order_id/cancel", to: "nursery#cancel_order"
       patch "nursery/mother-plants/:mother_plant_id/validate", to: "nursery#validate_mother_plant"
       patch "nursery/mother-plants/:mother_plant_id/reject", to: "nursery#reject_mother_plant"
+      post "nursery/nurseries", to: "nursery#create_nursery"
+      patch "nursery/nurseries/:nursery_id", to: "nursery#update_nursery"
+      delete "nursery/nurseries/:nursery_id", to: "nursery#destroy_nursery"
 
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"
