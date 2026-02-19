@@ -424,15 +424,16 @@ Design::ProjectTimesheet.find_or_create_by!(project: design_project, member_id: 
   item.notes = 'Atelier client et mise a jour concept.'
 end
 
-Design::Expense.find_or_create_by!(project: design_project, date: Date.current - 2, description: 'Achat plants pepiniere') do |item|
-  item.amount = 340.0
-  item.category = 'plants'
-  item.phase = 'projet-detaille'
-  item.member_id = members.first.id.to_s
-  item.member_name = "#{members.first.first_name} #{members.first.last_name}"
-  item.receipt_url = 'https://example.com/receipts/plants-001.pdf'
-  item.status = 'approved'
-end
+# Design::Expense model not yet created — skip seeding
+# Design::Expense.find_or_create_by!(project: design_project, date: Date.current - 2, description: 'Achat plants pepiniere') do |item|
+#   item.amount = 340.0
+#   item.category = 'plants'
+#   item.phase = 'projet-detaille'
+#   item.member_id = members.first.id.to_s
+#   item.member_name = "#{members.first.first_name} #{members.first.last_name}"
+#   item.receipt_url = 'https://example.com/receipts/plants-001.pdf'
+#   item.status = 'approved'
+# end
 
 analysis = Design::SiteAnalysis.find_or_create_by!(project: design_project)
 analysis.update!(
@@ -530,3 +531,351 @@ Academy::TrainingSession.find_or_create_by!(training: training_dj, start_date: D
   item.trainer_ids = [members.second.id.to_s]
   item.assistant_ids = []
 end
+
+# ──────────────────────────────────────────────
+# Nursery Seeds
+# ──────────────────────────────────────────────
+puts "Seeding nursery data..."
+
+nursery_semisto = Nursery::Nursery.find_or_create_by!(name: 'Pépinière Semisto') do |n|
+  n.nursery_type = 'semisto'
+  n.integration = 'platform'
+  n.address = 'Rue de la Forêt 42'
+  n.city = 'Namur'
+  n.postal_code = '5000'
+  n.country = 'BE'
+  n.latitude = 50.4674
+  n.longitude = 4.8720
+  n.contact_name = 'Sophie Dubois'
+  n.contact_email = 'sophie@semisto.org'
+  n.contact_phone = '+32 81 12 34 56'
+  n.description = 'Pépinière principale du réseau Semisto'
+  n.specialties = ['fruitiers', 'haies', 'couvre-sol']
+  n.is_pickup_point = true
+end
+
+nursery_partner = Nursery::Nursery.find_or_create_by!(name: 'Pépinière du Bocage') do |n|
+  n.nursery_type = 'partner'
+  n.integration = 'manual'
+  n.address = 'Chemin du Bocage 15'
+  n.city = 'Liège'
+  n.postal_code = '4000'
+  n.country = 'BE'
+  n.latitude = 50.6326
+  n.longitude = 5.5797
+  n.contact_name = 'Marc Lefort'
+  n.contact_email = 'marc@bocage.be'
+  n.contact_phone = '+32 4 987 65 43'
+  n.website = 'https://pepiniere-bocage.be'
+  n.description = 'Pépinière partenaire spécialisée en arbres forestiers'
+  n.specialties = ['forestiers', 'fruitiers']
+  n.is_pickup_point = true
+end
+
+nursery_third = Nursery::Nursery.find_or_create_by!(name: 'Les Jardins de Wallonie') do |n|
+  n.nursery_type = 'partner'
+  n.integration = 'platform'
+  n.address = 'Avenue Verte 8'
+  n.city = 'Mons'
+  n.postal_code = '7000'
+  n.country = 'BE'
+  n.latitude = 50.4542
+  n.longitude = 3.9563
+  n.contact_name = 'Isabelle Martin'
+  n.contact_email = 'isabelle@jardins-wallonie.be'
+  n.description = 'Spécialiste plantes médicinales et aromatiques'
+  n.specialties = ['médicinales', 'aromatiques']
+  n.is_pickup_point = false
+end
+
+# Containers
+container_p9 = Nursery::Container.find_or_create_by!(short_name: 'P9') do |c|
+  c.name = 'Pot 9cm'
+  c.volume_liters = 0.5
+  c.description = 'Petit pot standard 9cm'
+  c.sort_order = 1
+end
+
+container_c2 = Nursery::Container.find_or_create_by!(short_name: 'C2') do |c|
+  c.name = 'Conteneur 2L'
+  c.volume_liters = 2.0
+  c.description = 'Conteneur moyen 2 litres'
+  c.sort_order = 2
+end
+
+container_c5 = Nursery::Container.find_or_create_by!(short_name: 'C5') do |c|
+  c.name = 'Conteneur 5L'
+  c.volume_liters = 5.0
+  c.description = 'Grand conteneur 5 litres'
+  c.sort_order = 3
+end
+
+container_rn = Nursery::Container.find_or_create_by!(short_name: 'RN') do |c|
+  c.name = 'Racines nues'
+  c.volume_liters = nil
+  c.description = 'Plants à racines nues (saison hivernale)'
+  c.sort_order = 4
+end
+
+# Stock Batches
+batch1 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species_name: 'Malus domestica', container: container_c2) do |b|
+  b.species_id = 'sp-malus-domestica'
+  b.variety_name = 'Reine des Reinettes'
+  b.variety_id = 'var-reine-reinettes'
+  b.quantity = 50
+  b.available_quantity = 42
+  b.reserved_quantity = 8
+  b.sowing_date = Date.new(2025, 3, 15)
+  b.origin = 'Greffage local'
+  b.growth_stage = 'young'
+  b.price_euros = 12.50
+  b.accepts_semos = true
+  b.price_semos = 25.0
+  b.notes = 'Greffés sur M26, bon développement'
+end
+
+batch2 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species_name: 'Corylus avellana', container: container_rn) do |b|
+  b.species_id = 'sp-corylus-avellana'
+  b.variety_name = 'Merveille de Bollwiller'
+  b.variety_id = 'var-bollwiller'
+  b.quantity = 120
+  b.available_quantity = 95
+  b.reserved_quantity = 25
+  b.sowing_date = Date.new(2024, 11, 1)
+  b.origin = 'Marcottage'
+  b.growth_stage = 'established'
+  b.price_euros = 8.00
+  b.accepts_semos = true
+  b.price_semos = 16.0
+end
+
+batch3 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_partner, species_name: 'Quercus robur', container: container_c5) do |b|
+  b.species_id = 'sp-quercus-robur'
+  b.quantity = 30
+  b.available_quantity = 5
+  b.reserved_quantity = 0
+  b.sowing_date = Date.new(2024, 10, 20)
+  b.origin = 'Semis'
+  b.growth_stage = 'young'
+  b.price_euros = 18.00
+  b.accepts_semos = false
+  b.notes = 'Stock bas - réappro prévue mars 2026'
+end
+
+batch4 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_third, species_name: 'Lavandula angustifolia', container: container_p9) do |b|
+  b.species_id = 'sp-lavandula'
+  b.variety_name = 'Hidcote'
+  b.variety_id = 'var-hidcote'
+  b.quantity = 200
+  b.available_quantity = 180
+  b.reserved_quantity = 20
+  b.sowing_date = Date.new(2025, 5, 1)
+  b.origin = 'Bouturage'
+  b.growth_stage = 'seedling'
+  b.price_euros = 3.50
+  b.accepts_semos = true
+  b.price_semos = 7.0
+end
+
+batch5 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species_name: 'Rubus idaeus', container: container_p9) do |b|
+  b.species_id = 'sp-rubus-idaeus'
+  b.variety_name = 'Heritage'
+  b.variety_id = 'var-heritage'
+  b.quantity = 80
+  b.available_quantity = 3
+  b.reserved_quantity = 2
+  b.sowing_date = Date.new(2025, 6, 10)
+  b.origin = 'Division'
+  b.growth_stage = 'mature'
+  b.price_euros = 5.00
+  b.accepts_semos = true
+  b.price_semos = 10.0
+  b.notes = 'Framboisier remontant, excellent rendement'
+end
+
+# Mother Plants
+Nursery::MotherPlant.find_or_create_by!(species_name: 'Malus domestica', place_name: 'Verger communautaire Namur') do |mp|
+  mp.species_id = 'sp-malus-domestica'
+  mp.variety_name = 'Reine des Reinettes'
+  mp.variety_id = 'var-reine-reinettes'
+  mp.place_id = 'place-verger-namur'
+  mp.place_address = 'Chemin du Verger, 5000 Namur'
+  mp.planting_date = Date.new(2018, 3, 15)
+  mp.source = 'design-studio'
+  mp.project_name = 'Verger Namur Nord'
+  mp.project_id = 'proj-verger-namur'
+  mp.status = 'validated'
+  mp.validated_at = Time.new(2025, 6, 1)
+  mp.validated_by = 'Sophie Dubois'
+  mp.quantity = 3
+  mp.notes = 'Arbres vigoureux, bonne production'
+  mp.last_harvest_date = Date.new(2025, 10, 15)
+end
+
+Nursery::MotherPlant.find_or_create_by!(species_name: 'Sambucus nigra', place_name: 'Jardin partagé Liège') do |mp|
+  mp.species_id = 'sp-sambucus-nigra'
+  mp.place_id = 'place-jardin-liege'
+  mp.place_address = 'Rue des Jardins, 4000 Liège'
+  mp.planting_date = Date.new(2020, 11, 10)
+  mp.source = 'member-proposal'
+  mp.member_name = 'Pierre Lambert'
+  mp.member_id = 'member-pierre'
+  mp.status = 'pending'
+  mp.quantity = 2
+  mp.notes = 'Sureau adulte, proposition de récolte de boutures'
+end
+
+Nursery::MotherPlant.find_or_create_by!(species_name: 'Ribes nigrum', place_name: 'Potager collectif Mons') do |mp|
+  mp.species_id = 'sp-ribes-nigrum'
+  mp.variety_name = 'Noir de Bourgogne'
+  mp.variety_id = 'var-noir-bourgogne'
+  mp.place_id = 'place-potager-mons'
+  mp.place_address = 'Avenue du Potager, 7000 Mons'
+  mp.planting_date = Date.new(2021, 2, 20)
+  mp.source = 'member-proposal'
+  mp.member_name = 'Claire Fontaine'
+  mp.member_id = 'member-claire'
+  mp.status = 'pending'
+  mp.quantity = 5
+end
+
+Nursery::MotherPlant.find_or_create_by!(species_name: 'Prunus avium', place_name: 'Parc Josaphat') do |mp|
+  mp.species_id = 'sp-prunus-avium'
+  mp.variety_name = 'Burlat'
+  mp.variety_id = 'var-burlat'
+  mp.place_id = 'place-josaphat'
+  mp.place_address = 'Parc Josaphat, 1030 Bruxelles'
+  mp.planting_date = Date.new(2015, 4, 1)
+  mp.source = 'design-studio'
+  mp.project_name = 'Parc comestible Josaphat'
+  mp.project_id = 'proj-josaphat'
+  mp.status = 'rejected'
+  mp.validated_at = Time.new(2025, 8, 15)
+  mp.validated_by = 'Sophie Dubois'
+  mp.quantity = 1
+  mp.notes = 'Arbre malade, rejeté pour récolte'
+end
+
+# Orders
+order1 = Nursery::Order.find_or_create_by!(order_number: 'PEP-2026-0001') do |o|
+  o.customer_name = 'Association Les Vergers Urbains'
+  o.customer_email = 'contact@vergers-urbains.be'
+  o.customer_phone = '+32 2 345 67 89'
+  o.customer_id = 'cust-vergers-urbains'
+  o.is_member = true
+  o.status = 'new'
+  o.price_level = 'standard'
+  o.pickup_nursery = nursery_semisto
+  o.subtotal_euros = 125.0
+  o.subtotal_semos = 0
+  o.total_euros = 125.0
+  o.total_semos = 0
+  o.notes = 'Commande pour plantation printemps 2026'
+end
+
+Nursery::OrderLine.find_or_create_by!(order: order1, stock_batch: batch1, species_name: 'Malus domestica') do |l|
+  l.nursery = nursery_semisto
+  l.nursery_name = nursery_semisto.name
+  l.variety_name = 'Reine des Reinettes'
+  l.container_name = 'C2'
+  l.quantity = 10
+  l.unit_price_euros = 12.50
+  l.total_euros = 125.0
+  l.total_semos = 0
+  l.pay_in_semos = false
+end
+
+order2 = Nursery::Order.find_or_create_by!(order_number: 'PEP-2026-0002') do |o|
+  o.customer_name = 'Pierre Lambert'
+  o.customer_email = 'pierre.lambert@email.be'
+  o.customer_id = 'member-pierre'
+  o.is_member = true
+  o.status = 'processing'
+  o.price_level = 'solidarity'
+  o.pickup_nursery = nursery_semisto
+  o.subtotal_euros = 0
+  o.subtotal_semos = 250.0
+  o.total_euros = 0
+  o.total_semos = 250.0
+  o.prepared_at = Time.new(2026, 2, 15)
+  o.notes = 'Paiement en semos'
+end
+
+Nursery::OrderLine.find_or_create_by!(order: order2, stock_batch: batch2, species_name: 'Corylus avellana') do |l|
+  l.nursery = nursery_semisto
+  l.nursery_name = nursery_semisto.name
+  l.variety_name = 'Merveille de Bollwiller'
+  l.container_name = 'RN'
+  l.quantity = 10
+  l.unit_price_euros = 8.00
+  l.unit_price_semos = 16.0
+  l.total_euros = 0
+  l.total_semos = 160.0
+  l.pay_in_semos = true
+end
+
+Nursery::OrderLine.find_or_create_by!(order: order2, stock_batch: batch4, species_name: 'Lavandula angustifolia') do |l|
+  l.nursery = nursery_third
+  l.nursery_name = nursery_third.name
+  l.variety_name = 'Hidcote'
+  l.container_name = 'P9'
+  l.quantity = 10
+  l.unit_price_euros = 3.50
+  l.unit_price_semos = 7.0
+  l.total_euros = 0
+  l.total_semos = 70.0
+  l.pay_in_semos = true
+end
+
+order3 = Nursery::Order.find_or_create_by!(order_number: 'PEP-2026-0003') do |o|
+  o.customer_name = 'Commune de Gembloux'
+  o.customer_email = 'espaces-verts@gembloux.be'
+  o.customer_id = 'cust-gembloux'
+  o.is_member = false
+  o.status = 'ready'
+  o.price_level = 'support'
+  o.pickup_nursery = nursery_partner
+  o.subtotal_euros = 540.0
+  o.subtotal_semos = 0
+  o.total_euros = 540.0
+  o.total_semos = 0
+  o.prepared_at = Time.new(2026, 2, 10)
+  o.ready_at = Time.new(2026, 2, 18)
+end
+
+Nursery::OrderLine.find_or_create_by!(order: order3, stock_batch: batch3, species_name: 'Quercus robur') do |l|
+  l.nursery = nursery_partner
+  l.nursery_name = nursery_partner.name
+  l.container_name = 'C5'
+  l.quantity = 30
+  l.unit_price_euros = 18.00
+  l.total_euros = 540.0
+  l.total_semos = 0
+  l.pay_in_semos = false
+end
+
+# Transfers
+Nursery::Transfer.find_or_create_by!(order: order2, status: 'planned') do |t|
+  t.stops = [
+    { nurseryId: nursery_third.id.to_s, nurseryName: nursery_third.name, type: 'pickup', address: nursery_third.address },
+    { nurseryId: nursery_semisto.id.to_s, nurseryName: nursery_semisto.name, type: 'delivery', address: nursery_semisto.address }
+  ]
+  t.total_distance_km = 85.0
+  t.estimated_duration = '1h30'
+  t.scheduled_date = Date.new(2026, 2, 25)
+  t.notes = 'Transfert lavandes de Mons vers Namur'
+end
+
+Nursery::Transfer.find_or_create_by!(order: order3, status: 'in-progress') do |t|
+  t.stops = [
+    { nurseryId: nursery_partner.id.to_s, nurseryName: nursery_partner.name, type: 'pickup', address: nursery_partner.address }
+  ]
+  t.total_distance_km = 45.0
+  t.estimated_duration = '45min'
+  t.driver_name = 'Jean-Marc Dupont'
+  t.vehicle_info = 'Camionnette Semisto - 1-ABC-234'
+  t.scheduled_date = Date.new(2026, 2, 19)
+  t.notes = 'Livraison chênes pour Gembloux'
+end
+
+puts "Nursery seeding done!"
