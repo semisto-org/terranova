@@ -289,11 +289,11 @@ module Api
       end
 
       def training_params
-        params.permit(:title, :status, :price, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
       end
 
       def training_update_params
-        params.permit(:title, :status, :price, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
       end
 
       def session_params
@@ -301,11 +301,11 @@ module Api
       end
 
       def registration_params
-        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_postal_code, :departure_country, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note)
       end
 
       def registration_update_params
-        params.permit(:contact_name, :contact_email, :phone, :departure_postal_code, :departure_country, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note)
       end
 
       def document_params
@@ -362,6 +362,7 @@ module Api
           title: item.title,
           status: item.status,
           price: item.price.to_f,
+          depositAmount: item.deposit_amount.to_f,
           vatRate: item.vat_rate.to_f,
           priceExclVat: item.price_excl_vat,
           maxParticipants: item.max_participants,
@@ -406,10 +407,14 @@ module Api
           contactName: item.contact_name,
           contactEmail: item.contact_email,
           phone: item.phone,
+          departureCity: item.departure_city,
           departurePostalCode: item.departure_postal_code,
           departureCountry: item.departure_country,
+          carpooling: item.carpooling,
           amountPaid: item.amount_paid.to_f,
+          paymentAmount: item.payment_amount.to_f,
           paymentStatus: item.payment_status,
+          stripePaymentIntentId: item.stripe_payment_intent_id,
           internalNote: item.internal_note,
           registeredAt: item.registered_at.iso8601
         }

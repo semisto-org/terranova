@@ -18,5 +18,7 @@ end
 group :development do
   gem "letter_opener", "~> 1.10"
 end
+
 gem "sentry-ruby"
 gem "sentry-rails"
+gem "stripe", "~> 18.3"

@@ -16,6 +16,7 @@ module Academy
     after_update :create_album_when_planned, if: :saved_change_to_status?
     validates :status, inclusion: { in: STATUSES }
     validates :vat_rate, numericality: { greater_than_or_equal_to: 0, less_than: 100 }
+    validates :deposit_amount, numericality: { greater_than_or_equal_to: 0 }
 
     def price_excl_vat
       vat_rate.to_f > 0 ? (price / (1 + vat_rate / 100.0)).round(2) : price
