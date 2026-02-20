@@ -7,7 +7,7 @@ const POLES = [
   { id: 'academy', label: 'Academy', path: '/academy', accent: '#B01A19', bg: '#eac7b8', icon: '/icons/academy.png' },
   { id: 'nursery', label: 'Nursery', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },
   { id: 'plants', label: 'Plant Database', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
-  { id: 'knowledge', label: 'Knowledge Base', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
+  { id: 'knowledge', label: 'Base de connaissances', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
 ]
 
 export function getPoleFromPath(pathname) {
@@ -72,7 +72,7 @@ export default function ContextSwitcher() {
 
           <div className="py-1.5">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Poles</p>
-            {POLES.filter((p) => p.id !== 'plants').map((pole) => (
+            {POLES.filter((p) => p.id !== 'plants' && p.id !== 'knowledge').map((pole) => (
               <Link
                 key={pole.id}
                 href={pole.path}
@@ -122,7 +122,7 @@ export default function ContextSwitcher() {
               }`}
             >
               <span className="w-5 h-5 rounded flex items-center justify-center bg-teal-600 text-white text-[10px] font-bold shrink-0">K</span>
-              Knowledge Base
+              Base de connaissances
             </Link>
           </div>
 
