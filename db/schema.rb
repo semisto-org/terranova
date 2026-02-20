@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_20_170449) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -693,25 +693,73 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_170449) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "knowledge_articles", force: :cascade do |t|
+  create_table "knowledge_bookmarks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["topic_id"], name: "index_knowledge_bookmarks_on_topic_id"
+    t.index ["user_id", "topic_id"], name: "index_knowledge_bookmarks_on_user_id_and_topic_id", unique: true
+    t.index ["user_id"], name: "index_knowledge_bookmarks_on_user_id"
+  end
+
+  create_table "knowledge_comments", force: :cascade do |t|
     t.string "author_name"
-    t.string "category", default: "other", null: false
     t.text "content", null: false
     t.datetime "created_at", null: false
-    t.integer "lab_id"
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["topic_id"], name: "index_knowledge_comments_on_topic_id"
+    t.index ["user_id"], name: "index_knowledge_comments_on_user_id"
+  end
+
+  create_table "knowledge_sections", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "description"
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_knowledge_sections_on_created_by_id"
+  end
+
+  create_table "knowledge_topic_editors", force: :cascade do |t|
+    t.datetime "edited_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.bigint "topic_id", null: false
+    t.bigint "user_id", null: false
+    t.index ["topic_id", "user_id"], name: "index_knowledge_topic_editors_on_topic_id_and_user_id", unique: true
+    t.index ["topic_id"], name: "index_knowledge_topic_editors_on_topic_id"
+    t.index ["user_id"], name: "index_knowledge_topic_editors_on_user_id"
+  end
+
+  create_table "knowledge_topic_revisions", force: :cascade do |t|
+    t.json "changes_data", default: {}
+    t.datetime "created_at", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.string "user_name"
+    t.index ["topic_id"], name: "index_knowledge_topic_revisions_on_topic_id"
+    t.index ["user_id"], name: "index_knowledge_topic_revisions_on_user_id"
+  end
+
+  create_table "knowledge_topics", force: :cascade do |t|
+    t.string "author_name"
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
     t.boolean "pinned", default: false
-    t.string "pole"
-    t.string "source_url"
+    t.integer "reading_time_minutes", default: 1
+    t.bigint "section_id"
     t.string "status", default: "draft", null: false
-    t.text "summary"
     t.json "tags", default: []
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.index ["category"], name: "index_knowledge_articles_on_category"
-    t.index ["lab_id"], name: "index_knowledge_articles_on_lab_id"
-    t.index ["pinned"], name: "index_knowledge_articles_on_pinned"
-    t.index ["pole"], name: "index_knowledge_articles_on_pole"
-    t.index ["status"], name: "index_knowledge_articles_on_status"
+    t.index ["created_by_id"], name: "index_knowledge_topics_on_created_by_id"
+    t.index ["pinned"], name: "index_knowledge_topics_on_pinned"
+    t.index ["section_id"], name: "index_knowledge_topics_on_section_id"
+    t.index ["status"], name: "index_knowledge_topics_on_status"
   end
 
   create_table "member_roles", force: :cascade do |t|
@@ -1237,6 +1285,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_170449) do
   add_foreign_key "guilds", "members", column: "leader_id"
   add_foreign_key "hill_chart_snapshots", "pitches"
   add_foreign_key "idea_items", "idea_lists"
+  add_foreign_key "knowledge_bookmarks", "knowledge_topics", column: "topic_id"
+  add_foreign_key "knowledge_bookmarks", "members", column: "user_id"
+  add_foreign_key "knowledge_comments", "knowledge_topics", column: "topic_id"
+  add_foreign_key "knowledge_comments", "members", column: "user_id"
+  add_foreign_key "knowledge_sections", "members", column: "created_by_id"
+  add_foreign_key "knowledge_topic_editors", "knowledge_topics", column: "topic_id"
+  add_foreign_key "knowledge_topic_editors", "members", column: "user_id"
+  add_foreign_key "knowledge_topic_revisions", "knowledge_topics", column: "topic_id"
+  add_foreign_key "knowledge_topic_revisions", "members", column: "user_id"
+  add_foreign_key "knowledge_topics", "knowledge_sections", column: "section_id"
+  add_foreign_key "knowledge_topics", "members", column: "created_by_id"
   add_foreign_key "member_roles", "members"
   add_foreign_key "nursery_order_lines", "nursery_nurseries", column: "nursery_id"
   add_foreign_key "nursery_order_lines", "nursery_orders", column: "order_id"

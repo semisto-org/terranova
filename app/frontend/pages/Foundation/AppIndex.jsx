@@ -23,7 +23,7 @@ export default function AppIndex({ message, milestone }) {
         <Link href="/plants" className="rounded-xl border border-stone-200 bg-white p-4 hover:border-[#5B5781] transition-colors block">
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-emerald-600">P</span>
-            <span className="font-medium text-stone-900">Plant Database</span>
+            <span className="font-medium text-stone-900">Bases de données végétales</span>
           </div>
           <p className="text-xs text-stone-500 mt-2">Base de données végétale, recherche, palettes</p>
         </Link>

@@ -6,7 +6,7 @@ const POLES = [
   { id: 'design', label: 'Design Studio', path: '/design', accent: '#AFBD00', bg: '#e1e6d8', icon: '/icons/design.png' },
   { id: 'academy', label: 'Academy', path: '/academy', accent: '#B01A19', bg: '#eac7b8', icon: '/icons/academy.png' },
   { id: 'nursery', label: 'Nursery', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },
-  { id: 'plants', label: 'Plant Database', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
+  { id: 'plants', label: 'Bases de données végétales', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
   { id: 'knowledge', label: 'Base de connaissances', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
 ]
 
@@ -110,7 +110,7 @@ export default function ContextSwitcher() {
               }`}
             >
               <span className="w-5 h-5 rounded flex items-center justify-center bg-emerald-600 text-white text-[10px] font-bold shrink-0">P</span>
-              Plant Database
+              Bases de données végétales
             </Link>
             <Link
               href="/knowledge"
