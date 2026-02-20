@@ -11,6 +11,7 @@ import { NurseryStockCard } from './NurseryStockCard'
 import { PlantLocationMap } from './PlantLocationMap'
 import { ReferenceList } from './ReferenceList'
 import { MonthsCalendar } from './MonthsCalendar'
+import { SeasonCalendar } from './SeasonCalendar'
 import { PropertyBadge } from './PropertyBadge'
 import { AddToPaletteButton } from './AddToPaletteButton'
 import { SpeciesBreadcrumb } from './SpeciesBreadcrumb'
@@ -211,6 +212,7 @@ export function SpeciesDetail({
                 photos={photos}
                 contributors={contributors}
                 onContributorSelect={onContributorSelect}
+                onAddPhoto={onAddPhoto}
               />
             </div>
 
@@ -266,16 +268,6 @@ export function SpeciesDetail({
               {/* Action buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
                 <AddToPaletteButton onAddToPalette={onAddToPalette} />
-                <button
-                  onClick={onAddPhoto}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-stone-300 text-stone-700 font-medium rounded-xl hover:bg-stone-50 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Photo
-                </button>
               </div>
             </div>
           </div>
@@ -450,43 +442,13 @@ export function SpeciesDetail({
           {/* Calendar */}
           <div className="px-4 md:px-6">
             <CollapsibleSection title="Calendrier" icon={icons.calendar} defaultOpen={true}>
-              <div className="space-y-4">
-                {species.floweringMonths.length > 0 && (
-                  <MonthsCalendar
-                    activeMonths={species.floweringMonths}
-                    label="Floraison"
-                    color="pink"
-                  />
-                )}
-                {species.fruitingMonths.length > 0 && (
-                  <MonthsCalendar
-                    activeMonths={species.fruitingMonths}
-                    label="Fructification"
-                    color="orange"
-                  />
-                )}
-                {species.harvestMonths.length > 0 && (
-                  <MonthsCalendar
-                    activeMonths={species.harvestMonths}
-                    label="Récolte"
-                    color="green"
-                  />
-                )}
-
-                <div className="pt-2">
-                  <p className="text-xs text-stone-500 mb-2">Période de plantation</p>
-                  <div className="flex flex-wrap gap-2">
-                    {species.plantingSeasons.map(season => (
-                      <PropertyBadge
-                        key={season}
-                        value={season}
-                        options={filterOptions.plantingSeasons}
-                        variant="accent"
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <SeasonCalendar
+                floweringMonths={species.floweringMonths}
+                fruitingMonths={species.fruitingMonths}
+                harvestMonths={species.harvestMonths}
+                plantingSeasons={species.plantingSeasons}
+                plantingSeasonsOptions={filterOptions.plantingSeasons}
+              />
             </CollapsibleSection>
           </div>
 

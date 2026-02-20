@@ -594,12 +594,21 @@ module Api
 
         begin
           data = Rails.application.message_verifier(:client_portal).verify(token, purpose: :client_portal_access)
-          unless data[:project_id].to_s == params[:project_id].to_s
+          data = data.with_indifferent_access if data.respond_to?(:with_indifferent_access)
+          expected_project_id = project_id_for_client_portal_check
+          token_project_id = (data["project_id"] || data[:project_id])&.to_s
+          if expected_project_id.present? && token_project_id != expected_project_id
             render json: { error: "Token invalide pour ce projet" }, status: :unauthorized
           end
         rescue ActiveSupport::MessageVerifier::InvalidSignature
           render json: { error: "Lien invalide" }, status: :unauthorized
         end
+      end
+
+      def project_id_for_client_portal_check
+        return params[:project_id] if params[:project_id].present?
+        quote = Design::Quote.find_by(id: params[:quote_id])
+        quote&.project_id&.to_s
       end
 
       def find_project

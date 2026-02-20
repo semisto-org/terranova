@@ -1053,7 +1053,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   if (loading || !filterOptions) {
     return (
       <div className="flex items-center justify-center h-full p-8">
-        <p className="text-stone-500">Chargement Plant Database...</p>
+        <p className="text-stone-500">Chargement Bases de données végétales...</p>
       </div>
     )
   }

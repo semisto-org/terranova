@@ -1,24 +1,48 @@
 import { useState, useEffect, useRef } from 'react'
+import SimpleEditor from '../SimpleEditor'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 const IDEA_CATEGORIES = [
-  { value: 'subject', label: 'Sujet', icon: '💡', description: 'Idée de sujet de formation' },
+  { value: 'subject', label: 'Sujet', icon: '🎓', description: 'Idée de sujet de formation' },
   { value: 'trainer', label: 'Formateur', icon: '👤', description: 'Idée de formateur' },
   { value: 'location', label: 'Lieu', icon: '📍', description: 'Idée de lieu de formation' },
-  { value: 'other', label: 'Autre', icon: '📝', description: 'Autre type d\'idée' },
+  { value: 'other', label: 'Autre', icon: '📝', description: 'Autre type de note' },
 ]
 
-export function IdeaNoteFormModal({ note, onSubmit, onCancel, busy = false }) {
+export function IdeaNoteFormModal({ note, existingTags = [], onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(note)
   const titleRef = useRef(null)
+  const newTagRef = useRef(null)
 
   const [category, setCategory] = useState(note?.category ?? 'subject')
   const [title, setTitle] = useState(note?.title ?? '')
   const [content, setContent] = useState(note?.content ?? '')
-  const [tagsInput, setTagsInput] = useState(note?.tags?.join(', ') ?? '')
+  const [selectedTags, setSelectedTags] = useState(note?.tags ?? [])
+  const [newTagInput, setNewTagInput] = useState('')
   const [error, setError] = useState(null)
+
+  const toggleTag = (tag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    )
+  }
+
+  const addNewTag = () => {
+    const tag = newTagInput.trim().toLowerCase()
+    if (tag && !selectedTags.includes(tag)) {
+      setSelectedTags((prev) => [...prev, tag])
+    }
+    setNewTagInput('')
+    newTagRef.current?.focus()
+  }
+
+  const removeTag = (tag) => {
+    setSelectedTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  const availableTags = existingTags.filter((t) => !selectedTags.includes(t))
 
   // Focus first input when modal opens
   useEffect(() => {
@@ -56,18 +80,12 @@ export function IdeaNoteFormModal({ note, onSubmit, onCancel, busy = false }) {
       return
     }
 
-    // Parse tags
-    const tags = tagsInput
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0)
-
     try {
       await onSubmit({
         category,
         title: title.trim(),
-        content: content.trim(),
-        tags,
+        content: content,
+        tags: selectedTags,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -93,12 +111,12 @@ export function IdeaNoteFormModal({ note, onSubmit, onCancel, busy = false }) {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
-                  {isEdit ? 'Modifier la note idée' : 'Nouvelle note idée'}
+                  {isEdit ? 'Modifier la note' : 'Nouvelle note'}
                 </h3>
                 <p className="text-sm text-stone-500 mt-1">
                   {isEdit
-                    ? 'Mettez à jour votre note d\'idée'
-                    : 'Capturez une idée pour une future formation'}
+                    ? 'Mettez à jour votre note relative aux activités du pôle Academy'
+                    : 'Capture une note relative aux activités du pôle Academy'}
                 </p>
               </div>
               <button
@@ -183,63 +201,90 @@ export function IdeaNoteFormModal({ note, onSubmit, onCancel, busy = false }) {
                     onChange={(e) => setTitle(e.target.value)}
                     required
                     className={inputBase}
-                    placeholder="ex: Formation design régénératif avancé"
+                    placeholder=""
                   />
                 </div>
 
                 {/* Content */}
                 <div>
-                  <label
-                    htmlFor="idea-content"
-                    className="block text-sm font-semibold text-stone-700 mb-2"
-                  >
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
                     Contenu
                   </label>
-                  <textarea
-                    id="idea-content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    rows={6}
-                    className={inputBase}
+                  <SimpleEditor
+                    content={content}
+                    onUpdate={setContent}
                     placeholder="Développez votre idée... Contexte, objectifs, public visé, etc."
+                    minHeight="150px"
+                    toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']}
                   />
                 </div>
 
                 {/* Tags */}
                 <div>
-                  <label
-                    htmlFor="idea-tags"
-                    className="block text-sm font-semibold text-stone-700 mb-2"
-                  >
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
                     Tags
                   </label>
-                  <input
-                    id="idea-tags"
-                    type="text"
-                    value={tagsInput}
-                    onChange={(e) => setTagsInput(e.target.value)}
-                    className={inputBase}
-                    placeholder="ex: permaculture, design, avancé"
-                  />
-                  <p className="text-xs text-stone-500 mt-1.5">
-                    Séparez les tags par des virgules
-                  </p>
-                  {tagsInput && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {tagsInput
-                        .split(',')
-                        .map((tag) => tag.trim())
-                        .filter((tag) => tag.length > 0)
-                        .map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2.5 py-1 rounded-lg bg-[#B01A19]/10 text-[#B01A19] text-xs font-medium border border-[#B01A19]/20"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+
+                  {selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedTags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="group flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#B01A19]/10 text-[#B01A19] text-xs font-medium border border-[#B01A19]/20 hover:bg-[#B01A19]/20 transition-colors"
+                        >
+                          {tag}
+                          <svg className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      ))}
                     </div>
                   )}
+
+                  {availableTags.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-stone-500 mb-2">Tags existants</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availableTags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => toggleTag(tag)}
+                            className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium border border-stone-200 hover:bg-stone-200 hover:text-stone-800 transition-colors"
+                          >
+                            + {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <input
+                      ref={newTagRef}
+                      type="text"
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          addNewTag()
+                        }
+                      }}
+                      className={inputBase}
+                      placeholder="Ajouter un nouveau tag..."
+                    />
+                    <button
+                      type="button"
+                      onClick={addNewTag}
+                      disabled={!newTagInput.trim()}
+                      className="shrink-0 px-3 py-2 rounded-xl text-sm font-medium text-[#B01A19] border border-[#B01A19]/30 hover:bg-[#B01A19]/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Ajouter
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

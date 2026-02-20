@@ -30,6 +30,7 @@ Rails.application.routes.draw do
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
   get "profile", to: "app#profile"
+  get "knowledge", to: "app#knowledge"
 
   namespace :api do
     namespace :v1 do
@@ -249,6 +250,37 @@ Rails.application.routes.draw do
       patch "nursery/orders/:order_id/cancel", to: "nursery#cancel_order"
       patch "nursery/mother-plants/:mother_plant_id/validate", to: "nursery#validate_mother_plant"
       patch "nursery/mother-plants/:mother_plant_id/reject", to: "nursery#reject_mother_plant"
+      post "nursery/nurseries", to: "nursery#create_nursery"
+      patch "nursery/nurseries/:nursery_id", to: "nursery#update_nursery"
+      delete "nursery/nurseries/:nursery_id", to: "nursery#destroy_nursery"
+
+      # Knowledge Base
+      get "knowledge/sections", to: "knowledge/sections#index"
+      get "knowledge/sections/:id", to: "knowledge/sections#show"
+      post "knowledge/sections", to: "knowledge/sections#create"
+      patch "knowledge/sections/:id", to: "knowledge/sections#update"
+      delete "knowledge/sections/:id", to: "knowledge/sections#destroy"
+
+      get "knowledge/topics", to: "knowledge/topics#index"
+      get "knowledge/topics/:id", to: "knowledge/topics#show"
+      post "knowledge/topics", to: "knowledge/topics#create"
+      patch "knowledge/topics/:id", to: "knowledge/topics#update"
+      delete "knowledge/topics/:id", to: "knowledge/topics#destroy"
+      patch "knowledge/topics/:id/pin", to: "knowledge/topics#pin"
+      patch "knowledge/topics/:id/unpin", to: "knowledge/topics#unpin"
+      get "knowledge/topics/:id/related", to: "knowledge/topics#related"
+      post "knowledge/topics/:id/attachments", to: "knowledge/topics#add_attachment"
+      delete "knowledge/topics/:id/attachments/:attachment_id", to: "knowledge/topics#remove_attachment"
+      post "knowledge/topics/:id/bookmark", to: "knowledge/topics#bookmark"
+      delete "knowledge/topics/:id/bookmark", to: "knowledge/topics#unbookmark"
+      get "knowledge/topics/:id/revisions", to: "knowledge/topics#revisions"
+      get "knowledge/topics/:id/comments", to: "knowledge/topics#comments"
+      post "knowledge/topics/:id/comments", to: "knowledge/topics#create_comment"
+      patch "knowledge/topics/:topic_id/comments/:id", to: "knowledge/topics#update_comment"
+      delete "knowledge/topics/:topic_id/comments/:id", to: "knowledge/topics#destroy_comment"
+
+      get "knowledge/bookmarks", to: "knowledge/bookmarks#index"
+      get "knowledge/search", to: "knowledge/search#index"
 
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"

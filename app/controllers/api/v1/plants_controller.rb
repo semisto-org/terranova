@@ -8,10 +8,10 @@ module Api
           types: build_options(%w[tree shrub small-shrub climber herbaceous ground-cover]),
           exposures: build_options(%w[sun partial-shade shade]),
           hardinessZones: build_options(%w[zone-5 zone-6 zone-7 zone-8 zone-9]),
-          edibleParts: build_options(%w[fruit leaf flower seed root bark sap]),
+          edibleParts: build_options(%w[fruit leaf flower seed root bark sap], { 'seed' => 'Graine' }),
           interests: build_options(%w[edible medicinal nitrogen-fixer pollinator hedge ornamental]),
           ecosystemNeeds: build_options(%w[nurse-tree pioneer climax ground-cover erosion-control]),
-          propagationMethods: build_options(%w[seed cutting layering grafting division sucker]),
+          propagationMethods: build_options(%w[seed cutting layering grafting division sucker], { 'seed' => 'Semis' }),
           flowerColors: build_options(%w[white pink red yellow orange purple blue green]),
           plantingSeasons: build_options(%w[autumn winter spring]),
           months: build_options(%w[jan feb mar apr may jun jul aug sep oct nov dec]),
@@ -28,7 +28,7 @@ module Api
           wateringNeeds: build_options(%w[1 2 3 4 5]),
           lifeCycles: build_options(%w[annual biennial perennial]),
           foliageColors: build_options(%w[green dark-green light-green purple variegated silver golden]),
-          fragranceLevels: build_options(%w[none light medium strong]),
+          fragranceLevels: build_options(%w[none light medium strong], { 'medium' => 'Moyen' }),
           transformations: build_options(%w[jam jelly compote juice syrup liqueur dried frozen vinegar chutney]),
           fodderQualities: build_options(%w[sheep goats pigs cattle poultry rabbits]),
           strates: build_options(STRATE_KEYS)
@@ -414,8 +414,77 @@ module Api
 
       private
 
-      def build_options(values)
-        values.map { |value| { id: value, label: value.to_s.tr('-', ' ').capitalize } }
+      FRENCH_LABELS = {
+        # Plant types
+        'tree' => 'Arbre', 'shrub' => 'Arbuste', 'small-shrub' => 'Petit arbuste',
+        'climber' => 'Grimpante', 'herbaceous' => 'Herbacée', 'ground-cover' => 'Couvre-sol',
+        # Exposures
+        'sun' => 'Soleil', 'partial-shade' => 'Mi-ombre', 'shade' => 'Ombre',
+        # Hardiness zones
+        'zone-5' => 'Zone 5', 'zone-6' => 'Zone 6', 'zone-7' => 'Zone 7', 'zone-8' => 'Zone 8', 'zone-9' => 'Zone 9',
+        # Edible parts
+        'fruit' => 'Fruit', 'leaf' => 'Feuille', 'flower' => 'Fleur', 'seed' => 'Graine',
+        'root' => 'Racine', 'bark' => 'Écorce', 'sap' => 'Sève',
+        # Interests
+        'edible' => 'Comestible', 'medicinal' => 'Médicinal', 'nitrogen-fixer' => 'Fixateur d\'azote',
+        'pollinator' => 'Pollinisateur', 'hedge' => 'Haie', 'ornamental' => 'Ornementale',
+        # Ecosystem needs
+        'nurse-tree' => 'Arbre tuteur', 'pioneer' => 'Pionnière', 'climax' => 'Climax',
+        'erosion-control' => 'Anti-érosion',
+        # Propagation methods
+        'seed' => 'Semis', 'cutting' => 'Bouturage', 'layering' => 'Marcottage',
+        'grafting' => 'Greffage', 'division' => 'Division', 'sucker' => 'Drageonnage',
+        # Flower colors
+        'white' => 'Blanc', 'pink' => 'Rose', 'red' => 'Rouge', 'yellow' => 'Jaune',
+        'orange' => 'Orange', 'purple' => 'Violet', 'blue' => 'Bleu', 'green' => 'Vert',
+        # Planting seasons
+        'autumn' => 'Automne', 'winter' => 'Hiver', 'spring' => 'Printemps',
+        # Months
+        'jan' => 'Janv', 'feb' => 'Fév', 'mar' => 'Mars', 'apr' => 'Avr', 'may' => 'Mai', 'jun' => 'Juin',
+        'jul' => 'Juil', 'aug' => 'Août', 'sep' => 'Sept', 'oct' => 'Oct', 'nov' => 'Nov', 'dec' => 'Déc',
+        # Foliage types
+        'deciduous' => 'Caduc', 'semi-evergreen' => 'Semi-persistant', 'evergreen' => 'Persistant', 'marcescent' => 'Marcescent',
+        # European countries
+        'be' => 'Belgique', 'fr' => 'France', 'de' => 'Allemagne', 'nl' => 'Pays-Bas', 'lu' => 'Luxembourg',
+        'ch' => 'Suisse', 'es' => 'Espagne', 'it' => 'Italie', 'pt' => 'Portugal', 'uk' => 'Royaume-Uni',
+        'ie' => 'Irlande', 'at' => 'Autriche', 'pl' => 'Pologne', 'cz' => 'Tchéquie',
+        'dk' => 'Danemark', 'se' => 'Suède', 'no' => 'Norvège', 'fi' => 'Finlande',
+        # Fertility types
+        'self-fertile' => 'Autofertile', 'self-sterile' => 'Autostérile', 'partially-self-fertile' => 'Partiellement autofertile',
+        # Root systems
+        'taproot' => 'Pivotant', 'fibrous' => 'Fasciculé', 'spreading' => 'Traçant', 'shallow' => 'Superficiel', 'deep' => 'Profond',
+        # Growth rates
+        'slow' => 'Lente', 'medium' => 'Moyenne', 'fast' => 'Rapide', 'slow-start' => 'Lente au départ', 'fast-start' => 'Rapide au départ',
+        # Forest garden zones
+        'edge' => 'Lisière', 'light-shade' => 'Mi-ombre légère', 'full-sun' => 'Plein soleil', 'understory' => 'Sous-étage', 'canopy' => 'Canopée',
+        # Pollination types
+        'insect' => 'Entomophile', 'wind' => 'Anémophile', 'self' => 'Autogame', 'bird' => 'Ornithophile',
+        # Soil types
+        'clay' => 'Argileux', 'loam' => 'Limoneux', 'sandy' => 'Sableux', 'chalky' => 'Calcaire', 'peaty' => 'Tourbeux',
+        # Soil moistures
+        'dry' => 'Sec', 'moist' => 'Frais', 'wet' => 'Humide', 'waterlogged' => 'Détrempé',
+        # Soil richness
+        'poor' => 'Pauvre', 'moderate' => 'Modéré', 'rich' => 'Riche', 'very-rich' => 'Très riche',
+        # Watering needs
+        '1' => '1 - Très peu', '2' => '2 - Peu', '3' => '3 - Modéré', '4' => '4 - Régulier', '5' => '5 - Abondant',
+        # Life cycles
+        'annual' => 'Annuelle', 'biennial' => 'Bisannuelle', 'perennial' => 'Vivace',
+        # Foliage colors
+        'dark-green' => 'Vert foncé', 'light-green' => 'Vert clair', 'variegated' => 'Panaché', 'silver' => 'Argenté', 'golden' => 'Doré',
+        # Fragrance levels
+        'none' => 'Aucun', 'light' => 'Léger', 'strong' => 'Fort',
+        # Transformations
+        'jam' => 'Confiture', 'jelly' => 'Gelée', 'compote' => 'Compote', 'juice' => 'Jus', 'syrup' => 'Sirop',
+        'liqueur' => 'Liqueur', 'dried' => 'Séché', 'frozen' => 'Congelé', 'vinegar' => 'Vinaigre', 'chutney' => 'Chutney',
+        # Fodder qualities
+        'sheep' => 'Moutons', 'goats' => 'Chèvres', 'pigs' => 'Porcs', 'cattle' => 'Bovins', 'poultry' => 'Volailles', 'rabbits' => 'Lapins',
+        # Strates
+        'aquatic' => 'Aquatique', 'groundCover' => 'Couvre-sol', 'herbaceous' => 'Herbacée',
+        'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres'
+      }.freeze
+
+      def build_options(values, overrides = {})
+        values.map { |value| { id: value, label: overrides[value] || FRENCH_LABELS[value] || value.to_s.tr('-', ' ').capitalize } }
       end
 
       def genus_params
