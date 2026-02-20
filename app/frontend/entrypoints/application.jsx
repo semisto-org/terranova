@@ -1,8 +1,20 @@
 import { createInertiaApp } from '@inertiajs/react'
 import { createRoot } from 'react-dom/client'
 import React from 'react'
+import * as Sentry from '@sentry/react'
 import AppShell from '../components/shell/AppShell'
 import '../styles/application.css'
+
+if (import.meta.env.PROD) {
+  const dsn = document.querySelector('meta[name="sentry-dsn"]')?.content
+  if (dsn) {
+    Sentry.init({
+      dsn,
+      environment: 'production',
+      tracesSampleRate: 0.1,
+    })
+  }
+}
 
 const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPassword', 'Design/ClientPortal']
 
