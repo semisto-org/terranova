@@ -3,6 +3,8 @@
 module Api
   module V1
     class KnowledgeController < BaseController
+      skip_before_action :require_authentication, if: :valid_api_key?
+
       def index
         articles = KnowledgeArticle.all
         articles = articles.by_category(params[:category])
@@ -62,6 +64,12 @@ module Api
 
       def article_params
         params.permit(:title, :content, :summary, :category, :source_url, :lab_id, :pole, :pinned, :status, :author_name, tags: [])
+      end
+
+      def valid_api_key?
+        key = request.headers['X-API-Key']
+        key.present? && ENV['KNOWLEDGE_API_KEY'].present? &&
+          ActiveSupport::SecurityUtils.secure_compare(key, ENV['KNOWLEDGE_API_KEY'])
       end
     end
   end
