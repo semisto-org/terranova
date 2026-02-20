@@ -879,3 +879,93 @@ Nursery::Transfer.find_or_create_by!(order: order3, status: 'in-progress') do |t
 end
 
 puts "Nursery seeding done!"
+
+# ─── Knowledge Base ───
+puts "Seeding Knowledge Base..."
+
+knowledge_articles = [
+  {
+    title: "Éco-régimes PAC et opportunités pour l'agroforesterie",
+    content: "## Contexte\n\nLa nouvelle PAC 2023-2027 introduit les éco-régimes, un outil majeur pour rémunérer les pratiques agricoles bénéfiques.\n\n## Points clés\n\n- Les éco-régimes représentent **25% du budget** des aides directes\n- L'agroforesterie est éligible au niveau 2 (premium)\n- Les haies et alignements d'arbres sont valorisés\n\n## Implications pour Semisto\n\nCette évolution réglementaire ouvre des opportunités de financement pour les projets de forêts-jardins intégrés aux exploitations agricoles.",
+    summary: "Analyse des éco-régimes PAC 2023-2027 et leurs implications pour les projets agroforestiers",
+    category: "regulation",
+    tags: ["PAC", "agroforesterie", "financement"],
+    source_url: "https://agriculture.gouv.fr/pac-2023-2027",
+    pole: nil,
+    pinned: true,
+    status: "published",
+    author_name: "Sophie Dubois"
+  },
+  {
+    title: "Programme LIFE : financement européen pour la biodiversité",
+    content: "## Le programme LIFE\n\nLIFE est l'instrument financier de l'UE pour l'environnement et l'action climatique.\n\n## Budget 2021-2027\n\n- Budget total : **5,4 milliards €**\n- Sous-programme Nature et Biodiversité\n- Taux de cofinancement : 60-75%\n\n## Éligibilité Semisto\n\nLes projets de restauration écologique et de création de forêts-jardins peuvent être éligibles, notamment via :\n- Projets standard d'action\n- Projets intégrés stratégiques\n\n## Calendrier\n\nAppels à projets annuels, généralement en avril-mai.",
+    summary: "Opportunités de financement via le programme LIFE pour les projets de biodiversité",
+    category: "funding",
+    tags: ["LIFE", "EU", "biodiversité", "financement"],
+    source_url: "https://cinea.ec.europa.eu/programmes/life_en",
+    pole: nil,
+    pinned: false,
+    status: "published",
+    author_name: "Marc Lecomte"
+  },
+  {
+    title: "Les 7 strates de la forêt-jardin : guide technique",
+    content: "## Introduction\n\nLa forêt-jardin s'organise en 7 strates verticales, mimant la structure d'une forêt naturelle.\n\n## Les 7 strates\n\n1. **Canopée** — Grands arbres fruitiers et à noix (noyers, châtaigniers)\n2. **Petit arbre** — Fruitiers de taille moyenne (pommiers, poiriers)\n3. **Arbuste** — Petits fruits (groseilliers, cassissiers, noisetiers)\n4. **Herbacée** — Plantes vivaces comestibles (consoude, oseille)\n5. **Couvre-sol** — Plantes rampantes (fraisiers, thym)\n6. **Grimpante** — Lianes (kiwi, vigne, houblon)\n7. **Rhizosphère** — Racines et tubercules (topinambour, oca du Pérou)\n\n## Principes de design\n\n- Respecter les besoins en lumière de chaque strate\n- Planifier la succession temporelle\n- Intégrer les fixateurs d'azote à chaque niveau",
+    summary: "Guide complet des 7 strates verticales pour concevoir une forêt-jardin productive",
+    category: "technical",
+    tags: ["strates", "design", "forêt-jardin", "technique"],
+    pole: "academy",
+    pinned: false,
+    status: "published",
+    author_name: "Sophie Dubois"
+  },
+  {
+    title: "Stratégie réseau multi-pays Semisto 2026-2030",
+    content: "## Vision\n\nDéployer le modèle Semisto dans 5 pays européens d'ici 2030.\n\n## Pays cibles\n\n- **Belgique** (base) — 10 labs actifs\n- **France** — Partenariat avec le réseau des AMAP\n- **Pays-Bas** — Collaboration avec Voedselbosbouw\n- **Portugal** — Projets de reforestation comestible\n- **Allemagne** — Lien avec le mouvement Permakultur\n\n## Modèle de déploiement\n\n1. Identifier un porteur local\n2. Former via Academy\n3. Accompagner le premier design\n4. Autonomisation progressive\n\n## Indicateurs\n\n- Nombre de labs actifs par pays\n- Hectares en transition\n- Communauté de praticiens",
+    summary: "Plan stratégique pour l'expansion du réseau Semisto en Europe",
+    category: "strategy",
+    tags: ["réseau", "expansion", "Europe", "stratégie"],
+    pole: nil,
+    pinned: true,
+    status: "published",
+    author_name: "Marc Lecomte"
+  },
+  {
+    title: "Variétés fruitières locales wallonnes : inventaire et potentiel",
+    content: "## Patrimoine variétal wallon\n\nLa Wallonie possède un patrimoine remarquable de variétés fruitières anciennes, adaptées au terroir local.\n\n## Espèces principales\n\n### Pommiers\n- Reinette de Blenheim\n- Belle-Fleur de Brabant\n- Cwastresse double\n- President Roulin\n\n### Poiriers\n- Beurré d'Hardenpont\n- Calebasse à la Reine\n- Double Philippe\n\n### Pruniers\n- Sainte-Catherine\n- Altesse de Namur\n\n## Intérêt pour les forêts-jardins\n\n- Adaptation au climat local\n- Résistance aux maladies\n- Conservation de la biodiversité cultivée\n- Valorisation en circuits courts",
+    summary: "Inventaire des variétés fruitières anciennes wallonnes et leur potentiel pour les forêts-jardins",
+    category: "research",
+    tags: ["variétés locales", "Wallonie", "fruitiers", "biodiversité"],
+    pole: nil,
+    pinned: false,
+    status: "published",
+    author_name: "Isabelle Martin"
+  },
+  {
+    title: "Note : réglementation urbanisme et forêts comestibles",
+    content: "## Problématique\n\nLa plantation d'arbres fruitiers et forestiers en milieu péri-urbain soulève des questions réglementaires.\n\n## Points d'attention\n\n- Distances de plantation par rapport aux limites de propriété\n- Permis d'urbanisme pour aménagements paysagers\n- Réglementation sur les haies et clôtures\n- Accès public et responsabilité\n\n## Recommandations\n\nToujours consulter le service urbanisme communal avant de lancer un projet. Documenter les démarches pour créer un guide réutilisable.",
+    summary: "Notes sur les aspects réglementaires liés à l'urbanisme pour les projets de forêts comestibles",
+    category: "regulation",
+    tags: ["urbanisme", "réglementation", "plantation"],
+    pole: nil,
+    pinned: false,
+    status: "draft",
+    author_name: "Sophie Dubois"
+  }
+]
+
+knowledge_articles.each do |attrs|
+  KnowledgeArticle.find_or_create_by!(title: attrs[:title]) do |a|
+    a.content = attrs[:content]
+    a.summary = attrs[:summary]
+    a.category = attrs[:category]
+    a.tags = attrs[:tags]
+    a.source_url = attrs[:source_url]
+    a.pole = attrs[:pole]
+    a.pinned = attrs[:pinned]
+    a.status = attrs[:status]
+    a.author_name = attrs[:author_name]
+  end
+end
+
+puts "Knowledge Base seeding done!"

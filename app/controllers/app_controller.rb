@@ -87,6 +87,12 @@ class AppController < ApplicationController
     }
   end
 
+  def knowledge
+    render inertia: "Knowledge/Index", props: {
+      milestone: "Knowledge Base"
+    }
+  end
+
   def profile
     render inertia: "Profile/Index", props: {
       milestone: "Profile"

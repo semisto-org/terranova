@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
   get "profile", to: "app#profile"
+  get "knowledge", to: "app#knowledge"
 
   namespace :api do
     namespace :v1 do
@@ -246,6 +247,14 @@ Rails.application.routes.draw do
       post "nursery/nurseries", to: "nursery#create_nursery"
       patch "nursery/nurseries/:nursery_id", to: "nursery#update_nursery"
       delete "nursery/nurseries/:nursery_id", to: "nursery#destroy_nursery"
+
+      get "knowledge", to: "knowledge#index"
+      get "knowledge/:id", to: "knowledge#show"
+      post "knowledge", to: "knowledge#create"
+      patch "knowledge/:id", to: "knowledge#update"
+      delete "knowledge/:id", to: "knowledge#destroy"
+      patch "knowledge/:id/pin", to: "knowledge#pin"
+      patch "knowledge/:id/unpin", to: "knowledge#unpin"
 
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"
