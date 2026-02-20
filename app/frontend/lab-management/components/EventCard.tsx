@@ -45,31 +45,31 @@ export function EventCard({ event, members, onView }: EventCardProps) {
     <button
       onClick={onView}
       className={`
-        w-full text-left p-3 rounded-lg border border-stone-200 dark:border-stone-700
-        hover:border-stone-300 dark:hover:border-stone-600
+        w-full text-left p-3 rounded-lg border border-stone-200
+        hover:border-stone-300
         hover:shadow-sm transition-all
-        bg-white dark:bg-stone-800/50
+        bg-white
       `}
     >
       {/* Type badge */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-700">
           {getEventTypeLabel(event.type)}
         </span>
       </div>
 
       {/* Title */}
-      <h4 className="font-medium text-stone-800 dark:text-stone-100 mb-1 line-clamp-1">
+      <h4 className="font-medium text-stone-800 mb-1 line-clamp-1">
         {event.title}
       </h4>
 
       {/* Date & Time */}
-      <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">
+      <p className="text-xs text-stone-500 mb-2">
         {formatEventDate(event.startDate, event.endDate)}
       </p>
 
       {/* Location */}
-      <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400 mb-2">
+      <div className="flex items-center gap-1.5 text-xs text-stone-500 mb-2">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
@@ -96,12 +96,12 @@ export function EventCard({ event, members, onView }: EventCardProps) {
                 key={member.id}
                 src={member.avatar}
                 alt={`${member.firstName} ${member.lastName}`}
-                className="w-6 h-6 rounded-full border-2 border-white dark:border-stone-800 bg-stone-100"
+                className="w-6 h-6 rounded-full border-2 border-white bg-stone-100"
               />
             ))}
           </div>
           {attendees.length > 4 && (
-            <span className="text-xs text-stone-400 dark:text-stone-500 ml-1">
+            <span className="text-xs text-stone-400 ml-1">
               +{attendees.length - 4}
             </span>
           )}

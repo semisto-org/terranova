@@ -1,5 +1,6 @@
 module Design
   class Quote < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_quotes'
 
     STATUSES = %w[draft sent approved rejected expired].freeze

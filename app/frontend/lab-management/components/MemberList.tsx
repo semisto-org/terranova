@@ -70,16 +70,16 @@ export function MemberList({
   const getWallet = (member: Member) => wallets.find((w) => w.id === member.walletId)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-800/50">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
+              <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 tracking-tight">
                 Membres du Lab
               </h1>
-              <p className="mt-2 text-stone-600 dark:text-stone-400">
+              <p className="mt-2 text-stone-600">
                 Annuaire des membres et de leurs rôles
               </p>
             </div>
@@ -106,25 +106,25 @@ export function MemberList({
 
           {/* Stats */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{activeCount}</span>
-              <span className="text-sm text-stone-500 dark:text-stone-400">actifs</span>
+              <span className="text-sm font-medium text-stone-900">{activeCount}</span>
+              <span className="text-sm text-stone-500">actifs</span>
             </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm">
               <div className="w-2 h-2 rounded-full bg-stone-400" />
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{inactiveCount}</span>
-              <span className="text-sm text-stone-500 dark:text-stone-400">inactifs</span>
+              <span className="text-sm font-medium text-stone-900">{inactiveCount}</span>
+              <span className="text-sm text-stone-500">inactifs</span>
             </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{guilds.length}</span>
-              <span className="text-sm text-stone-500 dark:text-stone-400">guildes</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm">
+              <span className="text-sm font-medium text-stone-900">{guilds.length}</span>
+              <span className="text-sm text-stone-500">guildes</span>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="mb-8 p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 shadow-sm">
+        <div className="mb-8 p-4 rounded-2xl bg-white border border-stone-200 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -149,9 +149,9 @@ export function MemberList({
                   onChange={(e) => setSearch(e.target.value)}
                   className="
                     w-full pl-10 pr-4 py-2.5 rounded-xl
-                    bg-stone-50 dark:bg-stone-900/50
-                    border border-stone-200 dark:border-stone-600
-                    text-stone-900 dark:text-stone-100
+                    bg-stone-50
+                    border border-stone-200
+                    text-stone-900
                     placeholder:text-stone-400
                     focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                     transition-colors
@@ -167,9 +167,9 @@ export function MemberList({
                 onChange={(e) => setStatusFilter(e.target.value as MemberStatus | 'all')}
                 className="
                   w-full px-4 py-2.5 rounded-xl appearance-none
-                  bg-stone-50 dark:bg-stone-900/50
-                  border border-stone-200 dark:border-stone-600
-                  text-stone-900 dark:text-stone-100
+                  bg-stone-50
+                  border border-stone-200
+                  text-stone-900
                   focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                   transition-colors cursor-pointer
                 "
@@ -187,9 +187,9 @@ export function MemberList({
                 onChange={(e) => setRoleFilter(e.target.value as MemberRole | 'all')}
                 className="
                   w-full px-4 py-2.5 rounded-xl appearance-none
-                  bg-stone-50 dark:bg-stone-900/50
-                  border border-stone-200 dark:border-stone-600
-                  text-stone-900 dark:text-stone-100
+                  bg-stone-50
+                  border border-stone-200
+                  text-stone-900
                   focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                   transition-colors cursor-pointer
                 "
@@ -210,9 +210,9 @@ export function MemberList({
                 onChange={(e) => setGuildFilter(e.target.value)}
                 className="
                   w-full px-4 py-2.5 rounded-xl appearance-none
-                  bg-stone-50 dark:bg-stone-900/50
-                  border border-stone-200 dark:border-stone-600
-                  text-stone-900 dark:text-stone-100
+                  bg-stone-50
+                  border border-stone-200
+                  text-stone-900
                   focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]
                   transition-colors cursor-pointer
                 "
@@ -229,12 +229,12 @@ export function MemberList({
 
           {/* Active filters summary */}
           {(search || statusFilter !== 'all' || roleFilter !== 'all' || guildFilter !== 'all') && (
-            <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-700/50 flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-stone-500 dark:text-stone-400">Filtres actifs:</span>
+            <div className="mt-4 pt-4 border-t border-stone-100 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-stone-500">Filtres actifs:</span>
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   "{search}"
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -245,7 +245,7 @@ export function MemberList({
               {statusFilter !== 'all' && (
                 <button
                   onClick={() => setStatusFilter('all')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   {statusFilter === 'active' ? 'Actifs' : 'Inactifs'}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -256,7 +256,7 @@ export function MemberList({
               {roleFilter !== 'all' && (
                 <button
                   onClick={() => setRoleFilter('all')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   {roleLabels[roleFilter]}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,7 +267,7 @@ export function MemberList({
               {guildFilter !== 'all' && (
                 <button
                   onClick={() => setGuildFilter('all')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/20 dark:text-[#a9a3c7] text-xs font-medium hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
                   {guilds.find((g) => g.id === guildFilter)?.name}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -282,7 +282,7 @@ export function MemberList({
                   setRoleFilter('all')
                   setGuildFilter('all')
                 }}
-                className="text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 underline underline-offset-2"
+                className="text-xs text-stone-500 hover:text-stone-700 underline underline-offset-2"
               >
                 Tout effacer
               </button>
@@ -291,7 +291,7 @@ export function MemberList({
         </div>
 
         {/* Results count */}
-        <div className="mb-4 text-sm text-stone-500 dark:text-stone-400">
+        <div className="mb-4 text-sm text-stone-500">
           {filteredMembers.length} membre{filteredMembers.length !== 1 ? 's' : ''} trouvé{filteredMembers.length !== 1 ? 's' : ''}
         </div>
 
@@ -311,7 +311,7 @@ export function MemberList({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-4">
               <svg
                 className="w-8 h-8 text-stone-400"
                 fill="none"
@@ -326,10 +326,10 @@ export function MemberList({
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-stone-900 dark:text-stone-100 mb-1">
+            <h3 className="text-lg font-medium text-stone-900 mb-1">
               Aucun membre trouvé
             </h3>
-            <p className="text-stone-500 dark:text-stone-400 max-w-sm">
+            <p className="text-stone-500 max-w-sm">
               Aucun membre ne correspond aux critères de recherche. Essayez de modifier vos filtres.
             </p>
           </div>

@@ -27,7 +27,7 @@ function FilterChipGroup({ label, options, selected, onChange, icon }: FilterChi
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300">
+      <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
         {icon}
         {label}
       </label>
@@ -41,7 +41,7 @@ function FilterChipGroup({ label, options, selected, onChange, icon }: FilterChi
               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 ${
                 isSelected
                   ? 'bg-[#5B5781] text-white shadow-md shadow-[#5B5781]/20'
-                  : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
               }`}
             >
               {option.label}
@@ -61,7 +61,7 @@ export function FilterPanel({
   onFilterChange,
 }: FilterPanelProps) {
   return (
-    <div className="mt-4 p-5 bg-white dark:bg-stone-900 rounded-2xl shadow-lg border border-stone-200/50 dark:border-stone-800/50 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="mt-4 p-5 bg-white rounded-2xl shadow-lg border border-stone-200/50 animate-in fade-in slide-in-from-top-2 duration-300">
       {/* Primary Filters */}
       <div className="space-y-5">
         {/* Type */}
@@ -107,7 +107,7 @@ export function FilterPanel({
       {/* Advanced Filters Toggle */}
       <button
         onClick={() => onShowAdvancedChange(!showAdvanced)}
-        className="w-full mt-5 pt-4 border-t border-stone-200 dark:border-stone-800 flex items-center justify-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
+        className="w-full mt-5 pt-4 border-t border-stone-200 flex items-center justify-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors"
       >
         {showAdvanced ? 'Moins de filtres' : 'Plus de filtres'}
         <svg
@@ -122,7 +122,7 @@ export function FilterPanel({
 
       {/* Advanced Filters */}
       {showAdvanced && (
-        <div className="mt-5 pt-5 border-t border-stone-200 dark:border-stone-800 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="mt-5 pt-5 border-t border-stone-200 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
           {/* Edible Parts */}
           <FilterChipGroup
             label="Parties comestibles"

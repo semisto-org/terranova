@@ -25,11 +25,11 @@ function getInitials(contact: Contact): string {
 }
 
 const tagColors = [
-  'bg-[#5B5781]/15 text-[#5B5781] dark:bg-[#5B5781]/25 dark:text-[#a9a3c7]',
-  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
-  'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  'bg-[#5B5781]/15 text-[#5B5781]',
+  'bg-emerald-100 text-emerald-700',
+  'bg-amber-100 text-amber-700',
+  'bg-sky-100 text-sky-700',
+  'bg-rose-100 text-rose-700',
 ]
 
 export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardProps) {
@@ -39,11 +39,10 @@ export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardPr
   return (
     <div
       className="
-        group relative overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-700
-        bg-white dark:bg-stone-800/50 backdrop-blur-sm
+        group relative overflow-hidden rounded-2xl border border-stone-200
+        bg-white backdrop-blur-sm
         transition-all duration-300 ease-out
         hover:border-[#5B5781]/40 hover:shadow-lg hover:shadow-[#5B5781]/5
-        dark:hover:border-[#5B5781]/60 dark:hover:shadow-[#5B5781]/10
       "
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5B5781] via-[#5B5781]/60 to-[#AFBD00] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -51,7 +50,7 @@ export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardPr
       <div className="p-5">
         <div className="flex items-start gap-4">
           <div className="relative flex-shrink-0">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-[#5B5781]/15 dark:bg-[#5B5781]/25 text-[#5B5781] dark:text-[#a9a3c7] font-semibold text-lg ring-2 ring-stone-100 dark:ring-stone-700 group-hover:ring-[#5B5781]/30 transition-all duration-300">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-[#5B5781]/15 text-[#5B5781] font-semibold text-lg ring-2 ring-stone-100 group-hover:ring-[#5B5781]/30 transition-all duration-300">
               {isPerson ? (
                 initials
               ) : (
@@ -66,7 +65,7 @@ export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardPr
               )}
             </div>
             <div
-              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-stone-800 bg-stone-300 dark:bg-stone-600 flex items-center justify-center"
+              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-stone-300 flex items-center justify-center"
               title={isPerson ? 'Personne' : 'Organisation'}
             >
               {isPerson ? (
@@ -86,17 +85,17 @@ export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardPr
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100 truncate">{contact.name}</h3>
+            <h3 className="text-lg font-semibold text-stone-900 truncate">{contact.name}</h3>
             {contact.email && (
-              <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{contact.email}</p>
+              <p className="text-sm text-stone-500 truncate">{contact.email}</p>
             )}
             {isPerson && contact.organization && (
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">
+              <p className="text-xs text-stone-500 mt-0.5 truncate">
                 {contact.organization.name}
               </p>
             )}
             {!isPerson && contact.organizationType && (
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{contact.organizationType}</p>
+              <p className="text-xs text-stone-500 mt-0.5">{contact.organizationType}</p>
             )}
           </div>
         </div>
@@ -114,17 +113,17 @@ export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardPr
           </div>
         )}
 
-        <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-700/50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="mt-4 pt-4 border-t border-stone-100 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
             onClick={onView}
-            className="flex-1 px-3 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-600 transition-colors"
+            className="flex-1 px-3 py-2 text-sm font-medium text-stone-700 bg-stone-100 rounded-lg hover:bg-stone-200 transition-colors"
           >
             Voir la fiche
           </button>
           {onEdit && (
             <button
               onClick={onEdit}
-              className="px-3 py-2 text-sm font-medium text-[#5B5781] dark:text-[#a9a3c7] bg-[#5B5781]/10 dark:bg-[#5B5781]/20 rounded-lg hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+              className="px-3 py-2 text-sm font-medium text-[#5B5781] bg-[#5B5781]/10 rounded-lg hover:bg-[#5B5781]/20 transition-colors"
             >
               Modifier
             </button>
@@ -132,7 +131,7 @@ export function ContactCard({ contact, onView, onEdit, onDelete }: ContactCardPr
           {onDelete && (
             <button
               onClick={onDelete}
-              className="px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+              className="px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
             >
               Supprimer
             </button>

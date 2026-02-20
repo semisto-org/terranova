@@ -131,21 +131,21 @@ export function ShapeUpWorkboard({
   const cooldownDaysLeft = getCooldownDaysLeft()
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
                 Shape Up
               </h1>
-              <p className="text-stone-500 dark:text-stone-400 mt-1">
+              <p className="text-stone-500 mt-1">
                 {activeCycle ? (
                   <>
                     <span className="font-medium">{activeCycle.name}</span>
                     {isCooldown && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                         Cooldown
                       </span>
                     )}
@@ -161,10 +161,10 @@ export function ShapeUpWorkboard({
               <div className="flex items-center gap-4">
                 {isCooldown && cooldownDaysLeft !== null && (
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    <p className="text-2xl font-bold text-amber-600">
                       {cooldownDaysLeft}
                     </p>
-                    <p className="text-xs text-stone-500 dark:text-stone-400">
+                    <p className="text-xs text-stone-500">
                       jours avant betting
                     </p>
                   </div>
@@ -176,7 +176,7 @@ export function ShapeUpWorkboard({
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="border-b border-stone-200 dark:border-stone-700">
+          <div className="border-b border-stone-200">
             <nav className="flex gap-1 -mb-px" aria-label="Tabs">
               {tabConfig.map((tab) => {
                 const isActive = activeTab === tab.id
@@ -188,8 +188,8 @@ export function ShapeUpWorkboard({
                       relative group flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all
                       ${
                         isActive
-                          ? 'text-[#5B5781] dark:text-[#c8bfd2]'
-                          : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300'
+                          ? 'text-[#5B5781]'
+                          : 'text-stone-500 hover:text-stone-700'
                       }
                     `}
                   >
@@ -200,7 +200,7 @@ export function ShapeUpWorkboard({
                     <span
                       className={`
                         absolute bottom-0 left-0 right-0 h-0.5 transition-all
-                        ${isActive ? 'bg-[#5B5781] dark:bg-[#c8bfd2]' : 'bg-transparent group-hover:bg-stone-200 dark:group-hover:bg-stone-700'}
+                        ${isActive ? 'bg-[#5B5781]' : 'bg-transparent group-hover:bg-stone-200'}
                       `}
                     />
 
@@ -227,7 +227,7 @@ export function ShapeUpWorkboard({
           </div>
 
           {/* Tab description */}
-          <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+          <p className="mt-3 text-sm text-stone-500">
             {tabConfig.find((t) => t.id === activeTab)?.description}
           </p>
         </div>
@@ -347,22 +347,22 @@ function ShapingTrack({
             {/* Raw pitches column */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-semibold text-stone-800 dark:text-stone-100">
+                <h3 className="font-semibold text-stone-800">
                   Brouillons
                 </h3>
-                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300 rounded-full">
+                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold bg-stone-200 text-stone-600 rounded-full">
                   {rawPitches.length}
                 </span>
               </div>
 
               {rawPitches.length === 0 ? (
-                <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-dashed border-stone-300 dark:border-stone-600 p-8 text-center">
-                  <p className="text-stone-400 dark:text-stone-500 text-sm">
+                <div className="bg-white rounded-xl border border-dashed border-stone-300 p-8 text-center">
+                  <p className="text-stone-400 text-sm">
                     Aucun brouillon en cours
                   </p>
                   <button
                     onClick={onCreatePitch}
-                    className="mt-3 text-sm text-[#5B5781] dark:text-[#c8bfd2] font-medium hover:underline"
+                    className="mt-3 text-sm text-[#5B5781] font-medium hover:underline"
                   >
                     Créer un premier pitch
                   </button>
@@ -387,17 +387,17 @@ function ShapingTrack({
             {/* Shaped pitches column */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-semibold text-stone-800 dark:text-stone-100">
+                <h3 className="font-semibold text-stone-800">
                   Prêts pour le betting
                 </h3>
-                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold bg-[#AFBD00]/20 text-[#7a8200] dark:bg-[#AFBD00]/30 dark:text-[#AFBD00] rounded-full">
+                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold bg-[#AFBD00]/20 text-[#7a8200] rounded-full">
                   {shapedPitches.length}
                 </span>
               </div>
 
               {shapedPitches.length === 0 ? (
-                <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-dashed border-stone-300 dark:border-stone-600 p-8 text-center">
-                  <p className="text-stone-400 dark:text-stone-500 text-sm">
+                <div className="bg-white rounded-xl border border-dashed border-stone-300 p-8 text-center">
+                  <p className="text-stone-400 text-sm">
                     Aucun pitch prêt
                   </p>
                 </div>
@@ -422,20 +422,20 @@ function ShapingTrack({
 
       {/* Non-shapers see read-only view */}
       {!isShaper && (
-        <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-8 text-center">
+        <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
           <div className="text-4xl mb-3">🔒</div>
-          <h3 className="font-semibold text-stone-800 dark:text-stone-100 mb-2">
+          <h3 className="font-semibold text-stone-800 mb-2">
             Espace réservé aux Shapers
           </h3>
-          <p className="text-stone-500 dark:text-stone-400 text-sm max-w-md mx-auto">
+          <p className="text-stone-500 text-sm max-w-md mx-auto">
             Le Shaping est géré par les membres avec le rôle Shaper. Consultez les listes d'idées ci-dessous pour proposer des améliorations.
           </p>
         </div>
       )}
 
       {/* Idea Lists - visible to all */}
-      <div className="border-t border-stone-200 dark:border-stone-700 pt-8">
-        <h3 className="font-semibold text-stone-800 dark:text-stone-100 mb-4">
+      <div className="border-t border-stone-200 pt-8">
+        <h3 className="font-semibold text-stone-800 mb-4">
           Listes d'idées
         </h3>
         <IdeaLists

@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
   get "profile", to: "app#profile"
+  get "knowledge", to: "app#knowledge"
 
   namespace :api do
     namespace :v1 do
@@ -101,6 +102,19 @@ Rails.application.routes.draw do
       delete "lab/timesheets/:id", to: "lab_management#destroy_timesheet"
       patch "lab/timesheets/:id/mark-invoiced", to: "lab_management#mark_invoiced"
 
+      get "lab/expenses", to: "lab_management#list_expenses"
+      post "lab/expenses", to: "lab_management#create_expense"
+      patch "lab/expenses/:id", to: "lab_management#update_expense"
+      delete "lab/expenses/:id", to: "lab_management#destroy_expense"
+
+      get "lab/albums", to: "lab_management#list_albums"
+      post "lab/albums", to: "lab_management#create_album"
+      patch "lab/albums/:id", to: "lab_management#update_album"
+      delete "lab/albums/:id", to: "lab_management#destroy_album"
+      get "lab/albums/:id/media", to: "lab_management#album_media"
+      post "lab/albums/:id/media", to: "lab_management#upload_album_media"
+      delete "lab/albums/:id/media/:media_id", to: "lab_management#delete_album_media"
+
       get "plants/filter-options", to: "plants#filter_options"
       get "plants/search", to: "plants#search"
       get "plants/genera/:id", to: "plants#genus"
@@ -117,6 +131,12 @@ Rails.application.routes.draw do
       post "plants/palettes/:palette_id/items", to: "plants#add_palette_item"
       patch "plants/palette-items/:id", to: "plants#move_palette_item"
       delete "plants/palette-items/:id", to: "plants#remove_palette_item"
+      post "plants/genera", to: "plants#create_genus"
+      patch "plants/genera/:id", to: "plants#update_genus"
+      post "plants/species", to: "plants#create_species"
+      patch "plants/species/:id", to: "plants#update_species"
+      post "plants/varieties", to: "plants#create_variety"
+      patch "plants/varieties/:id", to: "plants#update_variety"
       post "plants/notes", to: "plants#create_note"
       post "plants/photos", to: "plants#create_photo"
       post "plants/references", to: "plants#create_reference"
@@ -241,6 +261,37 @@ Rails.application.routes.draw do
       # Mother plants
       patch "nursery/mother-plants/:mother_plant_id/validate", to: "nursery#validate_mother_plant"
       patch "nursery/mother-plants/:mother_plant_id/reject", to: "nursery#reject_mother_plant"
+      post "nursery/nurseries", to: "nursery#create_nursery"
+      patch "nursery/nurseries/:nursery_id", to: "nursery#update_nursery"
+      delete "nursery/nurseries/:nursery_id", to: "nursery#destroy_nursery"
+
+      # Knowledge Base
+      get "knowledge/sections", to: "knowledge/sections#index"
+      get "knowledge/sections/:id", to: "knowledge/sections#show"
+      post "knowledge/sections", to: "knowledge/sections#create"
+      patch "knowledge/sections/:id", to: "knowledge/sections#update"
+      delete "knowledge/sections/:id", to: "knowledge/sections#destroy"
+
+      get "knowledge/topics", to: "knowledge/topics#index"
+      get "knowledge/topics/:id", to: "knowledge/topics#show"
+      post "knowledge/topics", to: "knowledge/topics#create"
+      patch "knowledge/topics/:id", to: "knowledge/topics#update"
+      delete "knowledge/topics/:id", to: "knowledge/topics#destroy"
+      patch "knowledge/topics/:id/pin", to: "knowledge/topics#pin"
+      patch "knowledge/topics/:id/unpin", to: "knowledge/topics#unpin"
+      get "knowledge/topics/:id/related", to: "knowledge/topics#related"
+      post "knowledge/topics/:id/attachments", to: "knowledge/topics#add_attachment"
+      delete "knowledge/topics/:id/attachments/:attachment_id", to: "knowledge/topics#remove_attachment"
+      post "knowledge/topics/:id/bookmark", to: "knowledge/topics#bookmark"
+      delete "knowledge/topics/:id/bookmark", to: "knowledge/topics#unbookmark"
+      get "knowledge/topics/:id/revisions", to: "knowledge/topics#revisions"
+      get "knowledge/topics/:id/comments", to: "knowledge/topics#comments"
+      post "knowledge/topics/:id/comments", to: "knowledge/topics#create_comment"
+      patch "knowledge/topics/:topic_id/comments/:id", to: "knowledge/topics#update_comment"
+      delete "knowledge/topics/:topic_id/comments/:id", to: "knowledge/topics#destroy_comment"
+
+      get "knowledge/bookmarks", to: "knowledge/bookmarks#index"
+      get "knowledge/search", to: "knowledge/search#index"
 
       # Transfers
       post "nursery/transfers", to: "nursery#create_transfer"

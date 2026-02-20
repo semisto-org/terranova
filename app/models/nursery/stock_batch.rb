@@ -1,5 +1,6 @@
 module Nursery
   class StockBatch < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'nursery_stock_batches'
 
     GROWTH_STAGES = %w[seed seedling young established mature].freeze

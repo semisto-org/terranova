@@ -1,5 +1,6 @@
 module Design
   class ProjectTimesheet < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_project_timesheets'
 
     MODES = %w[billed semos].freeze

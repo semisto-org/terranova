@@ -125,10 +125,10 @@ export function SemosDashboard({
             Ⓢ
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+            <h1 className="text-2xl font-bold text-stone-900">
               Mon Portefeuille Semos
             </h1>
-            <p className="text-stone-500 dark:text-stone-400">
+            <p className="text-stone-500">
               Gérez vos Semos et consultez votre historique
             </p>
           </div>
@@ -263,7 +263,7 @@ export function SemosDashboard({
       {/* Transaction history */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+          <h2 className="text-lg font-semibold text-stone-900">
             Historique des transactions
           </h2>
 
@@ -283,12 +283,12 @@ export function SemosDashboard({
                   ${
                     filter === key
                       ? 'bg-[#5B5781] text-white'
-                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                   }
                 `}
               >
                 {label}
-                <span className={`ml-1.5 text-xs ${filter === key ? 'text-white/70' : 'text-stone-400 dark:text-stone-500'}`}>
+                <span className={`ml-1.5 text-xs ${filter === key ? 'text-white/70' : 'text-stone-400'}`}>
                   {count}
                 </span>
               </button>
@@ -298,11 +298,11 @@ export function SemosDashboard({
 
         {/* Transaction list */}
         {filteredActivity.length === 0 ? (
-          <div className="bg-stone-50 dark:bg-stone-800/50 rounded-2xl p-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-3xl mx-auto mb-4">
+          <div className="bg-stone-50 rounded-2xl p-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-stone-200 flex items-center justify-center text-3xl mx-auto mb-4">
               {filter === 'emissions' ? '✦' : filter === 'incoming' ? '↓' : filter === 'outgoing' ? '↑' : 'Ⓢ'}
             </div>
-            <p className="text-stone-500 dark:text-stone-400 font-medium">
+            <p className="text-stone-500 font-medium">
               {filter === 'all'
                 ? 'Aucune transaction pour le moment'
                 : filter === 'emissions'
@@ -311,7 +311,7 @@ export function SemosDashboard({
                     ? 'Aucun transfert reçu'
                     : 'Aucun transfert envoyé'}
             </p>
-            <p className="text-stone-400 dark:text-stone-500 text-sm mt-1">
+            <p className="text-stone-400 text-sm mt-1">
               Les transactions apparaîtront ici
             </p>
           </div>
@@ -329,16 +329,16 @@ export function SemosDashboard({
       </div>
 
       {/* Footer info */}
-      <div className="mt-12 p-6 bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-800/50 dark:to-stone-900/50 rounded-2xl border border-stone-200 dark:border-stone-700">
+      <div className="mt-12 p-6 bg-gradient-to-br from-stone-50 to-stone-100 rounded-2xl border border-stone-200">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-xl bg-[#AFBD00]/20 flex items-center justify-center text-[#AFBD00] text-xl shrink-0">
             ✦
           </div>
           <div>
-            <h3 className="font-semibold text-stone-900 dark:text-stone-100 mb-1">
+            <h3 className="font-semibold text-stone-900 mb-1">
               Qu'est-ce que le Semos ?
             </h3>
-            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+            <p className="text-sm text-stone-600 leading-relaxed">
               Le Semos est la monnaie interne du Lab Semisto. Elle permet de valoriser les contributions
               bénévoles, de faciliter les échanges entre membres, et de renforcer les liens de coopération.
               Chaque membre dispose d'un plancher et d'un plafond personnalisés.

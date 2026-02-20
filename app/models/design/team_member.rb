@@ -1,5 +1,6 @@
 module Design
   class TeamMember < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_team_members'
 
     ROLES = %w[project-manager designer butineur].freeze

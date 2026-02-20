@@ -3,6 +3,9 @@
   <head>
     <title>Terranova</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <% if ENV['SENTRY_DSN'].present? %>
+      <meta name="sentry-dsn" content="<%= ENV['SENTRY_DSN'] %>">
+    <% end %>
     <meta name="theme-color" content="#5b5781">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">

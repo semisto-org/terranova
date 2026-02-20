@@ -28,32 +28,32 @@ const categoryColors: Record<TimesheetCategory, { bg: string; text: string; dark
   design: {
     bg: 'bg-[#AFBD00]/10',
     text: 'text-[#8a9600]',
-    darkBg: 'dark:bg-[#AFBD00]/20',
-    darkText: 'dark:text-[#c8d44a]',
+    darkBg: '',
+    darkText: '',
   },
   formation: {
     bg: 'bg-[#B01A19]/10',
     text: 'text-[#B01A19]',
-    darkBg: 'dark:bg-[#B01A19]/20',
-    darkText: 'dark:text-[#e47777]',
+    darkBg: '',
+    darkText: '',
   },
   administratif: {
     bg: 'bg-[#5B5781]/10',
     text: 'text-[#5B5781]',
-    darkBg: 'dark:bg-[#5B5781]/20',
-    darkText: 'dark:text-[#c8bfd2]',
+    darkBg: '',
+    darkText: '',
   },
   coordination: {
     bg: 'bg-[#234766]/10',
     text: 'text-[#234766]',
-    darkBg: 'dark:bg-[#234766]/20',
-    darkText: 'dark:text-[#7badd4]',
+    darkBg: '',
+    darkText: '',
   },
   communication: {
     bg: 'bg-[#EF9B0D]/10',
     text: 'text-[#c47f00]',
-    darkBg: 'dark:bg-[#EF9B0D]/20',
-    darkText: 'dark:text-[#f5b84d]',
+    darkBg: '',
+    darkText: '',
   },
 }
 
@@ -80,16 +80,16 @@ export function TimesheetRow({
   const colors = categoryColors[timesheet.category]
 
   return (
-    <div className="group px-4 sm:px-6 py-4 hover:bg-stone-50 dark:hover:bg-stone-800/30 transition-colors">
+    <div className="group px-4 sm:px-6 py-4 hover:bg-stone-50 transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Date and member info */}
         <div className="flex items-center gap-3 sm:w-44 flex-shrink-0">
           {/* Date badge */}
-          <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-700 flex flex-col items-center justify-center flex-shrink-0">
-            <span className="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase">
+          <div className="w-12 h-12 rounded-xl bg-stone-100 flex flex-col items-center justify-center flex-shrink-0">
+            <span className="text-xs font-medium text-stone-500 uppercase">
               {new Date(timesheet.date).toLocaleDateString('fr-FR', { weekday: 'short' })}
             </span>
-            <span className="text-lg font-bold text-stone-700 dark:text-stone-200 leading-tight">
+            <span className="text-lg font-bold text-stone-700 leading-tight">
               {new Date(timesheet.date).getDate()}
             </span>
           </div>
@@ -103,9 +103,9 @@ export function TimesheetRow({
               <img
                 src={member.avatar}
                 alt={`${member.firstName} ${member.lastName}`}
-                className="w-8 h-8 rounded-full border border-stone-200 dark:border-stone-600 bg-stone-100"
+                className="w-8 h-8 rounded-full border border-stone-200 bg-stone-100"
               />
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-300 hidden lg:block">
+              <span className="text-sm font-medium text-stone-700 hidden lg:block">
                 {member.firstName}
               </span>
             </button>
@@ -115,7 +115,7 @@ export function TimesheetRow({
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Description */}
-          <p className="text-stone-800 dark:text-stone-200 font-medium line-clamp-1">{timesheet.description}</p>
+          <p className="text-stone-800 font-medium line-clamp-1">{timesheet.description}</p>
 
           {/* Meta info */}
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -130,7 +130,7 @@ export function TimesheetRow({
             {guild && (
               <button
                 onClick={onViewGuild}
-                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-[#5B5781] dark:text-stone-400 dark:hover:text-[#c8bfd2] transition-colors"
+                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-[#5B5781] transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -146,7 +146,7 @@ export function TimesheetRow({
 
             {/* Project or course reference */}
             {timesheet.projectId && (
-              <span className="inline-flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+              <span className="inline-flex items-center gap-1 text-xs text-stone-500">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -160,7 +160,7 @@ export function TimesheetRow({
             )}
 
             {timesheet.courseId && (
-              <span className="inline-flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+              <span className="inline-flex items-center gap-1 text-xs text-stone-500">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -175,7 +175,7 @@ export function TimesheetRow({
 
             {/* Kilometers */}
             {timesheet.kilometers > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+              <span className="inline-flex items-center gap-1 text-xs text-stone-500">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -194,18 +194,18 @@ export function TimesheetRow({
         <div className="flex items-center gap-3 sm:gap-4 sm:flex-shrink-0 ml-15 sm:ml-0">
           {/* Hours */}
           <div className="text-right">
-            <span className="text-lg font-bold text-stone-800 dark:text-stone-100 tabular-nums">
+            <span className="text-lg font-bold text-stone-800 tabular-nums">
               {formatNumber(timesheet.hours)}
             </span>
-            <span className="text-sm text-stone-500 dark:text-stone-400 ml-0.5">h</span>
+            <span className="text-sm text-stone-500 ml-0.5">h</span>
           </div>
 
           {/* Payment type */}
           <div
             className={`w-16 text-center py-1 rounded-lg text-[11px] font-medium uppercase tracking-wide ${
               timesheet.paymentType === 'invoice'
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-100 text-amber-700'
             }`}
           >
             {timesheet.paymentType === 'invoice' ? 'Facture' : 'Semos'}
@@ -217,8 +217,8 @@ export function TimesheetRow({
             disabled={timesheet.invoiced}
             className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
               timesheet.invoiced
-                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 cursor-default'
-                : 'bg-stone-100 text-stone-400 hover:bg-[#5B5781]/10 hover:text-[#5B5781] dark:bg-stone-700 dark:text-stone-500 dark:hover:bg-[#5B5781]/20 dark:hover:text-[#c8bfd2]'
+                ? 'bg-emerald-100 text-emerald-600 cursor-default'
+                : 'bg-stone-100 text-stone-400 hover:bg-[#5B5781]/10 hover:text-[#5B5781]'
             }`}
             title={timesheet.invoiced ? 'Facturée' : 'Marquer comme facturée'}
           >
@@ -236,7 +236,7 @@ export function TimesheetRow({
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={onEdit}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 dark:text-stone-500 dark:hover:text-[#c8bfd2] dark:hover:bg-[#5B5781]/20 transition-colors"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 transition-colors"
               title="Modifier"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -250,7 +250,7 @@ export function TimesheetRow({
             </button>
             <button
               onClick={onDelete}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 dark:text-stone-500 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
               title="Supprimer"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

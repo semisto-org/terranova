@@ -95,7 +95,7 @@ export function SemosTransactionRow({ activity, onClick }: SemosTransactionRowPr
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700/50 hover:border-[#5B5781]/30 dark:hover:border-[#5B5781]/50 transition-all duration-200 group text-left"
+      className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border border-stone-200 hover:border-[#5B5781]/30 transition-all duration-200 group text-left"
     >
       {/* Icon */}
       <div
@@ -105,8 +105,8 @@ export function SemosTransactionRow({ activity, onClick }: SemosTransactionRowPr
             activity.type === 'emission'
               ? 'bg-gradient-to-br from-[#AFBD00]/20 to-[#AFBD00]/10 text-[#AFBD00]'
               : activity.isIncoming
-                ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 dark:from-emerald-900/30 dark:to-emerald-900/10 dark:text-emerald-400'
-                : 'bg-gradient-to-br from-rose-100 to-rose-50 text-rose-600 dark:from-rose-900/30 dark:to-rose-900/10 dark:text-rose-400'
+                ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600'
+                : 'bg-gradient-to-br from-rose-100 to-rose-50 text-rose-600'
           }
         `}
       >
@@ -117,7 +117,7 @@ export function SemosTransactionRow({ activity, onClick }: SemosTransactionRowPr
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-stone-900 dark:text-stone-100 font-medium truncate group-hover:text-[#5B5781] dark:group-hover:text-[#8B87A8] transition-colors">
+            <p className="text-stone-900 font-medium truncate group-hover:text-[#5B5781] transition-colors">
               {activity.description}
             </p>
             <div className="flex items-center gap-2 mt-1">
@@ -127,14 +127,14 @@ export function SemosTransactionRow({ activity, onClick }: SemosTransactionRowPr
                   ${
                     activity.type === 'emission'
                       ? 'bg-[#AFBD00]/10 text-[#8a9600]'
-                      : 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
+                      : 'bg-stone-100 text-stone-600'
                   }
                 `}
               >
                 {getTransactionLabel(activity)}
               </span>
               {activity.otherParty && (
-                <span className="text-xs text-stone-500 dark:text-stone-400">
+                <span className="text-xs text-stone-500">
                   {activity.isIncoming ? 'De' : 'À'}{' '}
                   <span className="font-medium">
                     {activity.otherParty.firstName} {activity.otherParty.lastName[0]}.
@@ -151,8 +151,8 @@ export function SemosTransactionRow({ activity, onClick }: SemosTransactionRowPr
                   activity.type === 'emission'
                     ? 'text-[#AFBD00]'
                     : activity.isIncoming
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-rose-600 dark:text-rose-400'
+                      ? 'text-emerald-600'
+                      : 'text-rose-600'
                 }
               `}
             >
@@ -160,7 +160,7 @@ export function SemosTransactionRow({ activity, onClick }: SemosTransactionRowPr
               {formatAmount(Math.abs(activity.amount))}
               <span className="text-sm font-normal ml-0.5">S</span>
             </p>
-            <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
+            <p className="text-xs text-stone-400 mt-0.5">
               {formatDate(activity.date)} · {formatTime(activity.date)}
             </p>
           </div>

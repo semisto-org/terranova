@@ -17,7 +17,7 @@ const ORGANIZATION_TYPES = ['Entreprise', 'Association', 'Collectivité', 'Colle
 const SUGGESTED_TAGS = ['client', 'fournisseur', 'partenaire', 'bénévole', 'prestataire']
 
 const inputBase =
-  'w-full px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-600 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781] dark:focus:ring-[#5B5781]/40'
+  'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
 
 export interface ContactFormProps {
   contact?: Contact | null
@@ -79,19 +79,19 @@ export function ContactForm({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-2xl shadow-stone-900/20"
+        className="w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/20"
         onClick={(e) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
           {/* Header */}
-          <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100 dark:border-stone-800">
+          <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100">
             <h2
-              className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight"
+              className="text-xl font-bold text-stone-900 tracking-tight"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {contact ? 'Modifier le contact' : 'Nouveau contact'}
             </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+            <p className="text-sm text-stone-500 mt-0.5">
               {contact ? 'Mettez à jour les informations du contact' : 'Ajoutez une personne ou une organisation'}
             </p>
           </div>
@@ -100,13 +100,13 @@ export function ContactForm({
           <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-6">
             {/* Type toggle */}
             <div>
-              <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+              <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                 Type
               </span>
               <div
                 role="group"
                 aria-label="Type de contact"
-                className="inline-flex p-1 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200/60 dark:border-stone-600/60"
+                className="inline-flex p-1 rounded-xl bg-stone-100 border border-stone-200/60"
               >
                 {(['person', 'organization'] as const).map((type) => (
                   <button
@@ -116,7 +116,7 @@ export function ContactForm({
                     className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       values.contactType === type
                         ? 'text-white shadow-sm'
-                        : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
+                        : 'text-stone-600 hover:text-stone-900'
                     }`}
                     style={
                       values.contactType === type
@@ -132,11 +132,11 @@ export function ContactForm({
 
             {/* Identity section */}
             <div className="space-y-4">
-              <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+              <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Identité
               </span>
               <div>
-                <label htmlFor="contact-name" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                <label htmlFor="contact-name" className="block text-sm font-medium text-stone-700 mb-1.5">
                   {values.contactType === 'person' ? 'Nom complet' : 'Raison sociale'} <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -152,7 +152,7 @@ export function ContactForm({
               </div>
               {values.contactType === 'organization' && (
                 <div className="transition-all duration-200">
-                  <label htmlFor="org-type" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                  <label htmlFor="org-type" className="block text-sm font-medium text-stone-700 mb-1.5">
                     Type d&apos;organisation
                   </label>
                   <select
@@ -172,7 +172,7 @@ export function ContactForm({
               )}
               {values.contactType === 'person' && orgOptions.length > 0 && (
                 <div className="transition-all duration-200">
-                  <label htmlFor="org-link" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                  <label htmlFor="org-link" className="block text-sm font-medium text-stone-700 mb-1.5">
                     Organisation rattachée
                   </label>
                   <select
@@ -194,12 +194,12 @@ export function ContactForm({
 
             {/* Contact details section */}
             <div className="space-y-4">
-              <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+              <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Coordonnées
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="contact-email" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                  <label htmlFor="contact-email" className="block text-sm font-medium text-stone-700 mb-1.5">
                     Email
                   </label>
                   <input
@@ -212,7 +212,7 @@ export function ContactForm({
                   />
                 </div>
                 <div>
-                  <label htmlFor="contact-phone" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                  <label htmlFor="contact-phone" className="block text-sm font-medium text-stone-700 mb-1.5">
                     Téléphone
                   </label>
                   <input
@@ -226,7 +226,7 @@ export function ContactForm({
                 </div>
               </div>
               <div>
-                <label htmlFor="contact-address" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+                <label htmlFor="contact-address" className="block text-sm font-medium text-stone-700 mb-1.5">
                   Adresse
                 </label>
                 <textarea
@@ -242,7 +242,7 @@ export function ContactForm({
 
             {/* Tags section */}
             <div className="space-y-3">
-              <span className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+              <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 Catégorisation
               </span>
               <div className="flex flex-wrap gap-2">
@@ -262,20 +262,20 @@ export function ContactForm({
                 <button
                   type="button"
                   onClick={() => addTag(tagInput)}
-                  className="px-4 py-2.5 rounded-xl font-medium text-[#5B5781] dark:text-[#a9a3c7] bg-[#5B5781]/10 dark:bg-[#5B5781]/20 hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors shrink-0"
+                  className="px-4 py-2.5 rounded-xl font-medium text-[#5B5781] bg-[#5B5781]/10 hover:bg-[#5B5781]/20 transition-colors shrink-0"
                 >
                   Ajouter
                 </button>
               </div>
               {availableSuggestedTags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="text-xs text-stone-400 dark:text-stone-500 mr-1 self-center">Suggestions :</span>
+                  <span className="text-xs text-stone-400 mr-1 self-center">Suggestions :</span>
                   {availableSuggestedTags.map((tag) => (
                     <button
                       key={tag}
                       type="button"
                       onClick={() => addTag(tag)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-[#5B5781]/15 hover:text-[#5B5781] dark:hover:bg-[#5B5781]/25 dark:hover:text-[#a9a3c7] transition-colors border border-transparent hover:border-[#5B5781]/30"
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-stone-100 text-stone-600 hover:bg-[#5B5781]/15 hover:text-[#5B5781] transition-colors border border-transparent hover:border-[#5B5781]/30"
                     >
                       + {tag}
                     </button>
@@ -287,13 +287,13 @@ export function ContactForm({
                   {values.tagNames.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg text-sm font-medium bg-[#5B5781]/15 text-[#5B5781] dark:bg-[#5B5781]/25 dark:text-[#a9a3c7] border border-[#5B5781]/20 dark:border-[#5B5781]/30"
+                      className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg text-sm font-medium bg-[#5B5781]/15 text-[#5B5781] border border-[#5B5781]/20"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="p-0.5 rounded hover:bg-[#5B5781]/20 dark:hover:bg-[#5B5781]/30 transition-colors"
+                        className="p-0.5 rounded hover:bg-[#5B5781]/20 transition-colors"
                         aria-label={`Retirer ${tag}`}
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -308,7 +308,7 @@ export function ContactForm({
 
             {/* Notes section */}
             <div>
-              <label htmlFor="contact-notes" className="block text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+              <label htmlFor="contact-notes" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                 Notes
               </label>
               <textarea
@@ -323,11 +323,11 @@ export function ContactForm({
           </div>
 
           {/* Sticky footer */}
-          <div className="shrink-0 px-6 py-4 border-t border-stone-100 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/50 flex justify-end gap-3">
+          <div className="shrink-0 px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex justify-end gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2.5 rounded-xl font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="px-4 py-2.5 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100 transition-colors"
             >
               Annuler
             </button>

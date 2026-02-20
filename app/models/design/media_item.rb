@@ -1,5 +1,6 @@
 module Design
   class MediaItem < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_media_items'
 
     TYPES = %w[image video].freeze

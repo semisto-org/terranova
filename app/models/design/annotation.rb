@@ -1,5 +1,6 @@
 module Design
   class Annotation < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_annotations'
 
     AUTHOR_TYPES = %w[team client].freeze

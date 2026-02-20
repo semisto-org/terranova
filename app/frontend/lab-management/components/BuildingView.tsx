@@ -96,13 +96,13 @@ export function BuildingView({
 
   if (buildingPitches.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="text-6xl mb-4">🏗️</div>
-          <h2 className="text-xl font-semibold text-stone-800 dark:text-stone-100 mb-2">
+          <h2 className="text-xl font-semibold text-stone-800 mb-2">
             Aucun projet en construction
           </h2>
-          <p className="text-stone-500 dark:text-stone-400">
+          <p className="text-stone-500">
             Les projets apparaîtront ici une fois qu'ils auront été sélectionnés lors d'une Betting Table.
           </p>
         </div>
@@ -111,16 +111,16 @@ export function BuildingView({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with project selector */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
                 Building Track
               </h1>
-              <p className="text-stone-500 dark:text-stone-400 mt-1">
+              <p className="text-stone-500 mt-1">
                 Suivez l'avancement des projets en construction
               </p>
             </div>
@@ -134,7 +134,7 @@ export function BuildingView({
                     setSelectedPitchId(e.target.value)
                     setSelectedScopeId(null)
                   }}
-                  className="appearance-none bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-stone-700 dark:text-stone-300 hover:border-stone-300 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-[#5B5781] focus:border-transparent cursor-pointer min-w-[200px]"
+                  className="appearance-none bg-white border border-stone-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-stone-700 hover:border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#5B5781] focus:border-transparent cursor-pointer min-w-[200px]"
                 >
                   {buildingPitches.map(({ pitch, cycle }) => (
                     <option key={pitch.id} value={pitch.id}>
@@ -158,18 +158,18 @@ export function BuildingView({
         {selectedPitch && (
           <>
             {/* Project info bar */}
-            <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-4 mb-6">
+            <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-stone-800 dark:text-stone-100">
+                  <h2 className="text-lg font-semibold text-stone-800">
                     {selectedPitch.title}
                   </h2>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/30 dark:text-[#c8bfd2]">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#5B5781]/10 text-[#5B5781]">
                       {selectedPitch.appetite}
                     </span>
                     {selectedCycle && (
-                      <span className="text-sm text-stone-500 dark:text-stone-400">
+                      <span className="text-sm text-stone-500">
                         {selectedCycle.name}
                       </span>
                     )}
@@ -179,7 +179,7 @@ export function BuildingView({
                 <div className="flex items-center gap-6">
                   {/* Team */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-stone-500 dark:text-stone-400">Équipe:</span>
+                    <span className="text-xs text-stone-500">Équipe:</span>
                     <div className="flex -space-x-2">
                       {teamMembers.map((member) => (
                         <img
@@ -187,7 +187,7 @@ export function BuildingView({
                           src={member.avatar}
                           alt={`${member.firstName} ${member.lastName}`}
                           title={`${member.firstName} ${member.lastName}`}
-                          className="w-8 h-8 rounded-full border-2 border-white dark:border-stone-800 bg-stone-100"
+                          className="w-8 h-8 rounded-full border-2 border-white bg-stone-100"
                         />
                       ))}
                     </div>
@@ -196,10 +196,10 @@ export function BuildingView({
                   {/* Days remaining */}
                   {daysRemaining !== null && (
                     <div className="text-right">
-                      <p className={`text-2xl font-bold ${daysRemaining <= 7 ? 'text-red-500' : 'text-stone-800 dark:text-stone-100'}`}>
+                      <p className={`text-2xl font-bold ${daysRemaining <= 7 ? 'text-red-500' : 'text-stone-800'}`}>
                         {daysRemaining}
                       </p>
-                      <p className="text-xs text-stone-500 dark:text-stone-400">jours restants</p>
+                      <p className="text-xs text-stone-500">jours restants</p>
                     </div>
                   )}
 
@@ -207,7 +207,7 @@ export function BuildingView({
                   {onViewHistory && (
                     <button
                       onClick={() => onViewHistory(selectedPitch.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-stone-500 hover:text-stone-700 border border-stone-200 rounded-lg hover:bg-stone-50 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -222,12 +222,12 @@ export function BuildingView({
             {/* Main content */}
             <div className="space-y-6">
               {/* Hill Chart */}
-              <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-6">
+              <div className="bg-white rounded-xl border border-stone-200 p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-stone-800 dark:text-stone-100">
+                  <h3 className="font-semibold text-stone-800">
                     Hill Chart
                   </h3>
-                  <p className="text-xs text-stone-400 dark:text-stone-500">
+                  <p className="text-xs text-stone-400">
                     Cliquez sur un point pour voir le scope
                   </p>
                 </div>
@@ -242,13 +242,13 @@ export function BuildingView({
               {/* Scopes */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-stone-800 dark:text-stone-100">
+                  <h3 className="font-semibold text-stone-800">
                     Scopes
                   </h3>
                   {onCreateScope && (
                     <button
                       onClick={() => onCreateScope(selectedPitch.id)}
-                      className="text-sm text-[#5B5781] hover:text-[#4a4670] dark:text-[#c8bfd2] dark:hover:text-white font-medium transition-colors"
+                      className="text-sm text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors"
                     >
                       + Nouveau scope
                     </button>
@@ -256,8 +256,8 @@ export function BuildingView({
                 </div>
 
                 {pitchScopes.length === 0 ? (
-                  <div className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-8 text-center">
-                    <p className="text-stone-500 dark:text-stone-400">
+                  <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
+                    <p className="text-stone-500">
                       Aucun scope défini. Créez des scopes pour organiser le travail.
                     </p>
                   </div>

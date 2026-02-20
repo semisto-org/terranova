@@ -1,4 +1,5 @@
 class Bet < ApplicationRecord
+  include SoftDeletable
   belongs_to :pitch
   belongs_to :cycle
   belongs_to :placed_by, class_name: "Member", optional: true

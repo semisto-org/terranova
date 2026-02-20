@@ -110,7 +110,7 @@ function CircularStat({ value, max, label, icon, color }: CircularStatProps) {
               fill="none"
               stroke="currentColor"
               strokeWidth="6"
-              className="text-stone-200 dark:text-stone-700"
+              className="text-stone-200"
             />
             {/* Progress circle */}
             <circle
@@ -131,10 +131,10 @@ function CircularStat({ value, max, label, icon, color }: CircularStatProps) {
           </div>
         </div>
         <div className="mt-3 text-center">
-          <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+          <div className="text-2xl font-bold text-stone-900">
             {value}
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-1 leading-tight">
+          <div className="text-xs text-stone-500 mt-1 leading-tight">
             {label}
           </div>
         </div>
@@ -168,10 +168,10 @@ function ActivityHeatmap({ activityByMonth }: ActivityHeatmapProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-serif font-bold text-stone-900 dark:text-stone-100">
+        <h3 className="text-lg font-serif font-bold text-stone-900">
           Jardin d'activité
         </h3>
-        <div className="flex items-center gap-3 text-xs text-stone-500 dark:text-stone-400">
+        <div className="flex items-center gap-3 text-xs text-stone-500">
           <span>Moins</span>
           <div className="flex gap-1.5">
             {[0, 1, 2, 3, 4].map((level) => (
@@ -179,14 +179,14 @@ function ActivityHeatmap({ activityByMonth }: ActivityHeatmapProps) {
                 key={level}
                 className={`w-4 h-4 rounded-full transition-transform hover:scale-110 ${
                   level === 0
-                    ? 'bg-stone-200 dark:bg-stone-700'
+                    ? 'bg-stone-200'
                     : level === 1
-                      ? 'bg-[#AFBD00]/30 dark:bg-[#AFBD00]/20'
+                      ? 'bg-[#AFBD00]/30'
                       : level === 2
-                        ? 'bg-[#AFBD00]/50 dark:bg-[#AFBD00]/40'
+                        ? 'bg-[#AFBD00]/50'
                         : level === 3
-                          ? 'bg-[#AFBD00]/70 dark:bg-[#AFBD00]/60'
-                          : 'bg-[#AFBD00] dark:bg-[#AFBD00]'
+                          ? 'bg-[#AFBD00]/70'
+                          : 'bg-[#AFBD00]'
                 }`}
               />
             ))}
@@ -205,22 +205,22 @@ function ActivityHeatmap({ activityByMonth }: ActivityHeatmapProps) {
               <div
                 className={`${size} rounded-full transition-all duration-300 hover:scale-110 hover:shadow-lg cursor-pointer flex items-center justify-center ${
                   intensity === 0
-                    ? 'bg-stone-200 dark:bg-stone-700'
+                    ? 'bg-stone-200'
                     : intensity === 1
-                      ? 'bg-gradient-to-br from-[#AFBD00]/30 to-[#AFBD00]/20 dark:from-[#AFBD00]/20 dark:to-[#AFBD00]/10'
+                      ? 'bg-gradient-to-br from-[#AFBD00]/30 to-[#AFBD00]/20'
                       : intensity === 2
-                        ? 'bg-gradient-to-br from-[#AFBD00]/50 to-[#AFBD00]/40 dark:from-[#AFBD00]/40 dark:to-[#AFBD00]/30'
+                        ? 'bg-gradient-to-br from-[#AFBD00]/50 to-[#AFBD00]/40'
                         : intensity === 3
-                          ? 'bg-gradient-to-br from-[#AFBD00]/70 to-[#AFBD00]/60 dark:from-[#AFBD00]/60 dark:to-[#AFBD00]/50'
-                          : 'bg-gradient-to-br from-[#AFBD00] to-[#8fa000] dark:from-[#AFBD00] dark:to-[#8fa000] shadow-md'
+                          ? 'bg-gradient-to-br from-[#AFBD00]/70 to-[#AFBD00]/60'
+                          : 'bg-gradient-to-br from-[#AFBD00] to-[#8fa000] shadow-md'
                 }`}
                 title={`${monthLabels[index]}: ${value} contribution${value > 1 ? 's' : ''}`}
               >
                 {intensity > 0 && (
-                  <div className="w-2 h-2 rounded-full bg-white/40 dark:bg-white/20" />
+                  <div className="w-2 h-2 rounded-full bg-white/40" />
                 )}
               </div>
-              <p className="text-xs font-medium text-stone-600 dark:text-stone-400">
+              <p className="text-xs font-medium text-stone-600">
                 {monthLabels[index]}
               </p>
             </div>
@@ -245,31 +245,31 @@ function RecentActivityItem({ activity, index, onActivitySelect }: RecentActivit
   return (
     <button
       onClick={handleClick}
-      className="w-full text-left p-4 rounded-xl hover:bg-gradient-to-r hover:from-stone-50 hover:to-transparent dark:hover:from-stone-800/50 dark:hover:to-transparent transition-all duration-200 group relative overflow-hidden"
+      className="w-full text-left p-4 rounded-xl hover:bg-gradient-to-r hover:from-stone-50 hover:to-transparent transition-all duration-200 group relative overflow-hidden"
     >
       {/* Connection line */}
       {index < 9 && (
-        <div className="absolute left-8 top-full w-0.5 h-4 bg-gradient-to-b from-stone-200 to-transparent dark:from-stone-700 dark:to-transparent" />
+        <div className="absolute left-8 top-full w-0.5 h-4 bg-gradient-to-b from-stone-200 to-transparent" />
       )}
       
       <div className="flex items-start gap-4 relative z-10">
         {/* Icon with animated background */}
         <div className="relative flex-shrink-0">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#AFBD00]/20 to-[#5B5781]/20 dark:from-[#AFBD00]/10 dark:to-[#5B5781]/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-200">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#AFBD00]/20 to-[#5B5781]/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-200">
             {getActivityIcon(activity.type)}
           </div>
           {/* Pulse effect on hover */}
-          <div className="absolute inset-0 rounded-full bg-[#AFBD00]/20 dark:bg-[#AFBD00]/10 scale-0 group-hover:scale-150 transition-transform duration-300 opacity-0 group-hover:opacity-100" />
+          <div className="absolute inset-0 rounded-full bg-[#AFBD00]/20 scale-0 group-hover:scale-150 transition-transform duration-300 opacity-0 group-hover:opacity-100" />
         </div>
         
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-stone-700 dark:text-stone-300 group-hover:text-[#5B5781] dark:group-hover:text-[#AFBD00] transition-colors">
+          <p className="text-sm text-stone-700 group-hover:text-[#5B5781] transition-colors">
             <span className="font-medium">{getActivityLabel(activity.type)}</span>{' '}
-            <span className="text-[#5B5781] dark:text-[#AFBD00] font-semibold">{activity.targetName}</span>
+            <span className="text-[#5B5781] font-semibold">{activity.targetName}</span>
           </p>
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5 flex items-center gap-2">
+          <p className="text-xs text-stone-400 mt-1.5 flex items-center gap-2">
             <span>{formatRelativeDate(activity.timestamp)}</span>
-            <span className="w-1 h-1 rounded-full bg-stone-300 dark:bg-stone-600" />
+            <span className="w-1 h-1 rounded-full bg-stone-300" />
             <span>{new Date(activity.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
           </p>
         </div>
@@ -306,30 +306,30 @@ export function ContributorProfile({
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-50 dark:from-stone-900 dark:via-stone-950 dark:to-stone-900">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {/* Compact Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
           {/* Subtle gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#AFBD00]/5 via-[#5B5781]/3 to-[#AFBD00]/5 dark:from-[#AFBD00]/3 dark:via-[#5B5781]/3 dark:to-[#AFBD00]/3" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#AFBD00]/5 via-[#5B5781]/3 to-[#AFBD00]/5" />
           
-          <div className="relative bg-white/90 dark:bg-stone-900/90 backdrop-blur-sm border border-stone-200/50 dark:border-stone-700/50 p-5 sm:p-6">
+          <div className="relative bg-white/90 backdrop-blur-sm border border-stone-200/50 p-5 sm:p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
               {/* Left side: Avatar + Name + Date */}
               <div className="flex items-center gap-4 sm:gap-5 flex-1 min-w-0">
                 {/* Compact Avatar */}
                 <div className="relative flex-shrink-0">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#AFBD00] via-[#8fa000] to-[#5B5781] rounded-full p-0.5">
-                    <div className="w-full h-full bg-white dark:bg-stone-900 rounded-full" />
+                    <div className="w-full h-full bg-white rounded-full" />
                   </div>
                   {contributor.avatarUrl ? (
                     <img
                       src={contributor.avatarUrl}
                       alt={contributor.name}
-                      className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-white dark:border-stone-900"
+                      className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-white"
                     />
                   ) : (
-                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#AFBD00] to-[#5B5781] flex items-center justify-center text-white font-bold text-xl sm:text-2xl border-2 border-white dark:border-stone-900">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#AFBD00] to-[#5B5781] flex items-center justify-center text-white font-bold text-xl sm:text-2xl border-2 border-white">
                       {contributor.name
                         .split(' ')
                         .map((n) => n[0])
@@ -342,14 +342,14 @@ export function ContributorProfile({
                 {/* Name + Date */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 sm:gap-3 mb-1.5">
-                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 dark:text-stone-100">
+                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900">
                       {contributor.name}
                     </h1>
                     <span className="text-xl sm:text-2xl leading-none" title="Pays">
                       {getCountryFlag(contributor.labId, contributor.name)}
                     </span>
                   </div>
-                  <p className="text-sm sm:text-base text-stone-500 dark:text-stone-400">
+                  <p className="text-sm sm:text-base text-stone-500">
                     Contributrice depuis le <span className="font-medium">{formatDate(contributor.joinedAt)}</span>
                   </p>
                 </div>
@@ -357,7 +357,7 @@ export function ContributorProfile({
 
               {/* Right side: Compact Semos Badge (on large screens) */}
               <div className="lg:flex-shrink-0 lg:self-center">
-                <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-[#AFBD00] to-[#8fa000] dark:from-[#AFBD00] dark:to-[#8fa000] rounded-xl shadow-md shadow-[#AFBD00]/15 dark:shadow-[#AFBD00]/10">
+                <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-[#AFBD00] to-[#8fa000] rounded-xl shadow-md shadow-[#AFBD00]/15">
                   <div className="text-xl sm:text-2xl">Ⓢ</div>
                   <div>
                     <div className="text-[10px] sm:text-xs font-medium text-white/80 uppercase tracking-wide leading-tight">
@@ -382,7 +382,7 @@ export function ContributorProfile({
         </div>
 
         {/* Circular Stats Grid */}
-        <div className="bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 mb-5 shadow-sm">
+        <div className="bg-white rounded-2xl border border-stone-200 p-6 mb-5 shadow-sm">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             <CircularStat
               value={contributor.stats.speciesCreated}
@@ -416,29 +416,29 @@ export function ContributorProfile({
         </div>
 
         {/* Organic Activity Heatmap */}
-        <div className="bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 mb-5 shadow-sm">
+        <div className="bg-white rounded-2xl border border-stone-200 p-6 mb-5 shadow-sm">
           <ActivityHeatmap activityByMonth={contributor.activityByMonth} />
         </div>
 
         {/* Timeline of Recent Contributions */}
-        <div className="bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 shadow-sm">
-          <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-5">
+        <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
+          <h2 className="text-xl font-serif font-bold text-stone-900 mb-5">
             Chronologie des contributions
           </h2>
 
           {recentActivities.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl mx-auto mb-4">
+              <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-3xl mx-auto mb-4">
                 🌿
               </div>
-              <p className="text-stone-500 dark:text-stone-400">
+              <p className="text-stone-500">
                 Aucune contribution récente
               </p>
             </div>
           ) : (
             <div className="relative">
               {/* Vertical timeline line */}
-              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#AFBD00] via-stone-200 to-transparent dark:from-[#AFBD00] dark:via-stone-700 dark:to-transparent" />
+              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#AFBD00] via-stone-200 to-transparent" />
               
               <div className="space-y-0">
                 {recentActivities.map((activity, index) => (

@@ -1,5 +1,6 @@
 module Design
   class Project < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_projects'
 
     PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion].freeze
@@ -9,7 +10,7 @@ module Design
     has_many :meetings, class_name: 'Design::ProjectMeeting', foreign_key: :project_id, dependent: :destroy
     has_many :team_members, class_name: 'Design::TeamMember', foreign_key: :project_id, dependent: :destroy
     has_many :timesheets, class_name: 'Design::ProjectTimesheet', foreign_key: :project_id, dependent: :destroy
-    has_many :expenses, class_name: 'Design::Expense', foreign_key: :project_id, dependent: :destroy
+    has_many :expenses, class_name: "Expense", foreign_key: :design_project_id, dependent: :destroy
     has_one :site_analysis, class_name: 'Design::SiteAnalysis', foreign_key: :project_id, dependent: :destroy
     has_one :palette, class_name: 'Design::ProjectPalette', foreign_key: :project_id, dependent: :destroy
     has_many :quotes, class_name: 'Design::Quote', foreign_key: :project_id, dependent: :destroy
@@ -23,6 +24,7 @@ module Design
     has_many :plant_records, class_name: 'Design::PlantRecord', foreign_key: :project_id, dependent: :destroy
     has_many :follow_up_visits, class_name: 'Design::FollowUpVisit', foreign_key: :project_id, dependent: :destroy
     has_many :interventions, class_name: 'Design::Intervention', foreign_key: :project_id, dependent: :destroy
+    has_one :album, as: :albumable, dependent: :destroy
 
     validates :name, :client_id, :client_name, :phase, :status, presence: true
     validates :phase, inclusion: { in: PHASES }

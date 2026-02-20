@@ -1,14 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import {
   ActivityFeed,
   ContributorProfile,
   GenusDetail,
+  GenusFormModal,
   PlantPalette,
   SearchView,
   SpeciesDetail,
+  SpeciesFormModal,
   VarietyDetail,
+  VarietyFormModal,
 } from '../../plant-database/components'
 
 const EMPTY_FILTERS = {
@@ -294,6 +298,117 @@ function ContributionModal({ modal, busy, onClose, onChange, onSubmit }) {
   )
 }
 
+function AddPlantMenu({ onAddGenus, onAddSpecies, onAddVariety }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false)
+    }
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open])
+
+  const items = [
+    {
+      label: 'Nouveau genre',
+      description: 'Groupe taxonomique',
+      color: '#059669',
+      bgColor: '#ecfdf5',
+      icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+      action: onAddGenus,
+    },
+    {
+      label: 'Nouvelle espèce',
+      description: 'Avec caractéristiques botaniques',
+      color: '#5B5781',
+      bgColor: '#f3f0ff',
+      icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
+      action: onAddSpecies,
+    },
+    {
+      label: 'Nouvelle variété',
+      description: 'Cultivar d\'une espèce',
+      color: '#d97706',
+      bgColor: '#fffbeb',
+      icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z',
+      action: onAddVariety,
+    },
+  ]
+
+  return (
+    <div ref={menuRef} className="fixed bottom-6 right-6 z-20">
+      {/* Menu */}
+      {open && (
+        <div
+          className="absolute bottom-16 right-0 w-64 bg-white rounded-2xl border border-stone-200 shadow-xl overflow-hidden"
+          style={{ animation: 'menuSlideUp 200ms ease-out' }}
+        >
+          <div className="px-4 py-3 border-b border-stone-100">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Ajouter à la base</p>
+          </div>
+          <div className="py-1">
+            {items.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => {
+                  setOpen(false)
+                  item.action()
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-stone-50 transition-colors text-left"
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: item.bgColor }}
+                >
+                  <svg className="w-4.5 h-4.5" style={{ color: item.color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-stone-900">{item.label}</span>
+                  <p className="text-xs text-stone-500">{item.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* FAB */}
+      <button
+        onClick={() => setOpen(!open)}
+        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
+          open
+            ? 'bg-stone-700 rotate-45 shadow-xl'
+            : 'bg-[#5B5781] hover:bg-[#4a4770] hover:shadow-xl hover:scale-105'
+        }`}
+        aria-label="Ajouter une plante"
+      >
+        <svg className="w-6 h-6 text-white transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      <style>{`
+        @keyframes menuSlideUp {
+          from { opacity: 0; transform: translateY(8px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 const PLANT_SECTIONS = [
   { id: 'search', label: 'Recherche' },
   { id: 'palette', label: 'Palette' },
@@ -327,6 +442,10 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const [contributorPayload, setContributorPayload] = useState(null)
   const [contributionModal, setContributionModal] = useState(null)
   const [notice, setNotice] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [genusFormModal, setGenusFormModal] = useState(null) // null | { genus?, commonNames? }
+  const [speciesFormModal, setSpeciesFormModal] = useState(null) // null | { species?, defaultGenusId?, commonNames? }
+  const [varietyFormModal, setVarietyFormModal] = useState(null) // null | { variety?, defaultSpeciesId?, commonNames? }
 
   const catalogSpecies = useMemo(() => {
     const items = []
@@ -727,10 +846,14 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     )
     if (!item) return
 
-    mutateAndRefresh(async () => {
-      await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
-        method: 'DELETE',
-      })
+    setDeleteConfirm({
+      title: 'Retirer cette plante ?',
+      message: `« ${item.latinName || ''} » sera retirée de la palette.`,
+      action: () => mutateAndRefresh(async () => {
+        await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
+          method: 'DELETE',
+        })
+      }),
     })
   }, [mutateAndRefresh, palette])
 
@@ -778,13 +901,19 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const clearPalette = useCallback(() => {
     if (!palette?.strates) return
 
-    mutateAndRefresh(async () => {
-      const items = Object.values(palette.strates).flat()
-      await Promise.all(
-        items.map((item) =>
-          apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, { method: 'DELETE' })
+    const items = Object.values(palette.strates).flat()
+    if (items.length === 0) return
+
+    setDeleteConfirm({
+      title: 'Vider la palette ?',
+      message: `Les ${items.length} plante(s) seront retirées de la palette.`,
+      action: () => mutateAndRefresh(async () => {
+        await Promise.all(
+          items.map((item) =>
+            apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, { method: 'DELETE' })
+          )
         )
-      )
+      }),
     })
   }, [mutateAndRefresh, palette])
 
@@ -792,6 +921,105 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     if (!contributorPayload) return []
     return contributorPayload.recentActivity || []
   }, [contributorPayload])
+
+  // Genera list for species form
+  const allGenera = useMemo(() => {
+    return results
+      .filter((item) => item.type === 'genus')
+      .map((item) => ({ id: item.id, latinName: item.latinName, description: '' }))
+  }, [results])
+
+  // All species list for variety form
+  const allSpeciesList = useMemo(() => {
+    return results
+      .filter((item) => item.type === 'species')
+      .map((item) => ({ id: item.id, latinName: item.latinName }))
+  }, [results])
+
+  // Open form modals
+  const openGenusForm = useCallback((genus = null, commonNames = []) => {
+    setNotice(null)
+    setGenusFormModal({ genus, commonNames })
+  }, [])
+
+  const openSpeciesForm = useCallback((species = null, defaultGenusId = null, commonNames = []) => {
+    setNotice(null)
+    setSpeciesFormModal({ species, defaultGenusId, commonNames })
+  }, [])
+
+  const openVarietyForm = useCallback((variety = null, defaultSpeciesId = null, commonNames = []) => {
+    setNotice(null)
+    setVarietyFormModal({ variety, defaultSpeciesId, commonNames })
+  }, [])
+
+  // Submit genus form
+  const submitGenusForm = useCallback(async (data) => {
+    const success = await mutateAndRefresh(async () => {
+      const body = { ...data, contributor_id: currentContributorId }
+      if (genusFormModal?.genus?.id) {
+        await apiRequest(`/api/v1/plants/genera/${genusFormModal.genus.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+      } else {
+        const result = await apiRequest('/api/v1/plants/genera', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        })
+        navigateTo('genus', result.id)
+      }
+    })
+    if (success) {
+      setGenusFormModal(null)
+      setNotice(genusFormModal?.genus ? 'Genre mis à jour.' : 'Genre créé avec succès.')
+    }
+  }, [currentContributorId, genusFormModal, mutateAndRefresh, navigateTo])
+
+  // Submit species form
+  const submitSpeciesForm = useCallback(async (data) => {
+    const success = await mutateAndRefresh(async () => {
+      const body = { ...data, contributor_id: currentContributorId }
+      if (speciesFormModal?.species?.id) {
+        await apiRequest(`/api/v1/plants/species/${speciesFormModal.species.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+      } else {
+        const result = await apiRequest('/api/v1/plants/species', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        })
+        navigateTo('species', result.id)
+      }
+    })
+    if (success) {
+      setSpeciesFormModal(null)
+      setNotice(speciesFormModal?.species ? 'Espèce mise à jour.' : 'Espèce créée avec succès.')
+    }
+  }, [currentContributorId, mutateAndRefresh, navigateTo, speciesFormModal])
+
+  // Submit variety form
+  const submitVarietyForm = useCallback(async (data) => {
+    const success = await mutateAndRefresh(async () => {
+      const body = { ...data, contributor_id: currentContributorId }
+      if (varietyFormModal?.variety?.id) {
+        await apiRequest(`/api/v1/plants/varieties/${varietyFormModal.variety.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+      } else {
+        const result = await apiRequest('/api/v1/plants/varieties', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        })
+        navigateTo('variety', result.id)
+      }
+    })
+    if (success) {
+      setVarietyFormModal(null)
+      setNotice(varietyFormModal?.variety ? 'Variété mise à jour.' : 'Variété créée avec succès.')
+    }
+  }, [currentContributorId, mutateAndRefresh, navigateTo, varietyFormModal])
 
   const exportPalettePdf = useCallback(() => {
     if (!palette?.id) {
@@ -825,7 +1053,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   if (loading || !filterOptions) {
     return (
       <div className="flex items-center justify-center h-full p-8">
-        <p className="text-stone-500">Chargement Plant Database...</p>
+        <p className="text-stone-500">Chargement Bases de données végétales...</p>
       </div>
     )
   }
@@ -844,16 +1072,24 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
       )}
 
       {route.view === 'search' && (
-        <SearchView
-          filterOptions={filterOptions}
-          filters={filters}
-          results={results}
-          paletteItemIds={paletteItemIds}
-          onSearchChange={(query) => setFilters((previous) => ({ ...previous, query }))}
-          onFiltersChange={setFilters}
-          onResultSelect={(id, type) => navigateTo(type === 'genus' ? 'genus' : type, id)}
-          onAddToPalette={addToPalette}
-        />
+        <>
+          <SearchView
+            filterOptions={filterOptions}
+            filters={filters}
+            results={results}
+            paletteItemIds={paletteItemIds}
+            onSearchChange={(query) => setFilters((previous) => ({ ...previous, query }))}
+            onFiltersChange={setFilters}
+            onResultSelect={(id, type) => navigateTo(type === 'genus' ? 'genus' : type, id)}
+            onAddToPalette={addToPalette}
+          />
+          {/* Floating Add Button */}
+          <AddPlantMenu
+            onAddGenus={() => openGenusForm()}
+            onAddSpecies={() => openSpeciesForm()}
+            onAddVariety={() => openVarietyForm()}
+          />
+        </>
       )}
 
       {route.view === 'genus' && genusPayload && (
@@ -876,6 +1112,8 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           onAddPhoto={() => openPhotoModal('genus', genusPayload.genus.id)}
           onAddNote={() => openNoteModal('genus', genusPayload.genus.id)}
           onAddReference={() => openReferenceModal('genus', genusPayload.genus.id)}
+          onAddSpecies={() => openSpeciesForm(null, genusPayload.genus.id)}
+          onEdit={() => openGenusForm(genusPayload.genus, genusPayload.commonNames || [])}
         />
       )}
 
@@ -902,6 +1140,8 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           onAddPhoto={() => openPhotoModal('species', speciesPayload.species.id)}
           onAddNote={() => openNoteModal('species', speciesPayload.species.id)}
           onAddReference={() => openReferenceModal('species', speciesPayload.species.id)}
+          onAddVariety={() => openVarietyForm(null, speciesPayload.species.id)}
+          onEdit={() => openSpeciesForm(speciesPayload.species, speciesPayload.species.genusId, speciesPayload.commonNames || [])}
         />
       )}
 
@@ -928,6 +1168,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           onAddPhoto={() => openPhotoModal('variety', varietyPayload.variety.id)}
           onAddNote={() => openNoteModal('variety', varietyPayload.variety.id)}
           onAddReference={() => openReferenceModal('variety', varietyPayload.variety.id)}
+          onEdit={() => openVarietyForm(varietyPayload.variety, varietyPayload.variety.speciesId)}
         />
       )}
 
@@ -985,6 +1226,55 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
         onChange={updateContributionValue}
         onSubmit={submitContributionModal}
       />
+
+      {deleteConfirm && (
+        <ConfirmDeleteModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={() => {
+            deleteConfirm.action()
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
+
+      {/* Genus Form Modal */}
+      {genusFormModal && (
+        <GenusFormModal
+          genus={genusFormModal.genus}
+          existingCommonNames={genusFormModal.commonNames || []}
+          onSubmit={submitGenusForm}
+          onCancel={() => setGenusFormModal(null)}
+          busy={busy}
+        />
+      )}
+
+      {/* Species Form Modal */}
+      {speciesFormModal && (
+        <SpeciesFormModal
+          species={speciesFormModal.species}
+          genera={allGenera}
+          filterOptions={filterOptions}
+          existingCommonNames={speciesFormModal.commonNames || []}
+          defaultGenusId={speciesFormModal.defaultGenusId}
+          onSubmit={submitSpeciesForm}
+          onCancel={() => setSpeciesFormModal(null)}
+          busy={busy}
+        />
+      )}
+
+      {/* Variety Form Modal */}
+      {varietyFormModal && (
+        <VarietyFormModal
+          variety={varietyFormModal.variety}
+          availableSpecies={allSpeciesList}
+          defaultSpeciesId={varietyFormModal.defaultSpeciesId}
+          onSubmit={submitVarietyForm}
+          onCancel={() => setVarietyFormModal(null)}
+          busy={busy}
+        />
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 module Design
   class PlantMarker < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_plant_markers'
 
     belongs_to :planting_plan, class_name: 'Design::PlantingPlan'

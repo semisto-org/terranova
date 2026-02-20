@@ -15,7 +15,11 @@ import {
   EventForm,
   EventTypesAdmin,
   MemberForm,
+  ExpenseList,
+  AlbumList,
 } from '../../lab-management/components'
+import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -24,7 +28,9 @@ const SECTION_TABS = [
   { id: 'contacts', label: 'Contacts' },
   { id: 'semos', label: 'Semos' },
   { id: 'timesheets', label: 'Timesheets' },
+  { id: 'expenses', label: 'Dépenses' },
   { id: 'calendar', label: 'Calendrier' },
+  { id: 'albums', label: 'Albums' },
   { id: 'event-types', label: 'Types d\'événements' },
 ]
 
@@ -51,7 +57,7 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={onClose}>
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <form
@@ -61,20 +67,20 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
           }}
           className="flex flex-col min-h-0 h-full"
         >
-          <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200 dark:border-stone-700">
-            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 m-0">{title}</h2>
+          <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
+            <h2 className="text-xl font-bold text-stone-900 m-0">{title}</h2>
           </div>
           <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3">
             {fields.map((field) => (
               <label key={field.name} className="block space-y-1">
-                <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{field.label}</span>
+                <span className="text-sm font-semibold text-stone-700">{field.label}</span>
 
                 {field.type === 'textarea' && (
                   <textarea
                     rows={field.rows || 3}
                     value={values[field.name] ?? ''}
                     onChange={(event) => onChange(field.name, event.target.value)}
-                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-900"
                     required={field.required}
                   />
                 )}
@@ -83,7 +89,7 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
                   <select
                     value={values[field.name] ?? ''}
                     onChange={(event) => onChange(field.name, event.target.value)}
-                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-900"
                     required={field.required}
                   >
                     {(field.options || []).map((option) => (
@@ -108,15 +114,15 @@ function FormModal({ title, fields, values, onChange, onSubmit, onClose, busy })
                     type={field.type || 'text'}
                     value={values[field.name] ?? ''}
                     onChange={(event) => onChange(field.name, event.target.value)}
-                    className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white text-stone-900"
                     required={field.required}
                   />
                 )}
               </label>
             ))}
           </div>
-          <div className="shrink-0 px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium">
+          <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 rounded-lg bg-white text-stone-700 font-medium">
               Annuler
             </button>
             <button type="submit" className="px-3 py-1.5 text-sm border border-[#5B5781] bg-[#5B5781] text-white rounded-lg font-semibold disabled:opacity-60" disabled={busy}>
@@ -133,19 +139,19 @@ function DetailModal({ title, data, onClose }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={onClose}>
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200 dark:border-stone-700">
-          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 m-0">{title}</h2>
+        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
+          <h2 className="text-xl font-bold text-stone-900 m-0">{title}</h2>
         </div>
         <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4">
-          <pre className="bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-3 text-xs overflow-auto max-h-full">
+          <pre className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-xs overflow-auto max-h-full">
             {JSON.stringify(data, null, 2)}
           </pre>
         </div>
-        <div className="shrink-0 px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex justify-end">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium">
+        <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex justify-end">
+          <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border border-stone-300 rounded-lg bg-white text-stone-700 font-medium">
             Fermer
           </button>
         </div>
@@ -169,9 +175,13 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [timesheetFormModal, setTimesheetFormModal] = useState(null)
   const [eventForm, setEventForm] = useState(null)
   const [memberForm, setMemberForm] = useState(null)
+  const [expenses, setExpenses] = useState([])
+  const [expensesLoading, setExpensesLoading] = useState(false)
+  const [expenseFormModal, setExpenseFormModal] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
-  const loadOverview = useCallback(async () => {
-    setLoading(true)
+  const loadOverview = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     setError(null)
     try {
       const payload = await apiRequest('/api/v1/lab/overview')
@@ -179,13 +189,29 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     loadOverview()
   }, [loadOverview])
+
+  const loadExpenses = useCallback(async () => {
+    setExpensesLoading(true)
+    try {
+      const res = await apiRequest('/api/v1/lab/expenses')
+      setExpenses(res.items || [])
+    } catch {
+      setExpenses([])
+    } finally {
+      setExpensesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (tab === 'expenses') loadExpenses()
+  }, [tab, loadExpenses])
 
   const members = data?.members || []
   const pitches = data?.pitches || []
@@ -286,11 +312,14 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       })
     },
 
-    onDeletePitch: (pitchId) =>
-      runAndRefresh(async () => {
-        if (!window.confirm('Supprimer ce pitch ?')) return
-        await apiRequest(`/api/v1/lab/pitches/${pitchId}`, { method: 'DELETE' })
-      }),
+    onDeletePitch: (pitchId) => {
+      const pitch = pitches.find((item) => item.id === pitchId)
+      setDeleteConfirm({
+        title: 'Supprimer ce pitch ?',
+        message: `Le pitch « ${pitch?.title || ''} » sera supprimé définitivement.`,
+        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/pitches/${pitchId}`, { method: 'DELETE' })),
+      })
+    },
 
     onViewPitch: (pitchId) => showDetailFromApi('Détail pitch', `/api/v1/lab/pitches/${pitchId}`),
 
@@ -313,7 +342,13 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         })
       }),
 
-    onRemoveBet: (betId) => runAndRefresh(() => apiRequest(`/api/v1/lab/bets/${betId}`, { method: 'DELETE' })),
+    onRemoveBet: (betId) => {
+      setDeleteConfirm({
+        title: 'Retirer ce bet ?',
+        message: 'Ce bet sera retiré définitivement.',
+        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/bets/${betId}`, { method: 'DELETE' })),
+      })
+    },
 
     onCreateScope: (pitchId) =>
       openForm({
@@ -384,11 +419,13 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         })
       ),
 
-    onDeleteChowderItem: (itemId) =>
-      runAndRefresh(async () => {
-        if (!window.confirm('Supprimer cet item chowder ?')) return
-        await apiRequest(`/api/v1/lab/chowder-items/${itemId}`, { method: 'DELETE' })
-      }),
+    onDeleteChowderItem: (itemId) => {
+      setDeleteConfirm({
+        title: 'Supprimer cet item chowder ?',
+        message: 'Cet item chowder sera supprimé définitivement.',
+        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/chowder-items/${itemId}`, { method: 'DELETE' })),
+      })
+    },
 
     onViewScope: (scopeId) => {
       const scope = scopes.find((item) => item.id === scopeId)
@@ -529,11 +566,14 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       const contact = contacts.find((c) => c.id === contactId)
       setContactFormModal({ contact: contact || null })
     },
-    onDeleteContact: (contactId) =>
-      runAndRefresh(async () => {
-        if (!window.confirm('Supprimer ce contact ?')) return
-        await apiRequest(`/api/v1/lab/contacts/${contactId}`, { method: 'DELETE' })
-      }),
+    onDeleteContact: (contactId) => {
+      const contact = contacts.find((c) => c.id === contactId)
+      setDeleteConfirm({
+        title: 'Supprimer ce contact ?',
+        message: `Le contact « ${contact?.name || ''} » sera supprimé définitivement.`,
+        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/contacts/${contactId}`, { method: 'DELETE' })),
+      })
+    },
 
     onTransferSemos: (toWalletId, amount, description) =>
       runAndRefresh(() => {
@@ -568,11 +608,13 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (timesheet) setTimesheetFormModal({ timesheet })
     },
 
-    onDeleteTimesheet: (timesheetId) =>
-      runAndRefresh(async () => {
-        if (!window.confirm('Supprimer cette prestation ?')) return
-        await apiRequest(`/api/v1/lab/timesheets/${timesheetId}`, { method: 'DELETE' })
-      }),
+    onDeleteTimesheet: (timesheetId) => {
+      setDeleteConfirm({
+        title: 'Supprimer cette prestation ?',
+        message: 'Cette prestation sera supprimée définitivement.',
+        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/timesheets/${timesheetId}`, { method: 'DELETE' })),
+      })
+    },
 
     onMarkInvoiced: (timesheetId) =>
       runAndRefresh(() =>
@@ -627,13 +669,29 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       })
     },
 
-    onDeleteEvent: (eventId) =>
-      runAndRefresh(async () => {
-        if (!window.confirm('Supprimer cet événement ?')) return
-        await apiRequest(`/api/v1/lab/events/${eventId}`, { method: 'DELETE' })
-      }),
+    onDeleteEvent: (eventId) => {
+      const event = events.find((item) => item.id === eventId)
+      setDeleteConfirm({
+        title: 'Supprimer cet événement ?',
+        message: `L'événement « ${event?.title || ''} » sera supprimé définitivement.`,
+        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/events/${eventId}`, { method: 'DELETE' })),
+      })
+    },
 
     onViewEvent: (eventId) => showDetailFromApi('Détail événement', `/api/v1/lab/events/${eventId}`),
+
+    onCreateExpense: () => setExpenseFormModal({ expense: null }),
+    onEditExpense: (expense) => setExpenseFormModal({ expense }),
+    onDeleteExpense: (expenseId) => {
+      setDeleteConfirm({
+        title: 'Supprimer cette dépense ?',
+        message: 'Cette dépense sera supprimée définitivement.',
+        action: () => runAndRefresh(async () => {
+          await apiRequest(`/api/v1/lab/expenses/${expenseId}`, { method: 'DELETE' })
+          loadExpenses()
+        }),
+      })
+    },
 
     onViewCycle: (cycleId) => {
       const cycle = (data?.cycles || []).find((item) => item.id === cycleId)
@@ -646,7 +704,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (!guild) return
       setDetailModal({ title: 'Détail guilde', data: guild })
     },
-  }), [currentMemberId, contacts, data, events, members, openForm, pitches, runAndRefresh, scopes, showDetailFromApi, timesheets])
+  }), [currentMemberId, contacts, data, events, loadExpenses, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi, timesheets])
 
   if (loading) {
     return (
@@ -761,6 +819,18 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
+      {tab === 'expenses' && (
+        <ExpenseList
+          expenses={expenses}
+          loading={expensesLoading}
+          onCreateExpense={callbacks.onCreateExpense}
+          onEditExpense={callbacks.onEditExpense}
+          onDeleteExpense={callbacks.onDeleteExpense}
+          trainingOptions={[]}
+          designProjectOptions={[]}
+        />
+      )}
+
       {tab === 'timesheets' && (
         <TimesheetList
           timesheets={data.timesheets}
@@ -787,6 +857,13 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onViewEvent={callbacks.onViewEvent}
           onEditEvent={callbacks.onEditEvent}
           onDeleteEvent={callbacks.onDeleteEvent}
+        />
+      )}
+
+      {tab === 'albums' && (
+        <AlbumList
+          albums={data?.albums ?? []}
+          onRefresh={() => loadOverview(false)}
         />
       )}
 
@@ -933,6 +1010,103 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
             setMemberForm(null)
           }}
           onCancel={() => setMemberForm(null)}
+          busy={busy}
+        />
+      )}
+
+      {deleteConfirm && (
+        <ConfirmDeleteModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={() => {
+            deleteConfirm.action()
+            setDeleteConfirm(null)
+          }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
+
+      {expenseFormModal && (
+        <ExpenseFormModal
+          expense={expenseFormModal.expense}
+          contactOptions={(data?.contacts || []).map((c) => ({ id: c.id, name: c.name, contactType: c.contactType }))}
+          onCreateContact={async ({ name, contact_type }) => {
+            const contact = await apiRequest('/api/v1/lab/contacts', {
+              method: 'POST',
+              body: JSON.stringify({ name, contact_type }),
+            })
+            return { id: contact.id, name: contact.name, contactType: contact.contactType }
+          }}
+          showTrainingLink={true}
+          showDesignProjectLink={true}
+          trainingOptions={[]}
+          designProjectOptions={[]}
+          accentColor="#5B5781"
+          onSubmit={async (payload) => {
+            const isEdit = Boolean(expenseFormModal.expense?.id)
+            const documentFile = payload.document
+            const body = {
+              supplier: payload.supplier,
+              supplier_contact_id: payload.supplier_contact_id,
+              status: payload.status,
+              invoice_date: payload.invoice_date,
+              category: payload.category,
+              expense_type: payload.expense_type,
+              billing_zone: payload.billing_zone,
+              payment_date: payload.payment_date || null,
+              payment_type: payload.payment_type || null,
+              amount_excl_vat: payload.amount_excl_vat,
+              vat_rate: payload.vat_rate || null,
+              vat_6: payload.vat_6,
+              vat_12: payload.vat_12,
+              vat_21: payload.vat_21,
+              total_incl_vat: payload.total_incl_vat,
+              eu_vat_rate: payload.eu_vat_rate || null,
+              eu_vat_amount: payload.eu_vat_amount,
+              paid_by: payload.paid_by || null,
+              reimbursed: payload.reimbursed,
+              reimbursement_date: payload.reimbursement_date || null,
+              billable_to_client: payload.billable_to_client,
+              rebilling_status: payload.rebilling_status || null,
+              name: payload.name || '',
+              notes: payload.notes || '',
+              poles: payload.poles || [],
+              training_id: payload.training_id || null,
+              design_project_id: payload.design_project_id || null,
+            }
+            setBusy(true)
+            setError(null)
+            try {
+              if (documentFile) {
+                const formData = new FormData()
+                Object.entries(body).forEach(([k, v]) => {
+                  if (v === null || v === undefined) return
+                  if (Array.isArray(v)) v.forEach((x) => formData.append(`${k}[]`, x))
+                  else formData.append(k, v)
+                })
+                if (documentFile instanceof File) formData.append('document', documentFile)
+                const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
+                await apiRequest(url, {
+                  method: isEdit ? 'PATCH' : 'POST',
+                  body: formData,
+                })
+              } else {
+                const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
+                await apiRequest(url, {
+                  method: isEdit ? 'PATCH' : 'POST',
+                  body: JSON.stringify(body),
+                })
+              }
+              setExpenseFormModal(null)
+              await loadExpenses()
+            } catch (err) {
+              setError(err.message)
+              throw err
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onCancel={() => setExpenseFormModal(null)}
           busy={busy}
         />
       )}

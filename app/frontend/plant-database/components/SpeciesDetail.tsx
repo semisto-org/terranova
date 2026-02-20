@@ -11,6 +11,7 @@ import { NurseryStockCard } from './NurseryStockCard'
 import { PlantLocationMap } from './PlantLocationMap'
 import { ReferenceList } from './ReferenceList'
 import { MonthsCalendar } from './MonthsCalendar'
+import { SeasonCalendar } from './SeasonCalendar'
 import { PropertyBadge } from './PropertyBadge'
 import { AddToPaletteButton } from './AddToPaletteButton'
 import { SpeciesBreadcrumb } from './SpeciesBreadcrumb'
@@ -44,6 +45,10 @@ import {
 interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
   filterOptions: FilterOptions
   siblingSpecies?: Species[]
+  /** Called when user wants to add a variety to this species */
+  onAddVariety?: () => void
+  /** Called when user wants to edit this species */
+  onEdit?: () => void
 }
 
 export function SpeciesDetail({
@@ -68,7 +73,9 @@ export function SpeciesDetail({
   onGenusSelect,
   onContributorSelect,
   onNurserySelect,
-  onSpeciesSelect
+  onSpeciesSelect,
+  onAddVariety,
+  onEdit,
 }: SpeciesDetailWithFiltersProps & { onSpeciesSelect?: (id: string) => void }) {
   const primaryCommonName = commonNames.find(cn => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter(cn => cn.language !== 'fr')
@@ -185,9 +192,9 @@ export function SpeciesDetail({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
+    <div className="min-h-screen bg-stone-50">
       {/* Hero Section */}
-      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
+      <div className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
           {/* Breadcrumb with dropdown */}
           <SpeciesBreadcrumb
@@ -205,6 +212,7 @@ export function SpeciesDetail({
                 photos={photos}
                 contributors={contributors}
                 onContributorSelect={onContributorSelect}
+                onAddPhoto={onAddPhoto}
               />
             </div>
 
@@ -212,19 +220,33 @@ export function SpeciesDetail({
             <div className="md:w-1/2">
               {/* Type badge */}
               {typeLabel && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#AFBD00]/15 text-[#7a8200] dark:bg-[#AFBD00]/20 dark:text-[#d4e34d] mb-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#AFBD00]/15 text-[#7a8200] mb-3">
                   {typeLabel}
                 </span>
               )}
 
               {/* Latin name */}
-              <h1 className="font-serif text-3xl md:text-4xl text-stone-900 dark:text-stone-100 italic mb-2">
-                {species.latinName}
-              </h1>
+              <div className="flex items-start gap-3 mb-2">
+                <h1 className="font-serif text-3xl md:text-4xl text-stone-900 italic">
+                  {species.latinName}
+                </h1>
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="shrink-0 mt-1.5 p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 transition-colors"
+                    aria-label="Modifier l'espèce"
+                    title="Modifier"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
 
               {/* Common name */}
               {primaryCommonName && (
-                <p className="text-xl text-stone-600 dark:text-stone-400 mb-4">
+                <p className="text-xl text-stone-600 mb-4">
                   {primaryCommonName}
                 </p>
               )}
@@ -235,7 +257,7 @@ export function SpeciesDetail({
                   {otherCommonNames.map(cn => (
                     <span
                       key={cn.id}
-                      className="text-sm text-stone-500 dark:text-stone-400"
+                      className="text-sm text-stone-500"
                     >
                       <span className="text-xs opacity-70">{cn.language.toUpperCase()}</span> {cn.name}
                     </span>
@@ -246,16 +268,6 @@ export function SpeciesDetail({
               {/* Action buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
                 <AddToPaletteButton onAddToPalette={onAddToPalette} />
-                <button
-                  onClick={onAddPhoto}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 font-medium rounded-xl hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Photo
-                </button>
               </div>
             </div>
           </div>
@@ -263,7 +275,7 @@ export function SpeciesDetail({
       </div>
 
       {/* Visual Characteristics Grid */}
-      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
+      <div className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {/* Type */}
@@ -341,20 +353,20 @@ export function SpeciesDetail({
             />
 
             {/* Watering */}
-            <div className="flex flex-col items-center text-center p-3 rounded-xl hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900/30">
+            <div className="flex flex-col items-center text-center p-3 rounded-xl hover:bg-stone-50 transition-colors">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 bg-blue-100">
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map(level => (
                     <WaterDropIcon
                       key={level}
                       filled={level <= parseInt(species.wateringNeed)}
-                      className={`w-3 h-3 ${level <= parseInt(species.wateringNeed) ? 'text-blue-500' : 'text-blue-300 dark:text-blue-700'}`}
+                      className={`w-3 h-3 ${level <= parseInt(species.wateringNeed) ? 'text-blue-500' : 'text-blue-300'}`}
                     />
                   ))}
                 </div>
               </div>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mb-0.5">Arrosage</p>
-              <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+              <p className="text-xs text-stone-500 mb-0.5">Arrosage</p>
+              <p className="text-sm font-medium text-stone-900">
                 {filterOptions.wateringNeeds.find(w => w.id === species.wateringNeed)?.label.split(' - ')[1] || species.wateringNeed}
               </p>
             </div>
@@ -365,23 +377,23 @@ export function SpeciesDetail({
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
         {/* Collapsible sections */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 divide-y divide-stone-200 dark:divide-stone-800 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-200 overflow-hidden">
           {/* Origin & Details */}
           <div className="px-4 md:px-6 py-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">Origine</p>
-                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{species.origin}</p>
+                <p className="text-xs text-stone-500 mb-1">Origine</p>
+                <p className="text-sm font-medium text-stone-900">{species.origin}</p>
               </div>
               <div>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">Cycle de vie</p>
-                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                <p className="text-xs text-stone-500 mb-1">Cycle de vie</p>
+                <p className="text-sm font-medium text-stone-900">
                   {filterOptions.lifeCycles.find(l => l.id === species.lifeCycle)?.label}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">Pollinisation</p>
-                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                <p className="text-xs text-stone-500 mb-1">Pollinisation</p>
+                <p className="text-sm font-medium text-stone-900">
                   {filterOptions.pollinationTypes.find(p => p.id === species.pollinationType)?.label}
                 </p>
               </div>
@@ -389,8 +401,8 @@ export function SpeciesDetail({
 
             {/* Native countries */}
             {species.nativeCountries.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
-                <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Indigène en</p>
+              <div className="mt-4 pt-4 border-t border-stone-100">
+                <p className="text-xs text-stone-500 mb-2">Indigène en</p>
                 <div className="flex flex-wrap gap-1">
                   {species.nativeCountries.map(country => (
                     <PropertyBadge
@@ -406,9 +418,9 @@ export function SpeciesDetail({
 
             {/* Warnings */}
             {(species.isInvasive || species.toxicElements) && (
-              <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
+              <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-stone-100">
                 {species.isInvasive && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
@@ -416,7 +428,7 @@ export function SpeciesDetail({
                   </div>
                 )}
                 {species.toxicElements && (
-                  <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-sm">
+                  <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm">
                     <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
@@ -430,43 +442,13 @@ export function SpeciesDetail({
           {/* Calendar */}
           <div className="px-4 md:px-6">
             <CollapsibleSection title="Calendrier" icon={icons.calendar} defaultOpen={true}>
-              <div className="space-y-4">
-                {species.floweringMonths.length > 0 && (
-                  <MonthsCalendar
-                    activeMonths={species.floweringMonths}
-                    label="Floraison"
-                    color="pink"
-                  />
-                )}
-                {species.fruitingMonths.length > 0 && (
-                  <MonthsCalendar
-                    activeMonths={species.fruitingMonths}
-                    label="Fructification"
-                    color="orange"
-                  />
-                )}
-                {species.harvestMonths.length > 0 && (
-                  <MonthsCalendar
-                    activeMonths={species.harvestMonths}
-                    label="Récolte"
-                    color="green"
-                  />
-                )}
-
-                <div className="pt-2">
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Période de plantation</p>
-                  <div className="flex flex-wrap gap-2">
-                    {species.plantingSeasons.map(season => (
-                      <PropertyBadge
-                        key={season}
-                        value={season}
-                        options={filterOptions.plantingSeasons}
-                        variant="accent"
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <SeasonCalendar
+                floweringMonths={species.floweringMonths}
+                fruitingMonths={species.fruitingMonths}
+                harvestMonths={species.harvestMonths}
+                plantingSeasons={species.plantingSeasons}
+                plantingSeasonsOptions={filterOptions.plantingSeasons}
+              />
             </CollapsibleSection>
           </div>
 
@@ -475,7 +457,7 @@ export function SpeciesDetail({
             <CollapsibleSection title="Sol et environnement" icon={icons.soil} defaultOpen={true}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Types de sol</p>
+                  <p className="text-xs text-stone-500 mb-2">Types de sol</p>
                   <div className="flex flex-wrap gap-1">
                     {species.soilTypes.map(soil => (
                       <PropertyBadge
@@ -488,7 +470,7 @@ export function SpeciesDetail({
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Humidité</p>
+                  <p className="text-xs text-stone-500 mb-2">Humidité</p>
                   <PropertyBadge
                     value={species.soilMoisture}
                     options={filterOptions.soilMoistures}
@@ -496,7 +478,7 @@ export function SpeciesDetail({
                   />
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Richesse</p>
+                  <p className="text-xs text-stone-500 mb-2">Richesse</p>
                   <PropertyBadge
                     value={species.soilRichness}
                     options={filterOptions.soilRichness}
@@ -504,7 +486,7 @@ export function SpeciesDetail({
                   />
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Couleurs fleurs</p>
+                  <p className="text-xs text-stone-500 mb-2">Couleurs fleurs</p>
                   <div className="flex flex-wrap gap-1">
                     {species.flowerColors.map(color => (
                       <PropertyBadge
@@ -526,7 +508,7 @@ export function SpeciesDetail({
               <div className="space-y-4">
                 {species.edibleParts.length > 0 && (
                   <div>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Parties comestibles</p>
+                    <p className="text-xs text-stone-500 mb-2">Parties comestibles</p>
                     <div className="flex flex-wrap gap-2">
                       {species.edibleParts.map(part => (
                         <PropertyBadge
@@ -542,7 +524,7 @@ export function SpeciesDetail({
 
                 {species.interests.length > 0 && (
                   <div>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Intérêts</p>
+                    <p className="text-xs text-stone-500 mb-2">Intérêts</p>
                     <div className="flex flex-wrap gap-2">
                       {species.interests.map(interest => (
                         <PropertyBadge
@@ -557,7 +539,7 @@ export function SpeciesDetail({
 
                 {species.transformations.length > 0 && (
                   <div>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Transformations</p>
+                    <p className="text-xs text-stone-500 mb-2">Transformations</p>
                     <div className="flex flex-wrap gap-2">
                       {species.transformations.map(trans => (
                         <PropertyBadge
@@ -573,7 +555,7 @@ export function SpeciesDetail({
 
                 {species.fodderQualities.length > 0 && (
                   <div>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Qualités fourragères</p>
+                    <p className="text-xs text-stone-500 mb-2">Qualités fourragères</p>
                     <div className="flex flex-wrap gap-2">
                       {species.fodderQualities.map(fodder => (
                         <PropertyBadge
@@ -588,15 +570,15 @@ export function SpeciesDetail({
                 )}
 
                 {species.therapeuticProperties && (
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">Propriétés thérapeutiques</p>
-                    <p className="text-sm text-emerald-900 dark:text-emerald-300">{species.therapeuticProperties}</p>
+                  <div className="p-3 bg-emerald-50 rounded-lg">
+                    <p className="text-xs font-medium text-emerald-700 mb-1">Propriétés thérapeutiques</p>
+                    <p className="text-sm text-emerald-900">{species.therapeuticProperties}</p>
                   </div>
                 )}
 
                 {species.propagationMethods.length > 0 && (
                   <div>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">Modes de multiplication</p>
+                    <p className="text-xs text-stone-500 mb-2">Modes de multiplication</p>
                     <div className="flex flex-wrap gap-2">
                       {species.propagationMethods.map(method => (
                         <PropertyBadge
@@ -614,25 +596,25 @@ export function SpeciesDetail({
           </div>
 
           {/* Varieties */}
-          {varieties.length > 0 && (
-            <div className="px-4 md:px-6">
-              <CollapsibleSection title="Variétés" icon={icons.varieties} badge={varieties.length} defaultOpen={true}>
+          <div className="px-4 md:px-6">
+            <CollapsibleSection title="Variétés" icon={icons.varieties} badge={varieties.length} defaultOpen={varieties.length > 0}>
+              {varieties.length > 0 ? (
                 <div className="space-y-3">
                   {varieties.map(variety => (
                     <button
                       key={variety.id}
                       onClick={() => onVarietySelect?.(variety.id)}
-                      className="w-full text-left p-4 bg-stone-50 dark:bg-stone-800/50 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-xl transition-colors group"
+                      className="w-full text-left p-4 bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors group"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <p className="font-medium text-stone-900 dark:text-stone-100 italic group-hover:text-[#5B5781] dark:group-hover:text-[#a89ec4] transition-colors">
+                        <p className="font-medium text-stone-900 italic group-hover:text-[#5B5781] transition-colors">
                           {variety.latinName.split("'")[1]?.replace("'", '') || variety.latinName}
                         </p>
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3, 4, 5].map(star => (
                             <svg
                               key={star}
-                              className={`w-4 h-4 ${star <= variety.tasteRating ? 'text-amber-400' : 'text-stone-300 dark:text-stone-600'}`}
+                              className={`w-4 h-4 ${star <= variety.tasteRating ? 'text-amber-400' : 'text-stone-300'}`}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -642,15 +624,28 @@ export function SpeciesDetail({
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-x-4 text-sm">
-                        <span className="text-stone-500 dark:text-stone-400">Productivité: <span className="text-stone-700 dark:text-stone-300">{variety.productivity.split(' (')[0]}</span></span>
-                        <span className="text-stone-500 dark:text-stone-400">Calibre: <span className="text-stone-700 dark:text-stone-300">{variety.fruitSize.split(' (')[0]}</span></span>
+                        <span className="text-stone-500">Productivité: <span className="text-stone-700">{variety.productivity.split(' (')[0]}</span></span>
+                        <span className="text-stone-500">Calibre: <span className="text-stone-700">{variety.fruitSize.split(' (')[0]}</span></span>
                       </div>
                     </button>
                   ))}
                 </div>
-              </CollapsibleSection>
-            </div>
-          )}
+              ) : (
+                <p className="text-sm text-stone-500 py-2">Aucune variété enregistrée</p>
+              )}
+              {onAddVariety && (
+                <button
+                  onClick={onAddVariety}
+                  className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-stone-200 text-sm font-medium text-stone-500 hover:border-[#5B5781] hover:text-[#5B5781] hover:bg-[#5B5781]/5 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Ajouter une variété
+                </button>
+              )}
+            </CollapsibleSection>
+          </div>
 
           {/* Plant Locations Map */}
           <div className="px-4 md:px-6">
@@ -673,7 +668,7 @@ export function SpeciesDetail({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-stone-500 dark:text-stone-400 italic">
+                <p className="text-sm text-stone-500 italic">
                   Non disponible dans les pépinières du réseau
                 </p>
               )}
@@ -695,7 +690,7 @@ export function SpeciesDetail({
                   ))}
                   <button
                     onClick={() => onAddNote?.('')}
-                    className="w-full py-3 border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-xl text-stone-500 dark:text-stone-400 hover:border-[#5B5781] hover:text-[#5B5781] dark:hover:border-[#a89ec4] dark:hover:text-[#a89ec4] transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 border-2 border-dashed border-stone-300 rounded-xl text-stone-500 hover:border-[#5B5781] hover:text-[#5B5781] transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -706,7 +701,7 @@ export function SpeciesDetail({
               ) : (
                 <button
                   onClick={() => onAddNote?.('')}
-                  className="w-full py-6 border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-xl text-stone-500 dark:text-stone-400 hover:border-[#5B5781] hover:text-[#5B5781] dark:hover:border-[#a89ec4] dark:hover:text-[#a89ec4] transition-colors flex flex-col items-center justify-center gap-2"
+                  className="w-full py-6 border-2 border-dashed border-stone-300 rounded-xl text-stone-500 hover:border-[#5B5781] hover:text-[#5B5781] transition-colors flex flex-col items-center justify-center gap-2"
                 >
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />

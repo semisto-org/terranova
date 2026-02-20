@@ -52,7 +52,7 @@ export function SemosTransferForm({
   }
 
   return (
-    <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#5B5781] to-[#4a4670] px-6 py-5 text-white">
         <div className="flex items-center gap-3">
@@ -72,14 +72,14 @@ export function SemosTransferForm({
       <form onSubmit={handleSubmit} className="p-6 space-y-5">
         {/* Recipient */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Destinataire
           </label>
           <div className="relative">
             <select
               value={recipientId}
               onChange={(e) => setRecipientId(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 appearance-none cursor-pointer hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 appearance-none cursor-pointer hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
             >
               <option value="">Sélectionner un membre...</option>
               {availableRecipients.map((member) => (
@@ -93,7 +93,7 @@ export function SemosTransferForm({
             </div>
           </div>
           {selectedRecipient && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+            <div className="mt-2 flex items-center gap-2 text-sm text-stone-500">
               <img
                 src={selectedRecipient.avatar}
                 alt=""
@@ -106,7 +106,7 @@ export function SemosTransferForm({
 
         {/* Amount */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Montant
           </label>
           <div className="relative">
@@ -118,15 +118,15 @@ export function SemosTransferForm({
               min="0.1"
               max={maxTransfer}
               step="0.1"
-              className="w-full px-4 py-3 pr-16 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 text-2xl font-bold tabular-nums placeholder:text-stone-300 dark:placeholder:text-stone-600 hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
+              className="w-full px-4 py-3 pr-16 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-2xl font-bold tabular-nums placeholder:text-stone-300 hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
             />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 font-medium">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 font-medium">
               Semos
             </div>
           </div>
           {numAmount > 0 && (
             <div className="mt-2 flex items-center justify-between text-sm">
-              <span className={numAmount > maxTransfer ? 'text-rose-500' : 'text-stone-500 dark:text-stone-400'}>
+              <span className={numAmount > maxTransfer ? 'text-rose-500' : 'text-stone-500'}>
                 {numAmount > maxTransfer
                   ? `Insuffisant (max: ${formatAmount(maxTransfer)}S)`
                   : `Reste après transfert: ${formatAmount(currentWallet.balance - numAmount)}S`}
@@ -154,7 +154,7 @@ export function SemosTransferForm({
                 ${
                   parseFloat(amount) === value
                     ? 'bg-[#5B5781] text-white'
-                    : 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-600'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 }
               `}
             >
@@ -165,7 +165,7 @@ export function SemosTransferForm({
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Motif
           </label>
           <textarea
@@ -173,14 +173,14 @@ export function SemosTransferForm({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ex: Achat plants pépinière, Participation formation..."
             rows={2}
-            className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 resize-none hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 placeholder:text-stone-400 resize-none hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
           />
         </div>
 
         {/* Summary */}
         {canSubmit && selectedRecipient && (
-          <div className="bg-[#5B5781]/5 dark:bg-[#5B5781]/10 rounded-xl p-4 border border-[#5B5781]/10">
-            <p className="text-sm text-stone-600 dark:text-stone-300">
+          <div className="bg-[#5B5781]/5 rounded-xl p-4 border border-[#5B5781]/10">
+            <p className="text-sm text-stone-600">
               Vous allez transférer <span className="font-bold text-[#5B5781]">{formatAmount(numAmount)} Semos</span> à{' '}
               <span className="font-medium">{selectedRecipient.firstName} {selectedRecipient.lastName}</span>
             </p>
@@ -192,7 +192,7 @@ export function SemosTransferForm({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 px-4 py-3 bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl font-medium hover:bg-stone-200 dark:hover:bg-stone-600 transition-colors"
+            className="flex-1 px-4 py-3 bg-stone-100 text-stone-700 rounded-xl font-medium hover:bg-stone-200 transition-colors"
           >
             Annuler
           </button>
@@ -204,7 +204,7 @@ export function SemosTransferForm({
               ${
                 canSubmit
                   ? 'bg-gradient-to-r from-[#5B5781] to-[#4a4670] text-white hover:shadow-lg hover:shadow-[#5B5781]/25 active:scale-[0.98]'
-                  : 'bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 cursor-not-allowed'
+                  : 'bg-stone-200 text-stone-400 cursor-not-allowed'
               }
             `}
           >

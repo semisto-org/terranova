@@ -1,5 +1,6 @@
 module Design
   class ProjectPaletteItem < ApplicationRecord
+    include SoftDeletable
     self.table_name = 'design_project_palette_items'
 
     LAYERS = %w[canopy sub-canopy shrub herbaceous ground-cover vine root].freeze

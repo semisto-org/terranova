@@ -32,14 +32,15 @@ export function VarietyDetail({
   onNurserySelect,
   varieties = [],
   onVarietySelect,
-}: VarietyDetailProps & { filterOptions: FilterOptions; varieties?: any[]; onVarietySelect?: (varietyId: string) => void }) {
+  onEdit,
+}: VarietyDetailProps & { filterOptions: FilterOptions; varieties?: any[]; onVarietySelect?: (varietyId: string) => void; onEdit?: () => void }) {
   const primaryCommonName = commonNames.find((cn) => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter((cn) => cn.language !== 'fr')
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <div className="bg-white dark:bg-stone-800/50 border-b border-stone-200 dark:border-stone-700">
+      <div className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
           {/* Breadcrumb */}
           {genus && species && (
@@ -55,26 +56,40 @@ export function VarietyDetail({
           )}
 
           <div className="mb-4 mt-4">
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-2">
-              <span className="italic">{variety.latinName}</span>
-              {primaryCommonName && (
-                <span className="ml-3 font-normal text-stone-600 dark:text-stone-400">
-                  {primaryCommonName}
-                </span>
+            <div className="flex items-start gap-3 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900">
+                <span className="italic">{variety.latinName}</span>
+                {primaryCommonName && (
+                  <span className="ml-3 font-normal text-stone-600">
+                    {primaryCommonName}
+                  </span>
+                )}
+              </h1>
+              {onEdit && (
+                <button
+                  onClick={onEdit}
+                  className="shrink-0 mt-1.5 p-2 rounded-lg text-stone-400 hover:text-[#5B5781] hover:bg-[#5B5781]/10 transition-colors"
+                  aria-label="Modifier la variété"
+                  title="Modifier"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
               )}
-            </h1>
+            </div>
 
             {/* Other common names */}
             {otherCommonNames.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="text-sm text-stone-500 dark:text-stone-400">Aussi appelé :</span>
+                <span className="text-sm text-stone-500">Aussi appelé :</span>
                 {otherCommonNames.map((cn) => (
                   <span
                     key={cn.id}
-                    className="text-sm text-stone-600 dark:text-stone-400 font-medium"
+                    className="text-sm text-stone-600 font-medium"
                   >
                     {cn.name}
-                    <span className="text-xs text-stone-400 dark:text-stone-500 ml-1">
+                    <span className="text-xs text-stone-400 ml-1">
                       ({cn.language})
                     </span>
                   </span>
@@ -107,8 +122,8 @@ export function VarietyDetail({
         <CollapsibleSection title="Propriétés de la variété" icon="🌿" defaultOpen={true}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Taste Rating */}
-            <div className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700">
-              <div className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-2">
+            <div className="bg-white rounded-lg p-4 border border-stone-200">
+              <div className="text-sm font-medium text-stone-500 mb-2">
                 Qualité gustative
               </div>
               <div className="flex items-center gap-1">
@@ -118,7 +133,7 @@ export function VarietyDetail({
                     className={`w-5 h-5 ${
                       star <= variety.tasteRating
                         ? 'text-amber-400 fill-current'
-                        : 'text-stone-300 dark:text-stone-600'
+                        : 'text-stone-300'
                     }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
@@ -126,7 +141,7 @@ export function VarietyDetail({
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
-                <span className="ml-2 text-sm font-medium text-stone-700 dark:text-stone-300">
+                <span className="ml-2 text-sm font-medium text-stone-700">
                   {variety.tasteRating}/5
                 </span>
               </div>
@@ -134,11 +149,11 @@ export function VarietyDetail({
 
             {/* Productivity */}
             {variety.productivity && (
-              <div className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700">
-                <div className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-2">
+              <div className="bg-white rounded-lg p-4 border border-stone-200">
+                <div className="text-sm font-medium text-stone-500 mb-2">
                   Productivité
                 </div>
-                <div className="text-base font-medium text-stone-900 dark:text-stone-100">
+                <div className="text-base font-medium text-stone-900">
                   {variety.productivity}
                 </div>
               </div>
@@ -146,11 +161,11 @@ export function VarietyDetail({
 
             {/* Fruit Size */}
             {variety.fruitSize && (
-              <div className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700">
-                <div className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-2">
+              <div className="bg-white rounded-lg p-4 border border-stone-200">
+                <div className="text-sm font-medium text-stone-500 mb-2">
                   Calibre des fruits
                 </div>
-                <div className="text-base font-medium text-stone-900 dark:text-stone-100">
+                <div className="text-base font-medium text-stone-900">
                   {variety.fruitSize}
                 </div>
               </div>
@@ -158,11 +173,11 @@ export function VarietyDetail({
 
             {/* Storage Life */}
             {variety.storageLife && (
-              <div className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700">
-                <div className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-2">
+              <div className="bg-white rounded-lg p-4 border border-stone-200">
+                <div className="text-sm font-medium text-stone-500 mb-2">
                   Durée de conservation
                 </div>
-                <div className="text-base font-medium text-stone-900 dark:text-stone-100">
+                <div className="text-base font-medium text-stone-900">
                   {variety.storageLife}
                 </div>
               </div>
@@ -170,11 +185,11 @@ export function VarietyDetail({
 
             {/* Maturity */}
             {variety.maturity && (
-              <div className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700">
-                <div className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-2">
+              <div className="bg-white rounded-lg p-4 border border-stone-200">
+                <div className="text-sm font-medium text-stone-500 mb-2">
                   Précocité
                 </div>
-                <div className="text-base font-medium text-stone-900 dark:text-stone-100">
+                <div className="text-base font-medium text-stone-900">
                   {variety.maturity}
                 </div>
               </div>
@@ -182,11 +197,11 @@ export function VarietyDetail({
 
             {/* Disease Resistance */}
             {variety.diseaseResistance && (
-              <div className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700 sm:col-span-2">
-                <div className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-2">
+              <div className="bg-white rounded-lg p-4 border border-stone-200 sm:col-span-2">
+                <div className="text-sm font-medium text-stone-500 mb-2">
                   Résistance aux maladies
                 </div>
-                <div className="text-base text-stone-900 dark:text-stone-100">
+                <div className="text-base text-stone-900">
                   {variety.diseaseResistance}
                 </div>
               </div>
@@ -262,11 +277,11 @@ export function VarietyDetail({
           plantLocations.length === 0 &&
           nurseryStocks.length === 0 &&
           references.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700">
-              <div className="w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl mx-auto mb-4">
+            <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
+              <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-3xl mx-auto mb-4">
                 🌿
               </div>
-              <p className="text-stone-500 dark:text-stone-400">
+              <p className="text-stone-500">
                 Aucune information supplémentaire disponible pour cette variété
               </p>
             </div>

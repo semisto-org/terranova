@@ -4,12 +4,17 @@ function getCsrfToken() {
 }
 
 export async function apiRequest(path, options = {}) {
+  const body = options.body
+  const isFormData = body instanceof FormData
+  const headers = {
+    'X-CSRF-Token': getCsrfToken(),
+    ...(options.headers || {}),
+  }
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json'
+  }
   const response = await fetch(path, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': getCsrfToken(),
-      ...(options.headers || {}),
-    },
+    headers,
     ...options,
   })
 

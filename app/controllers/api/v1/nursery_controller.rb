@@ -29,7 +29,7 @@ module Api
       end
 
       def destroy_stock_batch
-        Nursery::StockBatch.find(params.require(:batch_id)).destroy!
+        Nursery::StockBatch.find(params.require(:batch_id)).soft_delete!
         head :no_content
       end
 
@@ -302,6 +302,10 @@ module Api
 
       def stock_batch_params
         params.permit(:nursery_id, :species_id, :species_name, :variety_id, :variety_name, :container_id, :quantity, :available_quantity, :reserved_quantity, :sowing_date, :origin, :growth_stage, :price_euros, :accepts_semos, :price_semos, :notes)
+      end
+
+      def nursery_params
+        params.permit(:name, :nursery_type, :integration, :address, :city, :postal_code, :country, :latitude, :longitude, :contact_name, :contact_email, :contact_phone, :website, :description, :is_pickup_point, specialties: [])
       end
 
       def order_params

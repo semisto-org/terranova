@@ -97,14 +97,14 @@ export function Dashboard({
   const memberGuilds = guilds.filter((g) => currentMember?.guildIds.includes(g.id))
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome header */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
             Bonjour, {currentMember?.firstName} 👋
           </h1>
-          <p className="text-stone-500 dark:text-stone-400 mt-1">
+          <p className="text-stone-500 mt-1">
             Voici ce qui se passe dans le Lab aujourd'hui
           </p>
         </div>
@@ -116,7 +116,7 @@ export function Dashboard({
             {/* Active Cycle */}
             {activeCycle && (
               <section>
-                <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-3">
+                <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-3">
                   Cycle actif
                 </h2>
                 <CycleProgress
@@ -129,17 +129,17 @@ export function Dashboard({
             {/* Projects in Building */}
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide">
                   Projets en cours
                 </h2>
-                <span className="text-xs text-stone-400 dark:text-stone-500">
+                <span className="text-xs text-stone-400">
                   {buildingPitches.length} projet{buildingPitches.length > 1 ? 's' : ''}
                 </span>
               </div>
 
               {buildingPitches.length === 0 ? (
-                <div className="bg-white dark:bg-stone-800/50 rounded-xl p-8 border border-stone-200 dark:border-stone-700 text-center">
-                  <p className="text-stone-500 dark:text-stone-400">
+                <div className="bg-white rounded-xl p-8 border border-stone-200 text-center">
+                  <p className="text-stone-500">
                     Aucun projet en cours pour ce cycle
                   </p>
                 </div>
@@ -148,7 +148,7 @@ export function Dashboard({
                   {buildingPitches.map(({ pitch, scopes: pitchScopes, team }) => (
                     <div
                       key={pitch.id}
-                      className="bg-white dark:bg-stone-800/50 rounded-xl p-5 border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-all hover:shadow-sm"
+                      className="bg-white rounded-xl p-5 border border-stone-200 hover:border-stone-300 transition-all hover:shadow-sm"
                     >
                       {/* Pitch header */}
                       <div className="flex items-start justify-between mb-4">
@@ -156,10 +156,10 @@ export function Dashboard({
                           onClick={() => onViewPitch?.(pitch.id)}
                           className="text-left hover:opacity-80 transition-opacity"
                         >
-                          <h3 className="font-semibold text-stone-800 dark:text-stone-100 line-clamp-2">
+                          <h3 className="font-semibold text-stone-800 line-clamp-2">
                             {pitch.title}
                           </h3>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#5B5781]/10 text-[#5B5781] dark:bg-[#5B5781]/30 dark:text-[#c8bfd2]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#5B5781]/10 text-[#5B5781]">
                             {pitch.appetite}
                           </span>
                         </button>
@@ -170,7 +170,7 @@ export function Dashboard({
                               src={member.avatar}
                               alt={`${member.firstName} ${member.lastName}`}
                               title={`${member.firstName} ${member.lastName}`}
-                              className="w-7 h-7 rounded-full border-2 border-white dark:border-stone-800 bg-stone-100 cursor-pointer hover:z-10 hover:scale-110 transition-transform"
+                              className="w-7 h-7 rounded-full border-2 border-white bg-stone-100 cursor-pointer hover:z-10 hover:scale-110 transition-transform"
                               onClick={() => onViewMember?.(member.id)}
                             />
                           ))}
@@ -186,7 +186,7 @@ export function Dashboard({
                           onViewScope={onViewScope}
                         />
                       ) : (
-                        <div className="py-4 text-center text-sm text-stone-400 dark:text-stone-500 bg-stone-50 dark:bg-stone-800 rounded-lg">
+                        <div className="py-4 text-center text-sm text-stone-400 bg-stone-50 rounded-lg">
                           Aucun scope défini
                         </div>
                       )}
@@ -199,20 +199,20 @@ export function Dashboard({
             {/* Upcoming Events */}
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide">
                   Prochains événements
                 </h2>
                 <button
                   onClick={onCreateEvent}
-                  className="text-xs text-[#5B5781] hover:text-[#4a4670] dark:text-[#c8bfd2] dark:hover:text-white font-medium transition-colors"
+                  className="text-xs text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors"
                 >
                   + Créer
                 </button>
               </div>
 
               {upcomingEvents.length === 0 ? (
-                <div className="bg-white dark:bg-stone-800/50 rounded-xl p-8 border border-stone-200 dark:border-stone-700 text-center">
-                  <p className="text-stone-500 dark:text-stone-400">
+                <div className="bg-white rounded-xl p-8 border border-stone-200 text-center">
+                  <p className="text-stone-500">
                     Aucun événement prévu cette semaine
                   </p>
                 </div>
@@ -236,7 +236,7 @@ export function Dashboard({
             {/* Semos Wallet */}
             {currentWallet && currentMember && (
               <section>
-                <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-3">
+                <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-3">
                   Mon portefeuille
                 </h2>
                 <SemosWalletCard
@@ -255,7 +255,7 @@ export function Dashboard({
             {/* My Guilds */}
             {memberGuilds.length > 0 && (
               <section>
-                <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-3">
+                <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-3">
                   Mes guildes
                 </h2>
                 <div className="space-y-2">
@@ -264,20 +264,20 @@ export function Dashboard({
                     const guildMembers = members.filter((m) => guild.memberIds.includes(m.id))
 
                     const colorClasses = {
-                      blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                      blue: 'bg-blue-100 text-blue-700',
                       purple:
-                        'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+                        'bg-purple-100 text-purple-700',
                       green:
-                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+                        'bg-emerald-100 text-emerald-700',
                       orange:
-                        'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-                      red: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+                        'bg-orange-100 text-orange-700',
+                      red: 'bg-rose-100 text-rose-700',
                     }
 
                     return (
                       <div
                         key={guild.id}
-                        className="bg-white dark:bg-stone-800/50 rounded-lg p-4 border border-stone-200 dark:border-stone-700"
+                        className="bg-white rounded-lg p-4 border border-stone-200"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <span
@@ -286,12 +286,12 @@ export function Dashboard({
                             {guild.name}
                           </span>
                           {leader?.id === currentMemberId && (
-                            <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                            <span className="text-[10px] text-stone-400">
                               (Lead)
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-stone-500 dark:text-stone-400 line-clamp-2 mb-2">
+                        <p className="text-xs text-stone-500 line-clamp-2 mb-2">
                           {guild.description}
                         </p>
                         <div className="flex items-center gap-1">
@@ -301,11 +301,11 @@ export function Dashboard({
                                 key={member.id}
                                 src={member.avatar}
                                 alt={`${member.firstName} ${member.lastName}`}
-                                className="w-5 h-5 rounded-full border border-white dark:border-stone-800 bg-stone-100"
+                                className="w-5 h-5 rounded-full border border-white bg-stone-100"
                               />
                             ))}
                           </div>
-                          <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                          <span className="text-[10px] text-stone-400">
                             {guildMembers.length} membre{guildMembers.length > 1 ? 's' : ''}
                           </span>
                         </div>
@@ -318,32 +318,32 @@ export function Dashboard({
 
             {/* Quick stats */}
             <section>
-              <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-3">
+              <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-3">
                 Statistiques
               </h2>
-              <div className="bg-white dark:bg-stone-800/50 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+              <div className="bg-white rounded-xl p-4 border border-stone-200">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-stone-50 dark:bg-stone-800 rounded-lg">
-                    <p className="text-2xl font-bold text-[#5B5781] dark:text-[#c8bfd2]">
+                  <div className="text-center p-3 bg-stone-50 rounded-lg">
+                    <p className="text-2xl font-bold text-[#5B5781]">
                       {members.filter((m) => m.status === 'active').length}
                     </p>
-                    <p className="text-xs text-stone-500 dark:text-stone-400">Membres actifs</p>
+                    <p className="text-xs text-stone-500">Membres actifs</p>
                   </div>
-                  <div className="text-center p-3 bg-stone-50 dark:bg-stone-800 rounded-lg">
+                  <div className="text-center p-3 bg-stone-50 rounded-lg">
                     <p className="text-2xl font-bold text-[#AFBD00]">{buildingPitches.length}</p>
-                    <p className="text-xs text-stone-500 dark:text-stone-400">Projets en cours</p>
+                    <p className="text-xs text-stone-500">Projets en cours</p>
                   </div>
-                  <div className="text-center p-3 bg-stone-50 dark:bg-stone-800 rounded-lg">
-                    <p className="text-2xl font-bold text-stone-700 dark:text-stone-300">
+                  <div className="text-center p-3 bg-stone-50 rounded-lg">
+                    <p className="text-2xl font-bold text-stone-700">
                       {guilds.length}
                     </p>
-                    <p className="text-xs text-stone-500 dark:text-stone-400">Guildes</p>
+                    <p className="text-xs text-stone-500">Guildes</p>
                   </div>
-                  <div className="text-center p-3 bg-stone-50 dark:bg-stone-800 rounded-lg">
-                    <p className="text-2xl font-bold text-stone-700 dark:text-stone-300">
+                  <div className="text-center p-3 bg-stone-50 rounded-lg">
+                    <p className="text-2xl font-bold text-stone-700">
                       {pitches.filter((p) => p.status === 'shaped').length}
                     </p>
-                    <p className="text-xs text-stone-500 dark:text-stone-400">Pitches prêts</p>
+                    <p className="text-xs text-stone-500">Pitches prêts</p>
                   </div>
                 </div>
               </div>

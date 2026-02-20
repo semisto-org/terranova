@@ -3,6 +3,8 @@ require 'test_helper'
 class LabManagementFlowsTest < ActionDispatch::IntegrationTest
   setup do
     [
+      AlbumMediaItem,
+      Album,
       BetTeamMembership,
       Bet,
       ScopeTask,
@@ -14,6 +16,7 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
       SemosTransaction,
       SemosEmission,
       SemosRate,
+      Expense,
       Timesheet,
       EventAttendee,
       Event,
@@ -190,5 +193,91 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
     ].each do |key|
       assert body.key?(key), "Missing key #{key}"
     end
+  end
+
+  test 'lab expenses list create update delete' do
+    get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body.key?('items')
+    assert_equal 0, body['items'].size
+
+    post '/api/v1/lab/expenses', params: {
+      supplier: 'Test Supplier',
+      status: 'processing',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'services_and_goods',
+      name: 'Lab expense',
+      total_incl_vat: 100,
+      amount_excl_vat: 82.64,
+      vat_6: 0, vat_12: 0, vat_21: 17.36
+    }, as: :json
+    assert_response :created
+    expense_id = JSON.parse(response.body)['id']
+
+    get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    assert_equal 1, JSON.parse(response.body)['items'].size
+
+    patch "/api/v1/lab/expenses/#{expense_id}", params: {
+      supplier: 'Test Supplier',
+      status: 'paid',
+      invoice_date: Date.current.iso8601,
+      expense_type: 'services_and_goods',
+      name: 'Updated',
+      total_incl_vat: 100
+    }, as: :json
+    assert_response :success
+    assert_equal 'paid', JSON.parse(response.body)['status']
+
+    delete "/api/v1/lab/expenses/#{expense_id}", as: :json
+    assert_response :no_content
+
+    get '/api/v1/lab/expenses', as: :json
+    assert_response :success
+    assert_equal 0, JSON.parse(response.body)['items'].size
+  end
+
+  test 'lab albums CRUD and media list' do
+    get '/api/v1/lab/albums', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body.key?('items')
+    assert_equal 0, body['items'].size
+
+    post '/api/v1/lab/albums', params: {
+      title: 'Album test',
+      description: 'Description test'
+    }, as: :json
+    assert_response :created
+    album = JSON.parse(response.body)
+    album_id = album['id']
+    assert_equal 'Album test', album['title']
+    assert_equal 'Description test', album['description']
+    assert_equal 0, album['mediaCount']
+
+    get "/api/v1/lab/albums/#{album_id}/media", as: :json
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)['items']
+
+    patch "/api/v1/lab/albums/#{album_id}", params: {
+      title: 'Album mis à jour',
+      description: 'Nouvelle description'
+    }, as: :json
+    assert_response :success
+    updated = JSON.parse(response.body)
+    assert_equal 'Album mis à jour', updated['title']
+    assert_equal 'Nouvelle description', updated['description']
+
+    get '/api/v1/lab/albums', as: :json
+    assert_response :success
+    assert_equal 1, JSON.parse(response.body)['items'].size
+
+    delete "/api/v1/lab/albums/#{album_id}", as: :json
+    assert_response :no_content
+
+    get '/api/v1/lab/albums', as: :json
+    assert_response :success
+    assert_equal 0, JSON.parse(response.body)['items'].size
   end
 end

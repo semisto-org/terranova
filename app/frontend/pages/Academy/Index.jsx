@@ -1,155 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import LocationsMap from '../../components/academy/LocationsMap'
-
-const STATUSES = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
-const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
-  registrations_open: 'Inscriptions ouvertes',
-  in_progress: 'En cours',
-  completed: 'Terminée',
-  cancelled: 'Annulée',
-}
-
-function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
-  const [tab, setTab] = useState('info')
-  const sessions = data.trainingSessions.filter((item) => item.trainingId === training.id)
-  const registrations = data.trainingRegistrations.filter((item) => item.trainingId === training.id)
-  const documents = data.trainingDocuments.filter((item) => item.trainingId === training.id)
-  const expenses = data.trainingExpenses.filter((item) => item.trainingId === training.id)
-  const attendances = data.trainingAttendances
-  const revenue = registrations.reduce((sum, item) => sum + Number(item.amountPaid || 0), 0)
-  const expenseTotal = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)
-
-  return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6">
-      <div className="max-w-6xl mx-auto space-y-4">
-        <div className="flex items-center gap-2">
-          <button className="rounded border border-stone-300 px-3 py-2 text-sm" onClick={onBack}>Retour Kanban</button>
-          <button className="rounded border border-stone-300 px-3 py-2 text-sm" onClick={onRefresh}>Rafraîchir</button>
-          {busy && <span className="text-xs text-stone-500">Synchronisation...</span>}
-        </div>
-        <header className="rounded-2xl border border-stone-200 bg-white p-5">
-          <h1 className="text-2xl font-semibold text-stone-900">{training.title}</h1>
-          <p className="text-stone-600 text-sm">{STATUS_LABELS[training.status]} · {training.price}€ · max {training.maxParticipants}</p>
-        </header>
-        <section className="rounded-2xl border border-stone-200 bg-white p-4">
-          <div className="mb-4 flex flex-wrap gap-2">
-            {['info', 'sessions', 'registrations', 'attendances', 'documents', 'checklist', 'finances'].map((item) => (
-              <button key={item} className={`rounded px-3 py-2 text-sm ${tab === item ? 'bg-[#B01A19] text-white' : 'bg-stone-100 text-stone-700'}`} onClick={() => setTab(item)}>
-                {item}
-              </button>
-            ))}
-          </div>
-          {tab === 'info' && (
-            <div className="space-y-2 text-sm text-stone-700">
-              <p>{training.description || 'Aucune description.'}</p>
-              <p>Note coordination: {training.coordinatorNote || '-'}</p>
-              <div className="flex gap-2">
-                {STATUSES.map((status) => (
-                  <button key={status} className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => actions.updateTrainingStatus(training.id, status)}>
-                    {STATUS_LABELS[status]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {tab === 'sessions' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addSession(training.id)}>Ajouter session</button>
-              {sessions.length === 0 ? <p className="text-sm text-stone-500">Aucune session.</p> : sessions.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.startDate} → {item.endDate}</span>
-                  <div className="flex items-center gap-2">
-                    <button className="text-stone-700" onClick={() => actions.editSession(item.id)}>Modifier</button>
-                    <button className="text-red-600" onClick={() => actions.deleteSession(item.id)}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'registrations' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addRegistration(training.id)}>Ajouter participant</button>
-              {registrations.length === 0 ? <p className="text-sm text-stone-500">Aucune inscription.</p> : registrations.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.contactName} · {item.paymentStatus} · {item.amountPaid}€</span>
-                  <div className="flex gap-2">
-                    <button className="text-stone-700" onClick={() => actions.editRegistration(item.id)}>Modifier</button>
-                    <button className="text-indigo-700" onClick={() => actions.updatePaymentStatus(item.id)}>Paiement</button>
-                    <button className="text-red-600" onClick={() => actions.deleteRegistration(item.id)}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'attendances' && (
-            <div className="space-y-2">
-              {registrations.length === 0 || sessions.length === 0 ? (
-                <p className="text-sm text-stone-500">Pas de grille présence (sessions ou inscriptions manquantes).</p>
-              ) : registrations.map((registration) => (
-                <div key={registration.id} className="rounded border border-stone-200 p-2 text-sm">
-                  <p className="font-medium">{registration.contactName}</p>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {sessions.map((session) => {
-                      const row = attendances.find((item) => item.registrationId === registration.id && item.sessionId === session.id)
-                      return (
-                        <button key={session.id} className={`rounded border px-2 py-1 text-xs ${row?.isPresent ? 'border-emerald-500 text-emerald-700' : 'border-stone-300 text-stone-700'}`} onClick={() => actions.markAttendance(registration.id, session.id, !row?.isPresent)}>
-                          {session.startDate}: {row?.isPresent ? 'présent' : 'absent'}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'documents' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addDocument(training.id)}>Ajouter document</button>
-              {documents.length === 0 ? <p className="text-sm text-stone-500">Aucun document.</p> : documents.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.name} · {item.type}</span>
-                  <button className="text-red-600" onClick={() => actions.deleteDocument(item.id)}>Supprimer</button>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'checklist' && (
-            <div className="space-y-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addChecklistItem(training.id)}>Ajouter item</button>
-              {(training.checklistItems || []).length === 0 ? <p className="text-sm text-stone-500">Checklist vide.</p> : training.checklistItems.map((item, index) => (
-                <div key={`${item}-${index}`} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <button className={(training.checkedItems || []).includes(index) ? 'line-through text-stone-500' : ''} onClick={() => actions.toggleChecklistItem(training.id, index)}>{item}</button>
-                  <button className="text-red-600" onClick={() => actions.removeChecklistItem(training.id, index)}>Supprimer</button>
-                </div>
-              ))}
-            </div>
-          )}
-          {tab === 'finances' && (
-            <div className="space-y-2 text-sm">
-              <p>Recettes: {revenue}€</p>
-              <p>Dépenses: {expenseTotal}€</p>
-              <p>Rentabilité: {revenue - expenseTotal}€</p>
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={() => actions.addExpense(training.id)}>Ajouter dépense</button>
-              {expenses.map((item) => (
-                <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                  <span>{item.date} · {item.category} · {item.amount}€</span>
-                  <div className="flex items-center gap-2">
-                    <button className="text-stone-700" onClick={() => actions.editExpense(item.id)}>Modifier</button>
-                    <button className="text-red-600" onClick={() => actions.deleteExpense(item.id)}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
-  )
-}
+import {
+  TrainingDetail,
+  TrainingKanban,
+  CalendarMonthView,
+  CalendarYearView,
+  IdeaNotesView,
+  ReportingDashboard,
+  TrainingFormModal,
+  RegistrationFormModal,
+  PaymentStatusModal,
+  SessionFormModal,
+  DocumentFormModal,
+  ChecklistItemModal,
+  IdeaNoteFormModal,
+} from '@/components/academy'
+import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
   { id: 'kanban', label: 'Formations' },
@@ -196,6 +66,9 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [activeModal, setActiveModal] = useState(null)
+  const [modalData, setModalData] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
     setData(payload)
@@ -234,14 +107,179 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
   }, [loadAcademy])
 
+  // Modal submission handlers
+  const handleTrainingSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/trainings/${modalData.training.id}` : '/api/v1/academy/trainings',
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleSessionSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/sessions/${modalData.session.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/sessions`,
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleRegistrationSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/registrations/${modalData.registration.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/registrations`,
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handlePaymentStatusSubmit = useCallback(async (status, amountPaid) => {
+    const success = await runMutation(() =>
+      apiRequest(`/api/v1/academy/registrations/${modalData.registrationId}/payment-status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, amount_paid: amountPaid })
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleDocumentSubmit = useCallback(async (values) => {
+    const formData = new FormData()
+    formData.append('name', values.name)
+    formData.append('document_type', values.document_type)
+    formData.append('file', values.file)
+    if (values.uploaded_by) formData.append('uploaded_by', values.uploaded_by)
+    const success = await runMutation(() =>
+      apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/documents`, {
+        method: 'POST',
+        body: formData,
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleChecklistItemSubmit = useCallback(async (item) => {
+    const success = await runMutation(() =>
+      apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/checklist`, {
+        method: 'POST',
+        body: JSON.stringify({ item })
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleExpenseSubmit = useCallback(async (payload) => {
+    const isEdit = Boolean(modalData?.isEdit && modalData?.expense?.id)
+    const trainingId = modalData?.trainingId || modalData?.expense?.trainingId
+    const documentFile = payload.document
+    const body = {
+      supplier: payload.supplier,
+      supplier_contact_id: payload.supplier_contact_id,
+      status: payload.status,
+      invoice_date: payload.invoice_date,
+      category: payload.category,
+      expense_type: payload.expense_type,
+      billing_zone: payload.billing_zone,
+      payment_date: payload.payment_date || null,
+      payment_type: payload.payment_type || null,
+      amount_excl_vat: payload.amount_excl_vat,
+      vat_rate: payload.vat_rate || null,
+      vat_6: payload.vat_6,
+      vat_12: payload.vat_12,
+      vat_21: payload.vat_21,
+      total_incl_vat: payload.total_incl_vat,
+      eu_vat_rate: payload.eu_vat_rate || null,
+      eu_vat_amount: payload.eu_vat_amount,
+      paid_by: payload.paid_by || null,
+      reimbursed: payload.reimbursed,
+      reimbursement_date: payload.reimbursement_date || null,
+      billable_to_client: payload.billable_to_client,
+      rebilling_status: payload.rebilling_status || null,
+      description: payload.description || '',
+      notes: payload.notes || '',
+      poles: payload.poles || [],
+      training_id: payload.training_id || trainingId || null,
+      design_project_id: payload.design_project_id || null,
+    }
+    const url = isEdit ? `/api/v1/academy/expenses/${modalData.expense.id}` : `/api/v1/academy/trainings/${trainingId}/expenses`
+    let success = false
+    if (documentFile) {
+      const formData = new FormData()
+      Object.entries(body).forEach(([k, v]) => {
+        if (v === null || v === undefined) return
+        if (Array.isArray(v)) v.forEach((x) => formData.append(`${k}[]`, x))
+        else formData.append(k, v)
+      })
+      if (documentFile instanceof File) formData.append('document', documentFile)
+      success = await runMutation(() => apiRequest(url, { method: isEdit ? 'PATCH' : 'POST', body: formData }))
+    } else {
+      success = await runMutation(() => apiRequest(url, { method: isEdit ? 'PATCH' : 'POST', body: JSON.stringify(body) }))
+    }
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
+  const handleIdeaNoteSubmit = useCallback(async (values) => {
+    const success = await runMutation(() =>
+      apiRequest(
+        modalData.isEdit ? `/api/v1/academy/idea-notes/${modalData.note.id}` : '/api/v1/academy/idea-notes',
+        {
+          method: modalData.isEdit ? 'PATCH' : 'POST',
+          body: JSON.stringify(values)
+        }
+      )
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+    }
+  }, [modalData, runMutation])
+
   const actions = useMemo(() => ({
     createTrainingType: () => {
       window.location.href = '/academy/training-types/new'
     },
     deleteTrainingType: (id) => {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer ce type de formation ?')) {
-        runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'DELETE' }))
-      }
+      const trainingType = data.trainingTypes.find(t => t.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer ce type de formation ?',
+        message: `Le type « ${trainingType?.name || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'DELETE' })),
+      })
     },
     editTrainingType: (id) => {
       window.location.href = `/academy/training-types/${id}/edit`
@@ -250,116 +288,171 @@ export default function AcademyIndex({ initialTrainingId }) {
       window.location.href = '/academy/locations/new'
     },
     deleteLocation: (id) => {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer ce lieu ?')) {
-        runMutation(() => apiRequest(`/api/v1/academy/locations/${id}`, { method: 'DELETE' }))
-      }
+      const location = data.trainingLocations.find(l => l.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer ce lieu ?',
+        message: `Le lieu « ${location?.name || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/locations/${id}`, { method: 'DELETE' })),
+      })
     },
     editLocation: (id) => {
       window.location.href = `/academy/locations/${id}/edit`
     },
     createTraining: () => {
       if (data.trainingTypes.length === 0) {
-        setError('Créez d’abord un type de formation.')
+        setError('Créez d\'abord un type de formation.')
         return
       }
-      const trainingTypeId = window.prompt(`Type ID (${data.trainingTypes.map((item) => item.id).join(', ')})`, data.trainingTypes[0].id)
-      const title = window.prompt('Titre de la formation')
-      if (!trainingTypeId || !title) return
-      runMutation(() => apiRequest('/api/v1/academy/trainings', { method: 'POST', body: JSON.stringify({ training_type_id: trainingTypeId, title, price: 180, max_participants: 20, requires_accommodation: false, description: '', coordinator_note: '' }) }))
+      setModalData({ isEdit: false })
+      setActiveModal('training')
     },
-    deleteTraining: (id) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
+    deleteTraining: (id) => {
+      const training = data.trainings.find(t => t.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer cette formation ?',
+        message: `La formation « ${training?.title || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
+      })
+    },
     editTraining: (id) => {
       const current = data.trainings.find((item) => item.id === id)
       if (!current) return
-      const title = window.prompt('Titre', current.title)
-      if (!title) return
-      const price = Number(window.prompt('Prix', String(current.price || 0)) || current.price || 0)
-      const maxParticipants = Number(window.prompt('Participants max', String(current.maxParticipants || 0)) || current.maxParticipants || 0)
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'PATCH', body: JSON.stringify({ title, price, max_participants: maxParticipants }) }))
+      setModalData({ isEdit: true, training: current })
+      setActiveModal('training')
     },
     updateTrainingStatus: (id, status) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })),
-    addSession: (trainingId) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/sessions`, { method: 'POST', body: JSON.stringify({ start_date: new Date().toISOString().slice(0, 10), end_date: new Date().toISOString().slice(0, 10), description: '', location_ids: [], trainer_ids: [], assistant_ids: [] }) })),
+    addSession: (trainingId) => {
+      setModalData({ isEdit: false, trainingId })
+      setActiveModal('session')
+    },
     editSession: (sessionId) => {
       const current = data.trainingSessions.find((item) => item.id === sessionId)
       if (!current) return
-      const startDate = window.prompt('Date début (YYYY-MM-DD)', current.startDate)
-      const endDate = window.prompt('Date fin (YYYY-MM-DD)', current.endDate)
-      if (!startDate || !endDate) return
-      runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'PATCH', body: JSON.stringify({ start_date: startDate, end_date: endDate, description: current.description, location_ids: current.locationIds || [], trainer_ids: current.trainerIds || [], assistant_ids: current.assistantIds || [] }) }))
+      setModalData({ isEdit: true, session: current })
+      setActiveModal('session')
     },
-    deleteSession: (sessionId) => runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'DELETE' })),
+    deleteSession: (sessionId) => {
+      const session = data.trainingSessions.find(s => s.id === sessionId)
+      const sessionDate = session?.date ? new Date(session.date).toLocaleDateString('fr-FR') : ''
+      setDeleteConfirm({
+        title: 'Supprimer cette session ?',
+        message: `La session${sessionDate ? ` du ${sessionDate}` : ''} sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/sessions/${sessionId}`, { method: 'DELETE' })),
+      })
+    },
     addRegistration: (trainingId) => {
-      const contactName = window.prompt('Nom du participant')
-      if (!contactName) return
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/registrations`, { method: 'POST', body: JSON.stringify({ contact_name: contactName, contact_email: '', amount_paid: 0, payment_status: 'pending', internal_note: '' }) }))
+      const training = data.trainings.find((item) => item.id === trainingId)
+      setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0 })
+      setActiveModal('registration')
     },
-    deleteRegistration: (registrationId) => runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'DELETE' })),
+    deleteRegistration: (registrationId) => {
+      const registration = data.trainingRegistrations.find(r => r.id === registrationId)
+      setDeleteConfirm({
+        title: 'Supprimer cette inscription ?',
+        message: `L'inscription de « ${registration?.participantName || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'DELETE' })),
+      })
+    },
     editRegistration: (registrationId) => {
       const current = data.trainingRegistrations.find((item) => item.id === registrationId)
       if (!current) return
-      const contactName = window.prompt('Nom participant', current.contactName)
-      if (!contactName) return
-      const contactEmail = window.prompt('Email', current.contactEmail || '') || ''
-      runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}`, { method: 'PATCH', body: JSON.stringify({ contact_name: contactName, contact_email: contactEmail, amount_paid: current.amountPaid, payment_status: current.paymentStatus, internal_note: current.internalNote || '' }) }))
+      const training = data.trainings.find((item) => item.id === current.trainingId)
+      setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0 })
+      setActiveModal('registration')
     },
-    updatePaymentStatus: (registrationId) => {
-      const status = window.prompt('Status paiement (pending/partial/paid)', 'partial')
-      const amountPaid = Number(window.prompt('Montant payé', '90') || 0)
-      if (!status) return
-      runMutation(() => apiRequest(`/api/v1/academy/registrations/${registrationId}/payment-status`, { method: 'PATCH', body: JSON.stringify({ status, amount_paid: amountPaid }) }))
+    updatePaymentStatus: (registrationId, status, amountPaid) => {
+      if (status !== undefined && amountPaid !== undefined) {
+        runMutation(() =>
+          apiRequest(`/api/v1/academy/registrations/${registrationId}/payment-status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, amount_paid: amountPaid }),
+          })
+        )
+        return
+      }
+      const current = data.trainingRegistrations.find((item) => item.id === registrationId)
+      if (!current) return
+      const training = data.trainings.find((item) => item.id === current.trainingId)
+      setModalData({ registrationId, registration: current, trainingPrice: training?.price || 0 })
+      setActiveModal('paymentStatus')
     },
     markAttendance: (registrationId, sessionId, isPresent) => runMutation(() => apiRequest('/api/v1/academy/attendance', { method: 'POST', body: JSON.stringify({ registration_id: registrationId, session_id: sessionId, is_present: isPresent, note: '' }) })),
     addDocument: (trainingId) => {
-      const name = window.prompt('Nom du document')
-      const url = window.prompt('URL du document')
-      if (!name || !url) return
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/documents`, { method: 'POST', body: JSON.stringify({ name, document_type: 'link', url }) }))
+      setModalData({ trainingId })
+      setActiveModal('document')
     },
-    deleteDocument: (id) => runMutation(() => apiRequest(`/api/v1/academy/documents/${id}`, { method: 'DELETE' })),
+    deleteDocument: (id) => {
+      const doc = data.trainingDocuments.find(d => d.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer ce document ?',
+        message: `Le document « ${doc?.name || ''} » sera supprimé définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/documents/${id}`, { method: 'DELETE' })),
+      })
+    },
     toggleChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/toggle/${itemIndex}`, { method: 'PATCH' })),
-    addChecklistItem: (trainingId) => {
-      const item = window.prompt('Nouvel item checklist')
-      if (!item) return
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist`, { method: 'POST', body: JSON.stringify({ item }) }))
+    addChecklistItem: (trainingId, item) => {
+      if (item !== undefined && item !== null && item !== '') {
+        runMutation(() =>
+          apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist`, {
+            method: 'POST',
+            body: JSON.stringify({ item }),
+          })
+        )
+        return
+      }
+      setModalData({ trainingId })
+      setActiveModal('checklistItem')
     },
     removeChecklistItem: (trainingId, itemIndex) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/checklist/${itemIndex}`, { method: 'DELETE' })),
+    reorderChecklist: (trainingId, checklistItems, checkedItems) =>
+      runMutation(() =>
+        apiRequest(`/api/v1/academy/trainings/${trainingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ checklist_items: checklistItems, checked_items: checkedItems }),
+        })
+      ),
     addExpense: (trainingId) => {
-      const description = window.prompt('Description dépense', 'Location salle')
-      const amount = Number(window.prompt('Montant', '120') || 0)
-      runMutation(() => apiRequest(`/api/v1/academy/trainings/${trainingId}/expenses`, { method: 'POST', body: JSON.stringify({ category: 'location', description, amount, date: new Date().toISOString().slice(0, 10) }) }))
+      setModalData({ isEdit: false, trainingId })
+      setActiveModal('expense')
     },
     editExpense: (expenseId) => {
       const current = data.trainingExpenses.find((item) => item.id === expenseId)
       if (!current) return
-      const description = window.prompt('Description dépense', current.description || '') || ''
-      const amount = Number(window.prompt('Montant', String(current.amount || 0)) || current.amount || 0)
-      runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'PATCH', body: JSON.stringify({ category: current.category, description, amount, date: current.date }) }))
+      setModalData({ isEdit: true, expense: current, trainingId: current.trainingId })
+      setActiveModal('expense')
     },
-    deleteExpense: (expenseId) => runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'DELETE' })),
+    deleteExpense: (expenseId) => {
+      const expense = data.trainingExpenses.find(e => e.id === expenseId)
+      setDeleteConfirm({
+        title: 'Supprimer cette dépense ?',
+        message: `La dépense « ${expense?.supplier || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/expenses/${expenseId}`, { method: 'DELETE' })),
+      })
+    },
     createIdeaNote: () => {
-      const title = window.prompt('Titre de la note idée')
-      if (!title) return
-      runMutation(() => apiRequest('/api/v1/academy/idea-notes', { method: 'POST', body: JSON.stringify({ category: 'subject', title, content: '', tags: [] }) }))
+      setModalData({ isEdit: false })
+      setActiveModal('ideaNote')
     },
     editIdeaNote: (id) => {
       const current = data.ideaNotes.find((item) => item.id === id)
       if (!current) return
-      const title = window.prompt('Titre', current.title)
-      if (!title) return
-      const content = window.prompt('Contenu', current.content || '') || ''
-      const tags = (window.prompt('Tags séparés par virgule', (current.tags || []).join(', ')) || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-      runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'PATCH', body: JSON.stringify({ category: current.category, title, content, tags }) }))
+      setModalData({ isEdit: true, note: current })
+      setActiveModal('ideaNote')
     },
-    deleteIdeaNote: (id) => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
+    deleteIdeaNote: (id) => {
+      const note = data.ideaNotes.find(n => n.id === id)
+      setDeleteConfirm({
+        title: 'Supprimer cette note ?',
+        message: `La note « ${note?.title || ''} » sera supprimée définitivement.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
+      })
+    },
     viewReporting: async () => {
       const payload = await apiRequest('/api/v1/academy/reporting')
       setReporting(payload)
       setView('reporting')
     },
-  }), [data, runMutation])
+  }), [data, runMutation, setDeleteConfirm])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
   const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
@@ -373,40 +466,153 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
     return true
   }), [data.trainingTypes, data.trainings, search, statusFilter, typeFilter])
-  const trainingsByStatus = useMemo(() => STATUSES.map((status) => ({ status, items: filteredTrainings.filter((item) => item.status === status) })), [filteredTrainings])
-  const calendarItems = useMemo(() => data.trainingSessions.map((session) => {
-    const training = data.trainings.find((item) => item.id === session.trainingId)
-    return { ...session, training }
-  }), [data.trainingSessions, data.trainings])
-  const monthItems = useMemo(() => calendarItems.filter((item) => {
-    const date = new Date(item.startDate)
-    return date.getFullYear() === calendarDate.getFullYear() && date.getMonth() === calendarDate.getMonth()
-  }), [calendarDate, calendarItems])
-  const yearItems = useMemo(() => {
-    const year = calendarDate.getFullYear()
-    const buckets = Array.from({ length: 12 }, (_, index) => ({ month: index, items: [] }))
-    calendarItems.forEach((item) => {
-      const date = new Date(item.startDate)
-      if (date.getFullYear() === year) buckets[date.getMonth()].items.push(item)
-    })
-    return buckets
-  }, [calendarDate, calendarItems])
-
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
+
+  const renderModals = () => (
+    <>
+      {activeModal === 'training' && (
+        <TrainingFormModal
+          training={modalData?.isEdit ? modalData.training : null}
+          trainingTypes={data.trainingTypes}
+          onSubmit={handleTrainingSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'session' && (
+        <SessionFormModal
+          session={modalData?.isEdit ? modalData.session : null}
+          locations={data.trainingLocations}
+          members={data.members}
+          onSubmit={handleSessionSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'registration' && (
+        <RegistrationFormModal
+          registration={modalData?.isEdit ? modalData.registration : null}
+          trainingPrice={modalData?.trainingPrice || 0}
+          onSubmit={handleRegistrationSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'paymentStatus' && modalData?.registration && (
+        <PaymentStatusModal
+          registration={modalData.registration}
+          trainingPrice={modalData.trainingPrice}
+          onSubmit={handlePaymentStatusSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'document' && (
+        <DocumentFormModal
+          onSubmit={handleDocumentSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'checklistItem' && (
+        <ChecklistItemModal
+          onSubmit={handleChecklistItemSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'expense' && (
+        <ExpenseFormModal
+          expense={modalData?.isEdit ? modalData.expense : null}
+          defaultTrainingId={modalData?.trainingId}
+          fetchContacts={() => apiRequest('/api/v1/lab/contacts')}
+          onCreateContact={async ({ name, contact_type }) => {
+            const contact = await apiRequest('/api/v1/lab/contacts', {
+              method: 'POST',
+              body: JSON.stringify({ name, contact_type }),
+            })
+            return { id: contact.id, name: contact.name, contactType: contact.contactType }
+          }}
+          trainingOptions={data.trainings.map((t) => ({ value: t.id, label: t.title }))}
+          designProjectOptions={[]}
+          showTrainingLink={true}
+          showDesignProjectLink={true}
+          accentColor="#B01A19"
+          onSubmit={handleExpenseSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'ideaNote' && (
+        <IdeaNoteFormModal
+          note={modalData?.isEdit ? modalData.note : null}
+          existingTags={[...new Set(data.ideaNotes.flatMap(n => n.tags || []))].sort()}
+          onSubmit={handleIdeaNoteSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+    </>
+  )
 
   if (selectedTraining) {
     return (
-      <TrainingDetail
-        training={selectedTraining}
-        data={data}
-        busy={busy}
-        onBack={() => {
-          setSelectedTrainingId(null)
-          window.history.pushState({}, '', '/academy')
-        }}
-        onRefresh={loadAcademy}
-        actions={actions}
-      />
+      <>
+        <TrainingDetail
+          training={selectedTraining}
+          data={data}
+          busy={busy}
+          onBack={() => {
+            setSelectedTrainingId(null)
+            window.history.pushState({}, '', '/academy')
+          }}
+          onRefresh={loadAcademy}
+          actions={actions}
+        />
+        {renderModals()}
+        {deleteConfirm && (
+          <ConfirmDeleteModal
+            title={deleteConfirm.title}
+            message={deleteConfirm.message}
+            onConfirm={() => {
+              deleteConfirm.action()
+              setDeleteConfirm(null)
+            }}
+            onCancel={() => setDeleteConfirm(null)}
+          />
+        )}
+      </>
     )
   }
 
@@ -437,82 +643,128 @@ export default function AcademyIndex({ initialTrainingId }) {
       <div className="px-4 py-4">
       <div className="max-w-7xl mx-auto space-y-4">
         {view === 'kanban' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={actions.createTraining}>Nouvelle formation</button>
-              <input className="min-w-[220px] rounded border border-stone-300 px-3 py-2 text-sm" placeholder="Rechercher une formation..." value={search} onChange={(event) => setSearch(event.target.value)} />
-              <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                <option value="all">Tous les statuts</option>
-                {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
-              </select>
-              <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-                <option value="all">Tous les types</option>
-                {data.trainingTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
-              </select>
-            </div>
-            {filteredTrainings.length === 0 ? (
-              <p className="text-sm text-stone-500">Aucune formation pour le moment.</p>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {trainingsByStatus.map((column) => (
-                  <div key={column.status} className="rounded-xl border border-stone-200 p-3 bg-stone-50">
-                    <p className="font-medium text-sm">{STATUS_LABELS[column.status]} ({column.items.length})</p>
-                    <div className="mt-2 space-y-2">
-                      {column.items.length === 0 ? <p className="text-xs text-stone-500">Aucune formation</p> : column.items.map((item) => (
-                        <div key={item.id} className="rounded border border-stone-200 bg-white p-2 text-sm">
-                          <p className="font-medium">{item.title}</p>
-                          <p className="text-xs text-stone-500">{item.price}€ · max {item.maxParticipants}</p>
-                          <div className="mt-2 flex gap-2">
-                            <button className="text-indigo-700 text-xs" onClick={() => {
-                              setSelectedTrainingId(item.id)
-                              window.history.pushState({}, '', `/academy/${item.id}`)
-                            }}>Ouvrir</button>
-                            <button className="text-stone-700 text-xs" onClick={() => actions.editTraining(item.id)}>Modifier</button>
-                            <button className="text-red-600 text-xs" onClick={() => actions.deleteTraining(item.id)}>Supprimer</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <TrainingKanban
+            trainings={filteredTrainings}
+            trainingTypes={data.trainingTypes}
+            trainingSessions={data.trainingSessions}
+            trainingRegistrations={data.trainingRegistrations}
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            onCreateTraining={actions.createTraining}
+            onViewTraining={(id) => {
+              setSelectedTrainingId(id)
+              window.history.pushState({}, '', `/academy/${id}`)
+            }}
+            onEditTraining={actions.editTraining}
+            onDeleteTraining={actions.deleteTraining}
+            onViewCalendar={() => setView('calendar')}
+            onViewReporting={actions.viewReporting}
+          />
         )}
 
         {view === 'calendar' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <p className="text-sm font-medium text-stone-800">Calendrier formations</p>
-              <button className={`rounded border px-2 py-1 text-xs ${calendarView === 'month' ? 'border-[#B01A19] text-[#B01A19]' : 'border-stone-300 text-stone-700'}`} onClick={() => setCalendarView('month')}>Mois</button>
-              <button className={`rounded border px-2 py-1 text-xs ${calendarView === 'year' ? 'border-[#B01A19] text-[#B01A19]' : 'border-stone-300 text-stone-700'}`} onClick={() => setCalendarView('year')}>Année</button>
-              <button className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}>Précédent</button>
-              <button className="rounded border border-stone-300 px-2 py-1 text-xs" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}>Suivant</button>
-              <span className="text-xs text-stone-600">{calendarDate.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}</span>
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-lg border border-stone-200 bg-stone-50 p-0.5">
+                  <button
+                    type="button"
+                    className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${calendarView === 'month' ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
+                    onClick={() => setCalendarView('month')}
+                  >
+                    Mois
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${calendarView === 'year' ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
+                    onClick={() => setCalendarView('year')}
+                  >
+                    Année
+                  </button>
+                </div>
+
+                <div className="h-5 w-px bg-stone-200 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 active:scale-[0.97]"
+                  onClick={() => setCalendarDate(new Date())}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Aujourd'hui
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-stone-200 bg-white text-stone-500 transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 active:scale-[0.93]"
+                  onClick={() =>
+                    setCalendarDate(
+                      calendarView === 'year'
+                        ? new Date(calendarDate.getFullYear() - 1, calendarDate.getMonth(), 1)
+                        : new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1)
+                    )
+                  }
+                  title={calendarView === 'year' ? 'Année précédente' : 'Mois précédent'}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <span className="min-w-[140px] text-center text-sm font-semibold text-stone-800 capitalize select-none">
+                  {calendarView === 'year'
+                    ? calendarDate.getFullYear()
+                    : calendarDate.toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                      })
+                  }
+                </span>
+
+                <button
+                  type="button"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-stone-200 bg-white text-stone-500 transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 active:scale-[0.93]"
+                  onClick={() =>
+                    setCalendarDate(
+                      calendarView === 'year'
+                        ? new Date(calendarDate.getFullYear() + 1, calendarDate.getMonth(), 1)
+                        : new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1)
+                    )
+                  }
+                  title={calendarView === 'year' ? 'Année suivante' : 'Mois suivant'}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            {calendarItems.length === 0 ? <p className="text-sm text-stone-500">Aucune session planifiée.</p> : (
-              calendarView === 'month' ? (
-                <div className="space-y-2">
-                  {monthItems.length === 0 ? <p className="text-sm text-stone-500">Aucune session ce mois-ci.</p> : monthItems.map((item) => (
-                    <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between">
-                      <span>{item.startDate} → {item.endDate} · {item.training?.title || 'Formation'}</span>
-                      {item.training && <button className="text-indigo-700 text-xs" onClick={() => {
-                        setSelectedTrainingId(item.training.id)
-                        window.history.pushState({}, '', `/academy/${item.training.id}`)
-                      }}>Ouvrir</button>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {yearItems.map((bucket) => (
-                    <div key={bucket.month} className="rounded border border-stone-200 p-2 text-sm">
-                      <p className="font-medium">{new Date(calendarDate.getFullYear(), bucket.month, 1).toLocaleDateString('fr-FR', { month: 'long' })}</p>
-                      <p className="text-xs text-stone-500">{bucket.items.length} session(s)</p>
-                    </div>
-                  ))}
-                </div>
-              )
+            {calendarView === 'month' ? (
+              <CalendarMonthView
+                currentDate={calendarDate}
+                trainings={data.trainings}
+                trainingSessions={data.trainingSessions}
+                trainingLocations={data.trainingLocations}
+                trainingRegistrations={data.trainingRegistrations}
+                onViewTraining={(id) => {
+                  setSelectedTrainingId(id)
+                  window.history.pushState({}, '', `/academy/${id}`)
+                }}
+              />
+            ) : (
+              <CalendarYearView
+                currentDate={calendarDate}
+                trainings={data.trainings}
+                trainingSessions={data.trainingSessions}
+                onViewTraining={(id) => {
+                  setSelectedTrainingId(id)
+                  window.history.pushState({}, '', `/academy/${id}`)
+                }}
+              />
             )}
           </section>
         )}
@@ -628,34 +880,16 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
 
         {view === 'ideas' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="mb-3">
-              <button className="rounded bg-[#AFBD00] px-3 py-2 text-sm" onClick={actions.createIdeaNote}>Nouvelle idée</button>
-            </div>
-            {data.ideaNotes.length === 0 ? <p className="text-sm text-stone-500">Aucune idée.</p> : data.ideaNotes.map((item) => (
-              <div key={item.id} className="rounded border border-stone-200 p-2 text-sm flex items-center justify-between mb-2">
-                <span>{item.category} · {item.title}</span>
-                <div className="flex items-center gap-2">
-                  <button className="text-stone-700" onClick={() => actions.editIdeaNote(item.id)}>Modifier</button>
-                  <button className="text-red-600" onClick={() => actions.deleteIdeaNote(item.id)}>Supprimer</button>
-                </div>
-              </div>
-            ))}
-          </section>
+          <IdeaNotesView
+            ideaNotes={data.ideaNotes}
+            onCreateIdeaNote={actions.createIdeaNote}
+            onEditIdeaNote={actions.editIdeaNote}
+            onDeleteIdeaNote={actions.deleteIdeaNote}
+          />
         )}
 
         {view === 'reporting' && (
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            {!reporting ? <p className="text-sm text-stone-500">Aucune donnée reporting.</p> : (
-              <div className="text-sm space-y-1">
-                <p>Formations: {reporting.trainingsCount}</p>
-                <p>Formations terminées: {reporting.completedTrainings}</p>
-                <p>Recettes totales: {reporting.totalRevenue}€</p>
-                <p>Dépenses totales: {reporting.totalExpenses}€</p>
-                <p>Rentabilité: {reporting.profitability}€</p>
-              </div>
-            )}
-          </section>
+          <ReportingDashboard data={reporting} />
         )}
 
         {(busy || error || notice) && (
@@ -672,6 +906,19 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
       </div>
     </div>
+
+    {renderModals()}
+    {deleteConfirm && (
+      <ConfirmDeleteModal
+        title={deleteConfirm.title}
+        message={deleteConfirm.message}
+        onConfirm={() => {
+          deleteConfirm.action()
+          setDeleteConfirm(null)
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
+    )}
     </>
   )
 }

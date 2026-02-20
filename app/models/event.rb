@@ -1,8 +1,10 @@
 class Event < ApplicationRecord
+  include SoftDeletable
   belongs_to :cycle, optional: true
   belongs_to :event_type
   has_many :event_attendees, dependent: :destroy
   has_many :attendees, through: :event_attendees, source: :member
+  has_one :album, as: :albumable, dependent: :destroy
 
   validates :title, :event_type, :start_date, :end_date, presence: true
 

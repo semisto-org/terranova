@@ -1,4 +1,5 @@
 class EventType < ApplicationRecord
+  include SoftDeletable
   has_many :events, dependent: :restrict_with_error
 
   validates :label, presence: true, uniqueness: true

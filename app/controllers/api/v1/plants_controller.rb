@@ -8,10 +8,10 @@ module Api
           types: build_options(%w[tree shrub small-shrub climber herbaceous ground-cover]),
           exposures: build_options(%w[sun partial-shade shade]),
           hardinessZones: build_options(%w[zone-5 zone-6 zone-7 zone-8 zone-9]),
-          edibleParts: build_options(%w[fruit leaf flower seed root bark sap]),
+          edibleParts: build_options(%w[fruit leaf flower seed root bark sap], { 'seed' => 'Graine' }),
           interests: build_options(%w[edible medicinal nitrogen-fixer pollinator hedge ornamental]),
           ecosystemNeeds: build_options(%w[nurse-tree pioneer climax ground-cover erosion-control]),
-          propagationMethods: build_options(%w[seed cutting layering grafting division sucker]),
+          propagationMethods: build_options(%w[seed cutting layering grafting division sucker], { 'seed' => 'Semis' }),
           flowerColors: build_options(%w[white pink red yellow orange purple blue green]),
           plantingSeasons: build_options(%w[autumn winter spring]),
           months: build_options(%w[jan feb mar apr may jun jul aug sep oct nov dec]),
@@ -28,7 +28,7 @@ module Api
           wateringNeeds: build_options(%w[1 2 3 4 5]),
           lifeCycles: build_options(%w[annual biennial perennial]),
           foliageColors: build_options(%w[green dark-green light-green purple variegated silver golden]),
-          fragranceLevels: build_options(%w[none light medium strong]),
+          fragranceLevels: build_options(%w[none light medium strong], { 'medium' => 'Moyen' }),
           transformations: build_options(%w[jam jelly compote juice syrup liqueur dried frozen vinegar chutney]),
           fodderQualities: build_options(%w[sheep goats pigs cattle poultry rabbits]),
           strates: build_options(STRATE_KEYS)
@@ -197,8 +197,149 @@ module Api
       end
 
       def remove_palette_item
-        Plant::PaletteItem.find(params.require(:id)).destroy!
+        Plant::PaletteItem.find(params.require(:id)).soft_delete!
         head :no_content
+      end
+
+      def create_genus
+        genus = Plant::Genus.create!(genus_params)
+
+        # Create common names if provided
+        Array(params[:common_names]).each do |cn|
+          Plant::CommonName.create!(
+            target_type: 'genus',
+            target_id: genus.id,
+            language: cn[:language] || 'fr',
+            name: cn[:name]
+          )
+        end
+
+        if params[:contributor_id].present?
+          contributor = Plant::Contributor.find(params[:contributor_id])
+          create_activity!(
+            activity_type: 'species_created',
+            contributor: contributor,
+            target_type: 'genus',
+            target_id: genus.id,
+            target_name: genus.latin_name
+          )
+        end
+
+        render json: serialize_genus(genus), status: :created
+      end
+
+      def update_genus
+        genus = Plant::Genus.find(params.require(:id))
+        genus.update!(genus_params)
+
+        # Replace common names if provided
+        if params.key?(:common_names)
+          Plant::CommonName.where(target_type: 'genus', target_id: genus.id).destroy_all
+          Array(params[:common_names]).each do |cn|
+            Plant::CommonName.create!(
+              target_type: 'genus',
+              target_id: genus.id,
+              language: cn[:language] || 'fr',
+              name: cn[:name]
+            )
+          end
+        end
+
+        render json: serialize_genus(genus)
+      end
+
+      def create_species
+        species = Plant::Species.create!(species_params)
+
+        # Create common names if provided
+        Array(params[:common_names]).each do |cn|
+          Plant::CommonName.create!(
+            target_type: 'species',
+            target_id: species.id,
+            language: cn[:language] || 'fr',
+            name: cn[:name]
+          )
+        end
+
+        if params[:contributor_id].present?
+          contributor = Plant::Contributor.find(params[:contributor_id])
+          increment_contributor_counter(contributor, :species_created)
+          create_activity!(
+            activity_type: 'species_created',
+            contributor: contributor,
+            target_type: 'species',
+            target_id: species.id,
+            target_name: species.latin_name
+          )
+        end
+
+        render json: serialize_species(species), status: :created
+      end
+
+      def update_species
+        species = Plant::Species.find(params.require(:id))
+        species.update!(species_params)
+
+        if params.key?(:common_names)
+          Plant::CommonName.where(target_type: 'species', target_id: species.id).destroy_all
+          Array(params[:common_names]).each do |cn|
+            Plant::CommonName.create!(
+              target_type: 'species',
+              target_id: species.id,
+              language: cn[:language] || 'fr',
+              name: cn[:name]
+            )
+          end
+        end
+
+        render json: serialize_species(species)
+      end
+
+      def create_variety
+        variety = Plant::Variety.create!(variety_params)
+
+        # Create common names if provided
+        Array(params[:common_names]).each do |cn|
+          Plant::CommonName.create!(
+            target_type: 'variety',
+            target_id: variety.id,
+            language: cn[:language] || 'fr',
+            name: cn[:name]
+          )
+        end
+
+        if params[:contributor_id].present?
+          contributor = Plant::Contributor.find(params[:contributor_id])
+          increment_contributor_counter(contributor, :varieties_created)
+          create_activity!(
+            activity_type: 'variety_created',
+            contributor: contributor,
+            target_type: 'variety',
+            target_id: variety.id,
+            target_name: variety.latin_name
+          )
+        end
+
+        render json: serialize_variety(variety), status: :created
+      end
+
+      def update_variety
+        variety = Plant::Variety.find(params.require(:id))
+        variety.update!(variety_params)
+
+        if params.key?(:common_names)
+          Plant::CommonName.where(target_type: 'variety', target_id: variety.id).destroy_all
+          Array(params[:common_names]).each do |cn|
+            Plant::CommonName.create!(
+              target_type: 'variety',
+              target_id: variety.id,
+              language: cn[:language] || 'fr',
+              name: cn[:name]
+            )
+          end
+        end
+
+        render json: serialize_variety(variety)
       end
 
       def create_note
@@ -273,8 +414,104 @@ module Api
 
       private
 
-      def build_options(values)
-        values.map { |value| { id: value, label: value.to_s.tr('-', ' ').capitalize } }
+      FRENCH_LABELS = {
+        # Plant types
+        'tree' => 'Arbre', 'shrub' => 'Arbuste', 'small-shrub' => 'Petit arbuste',
+        'climber' => 'Grimpante', 'herbaceous' => 'Herbacée', 'ground-cover' => 'Couvre-sol',
+        # Exposures
+        'sun' => 'Soleil', 'partial-shade' => 'Mi-ombre', 'shade' => 'Ombre',
+        # Hardiness zones
+        'zone-5' => 'Zone 5', 'zone-6' => 'Zone 6', 'zone-7' => 'Zone 7', 'zone-8' => 'Zone 8', 'zone-9' => 'Zone 9',
+        # Edible parts
+        'fruit' => 'Fruit', 'leaf' => 'Feuille', 'flower' => 'Fleur', 'seed' => 'Graine',
+        'root' => 'Racine', 'bark' => 'Écorce', 'sap' => 'Sève',
+        # Interests
+        'edible' => 'Comestible', 'medicinal' => 'Médicinal', 'nitrogen-fixer' => 'Fixateur d\'azote',
+        'pollinator' => 'Pollinisateur', 'hedge' => 'Haie', 'ornamental' => 'Ornementale',
+        # Ecosystem needs
+        'nurse-tree' => 'Arbre tuteur', 'pioneer' => 'Pionnière', 'climax' => 'Climax',
+        'erosion-control' => 'Anti-érosion',
+        # Propagation methods
+        'seed' => 'Semis', 'cutting' => 'Bouturage', 'layering' => 'Marcottage',
+        'grafting' => 'Greffage', 'division' => 'Division', 'sucker' => 'Drageonnage',
+        # Flower colors
+        'white' => 'Blanc', 'pink' => 'Rose', 'red' => 'Rouge', 'yellow' => 'Jaune',
+        'orange' => 'Orange', 'purple' => 'Violet', 'blue' => 'Bleu', 'green' => 'Vert',
+        # Planting seasons
+        'autumn' => 'Automne', 'winter' => 'Hiver', 'spring' => 'Printemps',
+        # Months
+        'jan' => 'Janv', 'feb' => 'Fév', 'mar' => 'Mars', 'apr' => 'Avr', 'may' => 'Mai', 'jun' => 'Juin',
+        'jul' => 'Juil', 'aug' => 'Août', 'sep' => 'Sept', 'oct' => 'Oct', 'nov' => 'Nov', 'dec' => 'Déc',
+        # Foliage types
+        'deciduous' => 'Caduc', 'semi-evergreen' => 'Semi-persistant', 'evergreen' => 'Persistant', 'marcescent' => 'Marcescent',
+        # European countries
+        'be' => 'Belgique', 'fr' => 'France', 'de' => 'Allemagne', 'nl' => 'Pays-Bas', 'lu' => 'Luxembourg',
+        'ch' => 'Suisse', 'es' => 'Espagne', 'it' => 'Italie', 'pt' => 'Portugal', 'uk' => 'Royaume-Uni',
+        'ie' => 'Irlande', 'at' => 'Autriche', 'pl' => 'Pologne', 'cz' => 'Tchéquie',
+        'dk' => 'Danemark', 'se' => 'Suède', 'no' => 'Norvège', 'fi' => 'Finlande',
+        # Fertility types
+        'self-fertile' => 'Autofertile', 'self-sterile' => 'Autostérile', 'partially-self-fertile' => 'Partiellement autofertile',
+        # Root systems
+        'taproot' => 'Pivotant', 'fibrous' => 'Fasciculé', 'spreading' => 'Traçant', 'shallow' => 'Superficiel', 'deep' => 'Profond',
+        # Growth rates
+        'slow' => 'Lente', 'medium' => 'Moyenne', 'fast' => 'Rapide', 'slow-start' => 'Lente au départ', 'fast-start' => 'Rapide au départ',
+        # Forest garden zones
+        'edge' => 'Lisière', 'light-shade' => 'Mi-ombre légère', 'full-sun' => 'Plein soleil', 'understory' => 'Sous-étage', 'canopy' => 'Canopée',
+        # Pollination types
+        'insect' => 'Entomophile', 'wind' => 'Anémophile', 'self' => 'Autogame', 'bird' => 'Ornithophile',
+        # Soil types
+        'clay' => 'Argileux', 'loam' => 'Limoneux', 'sandy' => 'Sableux', 'chalky' => 'Calcaire', 'peaty' => 'Tourbeux',
+        # Soil moistures
+        'dry' => 'Sec', 'moist' => 'Frais', 'wet' => 'Humide', 'waterlogged' => 'Détrempé',
+        # Soil richness
+        'poor' => 'Pauvre', 'moderate' => 'Modéré', 'rich' => 'Riche', 'very-rich' => 'Très riche',
+        # Watering needs
+        '1' => '1 - Très peu', '2' => '2 - Peu', '3' => '3 - Modéré', '4' => '4 - Régulier', '5' => '5 - Abondant',
+        # Life cycles
+        'annual' => 'Annuelle', 'biennial' => 'Bisannuelle', 'perennial' => 'Vivace',
+        # Foliage colors
+        'dark-green' => 'Vert foncé', 'light-green' => 'Vert clair', 'variegated' => 'Panaché', 'silver' => 'Argenté', 'golden' => 'Doré',
+        # Fragrance levels
+        'none' => 'Aucun', 'light' => 'Léger', 'strong' => 'Fort',
+        # Transformations
+        'jam' => 'Confiture', 'jelly' => 'Gelée', 'compote' => 'Compote', 'juice' => 'Jus', 'syrup' => 'Sirop',
+        'liqueur' => 'Liqueur', 'dried' => 'Séché', 'frozen' => 'Congelé', 'vinegar' => 'Vinaigre', 'chutney' => 'Chutney',
+        # Fodder qualities
+        'sheep' => 'Moutons', 'goats' => 'Chèvres', 'pigs' => 'Porcs', 'cattle' => 'Bovins', 'poultry' => 'Volailles', 'rabbits' => 'Lapins',
+        # Strates
+        'aquatic' => 'Aquatique', 'groundCover' => 'Couvre-sol', 'herbaceous' => 'Herbacée',
+        'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres'
+      }.freeze
+
+      def build_options(values, overrides = {})
+        values.map { |value| { id: value, label: overrides[value] || FRENCH_LABELS[value] || value.to_s.tr('-', ' ').capitalize } }
+      end
+
+      def genus_params
+        params.permit(:latin_name, :description)
+      end
+
+      def species_params
+        params.permit(
+          :genus_id, :latin_name, :plant_type, :hardiness, :life_cycle,
+          :fertility, :origin, :foliage_type, :foliage_color, :fragrance,
+          :growth_rate, :forest_garden_zone, :pollination_type, :root_system,
+          :soil_moisture, :soil_richness, :watering_need, :is_invasive,
+          :therapeutic_properties, :toxic_elements, :additional_notes,
+          edible_parts: [], interests: [], ecosystem_needs: [], exposures: [],
+          flower_colors: [], flowering_months: [], fruiting_months: [],
+          harvest_months: [], planting_seasons: [], propagation_methods: [],
+          native_countries: [], soil_types: [], fodder_qualities: [],
+          transformations: []
+        )
+      end
+
+      def variety_params
+        params.permit(
+          :species_id, :latin_name, :productivity, :taste_rating,
+          :fruit_size, :storage_life, :maturity, :disease_resistance,
+          :additional_notes
+        )
       end
 
       def palette_params
@@ -355,7 +592,9 @@ module Api
             id: item.id.to_s,
             type: 'variety',
             latinName: item.latin_name,
-            commonName: first_common_name('variety', item.id)
+            commonName: first_common_name('variety', item.id),
+            speciesId: item.species_id.to_s,
+            speciesName: item.species&.latin_name
           }
         end
       end
@@ -564,7 +803,8 @@ module Api
           foliageColor: item.foliage_color,
           fragrance: item.fragrance,
           transformations: item.transformations,
-          fodderQualities: item.fodder_qualities
+          fodderQualities: item.fodder_qualities,
+          additionalNotes: item.additional_notes
         }
       end
 
@@ -578,7 +818,8 @@ module Api
           tasteRating: item.taste_rating,
           storageLife: item.storage_life,
           maturity: item.maturity,
-          diseaseResistance: item.disease_resistance
+          diseaseResistance: item.disease_resistance,
+          additionalNotes: item.additional_notes
         }
       end
 

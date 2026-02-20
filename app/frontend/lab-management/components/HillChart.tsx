@@ -9,11 +9,11 @@ interface HillChartProps {
 }
 
 const scopeColors = [
-  { fill: '#8b5cf6', label: 'text-violet-700 dark:text-violet-300' }, // violet-500
-  { fill: '#f59e0b', label: 'text-amber-700 dark:text-amber-300' }, // amber-500
-  { fill: '#10b981', label: 'text-emerald-700 dark:text-emerald-300' }, // emerald-500
-  { fill: '#f43f5e', label: 'text-rose-700 dark:text-rose-300' }, // rose-500
-  { fill: '#0ea5e9', label: 'text-sky-700 dark:text-sky-300' }, // sky-500
+  { fill: '#8b5cf6', label: 'text-violet-700' }, // violet-500
+  { fill: '#f59e0b', label: 'text-amber-700' }, // amber-500
+  { fill: '#10b981', label: 'text-emerald-700' }, // emerald-500
+  { fill: '#f43f5e', label: 'text-rose-700' }, // rose-500
+  { fill: '#0ea5e9', label: 'text-sky-700' }, // sky-500
 ]
 
 export function HillChart({
@@ -82,7 +82,7 @@ export function HillChart({
   return (
     <div className="w-full">
       {!compact && (
-        <h4 className="font-medium text-stone-800 dark:text-stone-100 mb-3 truncate">
+        <h4 className="font-medium text-stone-800 mb-3 truncate">
           {pitchTitle}
         </h4>
       )}
@@ -101,7 +101,7 @@ export function HillChart({
             stroke="currentColor"
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
-            className="text-stone-300 dark:text-stone-600"
+            className="text-stone-300"
           />
 
           {/* Center line (peak) - vertical dotted line at 50% */}
@@ -114,7 +114,7 @@ export function HillChart({
             strokeWidth="1"
             strokeDasharray="2,3"
             vectorEffect="non-scaling-stroke"
-            className="text-stone-300 dark:text-stone-500"
+            className="text-stone-300"
           />
         </svg>
 
@@ -146,7 +146,7 @@ export function HillChart({
 
       {/* Labels */}
       {!compact && (
-        <div className="flex justify-between text-[10px] text-stone-400 dark:text-stone-500 mt-1 px-1">
+        <div className="flex justify-between text-[10px] text-stone-400 mt-1 px-1">
           <span>Figuring it out</span>
           <span>Making it happen</span>
         </div>
@@ -171,7 +171,7 @@ export function HillChart({
               />
               <span className={`${color.label} font-medium`}>{scope.name}</span>
               {!compact && (
-                <span className="text-stone-400 dark:text-stone-500">
+                <span className="text-stone-400">
                   {completedTasks}/{totalTasks}
                 </span>
               )}

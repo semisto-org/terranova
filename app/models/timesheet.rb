@@ -1,4 +1,5 @@
 class Timesheet < ApplicationRecord
+  include SoftDeletable
   belongs_to :member
   belongs_to :guild, optional: true
 

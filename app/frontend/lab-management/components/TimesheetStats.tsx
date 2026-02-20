@@ -82,18 +82,18 @@ export function TimesheetStats({ timesheets }: TimesheetStatsProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-6 mb-6">
       {/* Main stats - horizontal bar */}
-      <div className="flex-1 bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-5">
+      <div className="flex-1 bg-white rounded-2xl border border-stone-200 p-5">
         <div className="flex items-baseline gap-3 mb-4">
-          <span className="text-4xl font-bold text-stone-800 dark:text-stone-100 tabular-nums">
+          <span className="text-4xl font-bold text-stone-800 tabular-nums">
             {formatNumber(stats.totalHours)}
           </span>
-          <span className="text-lg text-stone-400 dark:text-stone-500">heures au total</span>
+          <span className="text-lg text-stone-400">heures au total</span>
         </div>
 
         {/* Stacked bar showing category distribution */}
         {categoryData.length > 0 && (
           <div className="space-y-3">
-            <div className="h-3 w-full bg-stone-100 dark:bg-stone-700 rounded-full overflow-hidden flex">
+            <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden flex">
               {categoryData.map(({ category, hours }) => (
                 <div
                   key={category}
@@ -109,10 +109,10 @@ export function TimesheetStats({ timesheets }: TimesheetStatsProps) {
               {categoryData.map(({ category, hours }) => (
                 <div key={category} className="flex items-center gap-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${categoryColors[category]}`} />
-                  <span className="text-sm text-stone-600 dark:text-stone-400">
+                  <span className="text-sm text-stone-600">
                     {categoryLabels[category]}
                   </span>
-                  <span className="text-sm font-medium text-stone-800 dark:text-stone-200 tabular-nums">
+                  <span className="text-sm font-medium text-stone-800 tabular-nums">
                     {formatNumber(hours)}h
                   </span>
                 </div>
@@ -125,24 +125,24 @@ export function TimesheetStats({ timesheets }: TimesheetStatsProps) {
       {/* Side stats */}
       <div className="flex sm:flex-col gap-4 sm:w-48">
         {/* This month */}
-        <div className="flex-1 bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-4">
-          <p className="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-1">
+        <div className="flex-1 bg-white rounded-2xl border border-stone-200 p-4">
+          <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">
             Ce mois
           </p>
-          <p className="text-2xl font-bold text-stone-800 dark:text-stone-100 tabular-nums">
+          <p className="text-2xl font-bold text-stone-800 tabular-nums">
             {formatNumber(stats.currentMonthHours)}
-            <span className="text-sm font-normal text-stone-400 dark:text-stone-500 ml-1">h</span>
+            <span className="text-sm font-normal text-stone-400 ml-1">h</span>
           </p>
         </div>
 
         {/* Pending */}
-        <div className="flex-1 bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 p-4">
-          <p className="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-1">
+        <div className="flex-1 bg-white rounded-2xl border border-stone-200 p-4">
+          <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">
             À facturer
           </p>
-          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+          <p className="text-2xl font-bold text-amber-600 tabular-nums">
             {stats.pendingCount}
-            <span className="text-sm font-normal text-stone-400 dark:text-stone-500 ml-1">
+            <span className="text-sm font-normal text-stone-400 ml-1">
               / {timesheets.length}
             </span>
           </p>
