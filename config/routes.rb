@@ -234,14 +234,31 @@ Rails.application.routes.draw do
       get "nursery", to: "nursery#index"
       get "nursery/dashboard", to: "nursery#dashboard"
       get "nursery/catalog", to: "nursery#catalog"
+
+      # Nurseries CRUD
+      post "nursery/nurseries", to: "nursery#create_nursery"
+      patch "nursery/nurseries/:nursery_id", to: "nursery#update_nursery"
+      delete "nursery/nurseries/:nursery_id", to: "nursery#destroy_nursery"
+
+      # Containers CRUD
+      post "nursery/containers", to: "nursery#create_container"
+      patch "nursery/containers/:container_id", to: "nursery#update_container"
+      delete "nursery/containers/:container_id", to: "nursery#destroy_container"
+
+      # Stock batches
       post "nursery/stock-batches", to: "nursery#create_stock_batch"
       patch "nursery/stock-batches/:batch_id", to: "nursery#update_stock_batch"
       delete "nursery/stock-batches/:batch_id", to: "nursery#destroy_stock_batch"
+
+      # Orders
       post "nursery/orders", to: "nursery#create_order"
+      get "nursery/orders/:order_id", to: "nursery#show_order"
       patch "nursery/orders/:order_id/process", to: "nursery#process_order"
       patch "nursery/orders/:order_id/ready", to: "nursery#mark_order_ready"
       patch "nursery/orders/:order_id/picked-up", to: "nursery#mark_order_picked_up"
       patch "nursery/orders/:order_id/cancel", to: "nursery#cancel_order"
+
+      # Mother plants
       patch "nursery/mother-plants/:mother_plant_id/validate", to: "nursery#validate_mother_plant"
       patch "nursery/mother-plants/:mother_plant_id/reject", to: "nursery#reject_mother_plant"
       post "nursery/nurseries", to: "nursery#create_nursery"
@@ -275,6 +292,36 @@ Rails.application.routes.draw do
 
       get "knowledge/bookmarks", to: "knowledge/bookmarks#index"
       get "knowledge/search", to: "knowledge/search#index"
+
+      # Transfers
+      post "nursery/transfers", to: "nursery#create_transfer"
+      patch "nursery/transfers/:transfer_id/start", to: "nursery#start_transfer"
+      patch "nursery/transfers/:transfer_id/complete", to: "nursery#complete_transfer"
+      patch "nursery/transfers/:transfer_id/cancel", to: "nursery#cancel_transfer"
+
+      # Team members
+      get "nursery/team", to: "nursery#list_team_members"
+      post "nursery/team", to: "nursery#create_team_member"
+      patch "nursery/team/:member_id", to: "nursery#update_team_member"
+      delete "nursery/team/:member_id", to: "nursery#destroy_team_member"
+
+      # Schedule
+      get "nursery/schedule", to: "nursery#list_schedule"
+      post "nursery/schedule", to: "nursery#create_schedule_slot"
+      patch "nursery/schedule/:slot_id", to: "nursery#update_schedule_slot"
+      delete "nursery/schedule/:slot_id", to: "nursery#destroy_schedule_slot"
+
+      # Documentation
+      get "nursery/documentation", to: "nursery#list_documentation"
+      post "nursery/documentation", to: "nursery#create_documentation"
+      patch "nursery/documentation/:doc_id", to: "nursery#update_documentation"
+      delete "nursery/documentation/:doc_id", to: "nursery#destroy_documentation"
+
+      # Timesheets
+      get "nursery/timesheets", to: "nursery#list_timesheets"
+      post "nursery/timesheets", to: "nursery#create_timesheet"
+      patch "nursery/timesheets/:entry_id", to: "nursery#update_timesheet"
+      delete "nursery/timesheets/:entry_id", to: "nursery#destroy_timesheet"
 
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"
