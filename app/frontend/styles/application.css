@@ -26,6 +26,41 @@
   --color-pole-implementation: #234766;
   --color-pole-implementation-bg: #c9d1d9;
 
+  /* Nova Chat */
+  --color-nova: #0D9488;
+}
+
+/* Nova Chat Animations */
+@keyframes nova-fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nova-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes nova-zoom-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.nova-animate-panel {
+  animation: nova-fade-in-up 0.3s ease-out both;
+}
+
+.nova-animate-fade {
+  animation: nova-fade-in 0.5s ease-out both;
+}
+
+.nova-animate-message {
+  animation: nova-fade-in-up 0.3s ease-out both;
+}
+
+.nova-animate-badge {
+  animation: nova-zoom-in 0.2s ease-out both;
+
   /* Typography */
   --font-heading: 'Sole Serif Small', 'DM Serif Display', serif;
   --font-body: 'Inter', system-ui, sans-serif;

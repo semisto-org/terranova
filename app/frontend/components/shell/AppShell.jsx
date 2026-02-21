@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
+import { NovaChat } from '../nova-chat'
 
 function ShellLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -90,6 +91,7 @@ export default function AppShell({ children }) {
   return (
     <ShellProvider>
       <ShellLayout>{children}</ShellLayout>
+      <NovaChat />
     </ShellProvider>
   )
 }
