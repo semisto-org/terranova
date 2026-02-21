@@ -301,6 +301,7 @@ Rails.application.routes.draw do
 
       # Notion Records
       get "notion_records/search", to: "notion_records#search"
+      post "notion_records/upsert", to: "notion_records#upsert"
 
       # Transfers
       post "nursery/transfers", to: "nursery#create_transfer"

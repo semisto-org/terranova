@@ -50,7 +50,24 @@ module Api
         }
       end
 
+      def upsert
+        record = NotionRecord.find_or_initialize_by(notion_id: params[:notion_id])
+        record.assign_attributes(notion_record_params)
+        if record.save
+          render json: { status: "ok", id: record.id, created: record.previously_new_record? }
+        else
+          render json: { error: record.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       private
+
+      def notion_record_params
+        params.permit(:notion_id, :database_name, :database_id, :title, :content_html).tap do |p|
+          p[:properties] = params[:properties].permit! if params[:properties].present?
+          p[:content] = params[:content] if params[:content].present?
+        end
+      end
 
       def truncate_properties(props)
         return {} if props.blank?
