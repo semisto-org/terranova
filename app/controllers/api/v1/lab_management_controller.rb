@@ -656,7 +656,7 @@ module Api
       end
 
       def contact_params
-        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :organization_id, tag_names: [])
+        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, tag_names: [])
       end
 
       def set_contact
@@ -1087,6 +1087,7 @@ module Api
           address: contact.address.to_s,
           organizationType: contact.organization_type.to_s,
           notes: contact.notes.to_s,
+          notesHtml: contact.notes_html.to_s,
           organizationId: contact.organization_id&.to_s,
           organization: contact.organization ? { id: contact.organization.id.to_s, name: contact.organization.name } : nil,
           tagNames: contact.tag_names,

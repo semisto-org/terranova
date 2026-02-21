@@ -931,6 +931,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
               organization_type: values.organizationType,
               organization_id: values.organizationId || null,
               notes: values.notes,
+              notes_html: values.notesHtml,
               tag_names: values.tagNames,
             }
             setBusy(true)

@@ -130,12 +130,19 @@ export function ContactDetail({
               </div>
             )}
 
-            {contact.notes && (
+            {(contact.notesHtml || contact.notes) && (
               <div>
                 <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-2">
                   Notes
                 </h3>
-                <p className="text-stone-900 whitespace-pre-wrap">{contact.notes}</p>
+                {contact.notesHtml ? (
+                  <div
+                    className="text-stone-900 prose prose-sm prose-stone max-w-none"
+                    dangerouslySetInnerHTML={{ __html: contact.notesHtml }}
+                  />
+                ) : (
+                  <p className="text-stone-900 whitespace-pre-wrap">{contact.notes}</p>
+                )}
               </div>
             )}
 

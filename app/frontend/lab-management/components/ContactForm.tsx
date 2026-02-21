@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import SimpleEditor from '../../components/SimpleEditor'
 import type { Contact } from '../types'
 
 export interface ContactFormValues {
@@ -10,6 +11,7 @@ export interface ContactFormValues {
   organizationType: string
   organizationId: string
   notes: string
+  notesHtml: string
   tagNames: string[]
 }
 
@@ -43,6 +45,7 @@ export function ContactForm({
     organizationType: contact?.organizationType ?? '',
     organizationId: contact?.organizationId ?? '',
     notes: contact?.notes ?? '',
+    notesHtml: contact?.notesHtml ?? '',
     tagNames: contact?.tagNames ?? [],
   })
 
@@ -308,15 +311,12 @@ export function ContactForm({
 
             {/* Notes section */}
             <div>
-              <label htmlFor="contact-notes" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+              <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                 Notes
-              </label>
-              <textarea
-                id="contact-notes"
-                value={values.notes}
-                onChange={(e) => update('notes', e.target.value)}
-                rows={3}
-                className={`${inputBase} resize-none`}
+              </span>
+              <SimpleEditor
+                content={values.notesHtml || values.notes}
+                onUpdate={(html: string) => update('notesHtml', html)}
                 placeholder="Commentaires, contexte, historique des échanges..."
               />
             </div>

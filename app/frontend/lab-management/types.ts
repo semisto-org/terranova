@@ -242,6 +242,7 @@ export interface Contact {
   address: string
   organizationType: string
   notes: string
+  notesHtml: string
   organizationId: string | null
   organization: { id: string; name: string } | null
   tagNames: string[]
