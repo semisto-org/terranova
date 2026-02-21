@@ -7,6 +7,7 @@ import {
   Bookmark, BookmarkCheck, Clock, MessageCircle, Users, Paperclip, FolderOpen,
   History, Send, MoreHorizontal
 } from 'lucide-react'
+import SimpleEditor from '../../components/SimpleEditor'
 
 const ACCENT = '#0D9488'
 
@@ -510,7 +511,16 @@ function TopicForm({ topic, onSave, onCancel }) {
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         {field('Titre *', 'title', 'text', { placeholder: 'Titre du sujet' })}
-        {field('Contenu (Markdown) *', 'content', 'textarea', { rows: 12, placeholder: '# Mon sujet\n\nContenu...' })}
+
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1">Contenu *</label>
+          <SimpleEditor
+            content={form.content}
+            onUpdate={(html) => setForm(f => ({ ...f, content: html }))}
+            placeholder="Rédigez le contenu du sujet..."
+            minHeight="250px"
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           {field('Section', 'section_id', 'select', {
