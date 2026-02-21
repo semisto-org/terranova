@@ -299,6 +299,9 @@ Rails.application.routes.draw do
       get "knowledge/bookmarks", to: "knowledge/bookmarks#index"
       get "knowledge/search", to: "knowledge/search#index"
 
+      # Notion Records
+      get "notion_records/search", to: "notion_records#search"
+
       # Transfers
       post "nursery/transfers", to: "nursery#create_transfer"
       patch "nursery/transfers/:transfer_id/start", to: "nursery#start_transfer"
