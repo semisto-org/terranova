@@ -73,19 +73,22 @@ class KnowledgeTopic < ApplicationRecord
   end
 
   def related_topics(limit = 5)
-    return self.class.none if tags.blank?
+    clean_tags = Array(tags).select(&:present?)
+    return self.class.none if clean_tags.empty?
+
+    quoted_tags = clean_tags.map { |t| ActiveRecord::Base.connection.quote(t) }
+    pg_array_literal = "ARRAY[#{quoted_tags.join(',')}]::text[]"
 
     self.class
       .published
       .where.not(id: id)
-      .where("tags ?| ARRAY[:tags]", tags: tags)
-      .select("knowledge_topics.*, (SELECT COUNT(*) FROM jsonb_array_elements_text(knowledge_topics.tags) AS t WHERE t = ANY(ARRAY[#{tags.map { |t| ActiveRecord::Base.connection.quote(t) }.join(',')}])) AS common_tags_count")
-      .order("common_tags_count DESC")
+      .where("tags ?| #{pg_array_literal}")
+      .select(Arel.sql("knowledge_topics.*, (SELECT COUNT(*) FROM jsonb_array_elements_text(knowledge_topics.tags) AS t WHERE t = ANY(#{pg_array_literal})) AS common_tags_count"))
+      .order(Arel.sql("common_tags_count DESC"))
       .limit(limit)
-  rescue
-    # Fallback for simpler tag matching
-    matching = self.class.published.where.not(id: id).select { |t| (t.tags || []) & (tags || []) != [] }
-    matching.sort_by { |t| -((t.tags || []) & (tags || [])).size }.first(limit)
+  rescue StandardError => e
+    Rails.logger.error("[KnowledgeTopic#related_topics] Error for topic #{id}: #{e.message}")
+    self.class.none
   end
 
   private
