@@ -1,6 +1,8 @@
 module Api
   module V1
     class PlantsController < BaseController
+      skip_before_action :require_authentication, only: [:filter_options, :search, :genus, :species, :variety]
+
       STRATE_KEYS = %w[aquatic groundCover herbaceous climbers shrubs trees].freeze
 
       def filter_options
