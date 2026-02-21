@@ -15,6 +15,8 @@ export type MemberRole =
 
 export type MemberStatus = 'active' | 'inactive'
 
+export type MemberKind = 'human' | 'ai'
+
 export interface Member {
   id: string
   firstName: string
@@ -24,6 +26,7 @@ export interface Member {
   roles: MemberRole[]
   status: MemberStatus
   isAdmin: boolean
+  memberKind: MemberKind
   joinedAt: string
   walletId: string
   guildIds: string[]
@@ -245,6 +248,7 @@ export interface Contact {
   notesHtml: string
   organizationId: string | null
   organization: { id: string; name: string } | null
+  people: { id: string; name: string }[]
   tagNames: string[]
   createdAt: string
   updatedAt: string

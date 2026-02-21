@@ -154,7 +154,7 @@ export function SemosDashboard({
               <div>
                 <p className="text-white/60 text-sm">Portefeuille de</p>
                 <p className="font-semibold text-lg">
-                  {currentMember.firstName} {currentMember.lastName}
+                  {currentMember.firstName} {currentMember.lastName}{currentMember.memberKind === 'ai' ? ' 🤖' : ''}
                 </p>
               </div>
             </div>

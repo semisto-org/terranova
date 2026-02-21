@@ -169,7 +169,7 @@ export function Dashboard({
                               key={member.id}
                               src={member.avatar}
                               alt={`${member.firstName} ${member.lastName}`}
-                              title={`${member.firstName} ${member.lastName}`}
+                              title={`${member.firstName} ${member.lastName}${member.memberKind === 'ai' ? ' 🤖' : ''}`}
                               className="w-7 h-7 rounded-full border-2 border-white bg-stone-100 cursor-pointer hover:z-10 hover:scale-110 transition-transform"
                               onClick={() => onViewMember?.(member.id)}
                             />

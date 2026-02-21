@@ -127,6 +127,44 @@ namespace :notion do
       puts "✅ Organizations: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
     end
 
+    desc "Link contacts (persons) to their organizations via Notion relations"
+    task link_contacts_organizations: :environment do
+      importer = NotionImporter.new
+      puts "🔗 Linking contacts to organizations..."
+
+      database_id = "0a7b84b1-6083-433d-b8d4-50fda24008ea"
+      pages = importer.fetch_database(database_id)
+      linked = skipped = errors = 0
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          contact = Contact.find_by(notion_id: notion_id)
+          next unless contact&.person?
+
+          org_notion_ids = importer.extract_relations(props, "🏢 Entreprises et collectifs")
+          if org_notion_ids.any?
+            organization = Contact.find_by(notion_id: org_notion_ids.first)
+            if organization
+              contact.update!(organization_id: organization.id)
+              linked += 1
+            else
+              skipped += 1
+            end
+          else
+            skipped += 1
+          end
+        rescue => e
+          errors += 1
+          puts "  ❌ Link #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Links: #{linked} linked, #{skipped} skipped, #{errors} errors"
+    end
+
     desc "Import suppliers from Notion (Fournisseurs)"
     task suppliers: :environment do
       importer = NotionImporter.new
@@ -619,6 +657,8 @@ namespace :notion do
     Rake::Task["notion:import:revenues"].invoke
     puts ""
     Rake::Task["notion:import:expenses"].invoke
+    puts ""
+    Rake::Task["notion:import:link_contacts_organizations"].invoke
     puts ""
 
     puts "🏁 Notion import complete!"

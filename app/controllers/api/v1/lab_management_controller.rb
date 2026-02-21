@@ -615,7 +615,7 @@ module Api
       private
 
       def member_params
-        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, roles: [], guild_ids: [])
+        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, roles: [], guild_ids: [])
       end
 
       def pitch_params
@@ -828,6 +828,7 @@ module Api
           status: member.status,
           isAdmin: member.is_admin,
           joinedAt: member.joined_at&.iso8601,
+          memberKind: member.member_kind,
           walletId: member.wallet&.id&.to_s,
           guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s }
         }
@@ -1090,6 +1091,7 @@ module Api
           notesHtml: contact.notes_html.to_s,
           organizationId: contact.organization_id&.to_s,
           organization: contact.organization ? { id: contact.organization.id.to_s, name: contact.organization.name } : nil,
+          people: contact.organization? ? contact.people.map { |p| { id: p.id.to_s, name: p.name } } : [],
           tagNames: contact.tag_names,
           createdAt: contact.created_at.iso8601,
           updatedAt: contact.updated_at.iso8601

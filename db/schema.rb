@@ -785,6 +785,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.boolean "is_admin", default: false, null: false
     t.date "joined_at", null: false
     t.string "last_name", null: false
+    t.string "member_kind", default: "human", null: false
     t.string "password_digest"
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false

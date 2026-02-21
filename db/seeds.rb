@@ -50,11 +50,60 @@ members_data = [
     roles: %w[comptable coordination],
     password: "terranova2026"
   }
+  {
+    first_name: "Beebopelula",
+    last_name: "",
+    email: "beebopelula@semisto.org",
+    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Beebopelula",
+    status: "active",
+    is_admin: false,
+    joined_at: Date.new(2025, 1, 1),
+    roles: %w[IT],
+    member_kind: "ai",
+    password: "terranova2026"
+  },
+  {
+    first_name: "Eddy",
+    last_name: "",
+    email: "eddy@semisto.org",
+    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Eddy",
+    status: "active",
+    is_admin: false,
+    joined_at: Date.new(2025, 1, 1),
+    roles: %w[designer],
+    member_kind: "ai",
+    password: "terranova2026"
+  },
+  {
+    first_name: "Lovely",
+    last_name: "",
+    email: "lovely@semisto.org",
+    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Lovely",
+    status: "active",
+    is_admin: false,
+    joined_at: Date.new(2025, 1, 1),
+    roles: %w[IT],
+    member_kind: "ai",
+    password: "terranova2026"
+  },
+  {
+    first_name: "Nova",
+    last_name: "",
+    email: "nova@semisto.org",
+    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Nova",
+    status: "active",
+    is_admin: false,
+    joined_at: Date.new(2025, 1, 1),
+    roles: %w[coordination],
+    member_kind: "ai",
+    password: "terranova2026"
+  }
 ]
 
 members = members_data.map do |attrs|
   member = Member.find_or_initialize_by(email: attrs[:email])
-  member.assign_attributes(attrs.except(:roles))
+  member.assign_attributes(attrs.except(:roles, :member_kind))
+  member.member_kind = attrs[:member_kind] || "human"
   member.save!
 
   member.member_roles.delete_all

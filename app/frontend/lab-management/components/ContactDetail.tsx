@@ -130,6 +130,27 @@ export function ContactDetail({
               </div>
             )}
 
+            {!isPerson && contact.people && contact.people.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-2">
+                  Personnes liées
+                </h3>
+                <ul className="space-y-1">
+                  {contact.people.map((person) => (
+                    <li
+                      key={person.id}
+                      className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-stone-50 border border-stone-100"
+                    >
+                      <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="text-sm font-medium text-stone-900">{person.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {(contact.notesHtml || contact.notes) && (
               <div>
                 <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-2">

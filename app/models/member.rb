@@ -17,9 +17,16 @@ class Member < ApplicationRecord
 
   has_many :placed_bets, class_name: "Bet", foreign_key: :placed_by_id, dependent: :nullify
 
+  MEMBER_KINDS = %w[human ai].freeze
+
   validates :first_name, :last_name, :email, :status, :joined_at, presence: true
+  validates :member_kind, inclusion: { in: MEMBER_KINDS }
 
   enum :status, { active: "active", inactive: "inactive" }, validate: true
+
+  def ai?
+    member_kind == "ai"
+  end
 
   # Returns the avatar URL: ActiveStorage attachment first, then fallback to the legacy string column
   def avatar_url
