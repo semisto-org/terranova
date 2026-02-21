@@ -344,4 +344,7 @@ Rails.application.routes.draw do
       get "partner", to: "placeholders#show", defaults: { section: "partner_portal", route: "/partner" }
     end
   end
+
+  # Catch-all route for client-side routing (must be last)
+  get "*path", to: "app#fallback", constraints: ->(req) { !req.path.start_with?("/api/", "/rails/") }
 end

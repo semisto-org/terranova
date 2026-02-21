@@ -107,6 +107,47 @@ class AppController < ApplicationController
     }
   end
 
+  def fallback
+    path = params[:path] || ''
+    case path
+    when /\Alab(\/|\z)/
+      lab
+    when /\Adesign\/([^\/]+)/
+      params[:project_id] = $1
+      design_project
+    when /\Adesign(\/|\z)/
+      design
+    when /\Aacademy\/training-types\/new/
+      academy_training_type_form
+    when /\Aacademy\/training-types\/([^\/]+)\/edit/
+      params[:id] = $1
+      academy_training_type_form
+    when /\Aacademy\/locations\/new/
+      academy_location_form
+    when /\Aacademy\/locations\/([^\/]+)\/edit/
+      params[:id] = $1
+      academy_location_form
+    when /\Aacademy\/([^\/]+)\/register/
+      params[:training_id] = $1
+      academy_registration
+    when /\Aacademy\/([^\/]+)/
+      params[:training_id] = $1
+      academy_training
+    when /\Aacademy(\/|\z)/
+      academy
+    when /\Anursery(\/|\z)/
+      nursery
+    when /\Aplants(\/|\z)/
+      plants
+    when /\Aknowledge(\/|\z)/
+      knowledge
+    when /\Aprofile(\/|\z)/
+      profile
+    else
+      index
+    end
+  end
+
   private
 
   def verify_client_portal_token!
