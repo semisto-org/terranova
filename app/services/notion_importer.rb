@@ -53,7 +53,200 @@ class NotionImporter
     prop["relation"].map { |r| r["id"] }
   end
 
+  # Fetch all blocks (content) of a Notion page, recursively
+  def fetch_page_blocks(page_id)
+    blocks = []
+    cursor = nil
+
+    loop do
+      path = "/blocks/#{page_id}/children?page_size=100"
+      path += "&start_cursor=#{cursor}" if cursor
+      response = api_get(path)
+      results = response["results"] || []
+
+      results.each do |block|
+        if block["has_children"]
+          block["children"] = fetch_page_blocks(block["id"])
+        end
+        blocks << block
+      end
+
+      break unless response["has_more"]
+      cursor = response["next_cursor"]
+    end
+
+    blocks
+  end
+
+  # Convert Notion blocks to HTML
+  def blocks_to_html(blocks)
+    html_parts = []
+    i = 0
+
+    while i < blocks.length
+      block = blocks[i]
+      type = block["type"]
+
+      case type
+      when "paragraph"
+        text = rich_text_to_html(block.dig("paragraph", "rich_text"))
+        html_parts << "<p>#{text}</p>" if text.present?
+      when "heading_1"
+        text = rich_text_to_html(block.dig("heading_1", "rich_text"))
+        html_parts << "<h1>#{text}</h1>"
+      when "heading_2"
+        text = rich_text_to_html(block.dig("heading_2", "rich_text"))
+        html_parts << "<h2>#{text}</h2>"
+      when "heading_3"
+        text = rich_text_to_html(block.dig("heading_3", "rich_text"))
+        html_parts << "<h3>#{text}</h3>"
+      when "bulleted_list_item"
+        items = collect_list_items(blocks, i, "bulleted_list_item")
+        html_parts << "<ul>#{items.map { |b| list_item_html(b, "bulleted_list_item") }.join}</ul>"
+        i += items.length - 1
+      when "numbered_list_item"
+        items = collect_list_items(blocks, i, "numbered_list_item")
+        html_parts << "<ol>#{items.map { |b| list_item_html(b, "numbered_list_item") }.join}</ol>"
+        i += items.length - 1
+      when "to_do"
+        checked = block.dig("to_do", "checked") ? "checked" : ""
+        text = rich_text_to_html(block.dig("to_do", "rich_text"))
+        html_parts << %(<p><input type="checkbox" disabled #{checked}> #{text}</p>)
+      when "code"
+        text = rich_text_to_html(block.dig("code", "rich_text"))
+        lang = block.dig("code", "language") || ""
+        html_parts << "<pre><code class=\"language-#{lang}\">#{text}</code></pre>"
+      when "image"
+        url = block.dig("image", "file", "url") || block.dig("image", "external", "url") || ""
+        caption = rich_text_to_html(block.dig("image", "caption")) || ""
+        html_parts << %(<figure><img src="#{url}" alt="#{caption}"><figcaption>#{caption}</figcaption></figure>)
+      when "divider"
+        html_parts << "<hr>"
+      when "quote"
+        text = rich_text_to_html(block.dig("quote", "rich_text"))
+        children_html = block["children"] ? blocks_to_html(block["children"]) : ""
+        html_parts << "<blockquote>#{text}#{children_html}</blockquote>"
+      when "callout"
+        text = rich_text_to_html(block.dig("callout", "rich_text"))
+        icon = block.dig("callout", "icon", "emoji") || ""
+        children_html = block["children"] ? blocks_to_html(block["children"]) : ""
+        html_parts << %(<div class="callout">#{icon} #{text}#{children_html}</div>)
+      when "toggle"
+        text = rich_text_to_html(block.dig("toggle", "rich_text"))
+        children_html = block["children"] ? blocks_to_html(block["children"]) : ""
+        html_parts << "<details><summary>#{text}</summary>#{children_html}</details>"
+      when "table"
+        html_parts << table_to_html(block)
+      when "bookmark"
+        url = block.dig("bookmark", "url") || ""
+        caption = rich_text_to_html(block.dig("bookmark", "caption"))
+        label = caption.present? ? caption : url
+        html_parts << %(<p><a href="#{url}">#{label}</a></p>)
+      when "embed"
+        url = block.dig("embed", "url") || ""
+        html_parts << %(<p><a href="#{url}">#{url}</a></p>)
+      when "video"
+        url = block.dig("video", "file", "url") || block.dig("video", "external", "url") || ""
+        html_parts << %(<p><a href="#{url}">Video</a></p>)
+      end
+
+      i += 1
+    end
+
+    html_parts.join("\n")
+  end
+
+  # Create or update a NotionRecord for a page
+  def upsert_notion_record(page, database_name:, database_id:, content_blocks: nil, content_html: nil)
+    notion_id = page["id"]
+    title = extract(page["properties"], "Name") || extract(page["properties"], "Nom") || ""
+
+    record = NotionRecord.find_or_initialize_by(notion_id: notion_id)
+    record.assign_attributes(
+      database_name: database_name,
+      database_id: database_id,
+      title: title,
+      properties: page["properties"],
+      content: content_blocks&.to_json,
+      content_html: content_html
+    )
+    record.save!
+    record
+  end
+
+  # Fetch page content and convert to HTML
+  def fetch_and_convert_page_content(page_id)
+    blocks = fetch_page_blocks(page_id)
+    html = blocks_to_html(blocks)
+    [blocks, html]
+  end
+
   private
+
+  def collect_list_items(blocks, start_index, type)
+    items = []
+    i = start_index
+    while i < blocks.length && blocks[i]["type"] == type
+      items << blocks[i]
+      i += 1
+    end
+    items
+  end
+
+  def list_item_html(block, type)
+    text = rich_text_to_html(block.dig(type, "rich_text"))
+    children_html = block["children"] ? blocks_to_html(block["children"]) : ""
+    "<li>#{text}#{children_html}</li>"
+  end
+
+  def table_to_html(block)
+    return "<table></table>" unless block["children"]
+
+    rows = block["children"]
+    html = "<table>"
+    rows.each_with_index do |row, idx|
+      cells = row.dig("table_row", "cells") || []
+      tag = idx == 0 && block.dig("table", "has_column_header") ? "th" : "td"
+      html += "<tr>"
+      cells.each do |cell|
+        html += "<#{tag}>#{rich_text_to_html(cell)}</#{tag}>"
+      end
+      html += "</tr>"
+    end
+    html += "</table>"
+    html
+  end
+
+  def rich_text_to_html(arr)
+    return "" if arr.nil? || arr.empty?
+    arr.map { |t| format_rich_text(t) }.join
+  end
+
+  def format_rich_text(t)
+    text = t["plain_text"] || ""
+    text = ERB::Util.html_escape(text)
+    annotations = t["annotations"] || {}
+
+    text = "<strong>#{text}</strong>" if annotations["bold"]
+    text = "<em>#{text}</em>" if annotations["italic"]
+    text = "<s>#{text}</s>" if annotations["strikethrough"]
+    text = "<u>#{text}</u>" if annotations["underline"]
+    text = "<code>#{text}</code>" if annotations["code"]
+
+    color = annotations["color"]
+    if color.present? && color != "default"
+      if color.end_with?("_background")
+        text = %(<span style="background-color: #{color.sub('_background', '')}">#{text}</span>)
+      else
+        text = %(<span style="color: #{color}">#{text}</span>)
+      end
+    end
+
+    href = t.dig("href")
+    text = %(<a href="#{href}">#{text}</a>) if href.present?
+
+    text
+  end
 
   def extract_value(prop)
     case prop["type"]
