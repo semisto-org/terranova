@@ -3,18 +3,21 @@ module Academy
     include SoftDeletable
     self.table_name = 'academy_trainings'
 
-    STATUSES = %w[draft planned registrations_open in_progress completed cancelled].freeze
+    STATUSES = %w[idea to_organize in_preparation to_publish published in_progress post_training cancelled completed].freeze
+    REGISTRATION_MODES = %w[open closed].freeze
 
     belongs_to :training_type, class_name: 'Academy::TrainingType'
     has_many :sessions, class_name: 'Academy::TrainingSession', foreign_key: :training_id, dependent: :destroy
     has_many :registrations, class_name: 'Academy::TrainingRegistration', foreign_key: :training_id, dependent: :destroy
     has_many :documents, class_name: 'Academy::TrainingDocument', foreign_key: :training_id, dependent: :destroy
     has_many :expenses, class_name: "Expense", foreign_key: :training_id, dependent: :destroy
+    has_many :revenues, class_name: "Revenue", foreign_key: :training_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
     validates :title, :status, presence: true
     after_update :create_album_when_planned, if: :saved_change_to_status?
     validates :status, inclusion: { in: STATUSES }
+    validates :registration_mode, inclusion: { in: REGISTRATION_MODES }, allow_blank: true
     validates :vat_rate, numericality: { greater_than_or_equal_to: 0, less_than: 100 }
     validates :deposit_amount, numericality: { greater_than_or_equal_to: 0 }
 

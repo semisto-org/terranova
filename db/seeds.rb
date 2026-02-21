@@ -476,6 +476,24 @@ Academy::TrainingType.find_or_create_by!(name: 'Initiation permaculture') do |it
   item.checklist_template = ['Programme valide', 'Lieu confirme', 'Materiel prepare']
 end
 
+# Notion training types
+%w[
+  Formation\ service\ public
+  Formation\ pour\ entreprises
+  Formation\ pour\ groupe\ privé
+  Formation\ pro
+  Formation\ pour\ le\ grand\ public
+  Conférence
+  Visite
+  Cursus
+  Formation\ pour\ partenaire
+].each do |type_name|
+  Academy::TrainingType.find_or_create_by!(name: type_name) do |item|
+    item.description = ""
+    item.checklist_template = []
+  end
+end
+
 loc_quatre_sources = Academy::TrainingLocation.find_or_create_by!(name: 'Les 4 Sources') do |item|
   item.address = "Fonds d'Ahinvaux 1, 5530 Yvoir"
   item.capacity = 50
