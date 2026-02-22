@@ -2,6 +2,9 @@
 
 class CreateTimesheets < ActiveRecord::Migration[8.0]
   def up
+    # Drop and recreate if table exists with wrong schema (from earlier partial migration)
+    drop_table :timesheets, if_exists: true
+
     create_table :timesheets do |t|
       t.text :description
       t.date :date, null: false
