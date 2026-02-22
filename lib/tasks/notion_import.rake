@@ -682,6 +682,491 @@ namespace :notion do
     end
   end
 
+    desc "Import plant genera from Notion"
+    task genera: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing plant genera..."
+
+      database_id = "0d532316-50fd-4d44-9652-0814662f02b8"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          genus = Plant::Genus.find_or_initialize_by(notion_id: notion_id)
+          is_new = genus.new_record?
+
+          genus.assign_attributes(
+            latin_name: importer.extract(props, "Nom") || "Unknown",
+            common_name: importer.extract(props, "Nom commun") || "",
+            wikipedia_url: importer.extract(props, "Wikipedia") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          genus.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Genres",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Genus #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Genera: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
+
+    desc "Import plant species from Notion"
+    task species: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing plant species..."
+
+      database_id = "43e8af73-6791-4b19-adbd-e182eadd85c8"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          species = Plant::Species.find_or_initialize_by(notion_id: notion_id)
+          is_new = species.new_record?
+
+          # Resolve genus via Notion relation
+          genus_notion_ids = importer.extract_relations(props, "Genre")
+          genus = genus_notion_ids.first && Plant::Genus.find_by(notion_id: genus_notion_ids.first)
+
+          # flower_colors: rich_text split by comma into jsonb array
+          flower_colors_raw = importer.extract(props, "🌸 Couleur des fleurs") || ""
+          flower_colors = flower_colors_raw.split(/\s*,\s*/).reject(&:blank?)
+
+          # flowering_months: rich_text split by comma
+          flowering_months_raw = importer.extract(props, "💐 Floraison") || ""
+          flowering_months = flowering_months_raw.split(/\s*,\s*/).reject(&:blank?)
+
+          species.assign_attributes(
+            latin_name: importer.extract(props, "Nom latin") || "Unknown",
+            description: importer.extract(props, "Descriptif") || "",
+            genus_id: genus&.id,
+            plant_type: (importer.extract(props, "Type") || []).first || species.plant_type || "tree",
+            exposures: importer.extract(props, "⛅️ Exposition") || [],
+            edible_parts: importer.extract(props, "🥗 Parties comestibles") || [],
+            ecosystem_needs: importer.extract(props, "Besoins écosystémiques") || [],
+            growth_rate: importer.extract(props, "Croissance") || species.growth_rate || "medium",
+            hardiness: importer.extract(props, "❄️ Rusticité") || "",
+            soil_moisture: (importer.extract(props, "Humidité du sol") || []).first || species.soil_moisture || "moist",
+            life_cycle: importer.extract(props, "♽ Cycle de vie") || species.life_cycle || "perennial",
+            foliage_type: importer.extract(props, "🌿 Feuillage") || species.foliage_type || "deciduous",
+            propagation_methods: importer.extract(props, "✖️ Multiplication") || [],
+            pollination_type: (importer.extract(props, "🐝 Pollinisation") || []).first || species.pollination_type || "insect",
+            harvest_months: importer.extract(props, "Récolte") || [],
+            flower_colors: flower_colors,
+            flowering_months: flowering_months,
+            fodder_qualities: importer.extract(props, "🐑 Qualités fourragères") || [],
+            interests: importer.extract(props, "Intérêts") || [],
+            is_invasive: importer.extract(props, "⚠️ Invasive") || false,
+            origin: importer.extract(props, "🗺 Origine") || "",
+            root_system: (importer.extract(props, "Racine") || []).first || species.root_system || "fibrous",
+            planting_seasons: importer.extract(props, "Plantation") || [],
+            height_description: importer.extract(props, "↕ Hauteur") || "",
+            spread_description: importer.extract(props, "↔️ Diamètre") || "",
+            is_native_belgium: importer.extract(props, "🇧🇪 Indigène") || false,
+            common_names_fr: importer.extract(props, "Noms communs 🇫🇷") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          species.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Espèces",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Species #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Species: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
+
+    desc "Import design projects from Notion"
+    task designs: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing design projects..."
+
+      database_id = "af042ca6-5380-49b0-83c8-8cdbb1f5662e"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      status_map = {
+        "En cours" => "active",
+        "Terminé" => "completed",
+        "En attente" => "pending",
+        "Archivé" => "archived",
+        "Annulé" => "archived"
+      }
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          project = Design::Project.find_or_initialize_by(notion_id: notion_id)
+          is_new = project.new_record?
+
+          notion_status = importer.extract(props, "Statut")
+          status = status_map[notion_status] || "pending"
+
+          # Porteur(s) de projet → client info
+          contact_notion_ids = importer.extract_relations(props, "Porteur(s) de projet")
+          client_contact = contact_notion_ids.first && Contact.find_by(notion_id: contact_notion_ids.first)
+
+          client_name = client_contact&.name || importer.extract(props, "Dénomination") || "Import Notion"
+          client_email = importer.extract(props, "E-mail") || client_contact&.email || ""
+          client_phone = importer.extract(props, "Téléphone") || client_contact&.phone || ""
+
+          # Lieu relation → location coordinates
+          lieu_notion_ids = importer.extract_relations(props, "Lieu")
+          lieu = lieu_notion_ids.first && Academy::TrainingLocation.find_by(notion_id: lieu_notion_ids.first)
+
+          attrs = {
+            name: importer.extract(props, "Dénomination") || "Sans nom",
+            status: status,
+            project_type: importer.extract(props, "Type de projet") || "",
+            address: importer.extract(props, "Localisation") || "",
+            client_id: client_contact&.id&.to_s || project.client_id || "notion-import",
+            client_name: client_name,
+            client_email: client_email,
+            client_phone: client_phone,
+            hours_planned: (importer.extract(props, "Budget d'heures") || 0).to_i,
+            google_photos_url: importer.extract(props, "Google Photos") || "",
+            website_url: importer.extract(props, "Site web") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          }
+
+          project.assign_attributes(attrs)
+
+          # Set phase default for new records
+          project.phase ||= "offre"
+
+          project.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Designs",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Design #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Designs: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
+
+    desc "Import timesheets from Notion"
+    task timesheets: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing timesheets..."
+
+      database_id = "9beb159f-9211-4e25-a807-2bff7c52aac1"
+      pages = importer.fetch_database(database_id)
+      created = updated = skipped = errors = 0
+
+      mode_map = {
+        "Facturé" => "billed",
+        "Billed" => "billed",
+        "SEMOS" => "semos",
+        "Semos" => "semos"
+      }
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          # project_id is required — skip if no Design linked
+          design_notion_ids = importer.extract_relations(props, "Design")
+          project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
+          unless project
+            skipped += 1
+            next
+          end
+
+          timesheet = Design::ProjectTimesheet.find_or_initialize_by(notion_id: notion_id)
+          is_new = timesheet.new_record?
+
+          member_people = importer.extract(props, "Membre de la Team") || []
+          member_name = member_people.first || "Unknown"
+
+          mode_raw = importer.extract(props, "Rémunération") || ""
+          mode = mode_map[mode_raw] || "billed"
+
+          # Training relation
+          training_notion_ids = importer.extract_relations(props, "Formation")
+          training = training_notion_ids.first && Academy::Training.find_by(notion_id: training_notion_ids.first)
+
+          timesheet.assign_attributes(
+            project_id: project.id,
+            notes: importer.extract(props, "Descriptif court de l'activité") || "",
+            date: importer.extract(props, "Date de la prestation") || Date.today,
+            hours: (importer.extract(props, "Heures prestées") || 0).to_d,
+            travel_km: (importer.extract(props, "KM (A/R)") || 0).to_i,
+            phase: importer.extract(props, "Etape du design") || "offre",
+            mode: mode,
+            member_id: member_name.parameterize,
+            member_name: member_name,
+            billed: importer.extract(props, "Facturé ?") || false,
+            training_id: training&.id,
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          timesheet.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Timesheets",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Timesheet #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Timesheets: #{pages.size} fetched, #{created} created, #{updated} updated, #{skipped} skipped, #{errors} errors"
+    end
+
+    desc "Import events (calendrier) from Notion"
+    task events: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing events..."
+
+      database_id = "b803cc5f-11a0-4e5e-85c1-edb285459176"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          event = Event.find_or_initialize_by(notion_id: notion_id)
+          is_new = event.new_record?
+
+          # Event type from multi_select
+          event_type_names = importer.extract(props, "Type d'événement") || []
+          event_type_name = event_type_names.first || "Autre"
+          event_type = EventType.find_or_create_by!(label: event_type_name)
+
+          # Date: Notion date has start and optionally end
+          date_prop = props["Date"]
+          start_date = date_prop&.dig("date", "start")
+          end_date = date_prop&.dig("date", "end") || start_date
+
+          # Build description from Heure + Notes
+          heure = importer.extract(props, "Heure") || ""
+          notes = importer.extract(props, "Notes") || ""
+          description_parts = []
+          description_parts << "Heure : #{heure}" if heure.present?
+          description_parts << notes if notes.present?
+
+          # Design relations → store in description
+          design_notion_ids = importer.extract_relations(props, "Design(s)")
+          if design_notion_ids.any?
+            design_names = Design::Project.where(notion_id: design_notion_ids).pluck(:name)
+            description_parts << "Designs : #{design_names.join(', ')}" if design_names.any?
+          end
+
+          location = importer.extract(props, "Lieu ou URL") || ""
+
+          event.assign_attributes(
+            title: importer.extract(props, "Libellé") || "Sans titre",
+            start_date: start_date || Time.current,
+            end_date: end_date || start_date || Time.current,
+            location: location,
+            description: description_parts.join("\n"),
+            event_type: event_type,
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          event.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Calendrier",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Event #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Events: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
+
+    desc "Import quotes (offres) from Notion"
+    task quotes: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing quotes..."
+
+      database_id = "1a0ad42e-4164-48cc-a8da-fa6c0701df4e"
+      pages = importer.fetch_database(database_id)
+      created = updated = skipped = errors = 0
+
+      status_map = {
+        "Brouillon" => "draft",
+        "Envoyée" => "sent",
+        "Acceptée" => "approved",
+        "Refusée" => "rejected",
+        "Expirée" => "expired"
+      }
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          # Link to design project
+          design_notion_ids = importer.extract_relations(props, "Design")
+          project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
+          unless project
+            skipped += 1
+            next
+          end
+
+          quote = Design::Quote.find_or_initialize_by(notion_id: notion_id)
+          is_new = quote.new_record?
+
+          notion_status = importer.extract(props, "Statut")
+          status = status_map[notion_status] || "draft"
+
+          # Contact (Prospect)
+          contact_notion_ids = importer.extract_relations(props, "Prospect(s)")
+          contact = contact_notion_ids.first && Contact.find_by(notion_id: contact_notion_ids.first)
+
+          # Author
+          author_people = importer.extract(props, "Rédacteur(s)") || []
+          author_name = author_people.first || ""
+
+          quote.assign_attributes(
+            project_id: project.id,
+            title: importer.extract(props, "Dénomination") || "Sans titre",
+            status: status,
+            sent_at: importer.extract(props, "Date d'envoi"),
+            accepted_at: importer.extract(props, "Date d'acceptation"),
+            contact_id: contact&.id,
+            author_name: author_name,
+            valid_until: quote.valid_until || Date.today + 30,
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          quote.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Offres",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Quote #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Quotes: #{pages.size} fetched, #{created} created, #{updated} updated, #{skipped} skipped, #{errors} errors"
+    end
+
+    desc "Import project documents from Notion"
+    task documents: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing project documents..."
+
+      database_id = "e5a7c104-076a-4dd7-b373-e01636630cc1"
+      pages = importer.fetch_database(database_id)
+      created = updated = skipped = errors = 0
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          # Link to design project
+          design_notion_ids = importer.extract_relations(props, "Design")
+          project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
+          unless project
+            skipped += 1
+            next
+          end
+
+          doc = Design::ProjectDocument.find_or_initialize_by(notion_id: notion_id)
+          is_new = doc.new_record?
+
+          category_values = importer.extract(props, "Type") || []
+          category = category_values.first || "other"
+
+          phase_values = importer.extract(props, "Phases") || []
+          phase = phase_values.join(", ")
+
+          doc.assign_attributes(
+            project_id: project.id,
+            name: importer.extract(props, "Nom") || "Sans nom",
+            category: category,
+            phase: phase,
+            url: doc.url || "https://notion.so/#{notion_id.tr('-', '')}",
+            uploaded_at: doc.uploaded_at || Time.current,
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          doc.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Documents",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Document #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Documents: #{pages.size} fetched, #{created} created, #{updated} updated, #{skipped} skipped, #{errors} errors"
+    end
+  end
+
   desc "Import all data from Notion"
   task import: :environment do
     puts "🚀 Starting full Notion import..."
@@ -698,6 +1183,20 @@ namespace :notion do
     Rake::Task["notion:import:trainings"].invoke
     puts ""
     Rake::Task["notion:import:registrations"].invoke
+    puts ""
+    Rake::Task["notion:import:genera"].invoke
+    puts ""
+    Rake::Task["notion:import:species"].invoke
+    puts ""
+    Rake::Task["notion:import:designs"].invoke
+    puts ""
+    Rake::Task["notion:import:timesheets"].invoke
+    puts ""
+    Rake::Task["notion:import:events"].invoke
+    puts ""
+    Rake::Task["notion:import:quotes"].invoke
+    puts ""
+    Rake::Task["notion:import:documents"].invoke
     puts ""
     Rake::Task["notion:import:revenues"].invoke
     puts ""
