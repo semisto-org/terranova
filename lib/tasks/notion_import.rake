@@ -401,7 +401,10 @@ namespace :notion do
                                 importer.extract_relations(props, "Training")
           training = training_notion_ids.first && Academy::Training.find_by(notion_id: training_notion_ids.first)
 
-          next unless training
+          unless training
+            puts "  ⏭️ Registration #{notion_id}: skipped — no linked training"
+            next
+          end
 
           email = importer.extract(props, "Email") || importer.extract(props, "E-mail") || ""
           phone = importer.extract(props, "Téléphone") || importer.extract(props, "Phone") || ""
@@ -695,11 +698,15 @@ namespace :notion do
         notion_id = page["id"]
 
         begin
-          genus = Plant::Genus.find_or_initialize_by(notion_id: notion_id)
+          latin_name = importer.extract(props, "Nom") || "Unknown"
+          genus = Plant::Genus.find_by(notion_id: notion_id) ||
+                  Plant::Genus.find_by(latin_name: latin_name) ||
+                  Plant::Genus.new
           is_new = genus.new_record?
 
           genus.assign_attributes(
-            latin_name: importer.extract(props, "Nom") || "Unknown",
+            notion_id: notion_id,
+            latin_name: latin_name,
             common_name: importer.extract(props, "Nom commun") || "",
             wikipedia_url: importer.extract(props, "Wikipedia") || "",
             notion_created_at: page["created_time"],
@@ -738,7 +745,10 @@ namespace :notion do
         notion_id = page["id"]
 
         begin
-          species = Plant::Species.find_or_initialize_by(notion_id: notion_id)
+          latin_name = importer.extract(props, "Nom latin") || "Unknown"
+          species = Plant::Species.find_by(notion_id: notion_id) ||
+                    Plant::Species.find_by(latin_name: latin_name) ||
+                    Plant::Species.new
           is_new = species.new_record?
 
           # Resolve genus via Notion relation
@@ -754,7 +764,8 @@ namespace :notion do
           flowering_months = flowering_months_raw.split(/\s*,\s*/).reject(&:blank?)
 
           species.assign_attributes(
-            latin_name: importer.extract(props, "Nom latin") || "Unknown",
+            notion_id: notion_id,
+            latin_name: latin_name,
             description: importer.extract(props, "Descriptif") || "",
             genus_id: genus&.id,
             plant_type: (importer.extract(props, "Type") || []).first || species.plant_type || "tree",
@@ -785,7 +796,19 @@ namespace :notion do
             notion_updated_at: page["last_edited_time"]
           )
 
-          species.save!
+          begin
+            species.save!
+          rescue ActiveRecord::RecordNotUnique
+            # Duplicate latin_name — append suffix
+            suffix = 2
+            loop do
+              species.latin_name = "#{latin_name} (#{suffix})"
+              break unless Plant::Species.where.not(id: species.id).exists?(latin_name: species.latin_name)
+              suffix += 1
+            end
+            species.save!
+            puts "  ⚠️ Duplicate latin_name '#{latin_name}' → renamed to '#{species.latin_name}'"
+          end
 
           importer.upsert_notion_record(
             page,
@@ -903,10 +926,16 @@ namespace :notion do
         notion_id = page["id"]
 
         begin
-          # project_id is required — skip if no Design linked
           design_notion_ids = importer.extract_relations(props, "Design")
           project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
+
+          # Training relation
+          training_notion_ids = importer.extract_relations(props, "Formation")
+          training = training_notion_ids.first && Academy::Training.find_by(notion_id: training_notion_ids.first)
+
+          # project_id is required by model — skip if no Design AND no Formation
           unless project
+            puts "  ⏭️ Timesheet #{notion_id}: skipped — no linked Design project (Formation: #{training&.title || 'none'})"
             skipped += 1
             next
           end
@@ -919,10 +948,6 @@ namespace :notion do
 
           mode_raw = importer.extract(props, "Rémunération") || ""
           mode = mode_map[mode_raw] || "billed"
-
-          # Training relation
-          training_notion_ids = importer.extract_relations(props, "Formation")
-          training = training_notion_ids.first && Academy::Training.find_by(notion_id: training_notion_ids.first)
 
           timesheet.assign_attributes(
             project_id: project.id,
@@ -1056,6 +1081,7 @@ namespace :notion do
           design_notion_ids = importer.extract_relations(props, "Design")
           project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
           unless project
+            puts "  ⏭️ Quote #{notion_id}: skipped — no linked Design project"
             skipped += 1
             next
           end
@@ -1123,6 +1149,7 @@ namespace :notion do
           design_notion_ids = importer.extract_relations(props, "Design")
           project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
           unless project
+            puts "  ⏭️ Document #{notion_id}: skipped — no linked Design project"
             skipped += 1
             next
           end
