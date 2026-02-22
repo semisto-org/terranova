@@ -680,7 +680,6 @@ namespace :notion do
 
       puts "✅ Expenses: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
     end
-  end
 
     desc "Import plant genera from Notion"
     task genera: :environment do
