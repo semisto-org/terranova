@@ -119,6 +119,8 @@ Rails.application.routes.draw do
       delete "lab/albums/:id/media/:media_id", to: "lab_management#delete_album_media"
 
       get "plants/filter-options", to: "plants#filter_options"
+      get "plants/genera", to: "plants#list_genera"
+      get "plants/species", to: "plants#list_species"
       get "plants/search", to: "plants#search"
       get "plants/genera/:id", to: "plants#genus"
       get "plants/species/:id", to: "plants#species"

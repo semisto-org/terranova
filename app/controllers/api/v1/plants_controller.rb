@@ -37,6 +37,39 @@ module Api
         }
       end
 
+      def list_genera
+        genera = Plant::Genus.order(:latin_name)
+        render json: {
+          items: genera.map { |g| serialize_genus(g) },
+          total: genera.size
+        }
+      end
+
+      def list_species
+        scope = Plant::Species.includes(:genus).order(:latin_name)
+        scope = scope.where(genus_id: params[:genus_id]) if params[:genus_id].present?
+        scope = scope.where(plant_type: params[:type]) if params[:type].present?
+
+        render json: {
+          items: scope.map { |s|
+            {
+              id: s.id.to_s,
+              genusId: s.genus_id&.to_s,
+              latinName: s.latin_name,
+              genusName: s.genus&.latin_name,
+              type: s.plant_type,
+              exposures: s.exposures,
+              hardiness: s.hardiness,
+              edibleParts: s.edible_parts,
+              interests: s.interests,
+              forestGardenZone: s.forest_garden_zone,
+              uses: (s.edible_parts + s.interests).uniq
+            }
+          },
+          total: scope.size
+        }
+      end
+
       def search
         query = params[:query].to_s.strip
 
