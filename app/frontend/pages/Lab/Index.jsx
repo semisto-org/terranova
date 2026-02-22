@@ -15,9 +15,12 @@ import {
   EventTypesAdmin,
   MemberForm,
   ExpenseList,
+  RevenueList,
+  RevenueDetailModal,
   AlbumList,
 } from '../../lab-management/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
+import { RevenueFormModal } from '../../components/shared/RevenueFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
@@ -28,6 +31,7 @@ const SECTION_TABS = [
   { id: 'semos', label: 'Semos' },
   { id: 'timesheets', label: 'Timesheets' },
   { id: 'expenses', label: 'Dépenses' },
+  { id: 'revenues', label: 'Recettes' },
   { id: 'albums', label: 'Albums' },
   { id: 'event-types', label: 'Types d\'événements' },
 ]
@@ -176,6 +180,10 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [expenses, setExpenses] = useState([])
   const [expensesLoading, setExpensesLoading] = useState(false)
   const [expenseFormModal, setExpenseFormModal] = useState(null)
+  const [revenues, setRevenues] = useState([])
+  const [revenuesLoading, setRevenuesLoading] = useState(false)
+  const [revenueFormModal, setRevenueFormModal] = useState(null)
+  const [revenueDetailModal, setRevenueDetailModal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const loadOverview = useCallback(async (showLoading = true) => {
@@ -210,6 +218,22 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   useEffect(() => {
     if (tab === 'expenses') loadExpenses()
   }, [tab, loadExpenses])
+
+  const loadRevenues = useCallback(async () => {
+    setRevenuesLoading(true)
+    try {
+      const res = await apiRequest('/api/v1/lab/revenues')
+      setRevenues(res.items || [])
+    } catch {
+      setRevenues([])
+    } finally {
+      setRevenuesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (tab === 'revenues') loadRevenues()
+  }, [tab, loadRevenues])
 
   const members = data?.members || []
   const pitches = data?.pitches || []
@@ -691,6 +715,20 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       })
     },
 
+    onCreateRevenue: () => setRevenueFormModal({ revenue: null }),
+    onEditRevenue: (revenue) => setRevenueFormModal({ revenue }),
+    onViewRevenue: (revenue) => setRevenueDetailModal(revenue),
+    onDeleteRevenue: (revenueId) => {
+      setDeleteConfirm({
+        title: 'Supprimer cette recette ?',
+        message: 'Cette recette sera supprimée définitivement.',
+        action: () => runAndRefresh(async () => {
+          await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'DELETE' })
+          loadRevenues()
+        }),
+      })
+    },
+
     onViewCycle: (cycleId) => {
       const cycle = (data?.cycles || []).find((item) => item.id === cycleId)
       if (!cycle) return
@@ -702,7 +740,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (!guild) return
       setDetailModal({ title: 'Détail guilde', data: guild })
     },
-  }), [currentMemberId, contacts, data, events, loadExpenses, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi, timesheets])
+  }), [currentMemberId, contacts, data, events, loadExpenses, loadRevenues, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi, timesheets])
 
   if (loading) {
     return (
@@ -826,6 +864,17 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onDeleteExpense={callbacks.onDeleteExpense}
           trainingOptions={[]}
           designProjectOptions={[]}
+        />
+      )}
+
+      {tab === 'revenues' && (
+        <RevenueList
+          revenues={revenues}
+          loading={revenuesLoading}
+          onCreateRevenue={callbacks.onCreateRevenue}
+          onEditRevenue={callbacks.onEditRevenue}
+          onDeleteRevenue={callbacks.onDeleteRevenue}
+          onViewRevenue={callbacks.onViewRevenue}
         />
       )}
 
@@ -1093,6 +1142,44 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
             }
           }}
           onCancel={() => setExpenseFormModal(null)}
+          busy={busy}
+        />
+      )}
+
+      {revenueDetailModal && (
+        <RevenueDetailModal
+          revenue={revenueDetailModal}
+          onClose={() => setRevenueDetailModal(null)}
+          onEdit={() => {
+            const rev = revenueDetailModal
+            setRevenueDetailModal(null)
+            setRevenueFormModal({ revenue: rev })
+          }}
+        />
+      )}
+
+      {revenueFormModal && (
+        <RevenueFormModal
+          revenue={revenueFormModal.revenue}
+          contacts={(data?.contacts || []).map((c) => ({ value: c.id, label: c.name }))}
+          onSave={async (formData) => {
+            setBusy(true)
+            try {
+              const existing = revenueFormModal.revenue
+              if (existing) {
+                await apiRequest(`/api/v1/lab/revenues/${existing.id}`, { method: 'PATCH', body: JSON.stringify(formData) })
+              } else {
+                await apiRequest('/api/v1/lab/revenues', { method: 'POST', body: JSON.stringify(formData) })
+              }
+              setRevenueFormModal(null)
+              loadRevenues()
+            } catch (err) {
+              alert(err.message || 'Erreur')
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onCancel={() => setRevenueFormModal(null)}
           busy={busy}
         />
       )}
