@@ -3,28 +3,37 @@ import { Plus, Calendar, BarChart3 } from 'lucide-react'
 import TrainingCard from './TrainingCard'
 
 const STATUS_ORDER = [
-  'draft',
-  'planned',
-  'registrations_open',
+  'idea',
+  'to_organize',
+  'in_preparation',
+  'to_publish',
+  'published',
   'in_progress',
+  'post_training',
   'completed',
   'cancelled',
 ]
 
 const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
-  registrations_open: 'Inscriptions ouvertes',
+  idea: 'Idée',
+  to_organize: 'À organiser',
+  in_preparation: 'En préparation',
+  to_publish: 'À publier',
+  published: 'Publiée',
   in_progress: 'En cours',
+  post_training: 'Post-formation',
   completed: 'Terminée',
   cancelled: 'Annulée',
 }
 
 const STATUS_COLORS = {
-  draft: 'border-stone-300',
-  planned: 'border-blue-300',
-  registrations_open: 'border-green-300',
+  idea: 'border-amber-300',
+  to_organize: 'border-orange-300',
+  in_preparation: 'border-blue-300',
+  to_publish: 'border-indigo-300',
+  published: 'border-green-300',
   in_progress: 'border-[#B01A19]/30',
+  post_training: 'border-teal-300',
   completed: 'border-stone-400',
   cancelled: 'border-red-300',
 }
@@ -144,7 +153,7 @@ export default function TrainingKanban({
           {STATUS_ORDER.map((status, index) => {
             const columnTrainings = trainingsByStatus[status]
             const count = columnTrainings.length
-            const isActiveStatus = status === 'in_progress' || status === 'registrations_open'
+            const isActiveStatus = status === 'in_progress' || status === 'published' || status === 'in_preparation'
 
             return (
               <div

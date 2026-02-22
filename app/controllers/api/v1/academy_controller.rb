@@ -2,6 +2,7 @@ module Api
   module V1
     class AcademyController < BaseController
       skip_before_action :require_authentication, only: [:index]
+      before_action :require_effective_member, except: [:index]
 
       def index
         render json: academy_payload

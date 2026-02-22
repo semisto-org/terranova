@@ -3,6 +3,7 @@ module Api
     class LabManagementController < BaseController
       class DomainError < StandardError; end
 
+      before_action :require_effective_member
       before_action :set_member, only: [:show_member, :update_member]
       before_action :set_contact, only: [:show_contact, :update_contact, :destroy_contact]
       before_action :set_pitch, only: [:update_pitch, :destroy_pitch, :create_scope, :add_chowder_item]
@@ -615,7 +616,7 @@ module Api
       private
 
       def member_params
-        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, roles: [], guild_ids: [])
+        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, :membership_type, roles: [], guild_ids: [])
       end
 
       def pitch_params
@@ -829,6 +830,7 @@ module Api
           isAdmin: member.is_admin,
           joinedAt: member.joined_at&.iso8601,
           memberKind: member.member_kind,
+          membershipType: member.membership_type,
           walletId: member.wallet&.id&.to_s,
           guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s }
         }

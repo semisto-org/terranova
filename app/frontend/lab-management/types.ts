@@ -16,6 +16,7 @@ export type MemberRole =
 export type MemberStatus = 'active' | 'inactive'
 
 export type MemberKind = 'human' | 'ai'
+export type MembershipType = 'effective' | 'adherent'
 
 export interface Member {
   id: string
