@@ -1098,7 +1098,7 @@ namespace :notion do
           author_name = author_people.first || ""
 
           quote.assign_attributes(
-            project_id: project.id,
+            project_id: project&.id,
             title: importer.extract(props, "Dénomination") || "Sans titre",
             status: status,
             sent_at: importer.extract(props, "Date d'envoi"),
@@ -1156,7 +1156,7 @@ namespace :notion do
           phase = phase_values.join(", ")
 
           doc.assign_attributes(
-            project_id: project.id,
+            project_id: project&.id,
             name: importer.extract(props, "Nom") || "Sans nom",
             category: category,
             phase: phase,
