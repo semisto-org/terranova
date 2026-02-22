@@ -479,8 +479,8 @@ module Api
         scope = Timesheet.includes(:member)
 
         scope = scope.where(member_id: params[:member_id]) if params[:member_id].present?
-        scope = scope.where(category: params[:category]) if params[:category].present?
-        scope = scope.where(invoiced: ActiveModel::Type::Boolean.new.cast(params[:invoiced])) if params.key?(:invoiced)
+        scope = scope.where(mode: params[:mode]) if params[:mode].present?
+        scope = scope.where(billed: ActiveModel::Type::Boolean.new.cast(params[:billed])) if params.key?(:billed)
         scope = scope.where("date >= ?", params[:start_date]) if params[:start_date].present?
         scope = scope.where("date <= ?", params[:end_date]) if params[:end_date].present?
 
@@ -511,7 +511,7 @@ module Api
       end
 
       def mark_invoiced
-        @timesheet.update!(invoiced: true)
+        @timesheet.update!(billed: true)
         render json: serialize_timesheet(@timesheet)
       end
 
