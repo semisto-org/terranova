@@ -280,6 +280,7 @@ export interface PlantingPlan {
   scale: number
   updatedAt: string
   markers: PlantMarker[]
+  layout?: string
 }
 
 // =============================================================================
@@ -411,6 +412,7 @@ export interface Intervention {
   description: string
   memberId: string
   memberName: string
+  notes?: string
 }
 
 export interface PlantFollowUp {

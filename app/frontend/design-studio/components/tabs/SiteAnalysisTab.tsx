@@ -47,9 +47,9 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
   }
 
   const hasAnyData = siteAnalysis && (
-    (siteAnalysis.climate as Record<string, unknown>)?.hardinessZone ||
-    (siteAnalysis.soil as Record<string, unknown>)?.type ||
-    (siteAnalysis.clientObservations as Record<string, unknown>)?.sunnyAreas
+    (siteAnalysis.climate as unknown as Record<string, unknown>)?.hardinessZone ||
+    (siteAnalysis.soil as unknown as Record<string, unknown>)?.type ||
+    (siteAnalysis.clientObservations as unknown as Record<string, unknown>)?.sunnyAreas
   )
 
   return (

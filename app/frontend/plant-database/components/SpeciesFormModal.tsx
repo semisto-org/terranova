@@ -77,8 +77,8 @@ const FR_LABELS: Record<string, string> = {
   // Ecosystem needs
   'nurse-tree': 'Arbre nourricier', 'pioneer': 'Pionnier', 'climax': 'Climax',
   'erosion-control': 'Anti-érosion',
-  // Propagation methods
-  'seed': 'Semis', 'cutting': 'Bouture', 'layering': 'Marcottage',
+  // Propagation methods (note: 'seed' already defined above as 'Graine')
+  'cutting': 'Bouture', 'layering': 'Marcottage',
   'grafting': 'Greffe', 'division': 'Division', 'sucker': 'Drageon',
   // Transformations
   'jam': 'Confiture', 'jelly': 'Gelée', 'compote': 'Compote', 'juice': 'Jus',
@@ -697,7 +697,7 @@ export function SpeciesFormModal({
                           perennial: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
                         }
                         return (
-                          <button key={o.id} type="button" onClick={() => setLifeCycle(o.id)}
+                          <button key={o.id} type="button" onClick={() => setLifeCycle(o.id as Species["lifeCycle"])}
                             className={`flex-1 flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border-2 transition-all duration-200 ${active ? 'border-[#5B5781] bg-[#5B5781]/5 shadow-sm' : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50'}`}>
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${active ? 'bg-[#5B5781]/10' : 'bg-stone-100'}`}>
                               <svg className={`w-4 h-4 transition-colors ${active ? 'text-[#5B5781]' : 'text-stone-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={icons[o.id] || icons.annual} /></svg>
@@ -710,14 +710,14 @@ export function SpeciesFormModal({
                   </div>
                   <div>
                     <label className={labelBase}>Vitesse de croissance</label>
-                    <select value={growthRate} onChange={(e) => setGrowthRate(e.target.value)} className={inputBase}>
+                    <select value={growthRate} onChange={(e) => setGrowthRate(e.target.value as Species["growthRate"])} className={inputBase}>
                       {opts.growthRates.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                     </select>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelBase}>Type de feuillage</label>
-                      <select value={foliageType} onChange={(e) => setFoliageType(e.target.value)} className={inputBase}>
+                      <select value={foliageType} onChange={(e) => setFoliageType(e.target.value as Species["foliageType"])} className={inputBase}>
                         {opts.foliageTypes.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
@@ -739,7 +739,7 @@ export function SpeciesFormModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelBase}>Système racinaire</label>
-                      <select value={rootSystem} onChange={(e) => setRootSystem(e.target.value)} className={inputBase}>
+                      <select value={rootSystem} onChange={(e) => setRootSystem(e.target.value as Species["rootSystem"])} className={inputBase}>
                         {opts.rootSystems.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
@@ -751,7 +751,7 @@ export function SpeciesFormModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelBase}>Parfum</label>
-                      <select value={fragrance} onChange={(e) => setFragrance(e.target.value)} className={inputBase}>
+                      <select value={fragrance} onChange={(e) => setFragrance(e.target.value as Species["fragrance"])} className={inputBase}>
                         {opts.fragranceLevels.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
@@ -779,13 +779,13 @@ export function SpeciesFormModal({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className={labelBase}>Humidité du sol</label>
-                      <select value={soilMoisture} onChange={(e) => setSoilMoisture(e.target.value)} className={inputBase}>
+                      <select value={soilMoisture} onChange={(e) => setSoilMoisture(e.target.value as Species["soilMoisture"])} className={inputBase}>
                         {opts.soilMoistures.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelBase}>Richesse du sol</label>
-                      <select value={soilRichness} onChange={(e) => setSoilRichness(e.target.value)} className={inputBase}>
+                      <select value={soilRichness} onChange={(e) => setSoilRichness(e.target.value as Species["soilRichness"])} className={inputBase}>
                         {opts.soilRichness.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
@@ -795,7 +795,7 @@ export function SpeciesFormModal({
                         {opts.wateringNeeds.map((o) => {
                           const active = wateringNeed === o.id
                           return (
-                            <button key={o.id} type="button" onClick={() => setWateringNeed(o.id)}
+                            <button key={o.id} type="button" onClick={() => setWateringNeed(o.id as Species["wateringNeed"])}
                               className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-all text-center ${
                                 active ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'bg-white text-stone-500 border-stone-200 hover:border-stone-300'
                               }`}>{o.id}</button>
@@ -864,7 +864,7 @@ export function SpeciesFormModal({
                   <div><label className={labelBase}>Fourrage</label><ChipGroup options={opts.fodderQualities} selected={fodderQualities} onChange={setFodderQualities} color="#795548" /></div>
                   <div>
                     <label className={labelBase}>Propriétés thérapeutiques</label>
-                    <SimpleEditor content={therapeuticProperties} onUpdate={setTherapeuticProperties} toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']} />
+                    <SimpleEditor content={therapeuticProperties} onUpdate={setTherapeuticProperties} toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']} placeholder="" />
                   </div>
                 </div>
               </div>
@@ -882,13 +882,13 @@ export function SpeciesFormModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelBase}>Fertilité</label>
-                      <select value={fertility} onChange={(e) => setFertility(e.target.value)} className={inputBase}>
+                      <select value={fertility} onChange={(e) => setFertility(e.target.value as Species["fertility"])} className={inputBase}>
                         {opts.fertilityTypes.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelBase}>Pollinisation</label>
-                      <select value={pollinationType} onChange={(e) => setPollinationType(e.target.value)} className={inputBase}>
+                      <select value={pollinationType} onChange={(e) => setPollinationType(e.target.value as Species["pollinationType"])} className={inputBase}>
                         {opts.pollinationTypes.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
@@ -923,11 +923,11 @@ export function SpeciesFormModal({
                   </label>
                   <div>
                     <label className={labelBase}>Éléments toxiques</label>
-                    <SimpleEditor content={toxicElements} onUpdate={setToxicElements} toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']} />
+                    <SimpleEditor content={toxicElements} onUpdate={setToxicElements} toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']} placeholder="" />
                   </div>
                   <div>
                     <label className={labelBase}>Informations complémentaires</label>
-                    <SimpleEditor content={additionalNotes} onUpdate={setAdditionalNotes} toolbar={['bold', 'italic', 'strike', '|', 'bulletList', 'orderedList']} />
+                    <SimpleEditor content={additionalNotes} onUpdate={setAdditionalNotes} toolbar={['bold', 'italic', 'strike', '|', 'bulletList', 'orderedList']} placeholder="" />
                   </div>
                 </div>
               </div>

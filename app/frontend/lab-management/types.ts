@@ -166,6 +166,8 @@ export type EventType = string // Label of the event type (now the identifier)
 export interface EventTypeConfig {
   id: string
   label: string
+  icon?: string
+  color?: string
 }
 
 export interface Event {

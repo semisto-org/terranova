@@ -317,7 +317,7 @@ export function ProjectDetailView({
             )}
             {activeTab === 'team' && (
               <TeamTab
-                teamMembers={detail.teamMembers}
+                teamMembers={detail.teamMembers as any}
                 projectPhase={project.phase}
                 onAddTeamMember={a.onAddTeamMember}
                 onRemoveTeamMember={a.onRemoveTeamMember}
@@ -325,7 +325,7 @@ export function ProjectDetailView({
             )}
             {activeTab === 'timesheets' && (
               <TimesheetsTab
-                timesheets={detail.timesheets}
+                timesheets={detail.timesheets as any}
                 projectPhase={project.phase as ProjectPhase}
                 onAddTimesheet={a.onAddTimesheet}
                 onDeleteTimesheet={a.onDeleteTimesheet}
@@ -342,7 +342,7 @@ export function ProjectDetailView({
             )}
             {activeTab === 'site-analysis' && (
               <SiteAnalysisTab
-                siteAnalysis={detail.siteAnalysis as import('../types').SiteAnalysis | null}
+                siteAnalysis={detail.siteAnalysis as any}
                 onSave={a.onSaveSiteAnalysis}
               />
             )}
@@ -398,7 +398,7 @@ export function ProjectDetailView({
             )}
             {activeTab === 'co-gestion' && (
               <CoGestionTab
-                plantFollowUp={detail.plantFollowUp}
+                plantFollowUp={detail.plantFollowUp as any}
                 annotations={detail.annotations as import('../types').Annotation[]}
                 harvestCalendar={detail.harvestCalendar as import('../types').HarvestCalendar | null}
                 maintenanceCalendar={detail.maintenanceCalendar as import('../types').MaintenanceCalendar | null}

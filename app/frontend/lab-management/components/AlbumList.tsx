@@ -46,7 +46,7 @@ export function AlbumList({ albums: albumsFromProps, onRefresh }: AlbumListProps
   const loadAlbums = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await apiRequest<{ items: AlbumItem[] }>('/api/v1/lab/albums')
+      const res: any = await apiRequest('/api/v1/lab/albums')
       setFetchedItems(res?.items ?? [])
     } catch {
       setFetchedItems([])

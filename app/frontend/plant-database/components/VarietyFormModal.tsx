@@ -529,7 +529,7 @@ export function VarietyFormModal({
 
               <div>
                 <label className={labelBase}>Résistance aux maladies</label>
-                <SimpleEditor content={diseaseResistance} onUpdate={setDiseaseResistance} toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']} />
+                <SimpleEditor content={diseaseResistance} onUpdate={setDiseaseResistance} toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']} placeholder="" />
               </div>
 
               {/* Divider */}
@@ -537,7 +537,7 @@ export function VarietyFormModal({
 
               <div>
                 <label className={labelBase}>Informations complémentaires</label>
-                <SimpleEditor content={additionalNotes} onUpdate={setAdditionalNotes} toolbar={['bold', 'italic', 'strike', '|', 'bulletList', 'orderedList']} />
+                <SimpleEditor content={additionalNotes} onUpdate={setAdditionalNotes} toolbar={['bold', 'italic', 'strike', '|', 'bulletList', 'orderedList']} placeholder="" />
               </div>
             </div>
 

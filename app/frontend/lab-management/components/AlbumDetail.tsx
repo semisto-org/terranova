@@ -21,7 +21,7 @@ export function AlbumDetail({ album, onBack, onRefresh }: AlbumDetailProps) {
   const fetchMedia = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await apiRequest<{ items: Record<string, unknown>[] }>(
+      const res: any = await apiRequest(
         `/api/v1/lab/albums/${album.id}/media`
       )
       setMediaItems(res?.items ?? [])

@@ -83,6 +83,7 @@ export interface Species {
   fragrance: 'none' | 'light' | 'medium' | 'strong'
   transformations: string[]
   fodderQualities: string[]
+  additionalNotes?: string
 }
 
 export interface Variety {
@@ -95,6 +96,7 @@ export interface Variety {
   storageLife: string
   maturity: string
   diseaseResistance: string
+  additionalNotes?: string
 }
 
 // =============================================================================

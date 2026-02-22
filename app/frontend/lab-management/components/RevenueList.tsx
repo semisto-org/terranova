@@ -213,7 +213,7 @@ function RevenueRow({
   onDelete: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLTableCellElement>(null)
 
   useEffect(() => {
     if (!menuOpen) return

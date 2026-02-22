@@ -3,6 +3,7 @@ import type { AISummary } from '../types'
 interface AISummaryCalloutProps {
   aiSummary?: AISummary
   onGenerate?: () => void
+  targetName?: string
 }
 
 export function AISummaryCallout({ aiSummary, onGenerate }: AISummaryCalloutProps) {

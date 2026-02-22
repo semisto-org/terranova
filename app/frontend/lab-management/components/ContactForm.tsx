@@ -318,6 +318,7 @@ export function ContactForm({
                 content={values.notesHtml || values.notes}
                 onUpdate={(html: string) => update('notesHtml', html)}
                 placeholder="Commentaires, contexte, historique des échanges..."
+                toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']}
               />
             </div>
           </div>
