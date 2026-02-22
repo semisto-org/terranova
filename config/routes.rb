@@ -31,6 +31,8 @@ Rails.application.routes.draw do
   get "plants/*path", to: "app#plants"
   get "profile", to: "app#profile"
   get "knowledge", to: "app#knowledge"
+  get "admin", to: "app#admin"
+  get "admin/settings", to: "app#admin"
 
   namespace :api do
     namespace :v1 do

@@ -100,6 +100,13 @@ class AppController < ApplicationController
     }
   end
 
+  def admin
+    render inertia: "Admin/Settings", props: {
+      milestone: "Administration",
+      currentMemberId: current_member.id.to_s
+    }
+  end
+
   def profile
     render inertia: "Profile/Index", props: {
       milestone: "Profile"
@@ -109,6 +116,8 @@ class AppController < ApplicationController
   def fallback
     path = params[:path] || ''
     case path
+    when /\Aadmin(\/|\z)/
+      admin
     when /\Alab(\/|\z)/
       lab
     when /\Adesign\/([^\/]+)/

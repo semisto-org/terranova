@@ -4,36 +4,19 @@ import { useShellNav } from '../../components/shell/ShellContext'
 import {
   Dashboard,
   ShapeUpWorkboard,
-  MemberList,
-  SemosDashboard,
-  TimesheetList,
-  TimesheetForm,
   ContactList,
   ContactDetail,
   ContactForm,
   EventForm,
-  EventTypesAdmin,
-  MemberForm,
-  ExpenseList,
-  RevenueList,
-  RevenueDetailModal,
   AlbumList,
 } from '../../lab-management/components'
-import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
-import { RevenueFormModal } from '../../components/shared/RevenueFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'shapeup', label: 'Shape Up' },
-  { id: 'members', label: 'Membres' },
   { id: 'contacts', label: 'Contacts' },
-  { id: 'semos', label: 'Semos' },
-  { id: 'timesheets', label: 'Timesheets' },
-  { id: 'expenses', label: 'Dépenses' },
-  { id: 'revenues', label: 'Recettes' },
   { id: 'albums', label: 'Albums' },
-  { id: 'event-types', label: 'Types d\'événements' },
 ]
 
 const EVENT_TYPES = [
@@ -174,16 +157,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [detailModal, setDetailModal] = useState(null)
   const [contactDetailModal, setContactDetailModal] = useState(null)
   const [contactFormModal, setContactFormModal] = useState(null)
-  const [timesheetFormModal, setTimesheetFormModal] = useState(null)
   const [eventForm, setEventForm] = useState(null)
-  const [memberForm, setMemberForm] = useState(null)
-  const [expenses, setExpenses] = useState([])
-  const [expensesLoading, setExpensesLoading] = useState(false)
-  const [expenseFormModal, setExpenseFormModal] = useState(null)
-  const [revenues, setRevenues] = useState([])
-  const [revenuesLoading, setRevenuesLoading] = useState(false)
-  const [revenueFormModal, setRevenueFormModal] = useState(null)
-  const [revenueDetailModal, setRevenueDetailModal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const loadOverview = useCallback(async (showLoading = true) => {
@@ -203,43 +177,12 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     loadOverview()
   }, [loadOverview])
 
-  const loadExpenses = useCallback(async () => {
-    setExpensesLoading(true)
-    try {
-      const res = await apiRequest('/api/v1/lab/expenses')
-      setExpenses(res.items || [])
-    } catch {
-      setExpenses([])
-    } finally {
-      setExpensesLoading(false)
-    }
-  }, [])
 
-  useEffect(() => {
-    if (tab === 'expenses') loadExpenses()
-  }, [tab, loadExpenses])
-
-  const loadRevenues = useCallback(async () => {
-    setRevenuesLoading(true)
-    try {
-      const res = await apiRequest('/api/v1/lab/revenues')
-      setRevenues(res.items || [])
-    } catch {
-      setRevenues([])
-    } finally {
-      setRevenuesLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (tab === 'revenues') loadRevenues()
-  }, [tab, loadRevenues])
 
   const members = data?.members || []
   const pitches = data?.pitches || []
   const events = data?.events || []
   const scopes = data?.scopes || []
-  const timesheets = data?.timesheets || []
   const contacts = data?.contacts || []
 
   const currentMemberId = useMemo(() => {
@@ -471,104 +414,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         })
       ),
 
-    onAddMember: () => {
-      setMemberForm({
-        member: null,
-        onSubmit: async (values) => {
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-
-          if (values.avatar_file) {
-            const body = new FormData()
-            body.append('first_name', values.first_name)
-            body.append('last_name', values.last_name)
-            body.append('email', values.email)
-            body.append('avatar_image', values.avatar_file)
-            body.append('status', 'active')
-            body.append('is_admin', String(values.is_admin))
-            body.append('joined_at', new Date().toISOString().slice(0, 10))
-            values.roles.forEach((role) => body.append('roles[]', role))
-
-            const response = await fetch('/api/v1/lab/members', {
-              method: 'POST',
-              headers: { 'X-CSRF-Token': csrfToken },
-              body,
-            })
-            if (!response.ok) {
-              const data = await response.json().catch(() => ({}))
-              throw new Error(data.error || `${response.status} ${response.statusText}`)
-            }
-          } else {
-            await apiRequest('/api/v1/lab/members', {
-              method: 'POST',
-              body: JSON.stringify({
-                first_name: values.first_name,
-                last_name: values.last_name,
-                email: values.email,
-                avatar: '',
-                status: 'active',
-                is_admin: values.is_admin,
-                joined_at: new Date().toISOString().slice(0, 10),
-                roles: values.roles,
-                guild_ids: [],
-              }),
-            })
-          }
-        },
-      })
-    },
-
-    onEditMember: (memberId) => {
-      const member = members.find((item) => item.id === memberId)
-      if (!member) return
-      setMemberForm({
-        member,
-        onSubmit: async (values) => {
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-
-          // If avatar needs to be removed, call the dedicated endpoint first
-          if (values.remove_avatar && !values.avatar_file) {
-            const removeResp = await fetch(`/api/v1/lab/members/${memberId}/avatar`, {
-              method: 'DELETE',
-              headers: { 'X-CSRF-Token': csrfToken },
-            })
-            if (!removeResp.ok) {
-              const data = await removeResp.json().catch(() => ({}))
-              throw new Error(data.error || 'Erreur lors de la suppression de l\'avatar')
-            }
-          }
-
-          if (values.avatar_file) {
-            const body = new FormData()
-            body.append('first_name', values.first_name)
-            body.append('last_name', values.last_name)
-            body.append('is_admin', String(values.is_admin))
-            body.append('avatar_image', values.avatar_file)
-            values.roles.forEach((role) => body.append('roles[]', role))
-
-            const response = await fetch(`/api/v1/lab/members/${memberId}`, {
-              method: 'PATCH',
-              headers: { 'X-CSRF-Token': csrfToken },
-              body,
-            })
-            if (!response.ok) {
-              const data = await response.json().catch(() => ({}))
-              throw new Error(data.error || `${response.status} ${response.statusText}`)
-            }
-          } else {
-            await apiRequest(`/api/v1/lab/members/${memberId}`, {
-              method: 'PATCH',
-              body: JSON.stringify({
-                first_name: values.first_name,
-                last_name: values.last_name,
-                is_admin: values.is_admin,
-                roles: values.roles,
-              }),
-            })
-          }
-        },
-      })
-    },
-
     onViewMember: (memberId) => showDetailFromApi('Détail membre', `/api/v1/lab/members/${memberId}`),
 
     onCreateContact: () => setContactFormModal({ contact: null }),
@@ -596,52 +441,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/contacts/${contactId}`, { method: 'DELETE' })),
       })
     },
-
-    onTransferSemos: (toWalletId, amount, description) =>
-      runAndRefresh(() => {
-        const fromWalletId = (data?.wallets || []).find((wallet) => wallet.memberId === currentMemberId)?.id
-        if (!fromWalletId) throw new Error('Portefeuille courant introuvable')
-
-        return apiRequest('/api/v1/lab/semos/transfer', {
-          method: 'POST',
-          body: JSON.stringify({ from_wallet_id: fromWalletId, to_wallet_id: toWalletId, amount, description }),
-        })
-      }),
-
-    onEmitSemos: (walletId, amount, reason, description) =>
-      runAndRefresh(() =>
-        apiRequest('/api/v1/lab/semos/emissions', {
-          method: 'POST',
-          body: JSON.stringify({ wallet_id: walletId, amount, reason, description, created_by_id: currentMemberId }),
-        })
-      ),
-
-    onUpdateRate: (rateId, amount) =>
-      runAndRefresh(() =>
-        apiRequest(`/api/v1/lab/semos/rates/${rateId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ amount }),
-        })
-      ),
-
-    onCreateTimesheet: () => setTimesheetFormModal({ timesheet: null }),
-    onEditTimesheet: (timesheetId) => {
-      const timesheet = timesheets.find((item) => item.id === timesheetId)
-      if (timesheet) setTimesheetFormModal({ timesheet })
-    },
-
-    onDeleteTimesheet: (timesheetId) => {
-      setDeleteConfirm({
-        title: 'Supprimer cette prestation ?',
-        message: 'Cette prestation sera supprimée définitivement.',
-        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/timesheets/${timesheetId}`, { method: 'DELETE' })),
-      })
-    },
-
-    onMarkInvoiced: (timesheetId) =>
-      runAndRefresh(() =>
-        apiRequest(`/api/v1/lab/timesheets/${timesheetId}/mark-invoiced`, { method: 'PATCH' })
-      ),
 
     onCreateEvent: () => {
       setEventForm({
@@ -702,33 +501,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
 
     onViewEvent: (eventId) => showDetailFromApi('Détail événement', `/api/v1/lab/events/${eventId}`),
 
-    onCreateExpense: () => setExpenseFormModal({ expense: null }),
-    onEditExpense: (expense) => setExpenseFormModal({ expense }),
-    onDeleteExpense: (expenseId) => {
-      setDeleteConfirm({
-        title: 'Supprimer cette dépense ?',
-        message: 'Cette dépense sera supprimée définitivement.',
-        action: () => runAndRefresh(async () => {
-          await apiRequest(`/api/v1/lab/expenses/${expenseId}`, { method: 'DELETE' })
-          loadExpenses()
-        }),
-      })
-    },
-
-    onCreateRevenue: () => setRevenueFormModal({ revenue: null }),
-    onEditRevenue: (revenue) => setRevenueFormModal({ revenue }),
-    onViewRevenue: (revenue) => setRevenueDetailModal(revenue),
-    onDeleteRevenue: (revenueId) => {
-      setDeleteConfirm({
-        title: 'Supprimer cette recette ?',
-        message: 'Cette recette sera supprimée définitivement.',
-        action: () => runAndRefresh(async () => {
-          await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'DELETE' })
-          loadRevenues()
-        }),
-      })
-    },
-
     onViewCycle: (cycleId) => {
       const cycle = (data?.cycles || []).find((item) => item.id === cycleId)
       if (!cycle) return
@@ -740,7 +512,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (!guild) return
       setDetailModal({ title: 'Détail guilde', data: guild })
     },
-  }), [currentMemberId, contacts, data, events, loadExpenses, loadRevenues, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi, timesheets])
+  }), [currentMemberId, contacts, data, events, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi])
 
   if (loading) {
     return (
@@ -819,18 +591,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
-      {tab === 'members' && (
-        <MemberList
-          members={data.members}
-          guilds={data.guilds}
-          wallets={data.wallets}
-          currentMemberId={currentMemberId}
-          onAddMember={callbacks.onAddMember}
-          onViewMember={callbacks.onViewMember}
-          onEditMember={callbacks.onEditMember}
-        />
-      )}
-
       {tab === 'contacts' && (
         <ContactList
           contacts={contacts}
@@ -841,68 +601,11 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
-      {tab === 'semos' && (
-        <SemosDashboard
-          members={data.members}
-          wallets={data.wallets}
-          transactions={data.semosTransactions}
-          emissions={data.semosEmissions}
-          rates={data.semosRates}
-          currentMemberId={currentMemberId}
-          onTransferSemos={callbacks.onTransferSemos}
-          onEmitSemos={callbacks.onEmitSemos}
-          onUpdateRate={callbacks.onUpdateRate}
-        />
-      )}
-
-      {tab === 'expenses' && (
-        <ExpenseList
-          expenses={expenses}
-          loading={expensesLoading}
-          onCreateExpense={callbacks.onCreateExpense}
-          onEditExpense={callbacks.onEditExpense}
-          onDeleteExpense={callbacks.onDeleteExpense}
-          trainingOptions={[]}
-          designProjectOptions={[]}
-        />
-      )}
-
-      {tab === 'revenues' && (
-        <RevenueList
-          revenues={revenues}
-          loading={revenuesLoading}
-          onCreateRevenue={callbacks.onCreateRevenue}
-          onEditRevenue={callbacks.onEditRevenue}
-          onDeleteRevenue={callbacks.onDeleteRevenue}
-          onViewRevenue={callbacks.onViewRevenue}
-        />
-      )}
-
-      {tab === 'timesheets' && (
-        <TimesheetList
-          timesheets={data.timesheets}
-          members={data.members}
-          guilds={data.guilds}
-          currentMemberId={currentMemberId}
-          isAdmin={Boolean(currentMember?.isAdmin)}
-          onCreateTimesheet={callbacks.onCreateTimesheet}
-          onEditTimesheet={callbacks.onEditTimesheet}
-          onDeleteTimesheet={callbacks.onDeleteTimesheet}
-          onMarkInvoiced={callbacks.onMarkInvoiced}
-          onViewMember={callbacks.onViewMember}
-          onViewGuild={callbacks.onViewGuild}
-        />
-      )}
-
       {tab === 'albums' && (
         <AlbumList
           albums={data?.albums ?? []}
           onRefresh={() => loadOverview(false)}
         />
-      )}
-
-      {tab === 'event-types' && (
-        <EventTypesAdmin busy={busy} />
       )}
 
       {formModal && (
@@ -995,59 +698,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
-      {timesheetFormModal && (
-        <TimesheetForm
-          timesheet={timesheetFormModal.timesheet}
-          onSubmit={async (values) => {
-            setBusy(true)
-            setError(null)
-            try {
-              if (timesheetFormModal.timesheet) {
-                await apiRequest(`/api/v1/lab/timesheets/${timesheetFormModal.timesheet.id}`, {
-                  method: 'PATCH',
-                  body: JSON.stringify({ description: values.description }),
-                })
-              } else {
-                await apiRequest('/api/v1/lab/timesheets', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    member_id: currentMemberId,
-                    date: values.date,
-                    hours: Number(values.hours),
-                    payment_type: values.payment_type,
-                    category: values.category,
-                    description: values.description,
-                    invoiced: false,
-                    kilometers: Number(values.kilometers || 0),
-                  }),
-                })
-              }
-              setTimesheetFormModal(null)
-              await loadOverview()
-            } catch (err) {
-              setError(err.message)
-            } finally {
-              setBusy(false)
-            }
-          }}
-          onCancel={() => setTimesheetFormModal(null)}
-          busy={busy}
-        />
-      )}
 
-      {memberForm && (
-        <MemberForm
-          member={memberForm.member}
-          onSubmit={async (values) => {
-            await runAndRefresh(async () => {
-              await memberForm.onSubmit(values)
-            })
-            setMemberForm(null)
-          }}
-          onCancel={() => setMemberForm(null)}
-          busy={busy}
-        />
-      )}
 
       {deleteConfirm && (
         <ConfirmDeleteModal
@@ -1061,128 +712,8 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
-      {expenseFormModal && (
-        <ExpenseFormModal
-          expense={expenseFormModal.expense}
-          contactOptions={(data?.contacts || []).map((c) => ({ id: c.id, name: c.name, contactType: c.contactType }))}
-          onCreateContact={async ({ name, contact_type }) => {
-            const contact = await apiRequest('/api/v1/lab/contacts', {
-              method: 'POST',
-              body: JSON.stringify({ name, contact_type }),
-            })
-            return { id: contact.id, name: contact.name, contactType: contact.contactType }
-          }}
-          showTrainingLink={true}
-          showDesignProjectLink={true}
-          trainingOptions={[]}
-          designProjectOptions={[]}
-          accentColor="#5B5781"
-          onSubmit={async (payload) => {
-            const isEdit = Boolean(expenseFormModal.expense?.id)
-            const documentFile = payload.document
-            const body = {
-              supplier: payload.supplier,
-              supplier_contact_id: payload.supplier_contact_id,
-              status: payload.status,
-              invoice_date: payload.invoice_date,
-              category: payload.category,
-              expense_type: payload.expense_type,
-              billing_zone: payload.billing_zone,
-              payment_date: payload.payment_date || null,
-              payment_type: payload.payment_type || null,
-              amount_excl_vat: payload.amount_excl_vat,
-              vat_rate: payload.vat_rate || null,
-              vat_6: payload.vat_6,
-              vat_12: payload.vat_12,
-              vat_21: payload.vat_21,
-              total_incl_vat: payload.total_incl_vat,
-              eu_vat_rate: payload.eu_vat_rate || null,
-              eu_vat_amount: payload.eu_vat_amount,
-              paid_by: payload.paid_by || null,
-              reimbursed: payload.reimbursed,
-              reimbursement_date: payload.reimbursement_date || null,
-              billable_to_client: payload.billable_to_client,
-              rebilling_status: payload.rebilling_status || null,
-              name: payload.name || '',
-              notes: payload.notes || '',
-              poles: payload.poles || [],
-              training_id: payload.training_id || null,
-              design_project_id: payload.design_project_id || null,
-            }
-            setBusy(true)
-            setError(null)
-            try {
-              if (documentFile) {
-                const formData = new FormData()
-                Object.entries(body).forEach(([k, v]) => {
-                  if (v === null || v === undefined) return
-                  if (Array.isArray(v)) v.forEach((x) => formData.append(`${k}[]`, x))
-                  else formData.append(k, v)
-                })
-                if (documentFile instanceof File) formData.append('document', documentFile)
-                const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
-                await apiRequest(url, {
-                  method: isEdit ? 'PATCH' : 'POST',
-                  body: formData,
-                })
-              } else {
-                const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
-                await apiRequest(url, {
-                  method: isEdit ? 'PATCH' : 'POST',
-                  body: JSON.stringify(body),
-                })
-              }
-              setExpenseFormModal(null)
-              await loadExpenses()
-            } catch (err) {
-              setError(err.message)
-              throw err
-            } finally {
-              setBusy(false)
-            }
-          }}
-          onCancel={() => setExpenseFormModal(null)}
-          busy={busy}
-        />
-      )}
 
-      {revenueDetailModal && (
-        <RevenueDetailModal
-          revenue={revenueDetailModal}
-          onClose={() => setRevenueDetailModal(null)}
-          onEdit={() => {
-            const rev = revenueDetailModal
-            setRevenueDetailModal(null)
-            setRevenueFormModal({ revenue: rev })
-          }}
-        />
-      )}
 
-      {revenueFormModal && (
-        <RevenueFormModal
-          revenue={revenueFormModal.revenue}
-          contacts={(data?.contacts || []).map((c) => ({ value: c.id, label: c.name }))}
-          onSave={async (formData) => {
-            setBusy(true)
-            try {
-              const existing = revenueFormModal.revenue
-              if (existing) {
-                await apiRequest(`/api/v1/lab/revenues/${existing.id}`, { method: 'PATCH', body: JSON.stringify(formData) })
-              } else {
-                await apiRequest('/api/v1/lab/revenues', { method: 'POST', body: JSON.stringify(formData) })
-              }
-              setRevenueFormModal(null)
-              loadRevenues()
-            } catch (err) {
-              alert(err.message || 'Erreur')
-            } finally {
-              setBusy(false)
-            }
-          }}
-          onCancel={() => setRevenueFormModal(null)}
-          busy={busy}
-        />
-      )}
     </div>
   )
 }
