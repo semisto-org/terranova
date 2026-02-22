@@ -490,8 +490,13 @@ namespace :notion do
               pole_page = importer.send(:api_get, "/pages/#{pole_notion_ids.first}")
               pole_props = pole_page["properties"]
               pole_name = importer.extract(pole_props, "Name") || importer.extract(pole_props, "Nom")
-              pole_map = { "Academy" => "academy", "Design Studio" => "design_studio", "Nursery" => "nursery", "Roots" => "roots" }
-              pole_name = pole_map[pole_name] || pole_name&.downcase
+              pole_map = {
+                "Academy" => "academy", "Académie" => "academy", "Formation" => "academy", "Formations" => "academy",
+                "Design Studio" => "design_studio", "Design" => "design_studio", "Design Labs" => "design_studio", "Bureau d'études" => "design_studio",
+                "Nursery" => "nursery", "Pépinière" => "nursery",
+                "Roots" => "roots", "Racines" => "roots", "Transverse" => "roots"
+              }
+              pole_name = pole_map[pole_name] || (Revenue::POLES.include?(pole_name&.downcase) ? pole_name.downcase : nil)
             rescue
               # ignore
             end
@@ -591,14 +596,17 @@ namespace :notion do
           is_new = expense.new_record?
 
           name = importer.extract(props, "Name") || importer.extract(props, "Nom") || ""
+          invoice_date = importer.extract(props, "Facture") || importer.extract(props, "Date facture") || importer.extract(props, "Date")
           status_raw = importer.extract(props, "Statut") || importer.extract(props, "Status") || "processing"
           status = status_map[status_raw] || "processing"
+          # If no invoice date, force planned status (invoice_date not required for planned)
+          status = "planned" if invoice_date.blank? && status != "planned"
 
           type_raw = importer.extract(props, "Type") || importer.extract(props, "Type de dépense") || "other"
           expense_type = expense_type_map[type_raw] || "other"
 
-          payment_raw = importer.extract(props, "Mode de paiement") || importer.extract(props, "Paiement") || ""
-          payment_type = payment_type_map[payment_raw] || payment_raw.presence
+          payment_raw = importer.extract(props, "Mode de paiement") || importer.extract(props, "Paiement") || importer.extract(props, "Type de paiement") || ""
+          payment_type = payment_type_map[payment_raw] || nil
 
           category = importer.extract(props, "Catégorie") || importer.extract(props, "Category") || ""
 
@@ -625,16 +633,21 @@ namespace :notion do
             vat_6: (importer.extract(props, "TVA 6%") || 0).to_d,
             vat_21: (importer.extract(props, "TVA 21%") || 0).to_d,
             total_incl_vat: (importer.extract(props, "Total TVAC") || importer.extract(props, "Total") || 0).to_d,
-            invoice_date: importer.extract(props, "Date facture") || importer.extract(props, "Date"),
-            payment_date: importer.extract(props, "Date paiement") || importer.extract(props, "Payé"),
+            invoice_date: invoice_date,
+            payment_date: importer.extract(props, "Paiement") || importer.extract(props, "Date paiement") || importer.extract(props, "Payé"),
             payment_type: payment_type,
             category: category.presence && Expense::EXPENSE_CATEGORIES.include?(category) ? category : nil,
             supplier_contact: supplier_contact,
-            supplier: supplier_contact&.name || importer.extract(props, "Fournisseur (texte)") || "",
+            supplier: supplier_contact&.name || importer.extract(props, "Fournisseur (texte)") || (supplier_contact ? "" : "Import Notion"),
             training: training,
             design_project: design_project,
-            vat_rate: importer.extract(props, "Taux TVA") || "",
-            billing_zone: importer.extract(props, "Zone de facturation") || "",
+            vat_rate: begin
+              raw_vat = importer.extract(props, "Taux TVA") || ""
+              vat_rate_map = { "0%" => "0", "6%" => "6", "12%" => "12", "21%" => "21", "N/A" => "na", "Intracommunautaire" => "intracom",
+                               "0" => "0", "6" => "6", "12" => "12", "21" => "21", "na" => "na", "intracom" => "intracom" }
+              vat_rate_map[raw_vat] || (Expense::VAT_RATES.include?(raw_vat) ? raw_vat : nil)
+            end,
+            billing_zone: importer.extract(props, "Zone de facturation") || importer.extract(props, "Zone") || "",
             poles: poles,
             notes: importer.extract(props, "Notes") || "",
             notion_created_at: page["created_time"],
