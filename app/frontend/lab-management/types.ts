@@ -28,9 +28,11 @@ export interface Member {
   status: MemberStatus
   isAdmin: boolean
   memberKind: MemberKind
+  membershipType: MembershipType
   joinedAt: string
   walletId: string
   guildIds: string[]
+  slackUserId: string | null
 }
 
 export interface Guild {

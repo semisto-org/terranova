@@ -12,6 +12,7 @@ class ApplicationController < ActionController::Base
             email: current_member.email,
             avatar: current_member.avatar_url,
             isAdmin: current_member.is_admin,
+            slackUserId: current_member.slack_user_id,
             membershipType: current_member.membership_type
           }
         end

@@ -13,6 +13,7 @@ module Api
       before_action :set_event_type, only: [:update_event_type, :destroy_event_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
       before_action :set_expense, only: [:update_expense, :destroy_expense]
+      before_action :set_revenue, only: [:update_revenue, :destroy_revenue]
       before_action :set_album, only: [:update_album, :destroy_album, :album_media, :upload_album_media, :delete_album_media]
 
       def overview
@@ -554,6 +555,39 @@ module Api
         head :no_content
       end
 
+      def list_revenues
+        scope = Revenue.includes(:contact, :training, :design_project)
+
+        scope = scope.where(status: params[:status]) if params[:status].present?
+        scope = scope.where(pole: params[:pole]) if params[:pole].present?
+        scope = scope.where(revenue_type: params[:revenue_type]) if params[:revenue_type].present?
+
+        render json: { items: scope.order(date: :desc).map { |r| serialize_revenue(r) } }
+      end
+
+      def create_revenue
+        revenue = Revenue.new(revenue_params)
+
+        if revenue.save
+          render json: serialize_revenue(revenue), status: :created
+        else
+          render json: { error: revenue.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_revenue
+        if @revenue.update(revenue_params)
+          render json: serialize_revenue(@revenue)
+        else
+          render json: { error: @revenue.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_revenue
+        @revenue.soft_delete!
+        head :no_content
+      end
+
       def list_albums
         scope = Album.includes(:albumable).order(updated_at: :desc)
         scope = scope.where(albumable_type: params[:albumable_type]) if params[:albumable_type].present?
@@ -616,7 +650,7 @@ module Api
       private
 
       def member_params
-        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, :membership_type, roles: [], guild_ids: [])
+        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, :membership_type, :slack_user_id, roles: [], guild_ids: [])
       end
 
       def pitch_params
@@ -696,6 +730,10 @@ module Api
         @expense = Expense.find(params.require(:id))
       end
 
+      def set_revenue
+        @revenue = Revenue.find(params.require(:id))
+      end
+
       def set_album
         @album = Album.find(params.require(:id))
       end
@@ -710,6 +748,14 @@ module Api
 
       def album_params
         params.permit(:title, :description, :status, :albumable_type, :albumable_id)
+      end
+
+      def revenue_params
+        params.permit(
+          :amount, :description, :date, :contact_id, :pole, :training_id, :design_project_id,
+          :revenue_type, :status, :notes, :label, :amount_excl_vat, :vat_6, :vat_21,
+          :payment_method, :category, :vat_rate, :vat_exemption, :invoice_url, :paid_at
+        )
       end
 
       def expense_params
@@ -766,6 +812,35 @@ module Api
           fileUrl: file_url,
           thumbnailUrl: thumbnail_url,
           createdAt: item.created_at.iso8601
+        }
+      end
+
+      def serialize_revenue(r)
+        {
+          id: r.id.to_s,
+          amount: r.amount.to_f,
+          description: r.description,
+          date: r.date&.iso8601,
+          contactId: r.contact_id&.to_s,
+          contactName: r.contact&.name,
+          pole: r.pole,
+          trainingId: r.training_id&.to_s,
+          designProjectId: r.design_project_id&.to_s,
+          revenueType: r.revenue_type,
+          status: r.status,
+          notes: r.notes,
+          label: r.label,
+          amountExclVat: r.amount_excl_vat.to_f,
+          vat6: r.vat_6.to_f,
+          vat21: r.vat_21.to_f,
+          paymentMethod: r.payment_method,
+          category: r.category,
+          vatRate: r.vat_rate,
+          vatExemption: r.vat_exemption,
+          invoiceUrl: r.invoice_url,
+          paidAt: r.paid_at&.iso8601,
+          createdAt: r.created_at.iso8601,
+          updatedAt: r.updated_at.iso8601
         }
       end
 
@@ -832,7 +907,8 @@ module Api
           memberKind: member.member_kind,
           membershipType: member.membership_type,
           walletId: member.wallet&.id&.to_s,
-          guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s }
+          guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s },
+          slackUserId: member.slack_user_id
         }
       end
 

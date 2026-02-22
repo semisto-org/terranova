@@ -170,12 +170,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [detailModal, setDetailModal] = useState(null)
   const [contactDetailModal, setContactDetailModal] = useState(null)
   const [contactFormModal, setContactFormModal] = useState(null)
-  const [timesheetFormModal, setTimesheetFormModal] = useState(null)
   const [eventForm, setEventForm] = useState(null)
-  const [memberForm, setMemberForm] = useState(null)
-  const [expenses, setExpenses] = useState([])
-  const [expensesLoading, setExpensesLoading] = useState(false)
-  const [expenseFormModal, setExpenseFormModal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const loadOverview = useCallback(async (showLoading = true) => {
@@ -195,27 +190,10 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     loadOverview()
   }, [loadOverview])
 
-  const loadExpenses = useCallback(async () => {
-    setExpensesLoading(true)
-    try {
-      const res = await apiRequest('/api/v1/lab/expenses')
-      setExpenses(res.items || [])
-    } catch {
-      setExpenses([])
-    } finally {
-      setExpensesLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (tab === 'expenses') loadExpenses()
-  }, [tab, loadExpenses])
-
   const members = data?.members || []
   const pitches = data?.pitches || []
   const events = data?.events || []
   const scopes = data?.scopes || []
-  const timesheets = data?.timesheets || []
   const contacts = data?.contacts || []
 
   const currentMemberId = useMemo(() => {
