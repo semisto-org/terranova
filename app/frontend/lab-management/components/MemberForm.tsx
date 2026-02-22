@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { Member } from '../types'
+import type { Member, MembershipType, MemberStatus } from '../types'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
@@ -22,6 +22,7 @@ export interface MemberFormProps {
     email: string
     roles: string[]
     is_admin: boolean
+    slack_user_id: string
     avatar_file?: File | null
     remove_avatar?: boolean
   }) => Promise<void>
@@ -42,6 +43,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
   const [error, setError] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar ?? null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [slackUserId, setSlackUserId] = useState(member?.slackUserId ?? '')
   const [removeAvatar, setRemoveAvatar] = useState(false)
 
   // Focus first input when modal opens
@@ -122,6 +124,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
         email: email.trim(),
         roles: selectedRoles,
         is_admin: isAdmin,
+        slack_user_id: slackUserId.trim(),
         avatar_file: avatarFile,
         remove_avatar: removeAvatar,
       })
@@ -308,6 +311,35 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
                       L'email ne peut pas être modifié après création
                     </p>
                   )}
+                </div>
+
+                {/* Slack User ID */}
+                <div>
+                  <label
+                    htmlFor="member-slack-user-id"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
+                  >
+                    Slack User ID
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="member-slack-user-id"
+                      type="text"
+                      value={slackUserId}
+                      onChange={(e) => setSlackUserId(e.target.value)}
+                      className={inputBase}
+                      placeholder="U0XXXXXXX"
+                    />
+                    {slackUserId.trim() ? (
+                      <span className="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-700">
+                        ✅ Slack lié
+                      </span>
+                    ) : (
+                      <span className="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-100 text-amber-700">
+                        ⚠️ Slack non lié
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Roles */}

@@ -17,8 +17,14 @@ module Api
       def nova_send(message)
         idempotency_key = "terranova-chat-#{SecureRandom.hex(8)}"
 
+        context_prefix = if current_member
+          "[Contexte] Membre connecté : #{current_member.first_name} #{current_member.last_name} (email: #{current_member.email}, slack_user_id: #{current_member.slack_user_id || 'non lié'})\n\n"
+        else
+          ""
+        end
+
         params_json = {
-          message: message,
+          message: "#{context_prefix}#{message}",
           idempotencyKey: idempotency_key,
           sessionKey: "agent:main:main"
         }.to_json

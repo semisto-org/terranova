@@ -83,6 +83,11 @@ export function MemberCard({ member, guilds, wallet, onView, onEdit }: MemberCar
               {member.email}
             </p>
           </div>
+
+          {/* Slack indicator */}
+          <div className="flex-shrink-0" title={member.slackUserId ? 'Slack lié' : 'Slack non lié'}>
+            <div className={`w-3 h-3 rounded-full ${member.slackUserId ? 'bg-green-500' : 'bg-stone-300'}`} />
+          </div>
         </div>
 
         {/* Roles */}

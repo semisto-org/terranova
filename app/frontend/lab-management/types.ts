@@ -16,6 +16,7 @@ export type MemberRole =
 export type MemberStatus = 'active' | 'inactive'
 
 export type MemberKind = 'human' | 'ai'
+export type MembershipType = 'effective' | 'adherent'
 
 export interface Member {
   id: string
@@ -27,9 +28,11 @@ export interface Member {
   status: MemberStatus
   isAdmin: boolean
   memberKind: MemberKind
+  membershipType: MembershipType
   joinedAt: string
   walletId: string
   guildIds: string[]
+  slackUserId: string | null
 }
 
 export interface Guild {
