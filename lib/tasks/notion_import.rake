@@ -647,7 +647,16 @@ namespace :notion do
                                "0" => "0", "6" => "6", "12" => "12", "21" => "21", "na" => "na", "intracom" => "intracom" }
               vat_rate_map[raw_vat] || (Expense::VAT_RATES.include?(raw_vat) ? raw_vat : nil)
             end,
-            billing_zone: importer.extract(props, "Zone de facturation") || importer.extract(props, "Zone") || "",
+            billing_zone: begin
+              raw_zone = importer.extract(props, "Zone de facturation") || importer.extract(props, "Zone") || ""
+              zone_map = {
+                "Belgique" => "belgium", "Belgium" => "belgium", "BE" => "belgium",
+                "Intra-UE" => "intra_eu", "Intra-EU" => "intra_eu", "UE" => "intra_eu", "EU" => "intra_eu", "Intracommunautaire" => "intra_eu",
+                "Extra-UE" => "extra_eu", "Extra-EU" => "extra_eu", "Hors UE" => "extra_eu",
+                "belgium" => "belgium", "intra_eu" => "intra_eu", "extra_eu" => "extra_eu"
+              }
+              zone_map[raw_zone] || nil
+            end,
             poles: poles,
             notes: importer.extract(props, "Notes") || "",
             notion_created_at: page["created_time"],
