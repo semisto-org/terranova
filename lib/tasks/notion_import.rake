@@ -486,24 +486,14 @@ namespace :notion do
           design_notion_ids = importer.extract_relations(props, "Design")
           design_project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first) rescue nil
 
-          pole_notion_ids = importer.extract_relations(props, "Pôle/Guilde transverse")
-          pole_name = nil
-          if pole_notion_ids.any?
-            begin
-              pole_page = importer.send(:api_get, "/pages/#{pole_notion_ids.first}")
-              pole_props = pole_page["properties"]
-              pole_name = importer.extract(pole_props, "Name") || importer.extract(pole_props, "Nom")
-              pole_map = {
-                "Academy" => "academy", "Académie" => "academy", "Formation" => "academy", "Formations" => "academy",
-                "Design Studio" => "design_studio", "Design" => "design_studio", "Design Labs" => "design_studio", "Bureau d'études" => "design_studio",
-                "Nursery" => "nursery", "Pépinière" => "nursery",
-                "Roots" => "roots", "Racines" => "roots", "Transverse" => "roots"
-              }
-              pole_name = pole_map[pole_name] || (Revenue::POLES.include?(pole_name&.downcase) ? pole_name.downcase : nil)
-            rescue
-              # ignore
-            end
-          end
+          # Pôle is a relation to "Pôles/Guildes" DB — use hardcoded mapping
+          pole_notion_map = {
+            "28df6f30-efe3-421c-9e87-6c111e61c07d" => "academy",
+            "06377457-4bab-442f-8215-f1d5dee4d8d5" => "design_studio",
+            "4e5d74d6-6ba8-4b6c-90f1-f3e73afbacdd" => "roots"
+          }
+          pole_relation_ids = importer.extract_relations(props, "Pôle/Guilde transverse")
+          pole_name = pole_relation_ids.first && pole_notion_map[pole_relation_ids.first]
 
           status_raw = importer.extract(props, "Statut") || "draft"
           status_map = { "Brouillon" => "draft", "Confirmé" => "confirmed", "Reçu" => "received" }
@@ -625,8 +615,15 @@ namespace :notion do
                               importer.extract_relations(props, "Projet design")
           design_project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first) rescue nil
 
-          pole_raw = importer.extract(props, "Pôle") || importer.extract(props, "Pole") || ""
-          poles = pole_raw.is_a?(Array) ? pole_raw.map(&:downcase) : [pole_raw.downcase].reject(&:blank?)
+          # Pôle is a relation to a "Pôles/Guildes" DB in Notion
+          # Pôle is a relation to "Pôles/Guildes" DB — use hardcoded mapping
+          # "Global" (4e5d...) = transversal, not a specific pole
+          expense_pole_notion_map = {
+            "28df6f30-efe3-421c-9e87-6c111e61c07d" => "academy",
+            "06377457-4bab-442f-8215-f1d5dee4d8d5" => "design"
+          }
+          pole_relation_ids = importer.extract_relations(props, "Pôle/Guilde transverse")
+          poles = pole_relation_ids.filter_map { |rid| expense_pole_notion_map[rid] }
 
           expense.assign_attributes(
             name: name,
