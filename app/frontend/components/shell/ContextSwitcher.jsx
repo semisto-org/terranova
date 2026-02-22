@@ -21,6 +21,7 @@ export default function ContextSwitcher() {
   const ref = useRef(null)
   const { auth } = usePage().props
   const currentPole = getPoleFromPath(window.location.pathname)
+  const isAdherent = auth?.member?.membershipType === 'adherent'
 
   useEffect(() => {
     function handleClickOutside(e) {
