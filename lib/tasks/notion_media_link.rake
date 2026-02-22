@@ -4,9 +4,9 @@ namespace :notion do
     linked = 0
     errors = 0
 
-    # Link expense invoices
+    # Link expense invoices (property: "Documents" or "Document")
     puts "📎 Linking expense invoices..."
-    NotionAsset.where(property_name: ["Facture", "Invoice", "Document", "Fichier"]).find_each do |asset|
+    NotionAsset.where(property_name: ["Documents", "Document", "PDF"]).find_each do |asset|
       expense = Expense.find_by(notion_id: asset.source_id)
       next unless expense && asset.file.attached?
 
@@ -20,26 +20,37 @@ namespace :notion do
       puts "  ❌ Error linking expense #{asset.source_id}: #{e.message}"
     end
 
-    # Link design project documents
-    puts "📎 Linking design documents..."
-    NotionAsset.where(property_name: ["Fichier", "File", "Document"]).find_each do |asset|
-      doc = Design::ProjectDocument.find_by(notion_id: asset.source_id)
-      next unless doc && asset.file.attached?
+    # Link organisation logos
+    puts "📎 Linking organisation logos..."
+    NotionAsset.where(property_name: "Logo").find_each do |asset|
+      contact = Contact.find_by(notion_id: asset.source_id)
+      next unless contact && asset.file.attached?
 
-      asset.update(attachable: doc) unless asset.attachable
+      asset.update(attachable: contact) unless asset.attachable
       linked += 1
     rescue => e
       errors += 1
-      puts "  ❌ Error: #{e.message}"
     end
 
-    # Link training documents
-    puts "📎 Linking training documents..."
-    NotionAsset.where(source_type: "property").find_each do |asset|
+    # Link training photos (Trombinoscope)
+    puts "📎 Linking training photos..."
+    NotionAsset.where(property_name: "Trombinoscope").find_each do |asset|
       training = Academy::Training.find_by(notion_id: asset.source_id)
       next unless training && asset.file.attached?
 
       asset.update(attachable: training) unless asset.attachable
+      linked += 1
+    rescue => e
+      errors += 1
+    end
+
+    # Link plant record photos
+    puts "📎 Linking plant record photos..."
+    NotionAsset.where(property_name: ["Photos", "Fleurs"]).find_each do |asset|
+      plant_record = PlantRecord.find_by(notion_id: asset.source_id)
+      next unless plant_record && asset.file.attached?
+
+      asset.update(attachable: plant_record) unless asset.attachable
       linked += 1
     rescue => e
       errors += 1
