@@ -652,7 +652,7 @@ module Api
       end
 
       def timesheet_params
-        params.permit(:member_id, :date, :hours, :payment_type, :description, :category, :invoiced, :kilometers, :project_id, :course_id, :guild_id)
+        params.permit(:member_id, :member_name, :date, :hours, :description, :phase, :mode, :billed, :travel_km, :design_project_id, :training_id, :pole_project_id, :event_id)
       end
 
       def contact_params
@@ -1061,16 +1061,18 @@ module Api
         {
           id: timesheet.id.to_s,
           memberId: timesheet.member_id.to_s,
+          memberName: timesheet.member_name,
           date: timesheet.date.iso8601,
           hours: timesheet.hours.to_f,
-          paymentType: timesheet.payment_type,
           description: timesheet.description,
-          category: timesheet.category,
-          invoiced: timesheet.invoiced,
-          kilometers: timesheet.kilometers.to_f,
-          projectId: timesheet.project_id,
-          courseId: timesheet.course_id,
-          guildId: timesheet.guild_id&.to_s
+          phase: timesheet.phase,
+          mode: timesheet.mode,
+          billed: timesheet.billed,
+          travelKm: timesheet.travel_km,
+          designProjectId: timesheet.design_project_id,
+          trainingId: timesheet.training_id,
+          poleProjectId: timesheet.pole_project_id,
+          eventId: timesheet.event_id
         }
       end
 
