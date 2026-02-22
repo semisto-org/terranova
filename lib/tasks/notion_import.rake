@@ -912,7 +912,7 @@ namespace :notion do
 
       database_id = "9beb159f-9211-4e25-a807-2bff7c52aac1"
       pages = importer.fetch_database(database_id)
-      created = updated = skipped = errors = 0
+      created = updated = errors = 0
 
       mode_map = {
         "Facturé" => "billed",
@@ -926,21 +926,24 @@ namespace :notion do
         notion_id = page["id"]
 
         begin
+          # Resolve all possible relations
           design_notion_ids = importer.extract_relations(props, "Design")
           project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
 
-          # Training relation
           training_notion_ids = importer.extract_relations(props, "Formation")
           training = training_notion_ids.first && Academy::Training.find_by(notion_id: training_notion_ids.first)
 
-          # project_id is required by model — skip if no Design AND no Formation
-          unless project
-            puts "  ⏭️ Timesheet #{notion_id}: skipped — no linked Design project (Formation: #{training&.title || 'none'})"
-            skipped += 1
-            next
+          pole_project_notion_ids = importer.extract_relations(props, "Projet de pôle/guilde/transverse")
+          pole_project = pole_project_notion_ids.first && PoleProject.find_by(notion_id: pole_project_notion_ids.first)
+
+          event_notion_ids = importer.extract_relations(props, "Événement lié")
+          event = event_notion_ids.first && Event.find_by(notion_id: event_notion_ids.first)
+
+          if project.nil? && training.nil? && pole_project.nil? && event.nil?
+            puts "  ⚠️ Timesheet #{notion_id}: no linked relation found (creating anyway)"
           end
 
-          timesheet = Design::ProjectTimesheet.find_or_initialize_by(notion_id: notion_id)
+          timesheet = Timesheet.find_or_initialize_by(notion_id: notion_id)
           is_new = timesheet.new_record?
 
           member_people = importer.extract(props, "Membre de la Team") || []
@@ -950,17 +953,19 @@ namespace :notion do
           mode = mode_map[mode_raw] || "billed"
 
           timesheet.assign_attributes(
-            project_id: project.id,
-            notes: importer.extract(props, "Descriptif court de l'activité") || "",
+            design_project_id: project&.id,
+            training_id: training&.id,
+            pole_project_id: pole_project&.id,
+            event_id: event&.id,
+            description: importer.extract(props, "Descriptif court de l'activité") || "",
             date: importer.extract(props, "Date de la prestation") || Date.today,
             hours: (importer.extract(props, "Heures prestées") || 0).to_d,
             travel_km: (importer.extract(props, "KM (A/R)") || 0).to_i,
-            phase: importer.extract(props, "Etape du design") || "offre",
+            phase: importer.extract(props, "Etape du design"),
             mode: mode,
             member_id: member_name.parameterize,
             member_name: member_name,
             billed: importer.extract(props, "Facturé ?") || false,
-            training_id: training&.id,
             notion_created_at: page["created_time"],
             notion_updated_at: page["last_edited_time"]
           )
@@ -980,7 +985,7 @@ namespace :notion do
         end
       end
 
-      puts "✅ Timesheets: #{pages.size} fetched, #{created} created, #{updated} updated, #{skipped} skipped, #{errors} errors"
+      puts "✅ Timesheets: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
     end
 
     desc "Import events (calendrier) from Notion"

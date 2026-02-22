@@ -1,21 +1,13 @@
+# frozen_string_literal: true
+
 class Timesheet < ApplicationRecord
-  include SoftDeletable
-  belongs_to :member
-  belongs_to :guild, optional: true
+  MODES = %w[billed semos].freeze
 
-  enum :payment_type, {
-    invoice: "invoice",
-    semos: "semos"
-  }, validate: true
+  belongs_to :design_project, class_name: "Design::Project", optional: true
+  belongs_to :training, class_name: "Academy::Training", optional: true
+  belongs_to :pole_project, optional: true
+  belongs_to :event, optional: true
 
-  enum :category, {
-    design: "design",
-    formation: "formation",
-    administratif: "administratif",
-    coordination: "coordination",
-    communication: "communication"
-  }, validate: true
-
-  validates :date, :hours, :payment_type, :category, presence: true
-  validates :hours, numericality: { greater_than: 0 }
+  validates :member_id, :member_name, :date, presence: true
+  validates :mode, inclusion: { in: MODES }, allow_blank: true
 end
