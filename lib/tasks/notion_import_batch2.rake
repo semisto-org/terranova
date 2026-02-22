@@ -544,6 +544,85 @@ namespace :notion do
       puts "✅ Varieties: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
     end
 
+    desc "Import knowledge base articles from Notion"
+    task knowledge: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing knowledge base articles..."
+
+      database_id = "95c21630-7ee8-42e0-9d6c-b5bcbe713ae0"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      # Ensure "Recherche & Veille" section exists
+      section = KnowledgeSection.find_or_create_by!(name: "Recherche & Veille")
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          title = importer.extract(props, "Name") || "Sans titre"
+          topic = KnowledgeTopic.find_or_initialize_by(notion_id: notion_id)
+          is_new = topic.new_record?
+
+          # Tags from "Sujets" multi_select
+          tags = importer.extract(props, "Sujets") || []
+          types = importer.extract(props, "Type") || []
+          all_tags = (tags + types).uniq
+
+          # Note + URL
+          note = importer.extract(props, "Note") || ""
+          url = importer.extract(props, "URL") || ""
+
+          # Fetch page content (blocks → HTML)
+          page_html = importer.fetch_and_convert_page_content(notion_id) rescue ""
+
+          # Build content: note + page content + source URL
+          content_parts = []
+          content_parts << "<p>#{note}</p>" if note.present?
+          content_parts << page_html if page_html.present?
+          content_parts << "<p><strong>Source :</strong> <a href=\"#{url}\">#{url}</a></p>" if url.present?
+          content = content_parts.join("\n")
+          content = "<p>#{title}</p>" if content.blank?
+
+          # Author from "Ajoutée par"
+          author_name = begin
+            prop = props["Ajoutée par"]
+            prop&.dig("created_by", "name") || "Import Notion"
+          rescue
+            "Import Notion"
+          end
+
+          topic.assign_attributes(
+            title: title,
+            content: content,
+            tags: all_tags,
+            status: "published",
+            section_id: section.id,
+            author_name: author_name,
+            source_url: url,
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          topic.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Knowledge Base",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ KB Article #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ KB Articles: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
+
     desc "Import all batch 2 data from Notion"
     task all: :environment do
       puts "🚀 Starting Notion import batch 2..."
@@ -566,6 +645,8 @@ namespace :notion do
       Rake::Task["notion:import_batch2:post_its"].invoke
       puts ""
       Rake::Task["notion:import_batch2:notes"].invoke
+      puts ""
+      Rake::Task["notion:import_batch2:knowledge"].invoke
       puts ""
 
       puts "🏁 Notion import batch 2 complete!"
