@@ -31,6 +31,8 @@ Rails.application.routes.draw do
   get "plants/*path", to: "app#plants"
   get "profile", to: "app#profile"
   get "knowledge", to: "app#knowledge"
+  get "admin", to: "app#admin"
+  get "admin/settings", to: "app#admin"
 
   namespace :api do
     namespace :v1 do
@@ -109,6 +111,11 @@ Rails.application.routes.draw do
       post "lab/expenses", to: "lab_management#create_expense"
       patch "lab/expenses/:id", to: "lab_management#update_expense"
       delete "lab/expenses/:id", to: "lab_management#destroy_expense"
+
+      get "lab/revenues", to: "lab_management#list_revenues"
+      post "lab/revenues", to: "lab_management#create_revenue"
+      patch "lab/revenues/:id", to: "lab_management#update_revenue"
+      delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
 
       get "lab/albums", to: "lab_management#list_albums"
       post "lab/albums", to: "lab_management#create_album"

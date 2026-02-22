@@ -22,7 +22,7 @@ const SECTION_TABS = [
   { id: 'expenses', label: 'Dépenses' },
   { id: 'revenues', label: 'Recettes' },
   { id: 'semos', label: 'Semos' },
-  { id: 'event-types', label: 'Types d\'événements' },
+  { id: 'event-types', label: "Types d'événements" },
 ]
 
 export default function AdminSettings({ currentMemberId: initialMemberId }) {
@@ -155,8 +155,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               body,
             })
             if (!response.ok) {
-              const data = await response.json().catch(() => ({}))
-              throw new Error(data.error || `${response.status} ${response.statusText}`)
+              const d = await response.json().catch(() => ({}))
+              throw new Error(d.error || `${response.status} ${response.statusText}`)
             }
           } else {
             await apiRequest('/api/v1/lab/members', {
@@ -191,8 +191,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               headers: { 'X-CSRF-Token': csrfToken },
             })
             if (!removeResp.ok) {
-              const data = await removeResp.json().catch(() => ({}))
-              throw new Error(data.error || 'Erreur lors de la suppression de l\'avatar')
+              const d = await removeResp.json().catch(() => ({}))
+              throw new Error(d.error || "Erreur lors de la suppression de l'avatar")
             }
           }
           if (values.avatar_file) {
@@ -208,8 +208,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               body,
             })
             if (!response.ok) {
-              const data = await response.json().catch(() => ({}))
-              throw new Error(data.error || `${response.status} ${response.statusText}`)
+              const d = await response.json().catch(() => ({}))
+              throw new Error(d.error || `${response.status} ${response.statusText}`)
             }
           } else {
             await apiRequest(`/api/v1/lab/members/${memberId}`, {

@@ -22,6 +22,8 @@ export interface MemberFormProps {
     email: string
     roles: string[]
     is_admin: boolean
+    membership_type: MembershipType
+    status: MemberStatus
     slack_user_id: string
     avatar_file?: File | null
     remove_avatar?: boolean
@@ -40,6 +42,8 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
   const [email, setEmail] = useState(member?.email ?? '')
   const [selectedRoles, setSelectedRoles] = useState<string[]>(member?.roles ?? [])
   const [isAdmin, setIsAdmin] = useState(member?.isAdmin ?? false)
+  const [membershipType, setMembershipType] = useState<MembershipType>(member?.membershipType ?? 'effective')
+  const [status, setStatus] = useState<MemberStatus>(member?.status ?? 'active')
   const [error, setError] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar ?? null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -124,6 +128,8 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
         email: email.trim(),
         roles: selectedRoles,
         is_admin: isAdmin,
+        membership_type: membershipType,
+        status: status,
         slack_user_id: slackUserId.trim(),
         avatar_file: avatarFile,
         remove_avatar: removeAvatar,
@@ -407,6 +413,38 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
                       Veuillez sélectionner au moins un rôle
                     </p>
                   )}
+                </div>
+
+                {/* Membership type & Status */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="member-membership-type" className="block text-sm font-semibold text-stone-700 mb-2">
+                      Type de membre
+                    </label>
+                    <select
+                      id="member-membership-type"
+                      value={membershipType}
+                      onChange={(e) => setMembershipType(e.target.value as MembershipType)}
+                      className={inputBase + ' appearance-none cursor-pointer'}
+                    >
+                      <option value="effective">Membre effectif</option>
+                      <option value="adherent">Membre adhérent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="member-status" className="block text-sm font-semibold text-stone-700 mb-2">
+                      Statut
+                    </label>
+                    <select
+                      id="member-status"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as MemberStatus)}
+                      className={inputBase + ' appearance-none cursor-pointer'}
+                    >
+                      <option value="active">Actif</option>
+                      <option value="inactive">Inactif</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Admin checkbox */}
