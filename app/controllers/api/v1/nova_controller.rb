@@ -24,7 +24,7 @@ module Api
         }.to_json
 
         result = `openclaw gateway call agent \
-          --url "#{ENV.fetch('NOVA_GATEWAY_URL', 'wss://hatchboxed.tailef7c98.ts.net')}" \
+          --url "#{ENV.fetch('NOVA_GATEWAY_URL', 'ws://127.0.0.1:18789')}" \
           --token "#{ENV['NOVA_GATEWAY_TOKEN']}" \
           --params '#{params_json.gsub("'", "\\\\'")}' \
           --expect-final \
