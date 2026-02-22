@@ -77,9 +77,8 @@ module Api
         end
 
         def related
-          topic = KnowledgeTopic.find(params[:id])
-          related = topic.related_topics(5)
-          render json: { topics: related.map { |t| t.as_json_brief(current_member: current_member) } }
+          # TODO: fix jsonb_array_elements_text cast issue then re-enable
+          render json: { topics: [] }
         end
 
         # POST /api/v1/knowledge/topics/:id/attachments
