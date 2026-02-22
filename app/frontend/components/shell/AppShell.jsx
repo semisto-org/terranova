@@ -3,9 +3,13 @@ import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
 import { NovaChat } from '../nova-chat'
+import { TimesheetForm } from '../../lab-management/components'
+import { apiRequest } from '@/lib/api'
 
 function ShellLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [timesheetModalOpen, setTimesheetModalOpen] = useState(false)
+  const [timesheetBusy, setTimesheetBusy] = useState(false)
 
   return (
     <div className="flex h-screen overflow-hidden bg-stone-50" style={{ fontFamily: 'var(--font-body)' }}>
@@ -55,6 +59,17 @@ function ShellLayout({ children }) {
             <span className="hidden sm:inline">Rechercher...</span>
           </button>
 
+          {/* Timesheet quick-add */}
+          <button
+            onClick={() => setTimesheetModalOpen(true)}
+            className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
+            aria-label="Ajouter une prestation"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+
           {/* Feedback (Tally) */}
           <button
             data-tally-open="LZWR7O"
@@ -83,6 +98,29 @@ function ShellLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Timesheet quick-add modal */}
+      {timesheetModalOpen && (
+        <TimesheetForm
+          onSubmit={async (values) => {
+            setTimesheetBusy(true)
+            try {
+              await apiRequest('/api/v1/lab/timesheets', {
+                method: 'POST',
+                body: JSON.stringify({ timesheet: values }),
+              })
+              setTimesheetModalOpen(false)
+            } catch (err) {
+              console.error('Failed to create timesheet:', err)
+              alert('Erreur lors de la création de la prestation')
+            } finally {
+              setTimesheetBusy(false)
+            }
+          }}
+          onCancel={() => setTimesheetModalOpen(false)}
+          busy={timesheetBusy}
+        />
+      )}
     </div>
   )
 }

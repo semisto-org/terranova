@@ -3,9 +3,8 @@ class AppController < ApplicationController
   before_action :verify_client_portal_token!, only: [:design_client_portal]
 
   def index
-    render inertia: "Foundation/AppIndex", props: {
-      message: "Terranova app shell via Inertia.js",
-      milestone: "Foundation"
+    render inertia: "Home/Index", props: {
+      milestone: "Home"
     }
   end
 

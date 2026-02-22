@@ -8,7 +8,6 @@ import {
   SemosDashboard,
   TimesheetList,
   TimesheetForm,
-  CalendarView,
   ContactList,
   ContactDetail,
   ContactForm,
@@ -29,7 +28,6 @@ const SECTION_TABS = [
   { id: 'semos', label: 'Semos' },
   { id: 'timesheets', label: 'Timesheets' },
   { id: 'expenses', label: 'Dépenses' },
-  { id: 'calendar', label: 'Calendrier' },
   { id: 'albums', label: 'Albums' },
   { id: 'event-types', label: 'Types d\'événements' },
 ]
@@ -844,19 +842,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onMarkInvoiced={callbacks.onMarkInvoiced}
           onViewMember={callbacks.onViewMember}
           onViewGuild={callbacks.onViewGuild}
-        />
-      )}
-
-      {tab === 'calendar' && (
-        <CalendarView
-          events={data.events}
-          cycles={data.cycles}
-          members={data.members}
-          currentMemberId={currentMemberId}
-          onCreateEvent={callbacks.onCreateEvent}
-          onViewEvent={callbacks.onViewEvent}
-          onEditEvent={callbacks.onEditEvent}
-          onDeleteEvent={callbacks.onDeleteEvent}
         />
       )}
 
