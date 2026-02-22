@@ -22,3 +22,4 @@ end
 gem "sentry-ruby"
 gem "sentry-rails"
 gem "stripe", "~> 18.3"
+gem 'down', '~> 5.0'
