@@ -1079,14 +1079,9 @@ namespace :notion do
         notion_id = page["id"]
 
         begin
-          # Link to design project
+          # Link to design project (optional)
           design_notion_ids = importer.extract_relations(props, "Design")
           project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
-          unless project
-            puts "  ⏭️ Quote #{notion_id}: skipped — no linked Design project"
-            skipped += 1
-            next
-          end
 
           quote = Design::Quote.find_or_initialize_by(notion_id: notion_id)
           is_new = quote.new_record?
@@ -1150,11 +1145,6 @@ namespace :notion do
           # Link to design project
           design_notion_ids = importer.extract_relations(props, "Design")
           project = design_notion_ids.first && Design::Project.find_by(notion_id: design_notion_ids.first)
-          unless project
-            puts "  ⏭️ Document #{notion_id}: skipped — no linked Design project"
-            skipped += 1
-            next
-          end
 
           doc = Design::ProjectDocument.find_or_initialize_by(notion_id: notion_id)
           is_new = doc.new_record?
