@@ -35,7 +35,18 @@ export default function NovaChat() {
     if (isOpen) setUnreadCount(0)
   }, [isOpen])
 
-  const handleSend = useCallback((text) => {
+  // AbortController ref for cancelling in-flight requests
+  const abortRef = React.useRef(null)
+
+  // Cancel pending request when panel closes
+  useEffect(() => {
+    if (!isOpen && abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+    }
+  }, [isOpen])
+
+  const handleSend = useCallback(async (text) => {
     const userMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -43,21 +54,42 @@ export default function NovaChat() {
       timestamp: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, userMessage])
-
-    // TODO: Replace with WebSocket send
-    // Simulate Nova response for now
     setIsTyping(true)
-    setTimeout(() => {
+
+    // Cancel any previous in-flight request
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      const response = await fetch('/api/v1/nova/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+        signal: controller.signal,
+      })
+      const data = await response.json()
       const novaMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Merci pour ta question ! Je suis encore en cours de connexion avec le backend. Eddy branche bientôt le WebSocket 🔌🌱",
+        content: data.reply || data.error || "Désolée, je n'ai pas pu répondre 🌱",
         timestamp: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, novaMessage])
-      setIsTyping(false)
       if (!isOpen) setUnreadCount((c) => c + 1)
-    }, 1500)
+    } catch (err) {
+      if (err.name === 'AbortError') return
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "Désolée, je n'ai pas pu me connecter. Réessaie dans un moment 🌱",
+        timestamp: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      abortRef.current = null
+      setIsTyping(false)
+    }
   }, [isOpen])
 
   return (

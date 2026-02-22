@@ -36,6 +36,8 @@ Rails.application.routes.draw do
     namespace :v1 do
       get "health", to: "health#show"
 
+      post "nova/chat", to: "nova#chat"
+
       get "foundation/routes", to: "foundation#routes"
       get "foundation/shell", to: "foundation#shell"
       get "foundation/milestone", to: "foundation#milestone"

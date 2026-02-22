@@ -1,4 +1,5 @@
 import React from 'react'
+import novaAvatar from './nova-avatar.jpg'
 
 function formatTime(date) {
   return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -30,9 +31,7 @@ export default function NovaChatMessage({ message, isLast }) {
       style={{ animationFillMode: 'both', animationDelay: isLast ? '50ms' : '0ms' }}
     >
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center text-sm shrink-0 mt-0.5">
-          🌱
-        </div>
+        <img src={novaAvatar} className="w-8 h-8 rounded-full shrink-0 mt-0.5" alt="Nova" />
       )}
       <div className={`max-w-[80%] ${isUser ? 'order-1' : ''}`}>
         <div
