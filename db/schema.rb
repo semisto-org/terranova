@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_22_221900) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,23 +54,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "address", default: "", null: false
     t.integer "capacity", default: 0, null: false
     t.jsonb "compatible_training_type_ids", default: [], null: false
+    t.string "country", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.boolean "has_accommodation", default: false, null: false
     t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
+    t.string "location_type", default: "", null: false
     t.decimal "longitude", precision: 10, scale: 6, default: "0.0", null: false
     t.string "name", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.jsonb "photo_gallery", default: [], null: false
     t.datetime "updated_at", null: false
+    t.string "website_url", default: "", null: false
     t.index ["deleted_at"], name: "index_academy_training_locations_on_deleted_at"
+    t.index ["notion_id"], name: "index_academy_training_locations_on_notion_id", unique: true
   end
 
   create_table "academy_training_registrations", force: :cascade do |t|
     t.decimal "amount_paid", precision: 12, scale: 2, default: "0.0", null: false
     t.string "carpooling", default: "none", null: false
     t.string "contact_email", default: "", null: false
-    t.string "contact_id", default: "", null: false
+    t.bigint "contact_id"
     t.string "contact_name", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -78,6 +85,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "departure_country", default: "", null: false
     t.string "departure_postal_code", default: "", null: false
     t.text "internal_note", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.decimal "payment_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.string "payment_status", default: "pending", null: false
     t.string "phone", default: "", null: false
@@ -85,7 +95,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "stripe_payment_intent_id"
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_academy_training_registrations_on_contact_id"
     t.index ["deleted_at"], name: "index_academy_training_registrations_on_deleted_at"
+    t.index ["notion_id"], name: "index_academy_training_registrations_on_notion_id", unique: true
     t.index ["stripe_payment_intent_id"], name: "idx_academy_registrations_stripe_pi", unique: true, where: "(stripe_payment_intent_id IS NOT NULL)"
     t.index ["training_id"], name: "index_academy_training_registrations_on_training_id"
   end
@@ -126,8 +138,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "deleted_at"
     t.decimal "deposit_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.text "description", default: "", null: false
+    t.jsonb "facilitator_ids", default: [], null: false
+    t.text "feedback", default: "", null: false
+    t.bigint "location_id"
     t.integer "max_participants", default: 0, null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.string "photo_album_url", default: "", null: false
     t.decimal "price", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "private_page_url", default: "", null: false
+    t.string "public_page_url", default: "", null: false
+    t.string "punchpass_url", default: "", null: false
+    t.string "registration_mode", default: "open", null: false
     t.boolean "requires_accommodation", default: false, null: false
     t.string "status", default: "draft", null: false
     t.string "title", null: false
@@ -135,8 +158,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "updated_at", null: false
     t.decimal "vat_rate", precision: 5, scale: 2, default: "0.0", null: false
     t.index ["deleted_at"], name: "index_academy_trainings_on_deleted_at"
+    t.index ["notion_id"], name: "index_academy_trainings_on_notion_id", unique: true
     t.index ["status"], name: "index_academy_trainings_on_status"
     t.index ["training_type_id"], name: "index_academy_trainings_on_training_type_id"
+  end
+
+  create_table "actions", force: :cascade do |t|
+    t.string "action_type"
+    t.string "assignee_name"
+    t.datetime "created_at", null: false
+    t.date "due_date"
+    t.string "name"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.bigint "parent_id"
+    t.bigint "pole_project_id"
+    t.string "priority"
+    t.string "status"
+    t.jsonb "tags", default: []
+    t.integer "time_minutes"
+    t.bigint "training_id"
+    t.datetime "updated_at", null: false
+    t.index ["notion_id"], name: "index_actions_on_notion_id", unique: true
+    t.index ["parent_id"], name: "index_actions_on_parent_id"
+    t.index ["pole_project_id"], name: "index_actions_on_pole_project_id"
+    t.index ["training_id"], name: "index_actions_on_training_id"
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -252,15 +299,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "email", default: ""
+    t.jsonb "expertise", default: [], null: false
+    t.string "linkedin_url", default: "", null: false
     t.string "name", null: false
     t.text "notes", default: ""
+    t.text "notes_html", default: ""
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.bigint "organization_id"
     t.string "organization_type", default: ""
     t.string "phone", default: ""
+    t.string "position", default: "", null: false
+    t.string "region", default: "", null: false
+    t.jsonb "teams", default: [], null: false
     t.datetime "updated_at", null: false
     t.index ["contact_type"], name: "index_contacts_on_contact_type"
     t.index ["deleted_at"], name: "index_contacts_on_deleted_at"
     t.index ["name"], name: "index_contacts_on_name"
+    t.index ["notion_id"], name: "index_contacts_on_notion_id", unique: true
     t.index ["organization_id"], name: "index_contacts_on_organization_id"
   end
 
@@ -273,6 +330,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.date "start_date", null: false
     t.string "status", default: "upcoming", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "design_actions", force: :cascade do |t|
+    t.string "assignee_name"
+    t.datetime "created_at", null: false
+    t.bigint "design_project_id"
+    t.date "due_date"
+    t.string "name"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.string "phase"
+    t.string "priority"
+    t.string "status"
+    t.integer "time_minutes"
+    t.decimal "time_planned_hours", precision: 5, scale: 2
+    t.datetime "updated_at", null: false
+    t.index ["design_project_id"], name: "index_design_actions_on_design_project_id"
+    t.index ["notion_id"], name: "index_design_actions_on_notion_id", unique: true
   end
 
   create_table "design_annotations", force: :cascade do |t|
@@ -402,6 +478,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "name", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.string "phase", default: "", null: false
     t.bigint "project_id", null: false
     t.bigint "size", default: 0, null: false
     t.datetime "updated_at", null: false
@@ -409,6 +489,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "uploaded_by", default: "team", null: false
     t.string "url", null: false
     t.index ["deleted_at"], name: "index_design_project_documents_on_deleted_at"
+    t.index ["notion_id"], name: "index_design_project_documents_on_notion_id", unique: true
     t.index ["project_id"], name: "index_design_project_documents_on_project_id"
   end
 
@@ -464,6 +545,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   end
 
   create_table "design_project_timesheets", force: :cascade do |t|
+    t.boolean "billed", default: false, null: false
     t.datetime "created_at", null: false
     t.date "date", null: false
     t.datetime "deleted_at"
@@ -472,11 +554,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "member_name", null: false
     t.string "mode", null: false
     t.text "notes", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.string "phase", null: false
     t.bigint "project_id", null: false
+    t.bigint "training_id"
     t.integer "travel_km", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_design_project_timesheets_on_deleted_at"
+    t.index ["notion_id"], name: "index_design_project_timesheets_on_notion_id", unique: true
     t.index ["project_id"], name: "index_design_project_timesheets_on_project_id"
   end
 
@@ -491,6 +578,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "deleted_at"
     t.decimal "expenses_actual", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "expenses_budget", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "google_photos_url", default: "", null: false
     t.integer "hours_billed", default: 0, null: false
     t.integer "hours_planned", default: 0, null: false
     t.integer "hours_semos", default: 0, null: false
@@ -498,15 +586,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
     t.decimal "longitude", precision: 10, scale: 6, default: "0.0", null: false
     t.string "name", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.string "phase", default: "offre", null: false
     t.string "place_id", default: "", null: false
     t.date "planting_date"
     t.string "project_manager_id", default: "", null: false
+    t.string "project_type", default: "", null: false
     t.date "start_date"
     t.string "status", default: "pending", null: false
     t.bigint "template_id"
     t.datetime "updated_at", null: false
+    t.string "website_url", default: "", null: false
     t.index ["deleted_at"], name: "index_design_projects_on_deleted_at"
+    t.index ["notion_id"], name: "index_design_projects_on_notion_id", unique: true
     t.index ["phase"], name: "index_design_projects_on_phase"
     t.index ["status"], name: "index_design_projects_on_status"
     t.index ["template_id"], name: "index_design_projects_on_template_id"
@@ -528,12 +622,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   end
 
   create_table "design_quotes", force: :cascade do |t|
+    t.date "accepted_at"
     t.datetime "approved_at"
     t.string "approved_by"
+    t.string "author_name", default: "", null: false
     t.text "client_comment"
+    t.bigint "contact_id"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.bigint "project_id", null: false
+    t.date "sent_at"
     t.string "status", default: "draft", null: false
     t.decimal "subtotal", precision: 12, scale: 2, default: "0.0", null: false
     t.string "title", null: false
@@ -544,6 +645,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.decimal "vat_rate", precision: 5, scale: 2, default: "21.0", null: false
     t.integer "version", default: 1, null: false
     t.index ["deleted_at"], name: "index_design_quotes_on_deleted_at"
+    t.index ["notion_id"], name: "index_design_quotes_on_notion_id", unique: true
     t.index ["project_id"], name: "index_design_quotes_on_project_id"
   end
 
@@ -610,12 +712,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "end_date", null: false
     t.bigint "event_type_id", null: false
     t.string "location", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.datetime "start_date", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["cycle_id"], name: "index_events_on_cycle_id"
     t.index ["deleted_at"], name: "index_events_on_deleted_at"
     t.index ["event_type_id"], name: "index_events_on_event_type_id"
+    t.index ["notion_id"], name: "index_events_on_notion_id", unique: true
   end
 
   create_table "expenses", force: :cascade do |t|
@@ -632,6 +738,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.date "invoice_date"
     t.text "name", default: "", null: false
     t.text "notes", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.string "paid_by"
     t.date "payment_date"
     t.string "payment_type"
@@ -651,6 +760,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "vat_rate"
     t.index ["deleted_at"], name: "index_expenses_on_deleted_at"
     t.index ["design_project_id"], name: "index_expenses_on_design_project_id"
+    t.index ["notion_id"], name: "index_expenses_on_notion_id", unique: true
     t.index ["supplier_contact_id"], name: "index_expenses_on_supplier_contact_id"
     t.index ["training_id"], name: "index_expenses_on_training_id"
   end
@@ -755,17 +865,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.boolean "pinned", default: false
     t.integer "reading_time_minutes", default: 1
     t.bigint "section_id"
+    t.string "source_url"
     t.string "status", default: "draft", null: false
     t.json "tags", default: []
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_knowledge_topics_on_created_by_id"
+    t.index ["notion_id"], name: "index_knowledge_topics_on_notion_id", unique: true
     t.index ["pinned"], name: "index_knowledge_topics_on_pinned"
     t.index ["section_id"], name: "index_knowledge_topics_on_section_id"
     t.index ["status"], name: "index_knowledge_topics_on_status"
+  end
+
+  create_table "location_zones", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "location_id"
+    t.string "name", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_location_zones_on_location_id"
+    t.index ["notion_id"], name: "index_location_zones_on_notion_id", unique: true
+  end
+
+  create_table "locations", force: :cascade do |t|
+    t.string "address"
+    t.string "country"
+    t.datetime "created_at", null: false
+    t.decimal "latitude", precision: 10, scale: 6
+    t.string "location_type"
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "name", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.datetime "updated_at", null: false
+    t.string "website_url"
+    t.index ["notion_id"], name: "index_locations_on_notion_id", unique: true
   end
 
   create_table "member_roles", force: :cascade do |t|
@@ -786,10 +929,66 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.date "joined_at", null: false
     t.string "last_name", null: false
     t.string "member_kind", default: "human", null: false
+    t.string "membership_type", default: "effective", null: false
     t.string "password_digest"
+    t.string "slack_user_id"
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_members_on_email", unique: true
+    t.index ["slack_user_id"], name: "index_members_on_slack_user_id", unique: true
+  end
+
+  create_table "notes", force: :cascade do |t|
+    t.boolean "archived", default: false
+    t.string "author_name"
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "note_type"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.bigint "pole_project_id"
+    t.jsonb "tags", default: []
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.index ["notion_id"], name: "index_notes_on_notion_id", unique: true
+    t.index ["pole_project_id"], name: "index_notes_on_pole_project_id"
+  end
+
+  create_table "notion_assets", force: :cascade do |t|
+    t.integer "attachable_id"
+    t.string "attachable_type"
+    t.integer "byte_size"
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.datetime "downloaded_at"
+    t.string "filename"
+    t.bigint "notion_record_id"
+    t.string "notion_url"
+    t.text "original_url", null: false
+    t.string "property_name"
+    t.string "source_id"
+    t.string "source_type"
+    t.datetime "updated_at", null: false
+    t.index ["attachable_type", "attachable_id"], name: "index_notion_assets_on_attachable_type_and_attachable_id"
+    t.index ["notion_record_id"], name: "index_notion_assets_on_notion_record_id"
+    t.index ["notion_url"], name: "index_notion_assets_on_notion_url"
+    t.index ["source_id"], name: "index_notion_assets_on_source_id"
+  end
+
+  create_table "notion_records", force: :cascade do |t|
+    t.text "content"
+    t.text "content_html"
+    t.datetime "created_at", null: false
+    t.string "database_id", null: false
+    t.string "database_name", null: false
+    t.string "notion_id", null: false
+    t.jsonb "properties", default: {}
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["database_name"], name: "index_notion_records_on_database_name"
+    t.index ["notion_id"], name: "index_notion_records_on_notion_id", unique: true
   end
 
   create_table "nursery_containers", force: :cascade do |t|
@@ -800,6 +999,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.integer "sort_order", default: 0, null: false
     t.datetime "updated_at", null: false
     t.decimal "volume_liters", precision: 7, scale: 2
+  end
+
+  create_table "nursery_documentation_entries", force: :cascade do |t|
+    t.string "author_id", null: false
+    t.string "author_name", null: false
+    t.text "content", default: ""
+    t.datetime "created_at", null: false
+    t.string "entry_type", default: "journal", null: false
+    t.bigint "nursery_id"
+    t.string "nursery_name", default: ""
+    t.datetime "published_at", null: false
+    t.jsonb "tags", default: [], null: false
+    t.string "thumbnail_url", default: ""
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "video_url", default: ""
+    t.index ["nursery_id"], name: "index_nursery_documentation_entries_on_nursery_id"
   end
 
   create_table "nursery_mother_plants", force: :cascade do |t|
@@ -893,6 +1109,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.index ["status"], name: "index_nursery_orders_on_status"
   end
 
+  create_table "nursery_schedule_slots", force: :cascade do |t|
+    t.string "activity", default: ""
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.string "end_time", null: false
+    t.bigint "member_id", null: false
+    t.string "member_name", default: "", null: false
+    t.string "member_role", default: "employee", null: false
+    t.text "notes", default: ""
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", default: "", null: false
+    t.string "start_time", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_nursery_schedule_slots_on_member_id"
+    t.index ["nursery_id"], name: "index_nursery_schedule_slots_on_nursery_id"
+  end
+
   create_table "nursery_stock_batches", force: :cascade do |t|
     t.boolean "accepts_semos", default: false, null: false
     t.integer "available_quantity", default: 0, null: false
@@ -918,6 +1151,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.index ["nursery_id"], name: "index_nursery_stock_batches_on_nursery_id"
   end
 
+  create_table "nursery_team_members", force: :cascade do |t|
+    t.string "avatar_url", default: ""
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.date "end_date"
+    t.string "name", null: false
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", default: "", null: false
+    t.string "phone", default: ""
+    t.string "role", default: "employee", null: false
+    t.date "start_date", null: false
+    t.datetime "updated_at", null: false
+    t.index ["nursery_id"], name: "index_nursery_team_members_on_nursery_id"
+  end
+
+  create_table "nursery_timesheet_entries", force: :cascade do |t|
+    t.string "category", default: "other", null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.text "description", default: ""
+    t.decimal "hours", precision: 5, scale: 2, default: "0.0", null: false
+    t.bigint "member_id", null: false
+    t.string "member_name", default: "", null: false
+    t.bigint "nursery_id", null: false
+    t.string "nursery_name", default: "", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_nursery_timesheet_entries_on_member_id"
+    t.index ["nursery_id"], name: "index_nursery_timesheet_entries_on_nursery_id"
+  end
+
   create_table "nursery_transfers", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
@@ -933,70 +1196,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.datetime "updated_at", null: false
     t.string "vehicle_info", default: "", null: false
     t.index ["order_id"], name: "index_nursery_transfers_on_order_id"
-  end
-
-  create_table "nursery_team_members", force: :cascade do |t|
-    t.string "name", null: false
-    t.string "email", null: false
-    t.string "role", default: "employee", null: false
-    t.bigint "nursery_id", null: false
-    t.string "nursery_name", default: "", null: false
-    t.string "avatar_url", default: ""
-    t.string "phone", default: ""
-    t.date "start_date", null: false
-    t.date "end_date"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["nursery_id"], name: "index_nursery_team_members_on_nursery_id"
-  end
-
-  create_table "nursery_schedule_slots", force: :cascade do |t|
-    t.bigint "member_id", null: false
-    t.string "member_name", default: "", null: false
-    t.string "member_role", default: "employee", null: false
-    t.bigint "nursery_id", null: false
-    t.string "nursery_name", default: "", null: false
-    t.date "date", null: false
-    t.string "start_time", null: false
-    t.string "end_time", null: false
-    t.string "activity", default: ""
-    t.text "notes", default: ""
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["member_id"], name: "index_nursery_schedule_slots_on_member_id"
-    t.index ["nursery_id"], name: "index_nursery_schedule_slots_on_nursery_id"
-  end
-
-  create_table "nursery_documentation_entries", force: :cascade do |t|
-    t.string "entry_type", default: "journal", null: false
-    t.string "title", null: false
-    t.text "content", default: ""
-    t.string "video_url", default: ""
-    t.string "thumbnail_url", default: ""
-    t.string "author_id", null: false
-    t.string "author_name", null: false
-    t.bigint "nursery_id"
-    t.string "nursery_name", default: ""
-    t.jsonb "tags", default: [], null: false
-    t.datetime "published_at", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["nursery_id"], name: "index_nursery_documentation_entries_on_nursery_id"
-  end
-
-  create_table "nursery_timesheet_entries", force: :cascade do |t|
-    t.bigint "member_id", null: false
-    t.string "member_name", default: "", null: false
-    t.bigint "nursery_id", null: false
-    t.string "nursery_name", default: "", null: false
-    t.date "date", null: false
-    t.string "category", default: "other", null: false
-    t.decimal "hours", precision: 5, scale: 2, default: "0.0", null: false
-    t.text "description", default: ""
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["member_id"], name: "index_nursery_timesheet_entries_on_member_id"
-    t.index ["nursery_id"], name: "index_nursery_timesheet_entries_on_nursery_id"
   end
 
   create_table "pitches", force: :cascade do |t|
@@ -1067,11 +1266,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   end
 
   create_table "plant_genera", force: :cascade do |t|
+    t.string "common_name", default: "", null: false
     t.datetime "created_at", null: false
     t.text "description", default: "", null: false
     t.string "latin_name", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.datetime "updated_at", null: false
+    t.string "wikipedia_url", default: "", null: false
     t.index ["latin_name"], name: "index_plant_genera_on_latin_name", unique: true
+    t.index ["notion_id"], name: "index_plant_genera_on_notion_id", unique: true
   end
 
   create_table "plant_locations", force: :cascade do |t|
@@ -1150,6 +1355,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.index ["target_type", "target_id"], name: "index_plant_photos_on_target_type_and_target_id"
   end
 
+  create_table "plant_records", force: :cascade do |t|
+    t.integer "altitude"
+    t.datetime "created_at", null: false
+    t.string "health_status"
+    t.bigint "location_id"
+    t.string "name"
+    t.text "notes"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.string "nursery_source"
+    t.string "plant_type_category"
+    t.date "planting_date"
+    t.string "population"
+    t.decimal "purchase_price", precision: 10, scale: 2
+    t.integer "quantity"
+    t.bigint "species_id"
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.bigint "variety_id"
+    t.bigint "zone_id"
+    t.index ["location_id"], name: "index_plant_records_on_location_id"
+    t.index ["notion_id"], name: "index_plant_records_on_notion_id", unique: true
+    t.index ["species_id"], name: "index_plant_records_on_species_id"
+    t.index ["variety_id"], name: "index_plant_records_on_variety_id"
+    t.index ["zone_id"], name: "index_plant_records_on_zone_id"
+  end
+
   create_table "plant_references", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "reference_type", null: false
@@ -1164,7 +1397,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
 
   create_table "plant_species", force: :cascade do |t|
     t.text "additional_notes"
+    t.string "common_names_fr", default: "", null: false
     t.datetime "created_at", null: false
+    t.text "description", default: "", null: false
     t.jsonb "ecosystem_needs", default: [], null: false
     t.jsonb "edible_parts", default: [], null: false
     t.jsonb "exposures", default: [], null: false
@@ -1181,11 +1416,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "growth_rate", default: "medium", null: false
     t.string "hardiness", default: "", null: false
     t.jsonb "harvest_months", default: [], null: false
+    t.string "height_description", default: "", null: false
     t.jsonb "interests", default: [], null: false
     t.boolean "is_invasive", default: false, null: false
+    t.boolean "is_native_belgium", default: false, null: false
     t.string "latin_name", null: false
     t.string "life_cycle", default: "perennial", null: false
     t.jsonb "native_countries", default: [], null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.string "origin", default: "", null: false
     t.string "plant_type", null: false
     t.jsonb "planting_seasons", default: [], null: false
@@ -1195,6 +1435,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "soil_moisture", default: "moist", null: false
     t.string "soil_richness", default: "moderate", null: false
     t.jsonb "soil_types", default: [], null: false
+    t.string "spread_description", default: "", null: false
     t.text "therapeutic_properties"
     t.text "toxic_elements"
     t.jsonb "transformations", default: [], null: false
@@ -1202,21 +1443,103 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
     t.string "watering_need", default: "3", null: false
     t.index ["genus_id"], name: "index_plant_species_on_genus_id"
     t.index ["latin_name"], name: "index_plant_species_on_latin_name", unique: true
+    t.index ["notion_id"], name: "index_plant_species_on_notion_id", unique: true
   end
 
   create_table "plant_varieties", force: :cascade do |t|
     t.text "additional_notes", default: "", null: false
+    t.jsonb "characteristics", default: [], null: false
+    t.string "common_names_fr", default: "", null: false
     t.datetime "created_at", null: false
+    t.text "description", default: "", null: false
     t.string "disease_resistance", default: "", null: false
+    t.string "fertility", default: "", null: false
     t.string "fruit_size", default: "", null: false
+    t.string "juice_quality", default: "", null: false
+    t.jsonb "labels", default: [], null: false
     t.string "latin_name", null: false
     t.string "maturity", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.string "productivity", default: "", null: false
-    t.bigint "species_id", null: false
+    t.boolean "publish_on_website", default: false, null: false
+    t.bigint "species_id"
     t.string "storage_life", default: "", null: false
     t.integer "taste_rating"
     t.datetime "updated_at", null: false
+    t.jsonb "usages", default: [], null: false
+    t.index ["notion_id"], name: "index_plant_varieties_on_notion_id", unique: true
     t.index ["species_id"], name: "index_plant_varieties_on_species_id"
+  end
+
+  create_table "pole_projects", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "lead_name"
+    t.string "name", null: false
+    t.boolean "needs_reclassification", default: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.string "status"
+    t.jsonb "team_names", default: []
+    t.datetime "updated_at", null: false
+    t.index ["notion_id"], name: "index_pole_projects_on_notion_id", unique: true
+  end
+
+  create_table "post_its", force: :cascade do |t|
+    t.string "author_name"
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.bigint "design_project_id"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.bigint "pole_project_id"
+    t.string "post_type"
+    t.string "title"
+    t.bigint "training_id"
+    t.datetime "updated_at", null: false
+    t.index ["design_project_id"], name: "index_post_its_on_design_project_id"
+    t.index ["notion_id"], name: "index_post_its_on_notion_id", unique: true
+    t.index ["pole_project_id"], name: "index_post_its_on_pole_project_id"
+    t.index ["training_id"], name: "index_post_its_on_training_id"
+  end
+
+  create_table "revenues", force: :cascade do |t|
+    t.decimal "amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "category", default: "", null: false
+    t.bigint "contact_id"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.datetime "deleted_at"
+    t.text "description", default: "", null: false
+    t.bigint "design_project_id"
+    t.string "invoice_url", default: "", null: false
+    t.string "label", default: "", null: false
+    t.text "notes", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.date "paid_at"
+    t.string "payment_method", default: "", null: false
+    t.string "pole"
+    t.string "revenue_type", default: "", null: false
+    t.string "status", default: "draft", null: false
+    t.bigint "training_id"
+    t.datetime "updated_at", null: false
+    t.decimal "vat_21", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
+    t.boolean "vat_exemption", default: false, null: false
+    t.string "vat_rate", default: "", null: false
+    t.index ["contact_id"], name: "index_revenues_on_contact_id"
+    t.index ["deleted_at"], name: "index_revenues_on_deleted_at"
+    t.index ["design_project_id"], name: "index_revenues_on_design_project_id"
+    t.index ["notion_id"], name: "index_revenues_on_notion_id", unique: true
+    t.index ["pole"], name: "index_revenues_on_pole"
+    t.index ["training_id"], name: "index_revenues_on_training_id"
   end
 
   create_table "scope_tasks", force: :cascade do |t|
@@ -1273,23 +1596,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   end
 
   create_table "timesheets", force: :cascade do |t|
-    t.string "category", null: false
-    t.string "course_id"
+    t.boolean "billed", default: false
     t.datetime "created_at", null: false
     t.date "date", null: false
-    t.datetime "deleted_at"
-    t.text "description", default: "", null: false
-    t.bigint "guild_id"
-    t.decimal "hours", precision: 5, scale: 2, null: false
-    t.boolean "invoiced", default: false, null: false
-    t.decimal "kilometers", precision: 8, scale: 2, default: "0.0", null: false
-    t.bigint "member_id", null: false
-    t.string "payment_type", null: false
-    t.string "project_id"
+    t.text "description"
+    t.bigint "design_project_id"
+    t.bigint "event_id"
+    t.decimal "hours", precision: 5, scale: 2, default: "0.0"
+    t.string "member_id", null: false
+    t.string "member_name", null: false
+    t.string "mode"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.string "phase"
+    t.bigint "pole_project_id"
+    t.bigint "training_id"
+    t.integer "travel_km", default: 0
     t.datetime "updated_at", null: false
-    t.index ["deleted_at"], name: "index_timesheets_on_deleted_at"
-    t.index ["guild_id"], name: "index_timesheets_on_guild_id"
+    t.index ["date"], name: "index_timesheets_on_date"
+    t.index ["design_project_id"], name: "index_timesheets_on_design_project_id"
+    t.index ["event_id"], name: "index_timesheets_on_event_id"
     t.index ["member_id"], name: "index_timesheets_on_member_id"
+    t.index ["notion_id"], name: "index_timesheets_on_notion_id", unique: true
+    t.index ["pole_project_id"], name: "index_timesheets_on_pole_project_id"
+    t.index ["training_id"], name: "index_timesheets_on_training_id"
   end
 
   create_table "wallets", force: :cascade do |t|
@@ -1306,8 +1637,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_registrations", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_training_registrations", "contacts"
   add_foreign_key "academy_training_sessions", "academy_trainings", column: "training_id"
   add_foreign_key "academy_trainings", "academy_training_types", column: "training_type_id"
+  add_foreign_key "actions", "academy_trainings", column: "training_id"
+  add_foreign_key "actions", "actions", column: "parent_id"
+  add_foreign_key "actions", "pole_projects"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "album_media_items", "albums"
@@ -1320,6 +1655,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   add_foreign_key "chowder_items", "pitches"
   add_foreign_key "contact_tags", "contacts"
   add_foreign_key "contacts", "contacts", column: "organization_id"
+  add_foreign_key "design_actions", "design_projects"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_follow_up_visits", "design_projects", column: "project_id"
@@ -1367,34 +1703,49 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_220001) do
   add_foreign_key "knowledge_topic_revisions", "members", column: "user_id"
   add_foreign_key "knowledge_topics", "knowledge_sections", column: "section_id"
   add_foreign_key "knowledge_topics", "members", column: "created_by_id"
+  add_foreign_key "location_zones", "locations"
   add_foreign_key "member_roles", "members"
+  add_foreign_key "notes", "pole_projects"
+  add_foreign_key "notion_assets", "notion_records"
+  add_foreign_key "nursery_documentation_entries", "nursery_nurseries", column: "nursery_id"
   add_foreign_key "nursery_order_lines", "nursery_nurseries", column: "nursery_id"
   add_foreign_key "nursery_order_lines", "nursery_orders", column: "order_id"
   add_foreign_key "nursery_order_lines", "nursery_stock_batches", column: "stock_batch_id"
   add_foreign_key "nursery_orders", "nursery_nurseries", column: "pickup_nursery_id"
+  add_foreign_key "nursery_schedule_slots", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_schedule_slots", "nursery_team_members", column: "member_id"
   add_foreign_key "nursery_stock_batches", "nursery_containers", column: "container_id"
   add_foreign_key "nursery_stock_batches", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_team_members", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_timesheet_entries", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_timesheet_entries", "nursery_team_members", column: "member_id"
   add_foreign_key "nursery_transfers", "nursery_orders", column: "order_id"
   add_foreign_key "pitches", "members", column: "author_id"
   add_foreign_key "plant_activity_items", "plant_contributors", column: "contributor_id"
   add_foreign_key "plant_notes", "plant_contributors", column: "contributor_id"
   add_foreign_key "plant_palette_items", "plant_palettes", column: "palette_id"
   add_foreign_key "plant_photos", "plant_contributors", column: "contributor_id"
+  add_foreign_key "plant_records", "location_zones", column: "zone_id"
+  add_foreign_key "plant_records", "locations"
+  add_foreign_key "plant_records", "plant_species", column: "species_id"
+  add_foreign_key "plant_records", "plant_varieties", column: "variety_id"
   add_foreign_key "plant_species", "plant_genera", column: "genus_id"
   add_foreign_key "plant_varieties", "plant_species", column: "species_id"
+  add_foreign_key "post_its", "academy_trainings", column: "training_id"
+  add_foreign_key "post_its", "design_projects"
+  add_foreign_key "post_its", "pole_projects"
+  add_foreign_key "revenues", "academy_trainings", column: "training_id"
+  add_foreign_key "revenues", "contacts"
+  add_foreign_key "revenues", "design_projects"
   add_foreign_key "scope_tasks", "scopes"
   add_foreign_key "scopes", "pitches"
   add_foreign_key "semos_emissions", "members", column: "created_by_id"
   add_foreign_key "semos_emissions", "wallets"
   add_foreign_key "semos_transactions", "wallets", column: "from_wallet_id"
   add_foreign_key "semos_transactions", "wallets", column: "to_wallet_id"
-  add_foreign_key "timesheets", "guilds"
-  add_foreign_key "timesheets", "members"
+  add_foreign_key "timesheets", "academy_trainings", column: "training_id"
+  add_foreign_key "timesheets", "design_projects"
+  add_foreign_key "timesheets", "events"
+  add_foreign_key "timesheets", "pole_projects"
   add_foreign_key "wallets", "members"
-  add_foreign_key "nursery_team_members", "nursery_nurseries", column: "nursery_id"
-  add_foreign_key "nursery_schedule_slots", "nursery_team_members", column: "member_id"
-  add_foreign_key "nursery_schedule_slots", "nursery_nurseries", column: "nursery_id"
-  add_foreign_key "nursery_documentation_entries", "nursery_nurseries", column: "nursery_id"
-  add_foreign_key "nursery_timesheet_entries", "nursery_team_members", column: "member_id"
-  add_foreign_key "nursery_timesheet_entries", "nursery_nurseries", column: "nursery_id"
 end
