@@ -484,6 +484,66 @@ namespace :notion do
       puts "✅ Notes: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
     end
 
+    desc "Import plant varieties from Notion"
+    task varieties: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing plant varieties..."
+
+      database_id = "0da62621-850d-4c04-a787-2a4615710127"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          latin_name = importer.extract(props, "Nom de la variété") || "Unknown"
+          variety = Plant::Variety.find_by(notion_id: notion_id) ||
+                    Plant::Variety.find_by(latin_name: latin_name) ||
+                    Plant::Variety.new
+          is_new = variety.new_record?
+
+          # Link to species via Notion relation
+          species_notion_ids = importer.extract_relations(props, "☘️ Espèces")
+          species = species_notion_ids.first && Plant::Species.find_by(notion_id: species_notion_ids.first)
+
+          variety.assign_attributes(
+            notion_id: notion_id,
+            latin_name: latin_name,
+            species: species,
+            common_names_fr: importer.extract(props, "Noms communs 🇫🇷") || "",
+            description: importer.extract(props, "Descriptif") || "",
+            characteristics: importer.extract(props, "Caractéristiques") || [],
+            labels: importer.extract(props, "Labels") || [],
+            usages: importer.extract(props, "Usages") || [],
+            fertility: importer.extract(props, "Fertilité") || "",
+            juice_quality: importer.extract(props, "Qualité en jus") || "",
+            publish_on_website: importer.extract(props, "Publier sur le site web") || false,
+            maturity: importer.extract(props, "Maturité sexuelle") || "",
+            fruit_size: importer.extract(props, "Dimensions") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
+          )
+
+          variety.save!
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Variétés",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Variety #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Varieties: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
+
     desc "Import all batch 2 data from Notion"
     task all: :environment do
       puts "🚀 Starting Notion import batch 2..."
@@ -494,6 +554,8 @@ namespace :notion do
       Rake::Task["notion:import_batch2:zones"].invoke
       puts ""
       Rake::Task["notion:import_batch2:pole_projects"].invoke
+      puts ""
+      Rake::Task["notion:import_batch2:varieties"].invoke
       puts ""
       Rake::Task["notion:import_batch2:plant_records"].invoke
       puts ""
