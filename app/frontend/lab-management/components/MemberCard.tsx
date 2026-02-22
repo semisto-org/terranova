@@ -73,13 +73,31 @@ export function MemberCard({ member, guilds, wallet, onView, onEdit }: MemberCar
               <h3 className="text-lg font-semibold text-stone-900 truncate">
                 {member.firstName} {member.lastName}
               </h3>
+              {member.membershipType === 'adherent' ? (
+                <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#0D9488] text-white">
+                  Adhérent
+                </span>
+              ) : (
+                <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#5B5781] text-white">
+                  Effectif
+                </span>
+              )}
               {member.isAdmin && (
                 <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#5B5781] text-white">
                   Admin
                 </span>
               )}
             </div>
-            <p className="text-sm text-stone-500 truncate">
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                member.status === 'active'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-stone-100 text-stone-500'
+              }`}>
+                {member.status === 'active' ? 'Actif' : 'Inactif'}
+              </span>
+            </div>
+            <p className="text-sm text-stone-500 truncate mt-0.5">
               {member.email}
             </p>
           </div>

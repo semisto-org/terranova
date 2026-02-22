@@ -2,6 +2,7 @@ module Api
   module V1
     class NurseryController < BaseController
       skip_before_action :require_authentication, only: [:catalog]
+      before_action :require_effective_member, except: [:catalog]
 
       def index
         render json: nursery_payload(filters: filter_params)

@@ -11,7 +11,8 @@ class ApplicationController < ActionController::Base
             lastName: current_member.last_name,
             email: current_member.email,
             avatar: current_member.avatar_url,
-            isAdmin: current_member.is_admin
+            isAdmin: current_member.is_admin,
+            membershipType: current_member.membership_type
           }
         end
       },
@@ -36,6 +37,16 @@ class ApplicationController < ActionController::Base
     @current_member ||= Member.find_by(id: session[:member_id]) if session[:member_id]
   end
   helper_method :current_member
+
+  def require_effective_member
+    if current_member&.adherent?
+      if request.path.start_with?("/api/")
+        render json: { error: "Accès réservé aux membres effectifs" }, status: :forbidden
+      else
+        redirect_to root_path, alert: "Accès réservé aux membres effectifs"
+      end
+    end
+  end
 
   def require_authentication
     unless current_member

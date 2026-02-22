@@ -21,6 +21,7 @@ export default function ContextSwitcher() {
   const ref = useRef(null)
   const { auth } = usePage().props
   const currentPole = getPoleFromPath(window.location.pathname)
+  const isAdherent = auth?.member?.membershipType === 'adherent'
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -71,7 +72,7 @@ export default function ContextSwitcher() {
             </div>
           )}
 
-          <div className="py-1.5">
+          {!isAdherent && (<div className="py-1.5">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Poles</p>
             {POLES.filter((p) => p.id !== 'plants' && p.id !== 'knowledge').map((pole) => (
               <Link
@@ -97,7 +98,7 @@ export default function ContextSwitcher() {
                 {pole.label}
               </Link>
             ))}
-          </div>
+          </div>)}
 
           <div className="py-1.5 border-t border-stone-100">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Outils</p>

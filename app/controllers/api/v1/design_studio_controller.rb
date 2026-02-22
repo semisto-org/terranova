@@ -7,6 +7,7 @@ module Api
       ].freeze
 
       skip_before_action :require_authentication, only: CLIENT_PORTAL_ACTIONS
+      before_action :require_effective_member, except: CLIENT_PORTAL_ACTIONS
       before_action :require_client_portal_access, only: CLIENT_PORTAL_ACTIONS
       def index
         projects = Design::Project.order(updated_at: :desc)
