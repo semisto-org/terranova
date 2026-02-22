@@ -8,6 +8,7 @@ const POLES = [
   { id: 'nursery', label: 'Nursery', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },
   { id: 'plants', label: 'Bases de données végétales', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
   { id: 'knowledge', label: 'Base de connaissances', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
+  { id: 'admin', label: 'Administration', path: '/admin', accent: '#64748B', bg: '#e2e8f0' },
 ]
 
 export function getPoleFromPath(pathname) {
