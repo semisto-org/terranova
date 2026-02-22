@@ -28,7 +28,9 @@ namespace :notion do
             region: importer.extract(props, "Région") || "",
             linkedin_url: importer.extract(props, "LinkedIn") || "",
             expertise: importer.extract(props, "Expertise") || [],
-            teams: importer.extract(props, "Teams") || []
+            teams: importer.extract(props, "Teams") || [],
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           # Fetch page content and convert to HTML
@@ -94,7 +96,9 @@ namespace :notion do
             phone: importer.extract(props, "Téléphone") || importer.extract(props, "Phone") || "",
             address: importer.extract(props, "Adresse") || importer.extract(props, "Address") || "",
             notes: importer.extract(props, "Notes") || importer.extract(props, "Description") || "",
-            linkedin_url: importer.extract(props, "LinkedIn") || importer.extract(props, "Site web") || ""
+            linkedin_url: importer.extract(props, "LinkedIn") || importer.extract(props, "Site web") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           # Fetch page content and convert to HTML
@@ -198,7 +202,9 @@ namespace :notion do
             phone: importer.extract(props, "Téléphone") || importer.extract(props, "Phone") || "",
             address: importer.extract(props, "Adresse") || importer.extract(props, "Address") || "",
             notes: importer.extract(props, "Notes") || importer.extract(props, "Description") || "",
-            linkedin_url: importer.extract(props, "Site web") || importer.extract(props, "LinkedIn") || ""
+            linkedin_url: importer.extract(props, "Site web") || importer.extract(props, "LinkedIn") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           # Fetch page content and convert to HTML
@@ -253,7 +259,9 @@ namespace :notion do
             address: importer.extract(props, "Adresse") || "",
             country: importer.extract(props, "Pays") || "",
             location_type: importer.extract(props, "Type") || "",
-            website_url: importer.extract(props, "Site web") || ""
+            website_url: importer.extract(props, "Site web") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           location.save!
@@ -341,7 +349,9 @@ namespace :notion do
             punchpass_url: importer.extract(props, "Punchpass") || "",
             registration_mode: reg_mode,
             location_id: location&.id,
-            facilitator_ids: facilitator_contacts.pluck(:id)
+            facilitator_ids: facilitator_contacts.pluck(:id),
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           training.save!
@@ -410,6 +420,12 @@ namespace :notion do
                           importer.extract(props, "Created time") ||
                           page["created_time"]
 
+          # Link to contact via Notion relations or email fallback
+          contact_notion_ids = importer.extract_relations(props, "Participant") +
+                               importer.extract_relations(props, "Contact")
+          linked_contact = contact_notion_ids.first && Contact.find_by(notion_id: contact_notion_ids.first)
+          linked_contact ||= Contact.find_by(email: email) if email.present?
+
           reg.assign_attributes(
             training: training,
             contact_name: contact_name,
@@ -417,7 +433,10 @@ namespace :notion do
             phone: phone,
             payment_status: mapped_payment,
             amount_paid: amount.to_d,
-            registered_at: registered_at
+            registered_at: registered_at,
+            contact: linked_contact,
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           reg.save!
@@ -499,7 +518,9 @@ namespace :notion do
             design_project: design_project,
             invoice_url: importer.extract(props, "Lien facture") || "",
             paid_at: importer.extract(props, "Payé"),
-            pole: pole_name || ""
+            pole: pole_name || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           revenue.save!
@@ -615,7 +636,9 @@ namespace :notion do
             vat_rate: importer.extract(props, "Taux TVA") || "",
             billing_zone: importer.extract(props, "Zone de facturation") || "",
             poles: poles,
-            notes: importer.extract(props, "Notes") || ""
+            notes: importer.extract(props, "Notes") || "",
+            notion_created_at: page["created_time"],
+            notion_updated_at: page["last_edited_time"]
           )
 
           expense.save!

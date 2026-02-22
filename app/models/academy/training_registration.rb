@@ -7,6 +7,7 @@ module Academy
     CARPOOLING_OPTIONS = %w[none seeking offering].freeze
 
     belongs_to :training, class_name: 'Academy::Training'
+    belongs_to :contact, optional: true
     has_many :attendances, class_name: 'Academy::TrainingAttendance', foreign_key: :registration_id, dependent: :destroy
 
     validates :contact_name, :payment_status, :registered_at, presence: true
