@@ -272,28 +272,21 @@ export interface LinkedActivities {
 
 // --- Timesheets ---
 
-export type PaymentType = 'invoice' | 'semos'
-
-export type TimesheetCategory =
-  | 'design'
-  | 'formation'
-  | 'administratif'
-  | 'coordination'
-  | 'communication'
-
 export interface Timesheet {
   id: string
   memberId: string
+  memberName: string
   date: string
   hours: number
-  paymentType: PaymentType
   description: string
-  category: TimesheetCategory
-  invoiced: boolean
-  kilometers: number
-  projectId: string | null
-  courseId: string | null
-  guildId: string | null
+  phase: string | null
+  mode: string | null
+  billed: boolean
+  travelKm: number | null
+  designProjectId: string | null
+  trainingId: string | null
+  poleProjectId: string | null
+  eventId: string | null
 }
 
 // =============================================================================

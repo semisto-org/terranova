@@ -1,11 +1,5 @@
 import { useState, useMemo } from 'react'
-import type {
-  Timesheet,
-  Member,
-  Guild,
-  TimesheetCategory,
-  PaymentType,
-} from '../types'
+import type { Timesheet, Member, Guild } from '../types'
 import { TimesheetRow } from './TimesheetRow'
 import { TimesheetFilters } from './TimesheetFilters'
 import { TimesheetStats } from './TimesheetStats'
@@ -14,12 +8,10 @@ const formatNumber = (n: number, decimals = 1) => {
   return n.toFixed(decimals).replace('.', ',')
 }
 
-// Get default date range: 1 month ago to today
 const getDefaultDateRange = () => {
   const today = new Date()
   const oneMonthAgo = new Date(today)
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-
   return {
     start: oneMonthAgo.toISOString().split('T')[0],
     end: today.toISOString().split('T')[0],
@@ -51,83 +43,45 @@ export function TimesheetList({
   onDeleteTimesheet,
   onMarkInvoiced,
   onViewMember,
-  onViewGuild,
 }: TimesheetListProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<TimesheetCategory | 'all'>('all')
-  const [paymentFilter, setPaymentFilter] = useState<PaymentType | 'all'>('all')
-  const [invoicedFilter, setInvoicedFilter] = useState<'all' | 'invoiced' | 'pending'>('all')
+  const [modeFilter, setModeFilter] = useState<string>('all')
+  const [billedFilter, setBilledFilter] = useState<'all' | 'billed' | 'pending'>('all')
   const [memberFilter, setMemberFilter] = useState<string>('all')
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>(getDefaultDateRange)
 
-  const currentMember = members.find((m) => m.id === currentMemberId)
-
-  // Filter timesheets based on admin status
   const accessibleTimesheets = isAdmin
     ? timesheets
     : timesheets.filter((ts) => ts.memberId === currentMemberId)
 
-  // First level: filter by date range (affects stats + list)
   const dateFilteredTimesheets = useMemo(() => {
     return accessibleTimesheets.filter((ts) => {
-      if (dateRange.start && ts.date < dateRange.start) {
-        return false
-      }
-      if (dateRange.end && ts.date > dateRange.end) {
-        return false
-      }
+      if (dateRange.start && ts.date < dateRange.start) return false
+      if (dateRange.end && ts.date > dateRange.end) return false
       return true
     })
   }, [accessibleTimesheets, dateRange])
 
-  // Second level: apply other filters (affects list only)
   const filteredTimesheets = useMemo(() => {
     return dateFilteredTimesheets.filter((ts) => {
-      // Search in description
-      if (searchQuery && !ts.description.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false
-      }
-
-      // Category filter
-      if (categoryFilter !== 'all' && ts.category !== categoryFilter) {
-        return false
-      }
-
-      // Payment type filter
-      if (paymentFilter !== 'all' && ts.paymentType !== paymentFilter) {
-        return false
-      }
-
-      // Invoiced filter
-      if (invoicedFilter === 'invoiced' && !ts.invoiced) {
-        return false
-      }
-      if (invoicedFilter === 'pending' && ts.invoiced) {
-        return false
-      }
-
-      // Member filter (admin only)
-      if (memberFilter !== 'all' && ts.memberId !== memberFilter) {
-        return false
-      }
-
+      if (searchQuery && !ts.description.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      if (modeFilter !== 'all' && ts.mode !== modeFilter) return false
+      if (billedFilter === 'billed' && !ts.billed) return false
+      if (billedFilter === 'pending' && ts.billed) return false
+      if (memberFilter !== 'all' && ts.memberId !== memberFilter) return false
       return true
     })
-  }, [dateFilteredTimesheets, searchQuery, categoryFilter, paymentFilter, invoicedFilter, memberFilter])
+  }, [dateFilteredTimesheets, searchQuery, modeFilter, billedFilter, memberFilter])
 
-  // Sort by date descending
   const sortedTimesheets = useMemo(() => {
     return [...filteredTimesheets].sort((a, b) => b.date.localeCompare(a.date))
   }, [filteredTimesheets])
 
-  // Group by month
   const groupedTimesheets = useMemo(() => {
     const groups: Record<string, Timesheet[]> = {}
     sortedTimesheets.forEach((ts) => {
-      const monthKey = ts.date.substring(0, 7) // YYYY-MM
-      if (!groups[monthKey]) {
-        groups[monthKey] = []
-      }
+      const monthKey = ts.date.substring(0, 7)
+      if (!groups[monthKey]) groups[monthKey] = []
       groups[monthKey].push(ts)
     })
     return groups
@@ -141,34 +95,12 @@ export function TimesheetList({
 
   const clearFilters = () => {
     setSearchQuery('')
-    setCategoryFilter('all')
-    setPaymentFilter('all')
-    setInvoicedFilter('all')
+    setModeFilter('all')
+    setBilledFilter('all')
     setMemberFilter('all')
   }
 
-  const hasActiveFilters =
-    searchQuery ||
-    categoryFilter !== 'all' ||
-    paymentFilter !== 'all' ||
-    invoicedFilter !== 'all' ||
-    memberFilter !== 'all'
-
-  // Format date range for display
-  const formatDateRangeLabel = () => {
-    if (!dateRange.start && !dateRange.end) return 'Toutes les dates'
-
-    const formatDate = (dateStr: string) => {
-      const date = new Date(dateStr)
-      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-    }
-
-    if (dateRange.start && dateRange.end) {
-      return `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`
-    }
-    if (dateRange.start) return `Depuis le ${formatDate(dateRange.start)}`
-    return `Jusqu'au ${formatDate(dateRange.end)}`
-  }
+  const hasActiveFilters = searchQuery || modeFilter !== 'all' || billedFilter !== 'all' || memberFilter !== 'all'
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -177,14 +109,9 @@ export function TimesheetList({
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
-                Timesheets
-              </h1>
-              <p className="text-stone-500 mt-1">
-                {isAdmin ? 'Gestion des prestations du Lab' : 'Mes prestations'}
-              </p>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">Timesheets</h1>
+              <p className="text-stone-500 mt-1">{isAdmin ? 'Gestion des prestations du Lab' : 'Mes prestations'}</p>
             </div>
-
             <button
               onClick={onCreateTimesheet}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#5B5781] hover:bg-[#4a4670] text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
@@ -215,48 +142,29 @@ export function TimesheetList({
               />
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const today = new Date()
-                  const oneWeekAgo = new Date(today)
-                  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-                  setDateRange({
-                    start: oneWeekAgo.toISOString().split('T')[0],
-                    end: today.toISOString().split('T')[0],
-                  })
-                }}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
-              >
-                7 jours
-              </button>
-              <button
-                onClick={() => setDateRange(getDefaultDateRange())}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
-              >
-                30 jours
-              </button>
-              <button
-                onClick={() => {
-                  const today = new Date()
-                  const threeMonthsAgo = new Date(today)
-                  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-                  setDateRange({
-                    start: threeMonthsAgo.toISOString().split('T')[0],
-                    end: today.toISOString().split('T')[0],
-                  })
-                }}
-                className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
-              >
-                3 mois
-              </button>
+              {[
+                { label: '7 jours', days: 7 },
+                { label: '30 jours', days: 30 },
+                { label: '3 mois', days: 90 },
+              ].map(({ label, days }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    const today = new Date()
+                    const past = new Date(today)
+                    past.setDate(past.getDate() - days)
+                    setDateRange({ start: past.toISOString().split('T')[0], end: today.toISOString().split('T')[0] })
+                  }}
+                  className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
+                >
+                  {label}
+                </button>
+              ))}
               <button
                 onClick={() => {
                   const today = new Date()
                   const startOfYear = new Date(today.getFullYear(), 0, 1)
-                  setDateRange({
-                    start: startOfYear.toISOString().split('T')[0],
-                    end: today.toISOString().split('T')[0],
-                  })
+                  setDateRange({ start: startOfYear.toISOString().split('T')[0], end: today.toISOString().split('T')[0] })
                 }}
                 className="px-2.5 py-1 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
               >
@@ -266,7 +174,7 @@ export function TimesheetList({
           </div>
         </div>
 
-        {/* Stats - based on date range */}
+        {/* Stats */}
         <TimesheetStats
           timesheets={dateFilteredTimesheets}
           members={members}
@@ -278,17 +186,15 @@ export function TimesheetList({
         <TimesheetFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          categoryFilter={categoryFilter}
-          onCategoryChange={setCategoryFilter}
-          paymentFilter={paymentFilter}
-          onPaymentChange={setPaymentFilter}
-          invoicedFilter={invoicedFilter}
-          onInvoicedChange={setInvoicedFilter}
+          modeFilter={modeFilter}
+          onModeChange={setModeFilter}
+          billedFilter={billedFilter}
+          onBilledChange={setBilledFilter}
           memberFilter={memberFilter}
           onMemberChange={setMemberFilter}
           members={members}
           showMemberFilter={isAdmin}
-          hasActiveFilters={hasActiveFilters}
+          hasActiveFilters={!!hasActiveFilters}
           onClearFilters={clearFilters}
         />
 
@@ -297,18 +203,8 @@ export function TimesheetList({
           {sortedTimesheets.length === 0 ? (
             <div className="bg-white rounded-2xl border border-stone-200 p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-stone-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg className="w-8 h-8 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-stone-700 mb-2">
@@ -320,32 +216,16 @@ export function TimesheetList({
                   : "Commencez par saisir votre première prestation pour suivre votre temps de travail."}
               </p>
               {hasActiveFilters ? (
-                <button
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors"
-                >
+                <button onClick={clearFilters} className="inline-flex items-center gap-2 px-4 py-2 text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   Effacer les filtres
                 </button>
               ) : (
-                <button
-                  onClick={onCreateTimesheet}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5B5781] hover:bg-[#4a4670] text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
-                >
+                <button onClick={onCreateTimesheet} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5B5781] hover:bg-[#4a4670] text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Saisir une prestation
                 </button>
@@ -355,12 +235,11 @@ export function TimesheetList({
             <div className="space-y-8">
               {Object.entries(groupedTimesheets).map(([monthKey, monthTimesheets]) => {
                 const monthHours = monthTimesheets.reduce((sum, ts) => sum + ts.hours, 0)
-                const monthKm = monthTimesheets.reduce((sum, ts) => sum + ts.kilometers, 0)
-                const invoicedCount = monthTimesheets.filter((ts) => ts.invoiced).length
+                const monthKm = monthTimesheets.reduce((sum, ts) => sum + (ts.travelKm || 0), 0)
+                const billedCount = monthTimesheets.filter((ts) => ts.billed).length
 
                 return (
                   <section key={monthKey}>
-                    {/* Month header */}
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-serif font-semibold text-stone-700 capitalize">
                         {formatMonthLabel(monthKey)}
@@ -368,54 +247,37 @@ export function TimesheetList({
                       <div className="flex items-center gap-4 text-sm text-stone-500">
                         <span className="flex items-center gap-1.5">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           {formatNumber(monthHours)}h
                         </span>
                         {monthKm > 0 && (
                           <span className="flex items-center gap-1.5">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                              />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
                             {monthKm} km
                           </span>
                         )}
                         <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                          {invoicedCount}/{monthTimesheets.length} facturées
+                          {billedCount}/{monthTimesheets.length} facturées
                         </span>
                       </div>
                     </div>
 
-                    {/* Timesheets for this month */}
                     <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden divide-y divide-stone-100">
                       {monthTimesheets.map((timesheet) => {
                         const member = members.find((m) => m.id === timesheet.memberId)
-                        const guild = timesheet.guildId
-                          ? guilds.find((g) => g.id === timesheet.guildId)
-                          : undefined
-
                         return (
                           <TimesheetRow
                             key={timesheet.id}
                             timesheet={timesheet}
                             member={member}
-                            guild={guild}
                             showMember={isAdmin}
                             onEdit={() => onEditTimesheet?.(timesheet.id)}
                             onDelete={() => onDeleteTimesheet?.(timesheet.id)}
-                            onMarkInvoiced={() => onMarkInvoiced?.(timesheet.id)}
+                            onMarkBilled={() => onMarkInvoiced?.(timesheet.id)}
                             onViewMember={() => member && onViewMember?.(member.id)}
-                            onViewGuild={() => guild && onViewGuild?.(guild.id)}
                           />
                         )
                       })}
@@ -427,16 +289,13 @@ export function TimesheetList({
           )}
         </div>
 
-        {/* Footer summary */}
         {sortedTimesheets.length > 0 && (
           <div className="mt-8 py-4 border-t border-stone-200">
             <p className="text-sm text-stone-500 text-center">
               {sortedTimesheets.length} prestation{sortedTimesheets.length > 1 ? 's' : ''} affichée
               {sortedTimesheets.length > 1 ? 's' : ''}
               {hasActiveFilters && (
-                <span className="ml-1">
-                  (sur {accessibleTimesheets.length} au total)
-                </span>
+                <span className="ml-1">(sur {accessibleTimesheets.length} au total)</span>
               )}
             </p>
           </div>
