@@ -280,4 +280,62 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal 0, JSON.parse(response.body)['items'].size
   end
+
+  test 'member form creates and updates all fields including slack_user_id' do
+    # Create member with all fields
+    post '/api/v1/lab/members', params: {
+      first_name: 'Charlie',
+      last_name: 'Test',
+      email: 'charlie@example.test',
+      status: 'active',
+      is_admin: false,
+      membership_type: 'adherent',
+      member_kind: 'human',
+      slack_user_id: 'U12345678',
+      roles: ['designer', 'formateur'],
+      joined_at: Date.current.iso8601
+    }, as: :json
+
+    assert_response :created
+    body = JSON.parse(response.body)
+    member_id = body['id']
+    assert_equal 'Charlie', body['firstName']
+    assert_equal 'Test', body['lastName']
+    assert_equal 'charlie@example.test', body['email']
+    assert_equal 'active', body['status']
+    assert_equal false, body['isAdmin']
+    assert_equal 'adherent', body['membershipType']
+    assert_equal 'U12345678', body['slackUserId']
+    assert_equal ['designer', 'formateur'], body['roles']
+
+    # Update all fields including slack_user_id
+    patch "/api/v1/lab/members/#{member_id}", params: {
+      first_name: 'Charles',
+      last_name: 'Updated',
+      is_admin: true,
+      status: 'inactive',
+      membership_type: 'effective',
+      slack_user_id: 'U87654321',
+      roles: ['shaper']
+    }, as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 'Charles', body['firstName']
+    assert_equal 'Updated', body['lastName']
+    assert_equal true, body['isAdmin']
+    assert_equal 'inactive', body['status']
+    assert_equal 'effective', body['membershipType']
+    assert_equal 'U87654321', body['slackUserId']
+    assert_equal ['shaper'], body['roles']
+
+    # Verify in database
+    member = Member.find(member_id)
+    assert_equal 'Charles', member.first_name
+    assert_equal 'Updated', member.last_name
+    assert_equal true, member.is_admin
+    assert_equal 'inactive', member.status
+    assert_equal 'effective', member.membership_type
+    assert_equal 'U87654321', member.slack_user_id
+  end
 end

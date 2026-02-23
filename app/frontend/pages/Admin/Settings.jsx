@@ -207,6 +207,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             body.append('is_admin', String(values.is_admin))
             body.append('status', values.status)
             body.append('membership_type', values.membership_type)
+            body.append('slack_user_id', values.slack_user_id)
             body.append('avatar_image', values.avatar_file)
             values.roles.forEach((role) => body.append('roles[]', role))
             const response = await fetch(`/api/v1/lab/members/${memberId}`, {
@@ -227,6 +228,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 is_admin: values.is_admin,
                 status: values.status,
                 membership_type: values.membership_type,
+                slack_user_id: values.slack_user_id,
                 roles: values.roles,
               }),
             })
