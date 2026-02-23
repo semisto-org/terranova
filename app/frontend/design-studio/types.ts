@@ -2,7 +2,7 @@
 // Core Types
 // =============================================================================
 
-export type ProjectPhase = 'offre' | 'pre-projet' | 'projet-detaille' | 'mise-en-oeuvre' | 'co-gestion'
+export type ProjectPhase = 'offre' | 'pre-projet' | 'projet-detaille' | 'mise-en-oeuvre' | 'co-gestion' | 'termine'
 export type ProjectStatus = 'active' | 'pending' | 'completed' | 'archived'
 export type TeamRole = 'project-manager' | 'designer' | 'butineur'
 export type TimesheetMode = 'billed' | 'semos'
@@ -48,6 +48,11 @@ export interface Project {
   clientEmail: string
   clientPhone: string
   placeId: string
+  street?: string
+  number?: string
+  city?: string
+  postcode?: string
+  countryName?: string
   address: string
   coordinates: Coordinates
   area: number

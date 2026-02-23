@@ -10,9 +10,6 @@ export default function MainNav() {
 
   return (
     <nav className="flex flex-col gap-0.5 px-3 py-3">
-      <p className="px-2 pb-1.5 text-[11px] font-medium text-stone-400 uppercase tracking-wider">
-        {pole.label}
-      </p>
       {shell.sections.map((section) => {
         const isActive = section.id === shell.activeSection
         return (

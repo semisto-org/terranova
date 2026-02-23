@@ -45,10 +45,6 @@ export default function TrainingKanban({
   trainingRegistrations = [],
   search,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
-  typeFilter,
-  onTypeFilterChange,
   onCreateTraining,
   onViewTraining,
   onEditTraining,
@@ -121,30 +117,6 @@ export default function TrainingKanban({
             onChange={(e) => onSearchChange?.(e.target.value)}
             className="min-w-[220px] rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-[#B01A19] focus:ring-2 focus:ring-[#B01A19]/10 outline-none"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => onStatusFilterChange?.(e.target.value)}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-[#B01A19] outline-none"
-          >
-            <option value="all">Tous les statuts</option>
-            {STATUS_ORDER.map((status) => (
-              <option key={status} value={status}>
-                {STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-          <select
-            value={typeFilter}
-            onChange={(e) => onTypeFilterChange?.(e.target.value)}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-[#B01A19] outline-none"
-          >
-            <option value="all">Tous les types</option>
-            {trainingTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 

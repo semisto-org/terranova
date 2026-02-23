@@ -10,7 +10,7 @@ export function CatalogItem({ speciesName, varietyName, batches, nurseries, cont
   const fullName = varietyName ? `${speciesName} '${varietyName}'` : speciesName
 
   return (
-    <div className="group border border-stone-200 dark:border-stone-700 rounded-lg bg-white dark:bg-stone-900 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-[#EF9B0D]/30">
+    <div className="group border border-stone-200 rounded-lg bg-white overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-[#EF9B0D]/30">
       <div className="px-4 py-3 bg-gradient-to-r from-[#fbe6c3]/50 to-transparent border-b border-stone-200">
         <h3 className="font-serif text-lg font-semibold text-stone-900">{fullName}</h3>
         {varietyName && <p className="text-sm text-stone-600 mt-0.5">{speciesName}</p>}

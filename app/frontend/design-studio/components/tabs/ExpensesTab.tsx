@@ -41,7 +41,7 @@ export function ExpensesTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+        <h3 className="text-sm font-semibold text-stone-900">
           Dépenses du projet
         </h3>
         <button
@@ -70,24 +70,24 @@ export function ExpensesTab({
           }
         />
       ) : (
-        <div className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+        <div className="rounded-2xl border border-stone-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/80">
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                <tr className="border-b border-stone-200 bg-stone-50">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Date
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Fournisseur
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Type
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400 text-right">
+                  <th className="px-4 py-3 font-semibold text-stone-600 text-right">
                     Montant TVAC
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Statut
                   </th>
                   <th className="px-4 py-3 w-36" />
@@ -97,9 +97,9 @@ export function ExpensesTab({
                 {expenses.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-stone-100 dark:border-stone-700/50 hover:bg-stone-50/50 dark:hover:bg-stone-800/30"
+                    className="border-b border-stone-100 hover:bg-stone-50/50"
                   >
-                    <td className="px-4 py-3 text-stone-600 dark:text-stone-400">
+                    <td className="px-4 py-3 text-stone-600">
                       {item.invoiceDate
                         ? new Date(item.invoiceDate).toLocaleDateString(
                             'fr-BE'
@@ -108,17 +108,17 @@ export function ExpensesTab({
                           ? new Date(item.date).toLocaleDateString('fr-BE')
                           : '—'}
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">
+                    <td className="px-4 py-3 font-medium text-stone-900">
                       {item.supplier || '—'}
                     </td>
-                    <td className="px-4 py-3 text-stone-700 dark:text-stone-300">
+                    <td className="px-4 py-3 text-stone-700">
                       {item.expenseType || item.category || '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-medium">
                       {amount(item).toLocaleString('fr-BE')} €
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-stone-100 dark:bg-stone-700 px-2 py-0.5 text-xs text-stone-700 dark:text-stone-300">
+                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">
                         {statusLabel[item.status || ''] || item.status || '—'}
                       </span>
                     </td>
@@ -127,7 +127,7 @@ export function ExpensesTab({
                         <button
                           type="button"
                           onClick={() => onEdit(item)}
-                          className="p-1.5 text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg transition-colors"
+                          className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg transition-colors"
                           title="Modifier"
                         >
                           <Pencil className="w-4 h-4" />

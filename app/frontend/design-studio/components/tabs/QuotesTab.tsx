@@ -61,7 +61,7 @@ export function QuotesTab({
           href={`/client/design/${projectId}`}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
         >
           <ExternalLink className="w-4 h-4" />
           Ouvrir portail client
@@ -88,39 +88,39 @@ export function QuotesTab({
           {quotes.map((quote) => (
             <div
               key={quote.id}
-              className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 overflow-hidden"
+              className="rounded-2xl border border-stone-200 bg-white overflow-hidden"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-stone-200 bg-stone-50/50">
                 <div className="flex items-center gap-3">
-                  <h4 className="font-semibold text-stone-900 dark:text-stone-100">
+                  <h4 className="font-semibold text-stone-900">
                     {quote.title}
                   </h4>
-                  <span className="rounded-full bg-stone-200 dark:bg-stone-600 px-2 py-0.5 text-xs font-medium text-stone-700 dark:text-stone-300">
+                  <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700">
                     v{quote.version}
                   </span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       quote.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        ? 'bg-emerald-100 text-emerald-800'
                         : quote.status === 'sent'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                          ? 'bg-amber-100 text-amber-800'
                           : quote.status === 'rejected'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-stone-100 text-stone-700'
                     }`}
                   >
                     {statusLabel[quote.status] ?? quote.status}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                  <span className="text-lg font-semibold text-stone-900">
                     {Number(quote.total).toLocaleString('fr-BE')} €
                   </span>
                   {quote.status === 'draft' && (
                     <button
                       type="button"
                       onClick={() => onSendQuote(quote.id)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[#AFBD00] px-3 py-1.5 text-sm font-medium text-[#6B7A00] dark:text-[#AFBD00] hover:bg-[#AFBD00]/10"
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#AFBD00] px-3 py-1.5 text-sm font-medium text-[#6B7A00] hover:bg-[#AFBD00]/10"
                     >
                       <Send className="w-3.5 h-3.5" />
                       Envoyer
@@ -143,13 +143,13 @@ export function QuotesTab({
                     {quote.lines.map((line) => (
                       <li
                         key={line.id}
-                        className="flex items-center justify-between gap-3 py-2 border-b border-stone-100 dark:border-stone-700/50 last:border-0"
+                        className="flex items-center justify-between gap-3 py-2 border-b border-stone-100 last:border-0"
                       >
-                        <span className="text-sm text-stone-700 dark:text-stone-300">
+                        <span className="text-sm text-stone-700">
                           {line.description} · {line.quantity} {line.unit}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-stone-900 dark:text-stone-100">
+                          <span className="font-medium text-stone-900">
                             {Number(line.total).toLocaleString('fr-BE')} €
                           </span>
                           <button
@@ -189,7 +189,7 @@ export function QuotesTab({
                           description: e.target.value,
                         }))
                       }
-                      className="sm:col-span-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+                      className="sm:col-span-2 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
                       required
                     />
                     <input
@@ -204,7 +204,7 @@ export function QuotesTab({
                           quantity: Number(e.target.value || 0),
                         }))
                       }
-                      className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+                      className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
                     />
                     <input
                       type="text"
@@ -213,7 +213,7 @@ export function QuotesTab({
                       onChange={(e) =>
                         setLineForm((p) => ({ ...p, unit: e.target.value }))
                       }
-                      className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+                      className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
                     />
                     <input
                       type="number"
@@ -227,11 +227,11 @@ export function QuotesTab({
                           unit_price: Number(e.target.value || 0),
                         }))
                       }
-                      className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+                      className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
                     />
                     <button
                       type="submit"
-                      className="rounded-xl bg-stone-200 dark:bg-stone-700 px-4 py-2 text-sm font-medium text-stone-800 dark:text-stone-200 hover:bg-stone-300 dark:hover:bg-stone-600"
+                      className="rounded-xl bg-stone-200 px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-300"
                     >
                       Ajouter ligne
                     </button>

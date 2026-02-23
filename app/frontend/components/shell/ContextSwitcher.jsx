@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, usePage, router } from '@inertiajs/react'
 
 const POLES = [
@@ -9,6 +10,7 @@ const POLES = [
   { id: 'plants', label: 'Bases de données végétales', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
   { id: 'knowledge', label: 'Base de connaissances', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
   { id: 'admin', label: 'Administration', path: '/admin', accent: '#64748B', bg: '#e2e8f0' },
+  { id: 'parametres', label: 'Paramètres', path: '/parametres', accent: '#64748B', bg: '#e2e8f0' },
 ]
 
 export function getPoleFromPath(pathname) {
@@ -18,22 +20,49 @@ export function getPoleFromPath(pathname) {
 
 export default function ContextSwitcher() {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef(null)
+  const menuRef = useRef(null)
   const { auth } = usePage().props
   const currentPole = getPoleFromPath(window.location.pathname)
   const isAdherent = auth?.member?.membershipType === 'adherent'
 
+  const updatePosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setMenuPosition({ top: rect.bottom + 4, left: rect.left })
+    }
+  }, [])
+
   useEffect(() => {
     function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+      if (
+        menuRef.current && !menuRef.current.contains(e.target) &&
+        buttonRef.current && !buttonRef.current.contains(e.target)
+      ) {
+        setOpen(false)
+      }
     }
     if (open) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
 
+  useLayoutEffect(() => {
+    if (open) {
+      updatePosition()
+      window.addEventListener('scroll', updatePosition, true)
+      window.addEventListener('resize', updatePosition)
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true)
+        window.removeEventListener('resize', updatePosition)
+      }
+    }
+  }, [open, updatePosition])
+
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-stone-100 transition-colors"
       >
@@ -53,28 +82,19 @@ export default function ContextSwitcher() {
         </svg>
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full mt-1 w-72 bg-white rounded-xl border border-stone-200 shadow-xl z-50 overflow-hidden">
-          {auth?.member && (
-            <div className="px-4 py-3 border-b border-stone-100">
-              <p className="text-sm font-medium text-stone-900">{auth.member.firstName} {auth.member.lastName}</p>
-              <p className="text-xs text-stone-500">{auth.member.email}</p>
-              <Link
-                href="/profile"
-                onClick={() => setOpen(false)}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Modifier mon profil
-              </Link>
-            </div>
-          )}
-
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed w-72 bg-white rounded-xl border border-stone-200 shadow-xl overflow-hidden"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            zIndex: 99999,
+          }}
+        >
           {!isAdherent && (<div className="py-1.5">
-            <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Poles</p>
-            {POLES.filter((p) => p.id !== 'plants' && p.id !== 'knowledge').map((pole) => (
+            <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Lab Wallonie</p>
+            {POLES.filter((p) => !['plants', 'knowledge', 'parametres'].includes(p.id)).map((pole) => (
               <Link
                 key={pole.id}
                 href={pole.path}
@@ -101,7 +121,7 @@ export default function ContextSwitcher() {
           </div>)}
 
           <div className="py-1.5 border-t border-stone-100">
-            <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Outils</p>
+            <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Outils mutualisés</p>
             <Link
               href="/plants"
               onClick={() => setOpen(false)}
@@ -130,39 +150,74 @@ export default function ContextSwitcher() {
 
           {auth?.member?.isAdmin && (
           <div className="py-1.5 border-t border-stone-100">
-            <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Administration</p>
             <Link
-              href="/admin"
+              href="/parametres"
               onClick={() => setOpen(false)}
               className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
-                currentPole.id === 'admin'
+                window.location.pathname === '/parametres'
                   ? 'bg-stone-50 text-stone-900 font-medium'
                   : 'text-stone-700 hover:bg-stone-50'
               }`}
             >
-              <span className="w-5 h-5 rounded flex items-center justify-center bg-slate-500 text-white text-[10px] shrink-0">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </span>
+              <svg className="w-5 h-5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
               Paramètres
             </Link>
           </div>
           )}
 
-          <div className="py-1.5 border-t border-stone-100">
-            <button
-              onClick={() => {
-                setOpen(false)
-                router.delete('/logout')
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer"
-            >
-              Deconnexion
-            </button>
-          </div>
-        </div>
+          {auth?.member && (
+            <div className="px-4 py-3 border-t border-stone-100 bg-stone-50/50">
+              <div className="flex items-center gap-3">
+                {auth.member.avatar ? (
+                  <img
+                    src={auth.member.avatar}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <span
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0 bg-stone-400"
+                  >
+                    {auth.member.firstName?.[0]}{auth.member.lastName?.[0]}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-stone-900 truncate">{auth.member.firstName} {auth.member.lastName}</p>
+                  <p className="text-xs text-stone-500 truncate">{auth.member.email}</p>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-3">
+                <Link
+                  href="/profile"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Modifier mon profil
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    router.delete('/logout')
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          )}
+        </div>,
+        document.body
       )}
     </div>
   )

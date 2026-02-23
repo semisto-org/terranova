@@ -1,22 +1,26 @@
 import { useState, useMemo } from 'react'
 import type { ProjectDashboardProps, Project, ProjectPhase, ProjectStatus } from '../types'
-import { ProjectCard } from './ProjectCard'
-import { StatsCard } from './StatsCard'
-
-// Design tokens: primary=#AFBD00 (design pole), secondary=#5B5781, neutral=stone
-// Typography: Sole Serif Small (headings), Inter (body)
+import { ProjectsMap } from './ProjectsMap'
 
 const phaseLabels: Record<ProjectPhase, string> = {
   'offre': 'Offre',
   'pre-projet': 'Pré-projet',
   'projet-detaille': 'Projet détaillé',
   'mise-en-oeuvre': 'Mise en œuvre',
-  'co-gestion': 'Co-gestion'
+  'co-gestion': 'Co-gestion',
+  'termine': 'Autonome',
 }
 
-const phaseOrder: ProjectPhase[] = ['offre', 'pre-projet', 'projet-detaille', 'mise-en-oeuvre', 'co-gestion']
+const phaseColors: Record<ProjectPhase, { bg: string; text: string; dot: string; border: string }> = {
+  'offre': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
+  'pre-projet': { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-400', border: 'border-orange-200' },
+  'projet-detaille': { bg: 'bg-[#e1e6d8]', text: 'text-[#6B7A00]', dot: 'bg-[#AFBD00]', border: 'border-[#AFBD00]/30' },
+  'mise-en-oeuvre': { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' },
+  'co-gestion': { bg: 'bg-[#c8bfd2]/30', text: 'text-[#5B5781]', dot: 'bg-[#5B5781]', border: 'border-[#5B5781]/30' },
+  'termine': { bg: 'bg-stone-100', text: 'text-stone-600', dot: 'bg-stone-400', border: 'border-stone-300' },
+}
 
-type SortOption = 'name' | 'date' | 'budget' | 'area'
+const phaseOrder: ProjectPhase[] = ['offre', 'pre-projet', 'projet-detaille', 'mise-en-oeuvre', 'co-gestion', 'termine']
 
 export function ProjectDashboard({
   projects,
@@ -28,37 +32,17 @@ export function ProjectDashboard({
   onCreateProject,
   onDuplicateProject
 }: ProjectDashboardProps) {
-  // Filter state
-  const [selectedPhases, setSelectedPhases] = useState<ProjectPhase[]>([])
-  const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | 'all'>('all')
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<ProjectStatus>>(new Set(['active', 'pending']))
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<SortOption>('date')
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<ProjectPhase>>(new Set())
 
-  // Get unique project managers for filter
-  const projectManagers = useMemo(() => {
-    const pms = new Map<string, string>()
-    projects.forEach(p => {
-      // In real app, we'd have PM name from teamMembers
-      pms.set(p.projectManagerId, p.projectManagerId)
-    })
-    return Array.from(pms.entries())
-  }, [projects])
-
-  // Filter and sort projects
   const filteredProjects = useMemo(() => {
     let result = projects.filter(p => p.status !== 'archived')
 
-    // Phase filter
-    if (selectedPhases.length > 0) {
-      result = result.filter(p => selectedPhases.includes(p.phase))
+    if (selectedStatuses.size > 0) {
+      result = result.filter(p => selectedStatuses.has(p.status))
     }
 
-    // Status filter
-    if (selectedStatus !== 'all') {
-      result = result.filter(p => p.status === selectedStatus)
-    }
-
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       result = result.filter(p =>
@@ -68,55 +52,72 @@ export function ProjectDashboard({
       )
     }
 
-    // Sort
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'date':
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        case 'budget':
-          const aProgress = a.budget.hoursPlanned > 0 ? a.budget.hoursWorked / a.budget.hoursPlanned : 0
-          const bProgress = b.budget.hoursPlanned > 0 ? b.budget.hoursWorked / b.budget.hoursPlanned : 0
-          return bProgress - aProgress
-        case 'area':
-          return b.area - a.area
-        default:
-          return 0
-      }
-    })
+    result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
     return result
-  }, [projects, selectedPhases, selectedStatus, searchQuery, sortBy])
+  }, [projects, selectedStatuses, searchQuery])
 
-  const togglePhase = (phase: ProjectPhase) => {
-    setSelectedPhases(prev =>
-      prev.includes(phase)
-        ? prev.filter(p => p !== phase)
-        : [...prev, phase]
-    )
+  const projectsByPhase = useMemo(() => {
+    const grouped = new Map<ProjectPhase, Project[]>()
+    for (const phase of phaseOrder) {
+      const phaseProjects = filteredProjects.filter(p => p.phase === phase)
+      if (phaseProjects.length > 0) {
+        grouped.set(phase, phaseProjects)
+      }
+    }
+    return grouped
+  }, [filteredProjects])
+
+  const toggleCollapse = (phase: ProjectPhase) => {
+    setCollapsedPhases(prev => {
+      const next = new Set(prev)
+      if (next.has(phase)) {
+        next.delete(phase)
+      } else {
+        next.add(phase)
+      }
+      return next
+    })
   }
 
   const clearFilters = () => {
-    setSelectedPhases([])
-    setSelectedStatus('all')
+    setSelectedStatuses(new Set(['active', 'pending']))
     setSearchQuery('')
   }
 
-  const hasActiveFilters = selectedPhases.length > 0 || selectedStatus !== 'all' || searchQuery.trim()
+  const toggleStatus = (status: ProjectStatus) => {
+    setSelectedStatuses(prev => {
+      const next = new Set(prev)
+      if (next.has(status)) {
+        next.delete(status)
+      } else {
+        next.add(status)
+      }
+      return next
+    })
+  }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount)
+  const selectAllStatuses = () => {
+    setSelectedStatuses(new Set(['active', 'pending', 'completed']))
+  }
+
+  const hasActiveFilters = selectedStatuses.size !== 2 || !selectedStatuses.has('active') || !selectedStatuses.has('pending') || searchQuery.trim()
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('fr-BE', {
+      day: 'numeric',
+      month: 'short',
+      year: '2-digit'
+    })
   }
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header with organic gradient accent */}
+      {/* Header */}
       <header className="relative overflow-hidden border-b border-stone-200 bg-white">
-        {/* Decorative gradient inspired by forest layers */}
         <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute inset-0 bg-gradient-to-br from-[#AFBD00] via-transparent to-[#5B5781]" />
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#AFBD00]/20 to-transparent" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -133,7 +134,6 @@ export function ProjectDashboard({
               </p>
             </div>
 
-            {/* Create project dropdown */}
             <div className="relative group">
               <button
                 onClick={() => onCreateProject?.()}
@@ -145,7 +145,6 @@ export function ProjectDashboard({
                 Nouveau projet
               </button>
 
-              {/* Template dropdown on hover */}
               {templates.length > 0 && (
                 <div className="absolute right-0 mt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
                   <div className="bg-white rounded-xl shadow-xl border border-stone-200 overflow-hidden">
@@ -160,12 +159,8 @@ export function ProjectDashboard({
                         onClick={() => onCreateProject?.(template.id)}
                         className="w-full px-4 py-3 text-left hover:bg-stone-50 transition-colors"
                       >
-                        <div className="font-medium text-stone-900">
-                          {template.name}
-                        </div>
-                        <div className="text-sm text-stone-500">
-                          {template.description}
-                        </div>
+                        <div className="font-medium text-stone-900">{template.name}</div>
+                        <div className="text-sm text-stone-500">{template.description}</div>
                       </button>
                     ))}
                   </div>
@@ -177,49 +172,6 @@ export function ProjectDashboard({
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatsCard
-            label="Projets actifs"
-            value={stats.activeProjects}
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-              </svg>
-            }
-            accent="primary"
-          />
-          <StatsCard
-            label="Heures ce mois"
-            value={stats.totalHoursThisMonth}
-            suffix="h"
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
-          <StatsCard
-            label="CA annuel"
-            value={formatCurrency(stats.totalRevenueThisYear)}
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-              </svg>
-            }
-            accent="secondary"
-          />
-          <StatsCard
-            label="Taux conversion"
-            value={`${Math.round(stats.quoteConversionRate * 100)}%`}
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
-        </section>
-
         {/* Upcoming meetings */}
         {stats.upcomingMeetings.length > 0 && (
           <section className="mb-8">
@@ -255,12 +207,10 @@ export function ProjectDashboard({
           </section>
         )}
 
-        {/* Filters and Projects Grid */}
+        {/* Filters */}
         <section>
           <div className="flex flex-col gap-4 mb-6">
-            {/* Search and Sort row */}
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* Search */}
               <div className="relative flex-1">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -273,53 +223,47 @@ export function ProjectDashboard({
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent transition-shadow"
                 />
               </div>
-
-              {/* Sort dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent cursor-pointer"
-              >
-                <option value="date">Activité récente</option>
-                <option value="name">Nom A-Z</option>
-                <option value="budget">Budget consommé</option>
-                <option value="area">Surface</option>
-              </select>
             </div>
 
-            {/* Phase filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-stone-500 mr-1">Phase :</span>
-              {phaseOrder.map(phase => (
-                <button
-                  key={phase}
-                  onClick={() => togglePhase(phase)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                    selectedPhases.includes(phase)
-                      ? 'bg-[#AFBD00] text-stone-900'
-                      : 'bg-white text-stone-600 border border-stone-200 hover:border-[#AFBD00]'
-                  }`}
-                >
-                  <PhaseIndicator phase={phase} small />
-                  {phaseLabels[phase]}
-                </button>
-              ))}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-medium text-stone-400 uppercase tracking-wider mr-1">Statut</span>
+                {[
+                  { id: 'active' as ProjectStatus, label: 'En cours', color: 'emerald' },
+                  { id: 'pending' as ProjectStatus, label: 'En attente', color: 'amber' },
+                  { id: 'completed' as ProjectStatus, label: 'Terminés', color: 'stone' },
+                ].map(({ id, label, color }) => {
+                  const isSelected = selectedStatuses.has(id)
+                  const colorStyles = {
+                    emerald: isSelected ? 'bg-emerald-500/15 text-emerald-700 border-emerald-300' : 'border-stone-200 text-stone-600 hover:border-emerald-300',
+                    amber: isSelected ? 'bg-amber-500/15 text-amber-700 border-amber-300' : 'border-stone-200 text-stone-600 hover:border-amber-300',
+                    stone: isSelected ? 'bg-stone-200 text-stone-700 border-stone-300' : 'border-stone-200 text-stone-600 hover:border-stone-300',
+                  }
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggleStatus(id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 ${colorStyles[color]}`}
+                    >
+                      {isSelected && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                      )}
+                      {label}
+                    </button>
+                  )
+                })}
+                {selectedStatuses.size < 3 && (
+                  <button
+                    type="button"
+                    onClick={selectAllStatuses}
+                    className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                  >
+                    Tous
+                  </button>
+                )}
+              </div>
 
-              {/* Status filter */}
-              <div className="w-px h-6 bg-stone-200 mx-2 hidden sm:block" />
-
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as ProjectStatus | 'all')}
-                className="px-3 py-1.5 bg-white border border-stone-200 rounded-full text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent cursor-pointer"
-              >
-                <option value="all">Tous statuts</option>
-                <option value="active">En cours</option>
-                <option value="pending">En attente</option>
-                <option value="completed">Terminés</option>
-              </select>
-
-              {/* Clear filters */}
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
@@ -334,6 +278,14 @@ export function ProjectDashboard({
             </div>
           </div>
 
+          {/* Map */}
+          <div className="mb-6">
+            <ProjectsMap
+              projects={filteredProjects}
+              onViewProject={onViewProject}
+            />
+          </div>
+
           {/* Results count */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-stone-500">
@@ -342,19 +294,136 @@ export function ProjectDashboard({
             </p>
           </div>
 
-          {/* Projects Grid */}
+          {/* Table grouped by phase */}
           {filteredProjects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredProjects.map(project => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onView={() => onViewProject?.(project.id)}
-                  onEdit={() => onEditProject?.(project.id)}
-                  onDelete={() => onDeleteProject?.(project.id)}
-                  onDuplicate={() => onDuplicateProject?.(project.id)}
-                />
-              ))}
+            <div className="space-y-4">
+              {Array.from(projectsByPhase.entries()).map(([phase, phaseProjects]) => {
+                const colors = phaseColors[phase]
+                const isCollapsed = collapsedPhases.has(phase)
+
+                return (
+                  <div key={phase} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                    {/* Phase group header */}
+                    <button
+                      onClick={() => toggleCollapse(phase)}
+                      className={`w-full flex items-center gap-3 px-5 py-3 ${colors.bg} border-b ${colors.border} hover:brightness-95 transition-all`}
+                    >
+                      <svg
+                        className={`w-4 h-4 ${colors.text} transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <span className={`w-2.5 h-2.5 rounded-full ${colors.dot}`} />
+                      <span className={`font-medium ${colors.text}`}>
+                        {phaseLabels[phase]}
+                      </span>
+                      <span className={`text-sm opacity-70 ${colors.text}`}>
+                        ({phaseProjects.length})
+                      </span>
+                    </button>
+
+                    {/* Table */}
+                    {!isCollapsed && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-stone-100">
+                              <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[28%]">Projet</th>
+                              <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[8%]">Surface</th>
+                              <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[20%]">Budget heures</th>
+                              <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[6%]"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {phaseProjects.map((project, idx) => {
+                              const budgetProgress = project.budget.hoursPlanned > 0
+                                ? Math.round((project.budget.hoursWorked / project.budget.hoursPlanned) * 100)
+                                : 0
+                              const isLast = idx === phaseProjects.length - 1
+
+                              return (
+                                <tr
+                                  key={project.id}
+                                  onClick={() => onViewProject?.(project.id)}
+                                  className={`group cursor-pointer hover:bg-stone-50 transition-colors ${!isLast ? 'border-b border-stone-50' : ''}`}
+                                >
+                                  {/* Project name + address */}
+                                  <td className="px-5 py-3">
+                                    <div className="font-medium text-stone-900 group-hover:text-[#AFBD00] transition-colors truncate">
+                                      {project.name}
+                                    </div>
+                                    {project.address && (
+                                      <div className="text-xs text-stone-400 truncate mt-0.5" title={project.address}>
+                                        {project.address.length > 30 ? `${project.address.slice(0, 30)}…` : project.address}
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* Area */}
+                                  <td className="px-3 py-3 text-right">
+                                    <span className="text-sm text-stone-600 tabular-nums">
+                                      {project.area > 0 ? `${project.area} m²` : '—'}
+                                    </span>
+                                  </td>
+
+                                  {/* Budget hours with progress bar */}
+                                  <td className="px-3 py-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                                          <div
+                                            className={`h-full rounded-full transition-all duration-500 ${
+                                              budgetProgress > 90 ? 'bg-red-500' :
+                                              budgetProgress > 70 ? 'bg-amber-500' :
+                                              'bg-[#AFBD00]'
+                                            }`}
+                                            style={{ width: `${Math.min(budgetProgress, 100)}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                      <span className="text-xs text-stone-500 tabular-nums whitespace-nowrap">
+                                        {project.budget.hoursWorked}h / {project.budget.hoursPlanned}h
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Actions */}
+                                  <td className="px-5 py-3 text-right">
+                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onDuplicateProject?.(project.id) }}
+                                        title="Dupliquer"
+                                        className="p-1.5 text-stone-400 hover:text-[#AFBD00] rounded-lg hover:bg-stone-100 transition-colors"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onDeleteProject?.(project.id) }}
+                                        title="Supprimer"
+                                        className="p-1.5 text-stone-400 hover:text-red-500 rounded-lg hover:bg-stone-100 transition-colors"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -380,20 +449,5 @@ export function ProjectDashboard({
         </section>
       </main>
     </div>
-  )
-}
-
-// Phase indicator dot with color coding
-function PhaseIndicator({ phase, small = false }: { phase: ProjectPhase; small?: boolean }) {
-  const colors: Record<ProjectPhase, string> = {
-    'offre': 'bg-amber-400',
-    'pre-projet': 'bg-orange-400',
-    'projet-detaille': 'bg-[#AFBD00]',
-    'mise-en-oeuvre': 'bg-emerald-500',
-    'co-gestion': 'bg-[#5B5781]'
-  }
-
-  return (
-    <div className={`rounded-full ${colors[phase]} ${small ? 'w-2 h-2' : 'w-2.5 h-2.5'}`} />
   )
 }

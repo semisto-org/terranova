@@ -3,7 +3,7 @@ module Design
     include SoftDeletable
     self.table_name = 'design_projects'
 
-    PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion].freeze
+    PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion termine].freeze
     STATUSES = %w[active pending completed archived].freeze
 
     belongs_to :template, class_name: 'Design::ProjectTemplate', optional: true
@@ -29,5 +29,10 @@ module Design
     validates :name, :client_id, :client_name, :phase, :status, presence: true
     validates :phase, inclusion: { in: PHASES }
     validates :status, inclusion: { in: STATUSES }
+
+    def address_display
+      parts = [street, number, postcode, city, country_name].reject(&:blank?)
+      parts.join(', ')
+    end
   end
 end

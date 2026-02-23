@@ -54,14 +54,14 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Map className="w-4 h-4 text-[#AFBD00]" />
           Analyse rapide (échelle de permanence)
         </h3>
         <form onSubmit={handleSubmit} className="grid sm:grid-cols-3 gap-4">
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span className="text-xs font-medium text-stone-500">
               Zone de rusticité
             </span>
             <input
@@ -71,11 +71,11 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
               onChange={(e) =>
                 setForm((p) => ({ ...p, hardinessZone: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span className="text-xs font-medium text-stone-500">
               Type de sol
             </span>
             <input
@@ -85,11 +85,11 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
               onChange={(e) =>
                 setForm((p) => ({ ...p, soilType: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
           </label>
           <label className="grid gap-1 sm:col-span-3">
-            <span className="text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span className="text-xs font-medium text-stone-500">
               Notes climat / sol
             </span>
             <input
@@ -99,7 +99,7 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
               onChange={(e) =>
                 setForm((p) => ({ ...p, notes: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
           </label>
           <div className="sm:col-span-3">
@@ -121,12 +121,12 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
           return (
             <div
               key={key}
-              className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 overflow-hidden"
+              className="rounded-2xl border border-stone-200 bg-white overflow-hidden"
             >
               <button
                 type="button"
                 onClick={() => setOpenSection(isOpen ? null : key)}
-                className="w-full flex items-center gap-2 px-5 py-3 text-left text-sm font-medium text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800/80 transition-colors"
+                className="w-full flex items-center gap-2 px-5 py-3 text-left text-sm font-medium text-stone-900 hover:bg-stone-50 transition-colors"
               >
                 {isOpen ? (
                   <ChevronDown className="w-4 h-4 text-stone-500" />
@@ -139,8 +139,8 @@ export function SiteAnalysisTab({ siteAnalysis, onSave }: SiteAnalysisTabProps) 
                 )}
               </button>
               {isOpen && (
-                <div className="px-5 pb-4 pt-0 border-t border-stone-100 dark:border-stone-700">
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-3">
+                <div className="px-5 pb-4 pt-0 border-t border-stone-100">
+                  <p className="text-xs text-stone-500 mt-3">
                     Les champs détaillés pour « {label} » peuvent être ajoutés
                     ici (formulaire complet à étendre selon les types).
                   </p>

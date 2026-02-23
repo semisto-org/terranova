@@ -9,6 +9,7 @@ const phaseOrder: ProjectPhase[] = [
   'projet-detaille',
   'mise-en-oeuvre',
   'co-gestion',
+  'termine',
 ]
 
 interface TimesheetsTabProps {
@@ -73,8 +74,8 @@ export function TimesheetsTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#AFBD00]" />
           Ajouter une prestation
         </h3>
@@ -89,7 +90,7 @@ export function TimesheetsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, member_name: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -101,7 +102,7 @@ export function TimesheetsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, hours: Number(e.target.value || 0) }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <select
             value={form.phase}
@@ -111,7 +112,7 @@ export function TimesheetsTab({
                 phase: e.target.value as ProjectPhase,
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             {phaseOrder.map((ph) => (
               <option key={ph} value={ph}>
@@ -127,7 +128,7 @@ export function TimesheetsTab({
                 mode: e.target.value as 'billed' | 'semos',
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             <option value="billed">Facturé</option>
             <option value="semos">Semos</option>
@@ -140,7 +141,7 @@ export function TimesheetsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, travel_km: Number(e.target.value || 0) }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="text"
@@ -149,7 +150,7 @@ export function TimesheetsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, notes: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-1"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-1"
           />
           <div className="sm:col-span-2 lg:col-span-6">
             <button
@@ -163,14 +164,14 @@ export function TimesheetsTab({
       </div>
 
       {(totalHours > 0 && (
-        <div className="flex flex-wrap gap-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-[#e1e6d8]/50 dark:bg-[#AFBD00]/10 p-4">
-          <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+        <div className="flex flex-wrap gap-4 rounded-2xl border border-stone-200 bg-[#e1e6d8]/50 p-4">
+          <span className="text-sm font-medium text-stone-700">
             Total : <strong>{totalHours}h</strong>
           </span>
-          <span className="text-sm text-stone-600 dark:text-stone-400">
+          <span className="text-sm text-stone-600">
             Facturées : <strong>{totalBilled}h</strong>
           </span>
-          <span className="text-sm text-stone-600 dark:text-stone-400">
+          <span className="text-sm text-stone-600">
             Semos : <strong>{totalSemos}h</strong>
           </span>
         </div>
@@ -183,24 +184,24 @@ export function TimesheetsTab({
           description="Les heures passées sur le projet apparaîtront ici."
         />
       ) : (
-        <div className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+        <div className="rounded-2xl border border-stone-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/80">
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                <tr className="border-b border-stone-200 bg-stone-50">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Date
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Membre
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400 text-right">
+                  <th className="px-4 py-3 font-semibold text-stone-600 text-right">
                     Heures
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Phase
                   </th>
-                  <th className="px-4 py-3 font-semibold text-stone-600 dark:text-stone-400">
+                  <th className="px-4 py-3 font-semibold text-stone-600">
                     Mode
                   </th>
                   <th className="px-4 py-3 w-20" />
@@ -210,25 +211,25 @@ export function TimesheetsTab({
                 {timesheets.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-stone-100 dark:border-stone-700/50 hover:bg-stone-50/50 dark:hover:bg-stone-800/30"
+                    className="border-b border-stone-100 hover:bg-stone-50/50"
                   >
-                    <td className="px-4 py-3 text-stone-600 dark:text-stone-400">
+                    <td className="px-4 py-3 text-stone-600">
                       {new Date(item.date).toLocaleDateString('fr-BE')}
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">
+                    <td className="px-4 py-3 font-medium text-stone-900">
                       {item.memberName}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {Number(item.hours)}h
                     </td>
-                    <td className="px-4 py-3 text-stone-600 dark:text-stone-400">
+                    <td className="px-4 py-3 text-stone-600">
                       {item.phase}
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={
                           item.mode === 'billed'
-                            ? 'text-[#5B5781] dark:text-[#9B94BB]'
+                            ? 'text-[#5B5781]'
                             : 'text-stone-500'
                         }
                       >

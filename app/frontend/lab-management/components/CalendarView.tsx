@@ -6,6 +6,8 @@ export interface CalendarViewProps {
   cycles: Cycle[]
   members: Member[]
   currentMemberId: string
+  firstName?: string
+  labName?: string
   onCreateEvent?: () => void
   onViewEvent?: (eventId: string) => void
   onEditEvent?: (eventId: string) => void
@@ -91,6 +93,8 @@ export function CalendarView({
   cycles,
   members,
   currentMemberId,
+  firstName,
+  labName,
   onCreateEvent,
   onViewEvent,
   onEditEvent,
@@ -377,10 +381,10 @@ export function CalendarView({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
-              Calendrier
+              Bienvenue, {firstName || 'utilisateur'}
             </h1>
             <p className="text-stone-500 mt-1">
-              Cycles, réunions et événements du Lab
+              Tableau de bord du Lab{labName ? ` ${labName}` : ''}
             </p>
           </div>
 
@@ -985,6 +989,8 @@ interface EventDetailModalProps {
 }
 
 function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDetailModalProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
   const attendees = event.attendeeIds
     .map((id) => members.find((m) => m.id === id))
     .filter(Boolean) as Member[]
@@ -1120,21 +1126,50 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
 
         {/* Actions */}
         <div className="shrink-0 px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-2">
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              Supprimer
-            </button>
-          )}
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="px-4 py-1.5 text-sm bg-[#5B5781] hover:bg-[#4a4670] text-white rounded-lg font-medium transition-colors"
-            >
-              Modifier
-            </button>
+          {confirmingDelete ? (
+            <>
+              <span className="text-sm text-stone-600 mr-auto">
+                Supprimer « {event.title} » ?
+              </span>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete?.()
+                  setConfirmingDelete(false)
+                }}
+                className="px-4 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Confirmer la suppression
+              </button>
+            </>
+          ) : (
+            <>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Supprimer
+                </button>
+              )}
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="px-4 py-1.5 text-sm bg-[#5B5781] hover:bg-[#4a4670] text-white rounded-lg font-medium transition-colors"
+                >
+                  Modifier
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

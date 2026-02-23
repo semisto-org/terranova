@@ -64,8 +64,6 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [calendarView, setCalendarView] = useState('month')
   const [calendarDate, setCalendarDate] = useState(() => new Date())
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
   const [activeModal, setActiveModal] = useState(null)
   const [modalData, setModalData] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -456,8 +454,6 @@ export default function AcademyIndex({ initialTrainingId }) {
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
   const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
-    if (statusFilter !== 'all' && item.status !== statusFilter) return false
-    if (typeFilter !== 'all' && item.trainingTypeId !== typeFilter) return false
     if (search.trim() !== '') {
       const query = search.trim().toLowerCase()
       const typeName = data.trainingTypes.find((type) => type.id === item.trainingTypeId)?.name?.toLowerCase() || ''
@@ -465,7 +461,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       if (!text.includes(query)) return false
     }
     return true
-  }), [data.trainingTypes, data.trainings, search, statusFilter, typeFilter])
+  }), [data.trainingTypes, data.trainings, search])
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
 
   const renderModals = () => (
@@ -650,10 +646,6 @@ export default function AcademyIndex({ initialTrainingId }) {
             trainingRegistrations={data.trainingRegistrations}
             search={search}
             onSearchChange={setSearch}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            typeFilter={typeFilter}
-            onTypeFilterChange={setTypeFilter}
             onCreateTraining={actions.createTraining}
             onViewTraining={(id) => {
               setSelectedTrainingId(id)

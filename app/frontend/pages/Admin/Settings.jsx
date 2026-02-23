@@ -7,7 +7,6 @@ import {
   SemosDashboard,
   TimesheetList,
   TimesheetForm,
-  EventTypesAdmin,
   MemberForm,
   ExpenseList,
   RevenueList,
@@ -23,7 +22,6 @@ const SECTION_TABS = [
   { id: 'expenses', label: 'Dépenses' },
   { id: 'revenues', label: 'Recettes' },
   { id: 'semos', label: 'Semos' },
-  { id: 'event-types', label: "Types d'événements" },
 ]
 
 export default function AdminSettings({ currentMemberId: initialMemberId }) {
@@ -406,10 +404,6 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onViewMember={callbacks.onViewMember}
           onViewGuild={callbacks.onViewGuild}
         />
-      )}
-
-      {tab === 'event-types' && (
-        <EventTypesAdmin busy={busy} />
       )}
 
       {detailModal && (

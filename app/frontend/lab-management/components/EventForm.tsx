@@ -4,18 +4,18 @@ import StarterKit from '@tiptap/starter-kit'
 import { apiRequest } from '@/lib/api'
 import type { EventType, EventTypeConfig } from '../types'
 
-// Helper function to get config for any event type
-function getEventTypeConfig(type: string, eventTypes: EventTypeConfig[]): EventTypeConfig | null {
-  return eventTypes.find(et => et.label === type) || null
-}
-
-function toLocalDatetimeInput(date: Date): string {
+function toDateInput(date: Date): string {
   const pad = (n: number) => `${n}`.padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-function parseDatetimeInput(value: string): Date {
-  return new Date(value)
+function toTimeInput(date: Date): string {
+  const pad = (n: number) => `${n}`.padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function combineDateAndTime(dateStr: string, timeStr: string): string {
+  return `${dateStr}T${timeStr}`
 }
 
 function addMinutes(date: Date, minutes: number): Date {
@@ -33,6 +33,7 @@ export interface EventFormProps {
     eventTypeId: string
     startDate: string
     endDate: string
+    allDay?: boolean
     location: string
     description: string
   } | null
@@ -41,6 +42,7 @@ export interface EventFormProps {
     event_type_id: string
     start_date: string
     end_date: string
+    all_day: boolean
     location: string
     description: string
   }) => Promise<void>
@@ -56,18 +58,18 @@ export function EventForm({
 }: EventFormProps) {
   const isEdit = Boolean(event)
 
-  // Initialize form state
   const now = new Date()
   const defaultEnd = addMinutes(now, 60)
+  const eventStart = event ? new Date(event.startDate) : now
+  const eventEnd = event ? new Date(event.endDate) : defaultEnd
 
   const [title, setTitle] = useState(event?.title ?? '')
   const [eventTypeId, setEventTypeId] = useState<string>(event?.eventTypeId ?? '')
-  const [startDate, setStartDate] = useState(() =>
-    event ? toLocalDatetimeInput(parseDatetimeInput(event.startDate)) : toLocalDatetimeInput(now)
-  )
-  const [endDate, setEndDate] = useState(() =>
-    event ? toLocalDatetimeInput(parseDatetimeInput(event.endDate)) : toLocalDatetimeInput(defaultEnd)
-  )
+  const [allDay, setAllDay] = useState(event?.allDay ?? false)
+  const [startDateStr, setStartDateStr] = useState(() => toDateInput(eventStart))
+  const [endDateStr, setEndDateStr] = useState(() => toDateInput(eventEnd))
+  const [startTimeStr, setStartTimeStr] = useState(() => toTimeInput(eventStart))
+  const [endTimeStr, setEndTimeStr] = useState(() => toTimeInput(eventEnd))
   const [location, setLocation] = useState(event?.location ?? 'Lab')
   const [description, setDescription] = useState(event?.description ?? '')
   const [eventTypes, setEventTypes] = useState<EventTypeConfig[]>([])
@@ -135,23 +137,40 @@ export function EventForm({
     el?.focus()
   }, [])
 
-  // Update end date when start date changes (maintain duration)
-  const handleStartDateChange = (value: string) => {
-    setStartDate(value)
-    const start = parseDatetimeInput(value)
-    const currentEnd = parseDatetimeInput(endDate)
-    const duration = currentEnd.getTime() - parseDatetimeInput(startDate).getTime()
-    const newEnd = new Date(start.getTime() + duration)
-    setEndDate(toLocalDatetimeInput(newEnd))
+  const handleStartDateChange = (newDate: string) => {
+    const oldStart = new Date(`${startDateStr}T${startTimeStr}`)
+    const oldEnd = new Date(`${endDateStr}T${endTimeStr}`)
+    const duration = oldEnd.getTime() - oldStart.getTime()
+    setStartDateStr(newDate)
+    const newEnd = new Date(new Date(`${newDate}T${startTimeStr}`).getTime() + duration)
+    setEndDateStr(toDateInput(newEnd))
+    setEndTimeStr(toTimeInput(newEnd))
+  }
+
+  const handleStartTimeChange = (newTime: string) => {
+    const oldStart = new Date(`${startDateStr}T${startTimeStr}`)
+    const oldEnd = new Date(`${endDateStr}T${endTimeStr}`)
+    const duration = oldEnd.getTime() - oldStart.getTime()
+    setStartTimeStr(newTime)
+    const newEnd = new Date(new Date(`${startDateStr}T${newTime}`).getTime() + duration)
+    setEndDateStr(toDateInput(newEnd))
+    setEndTimeStr(toTimeInput(newEnd))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const startISO = allDay
+      ? new Date(`${startDateStr}T00:00:00`).toISOString()
+      : new Date(combineDateAndTime(startDateStr, startTimeStr)).toISOString()
+    const endISO = allDay
+      ? new Date(`${endDateStr}T23:59:59`).toISOString()
+      : new Date(combineDateAndTime(endDateStr, endTimeStr)).toISOString()
     onSubmit({
       title,
       event_type_id: eventTypeId,
-      start_date: startDate,
-      end_date: endDate,
+      start_date: startISO,
+      end_date: endISO,
+      all_day: allDay,
       location,
       description: editor?.getHTML() || '',
     })
@@ -224,7 +243,7 @@ export function EventForm({
                     value={eventTypeId}
                     onChange={(e) => setEventTypeId(e.target.value)}
                     required
-                    className={`${inputBase} appearance-none pr-10 cursor-pointer`}
+                    className={`${inputBase} appearance-none pr-10 cursor-pointer ${eventTypeId ? 'text-transparent' : ''}`}
                   >
                     <option value="">Sélectionnez un type</option>
                     {eventTypes.map((type) => (
@@ -240,61 +259,126 @@ export function EventForm({
                     </svg>
                   </div>
                   {/* Selected type preview */}
-                  {eventTypeId && (() => {
+                  {eventTypeId ? (() => {
                     const selectedType = eventTypes.find(t => t.id === eventTypeId)
                     if (selectedType) {
                       return (
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
                           <span className="text-lg">{selectedType.icon}</span>
-                          <span className={`text-sm font-medium ${selectedType.color}`}>
+                          <span className={`text-sm font-medium text-stone-900 ${selectedType.color}`}>
                             {selectedType.label}
                           </span>
                         </div>
                       )
                     }
                     return null
-                  })()}
+                  })() : (
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400 text-sm">
+                      Sélectionnez un type
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Date & Time Section */}
             <div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Start Date/Time */}
-                <div>
-                  <label
-                    htmlFor="event-start"
-                    className="block text-sm font-medium text-stone-700 mb-1.5"
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  Dates <span className="text-rose-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setAllDay(!allDay)}
+                  className="group flex items-center gap-2 select-none"
+                >
+                  <span className="text-xs font-medium text-stone-500 group-hover:text-stone-700 transition-colors">
+                    Toute la journée
+                  </span>
+                  <div
+                    className={`
+                      relative w-9 h-5 rounded-full transition-colors duration-200 ease-in-out
+                      ${allDay ? 'bg-[#5B5781]' : 'bg-stone-300'}
+                    `}
                   >
-                    Début <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="event-start"
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => handleStartDateChange(e.target.value)}
-                    required
-                    className={inputBase}
-                  />
+                    <div
+                      className={`
+                        absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm
+                        transition-transform duration-200 ease-in-out
+                        ${allDay ? 'translate-x-4' : 'translate-x-0'}
+                      `}
+                    />
+                  </div>
+                </button>
+              </div>
+
+              <div className="rounded-xl border border-stone-200 bg-stone-50/50 overflow-hidden">
+                {/* Date row */}
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="shrink-0 w-7 h-7 rounded-lg bg-[#5B5781]/10 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-[#5B5781]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 min-w-0">
+                    <input
+                      id="event-start-date"
+                      type="date"
+                      value={startDateStr}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
+                      required
+                      className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-sm text-stone-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]"
+                    />
+                    <svg className="shrink-0 w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                    <input
+                      id="event-end-date"
+                      type="date"
+                      value={endDateStr}
+                      onChange={(e) => setEndDateStr(e.target.value)}
+                      required
+                      min={startDateStr}
+                      className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-sm text-stone-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]"
+                    />
+                  </div>
                 </div>
 
-                {/* End Date/Time */}
-                <div>
-                  <label
-                    htmlFor="event-end"
-                    className="block text-sm font-medium text-stone-700 mb-1.5"
-                  >
-                    Fin <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="event-end"
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    required
-                    className={inputBase}
-                  />
+                {/* Time row — collapses when allDay */}
+                <div
+                  className={`
+                    grid transition-all duration-200 ease-in-out
+                    ${allDay ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}
+                  `}
+                >
+                  <div className="overflow-hidden">
+                    <div className="flex items-center gap-3 px-4 py-3 border-t border-stone-200/60">
+                      <div className="shrink-0 w-7 h-7 rounded-lg bg-[#5B5781]/10 flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5 text-[#5B5781]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        <input
+                          id="event-start-time"
+                          type="time"
+                          value={startTimeStr}
+                          onChange={(e) => handleStartTimeChange(e.target.value)}
+                          className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-sm text-stone-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]"
+                        />
+                        <svg className="shrink-0 w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                        <input
+                          id="event-end-time"
+                          type="time"
+                          value={endTimeStr}
+                          onChange={(e) => setEndTimeStr(e.target.value)}
+                          className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-sm text-stone-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

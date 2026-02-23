@@ -106,7 +106,16 @@ module Api
 
       def create_team_member
         project = find_project
-        item = project.team_members.create!(team_member_params)
+        attrs = team_member_params
+        if attrs[:member_id].present? && attrs[:member_id].to_s.match?(/\A\d+\z/)
+          member = Member.find_by(id: attrs[:member_id])
+          if member
+            attrs[:member_name] = "#{member.first_name} #{member.last_name}".strip.presence || member.email
+            attrs[:member_email] = member.email.to_s
+            attrs[:member_avatar] = member.avatar_url.to_s
+          end
+        end
+        item = project.team_members.create!(attrs)
         render json: serialize_team_member(item), status: :created
       end
 
@@ -318,7 +327,7 @@ module Api
 
         search_targets = [
           [:project, project.name.to_s],
-          [:project, project.address.to_s]
+          [:project, project.address_display.to_s]
         ]
         project.quotes.find_each { |item| search_targets << [:quote, "#{item.title} #{item.client_comment}"] }
         project.documents.find_each { |item| search_targets << [:document, "#{item.name} #{item.category}"] }
@@ -640,15 +649,16 @@ module Api
       end
 
       def project_params
-        params.permit(:name, :client_id, :client_name, :client_email, :client_phone, :place_id, :address, :latitude, :longitude, :area, :phase, :status, :start_date, :planting_date, :project_manager_id, :hours_planned, :hours_worked, :hours_billed, :hours_semos, :expenses_budget, :expenses_actual)
+        params.permit(:name, :client_id, :client_name, :client_email, :client_phone, :place_id, :street, :number, :city, :postcode, :country_name, :latitude, :longitude, :area, :phase, :status, :start_date, :planting_date, :project_manager_id, :hours_planned, :hours_worked, :hours_billed, :hours_semos, :expenses_budget, :expenses_actual)
       end
 
       def project_update_params
-        params.permit(:name, :phase, :status, :address, :area)
+        params.permit(:name, :client_name, :client_email, :client_phone, :phase, :status, :street, :number, :city, :postcode, :country_name, :latitude, :longitude, :area)
       end
 
       def team_member_params
         attrs = params.permit(:member_id, :member_name, :member_email, :member_avatar, :role, :is_paid)
+        attrs[:member_id] = attrs[:member_id].to_s
         attrs[:assigned_at] = Time.current
         attrs
       end
@@ -845,7 +855,12 @@ module Api
           clientEmail: project.client_email,
           clientPhone: project.client_phone,
           placeId: project.place_id,
-          address: project.address,
+          street: project.street,
+          number: project.number,
+          city: project.city,
+          postcode: project.postcode,
+          countryName: project.country_name,
+          address: project.address_display,
           coordinates: { lat: project.latitude.to_f, lng: project.longitude.to_f },
           area: project.area,
           phase: project.phase,
@@ -936,7 +951,7 @@ module Api
       end
 
       def serialize_expense(item)
-        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document) : nil
+        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
         {
           id: item.id.to_s,
           trainingId: item.training_id&.to_s,

@@ -1,4 +1,5 @@
 export { ProjectDashboard } from './ProjectDashboard'
+export { ProjectsMap } from './ProjectsMap'
 export { ProjectCard } from './ProjectCard'
 export { StatsCard } from './StatsCard'
 export { ProjectDetailView } from './ProjectDetail'

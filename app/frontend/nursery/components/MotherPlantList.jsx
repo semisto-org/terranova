@@ -46,8 +46,8 @@ export function MotherPlantList({ motherPlants, onView, onValidate, onReject }) 
   const clearFilters = () => { setFilters({}); setSearchQuery('') }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="sticky top-0 z-10 bg-white dark:bg-stone-900 border-b border-stone-200 shadow-sm">
+    <div className="min-h-screen bg-stone-50">
+      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="mb-6">
             <h1 className="font-serif text-3xl font-bold text-stone-900 mb-2">Plants-Mères</h1>

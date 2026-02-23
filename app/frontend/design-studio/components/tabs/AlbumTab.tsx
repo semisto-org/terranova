@@ -36,8 +36,8 @@ export function AlbumTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#AFBD00]" />
           Ajouter un média
         </h3>
@@ -53,7 +53,7 @@ export function AlbumTab({
                 media_type: e.target.value as 'image' | 'video',
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             <option value="image">Image</option>
             <option value="video">Vidéo</option>
@@ -65,7 +65,7 @@ export function AlbumTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, url: e.target.value }))
             }
-            className="sm:col-span-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="sm:col-span-2 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -75,7 +75,7 @@ export function AlbumTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, thumbnail_url: e.target.value }))
             }
-            className="sm:col-span-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="sm:col-span-2 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="text"
@@ -84,7 +84,7 @@ export function AlbumTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, caption: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-1"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-1"
           />
           <div className="sm:col-span-2 lg:col-span-6">
             <button
@@ -108,9 +108,9 @@ export function AlbumTab({
           {mediaItems.map((item) => (
             <div
               key={item.id}
-              className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 overflow-hidden group"
+              className="rounded-2xl border border-stone-200 bg-white overflow-hidden group"
             >
-              <div className="aspect-video bg-stone-100 dark:bg-stone-800 relative">
+              <div className="aspect-video bg-stone-100 relative">
                 {item.thumbnailUrl ? (
                   <img
                     src={item.thumbnailUrl}
@@ -142,7 +142,7 @@ export function AlbumTab({
                   </button>
                 </div>
               </div>
-              <p className="p-2 text-xs text-stone-600 dark:text-stone-400 truncate">
+              <p className="p-2 text-xs text-stone-600 truncate">
                 {item.caption || 'Sans légende'}
               </p>
             </div>

@@ -679,7 +679,7 @@ module Api
       end
 
       def event_params
-        params.permit(:title, :event_type_label, :event_type_id, :start_date, :end_date, :location, :description, :cycle_id)
+        params.permit(:title, :event_type_label, :event_type_id, :start_date, :end_date, :all_day, :location, :description, :cycle_id)
       end
 
       def event_type_params
@@ -1059,6 +1059,7 @@ module Api
           eventTypeId: event.event_type_id.to_s,
           startDate: event.start_date.iso8601,
           endDate: event.end_date.iso8601,
+          allDay: event.all_day,
           location: event.location,
           description: event.description,
           attendeeIds: event.event_attendees.map { |ea| ea.member_id.to_s },

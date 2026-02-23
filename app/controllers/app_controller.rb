@@ -107,6 +107,12 @@ class AppController < ApplicationController
     }
   end
 
+  def parametres
+    render inertia: "Admin/Parametres", props: {
+      milestone: "Paramètres"
+    }
+  end
+
   def profile
     render inertia: "Profile/Index", props: {
       milestone: "Profile"
@@ -118,6 +124,8 @@ class AppController < ApplicationController
     case path
     when /\Aadmin(\/|\z)/
       admin
+    when /\Aparametres(\/|\z)/
+      parametres
     when /\Alab(\/|\z)/
       lab
     when /\Adesign\/([^\/]+)/

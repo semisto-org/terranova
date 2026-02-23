@@ -1,14 +1,14 @@
 import { Eye, CheckCircle2, XCircle, Clock, MapPin, Calendar, Sprout } from 'lucide-react'
 
 const statusConfig = {
-  pending: { label: 'En attente', color: 'text-[#EF9B0D]', bgColor: 'bg-[#fbe6c3] dark:bg-[#fbe6c3]/30', icon: <Clock className="w-3.5 h-3.5" /> },
-  validated: { label: 'Validé', color: 'text-green-700', bgColor: 'bg-green-100 dark:bg-green-950/30', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-  rejected: { label: 'Rejeté', color: 'text-red-700', bgColor: 'bg-red-100 dark:bg-red-950/30', icon: <XCircle className="w-3.5 h-3.5" /> },
+  pending: { label: 'En attente', color: 'text-[#EF9B0D]', bgColor: 'bg-[#fbe6c3]', icon: <Clock className="w-3.5 h-3.5" /> },
+  validated: { label: 'Validé', color: 'text-green-700', bgColor: 'bg-green-100', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  rejected: { label: 'Rejeté', color: 'text-red-700', bgColor: 'bg-red-100', icon: <XCircle className="w-3.5 h-3.5" /> },
 }
 
 const sourceConfig = {
-  'design-studio': { label: 'Design Studio', color: 'text-[#5B5781]', bgColor: 'bg-[#c8bfd2] dark:bg-[#c8bfd2]/30' },
-  'member-proposal': { label: 'Proposition membre', color: 'text-[#AFBD00]', bgColor: 'bg-[#e1e6d8] dark:bg-[#e1e6d8]/30' },
+  'design-studio': { label: 'Design Studio', color: 'text-[#5B5781]', bgColor: 'bg-[#c8bfd2]' },
+  'member-proposal': { label: 'Proposition membre', color: 'text-[#AFBD00]', bgColor: 'bg-[#e1e6d8]' },
 }
 
 const formatDate = (dateString) => new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateString))

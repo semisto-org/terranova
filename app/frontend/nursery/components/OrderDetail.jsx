@@ -41,14 +41,14 @@ export function OrderDetail({ order, onProcess, onMarkReady, onMarkPickedUp, onC
   const priceLevelStyle = priceLevelConfig[order.priceLevel] || priceLevelConfig.standard
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="min-h-screen bg-stone-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {onBack && (
           <button onClick={onBack} className="mb-6 flex items-center gap-2 text-sm text-stone-600 hover:text-[#EF9B0D] transition-colors">← Retour à la liste</button>
         )}
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 mb-2">{order.orderNumber}</h1>
+          <h1 className="text-3xl font-bold text-stone-900 mb-2">{order.orderNumber}</h1>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusStyle.badge} text-white`}>{statusStyle.label}</span>
             <span className={`inline-flex items-center px-3 py-1 rounded text-sm font-medium ${priceLevelStyle.bg} ${priceLevelStyle.text}`}>{priceLevelStyle.label}</span>
@@ -79,8 +79,8 @@ export function OrderDetail({ order, onProcess, onMarkReady, onMarkPickedUp, onC
           )}
         </div>
 
-        <section className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-4">Informations client</h2>
+        <section className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">Informations client</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><p className="text-sm text-stone-500 mb-1">Nom</p><p className="font-medium text-stone-900">{order.customerName}</p></div>
             <div><p className="text-sm text-stone-500 mb-1">Email</p><p className="text-stone-900">{order.customerEmail}</p></div>
@@ -89,7 +89,7 @@ export function OrderDetail({ order, onProcess, onMarkReady, onMarkPickedUp, onC
           </div>
         </section>
 
-        <section className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-6 mb-6">
+        <section className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-stone-900 mb-4">Dates</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div><p className="text-stone-500 mb-1">Créée le</p><p className="text-stone-900">{formatDateTime(order.createdAt)}</p></div>
@@ -108,7 +108,7 @@ export function OrderDetail({ order, onProcess, onMarkReady, onMarkPickedUp, onC
           </div>
         </section>
 
-        <section className="bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 p-6 mb-6">
+        <section className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
           <div className="space-y-2">
             <div className="flex justify-between"><span className="text-sm text-stone-600">Sous-total euros</span><span className="font-medium text-stone-900">{order.subtotalEuros?.toFixed(2)}€</span></div>
             {order.subtotalSemos > 0 && <div className="flex justify-between"><span className="text-sm text-stone-600">Sous-total Semos</span><span className="font-medium text-stone-900">{order.subtotalSemos}S</span></div>}

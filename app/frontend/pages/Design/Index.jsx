@@ -11,7 +11,11 @@ function defaultProjectForm() {
     client_name: '',
     client_email: '',
     client_phone: '',
-    address: '',
+    street: '',
+    number: '',
+    city: '',
+    postcode: '',
+    country_name: '',
     area: 500,
   }
 }
@@ -69,9 +73,29 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
               </label>
             </div>
 
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="grid gap-1">
+                <span className="text-sm font-medium text-stone-700">Rue</span>
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.street} onChange={(e) => onChange('street', e.target.value)} required />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-sm font-medium text-stone-700">Numéro</span>
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.number} onChange={(e) => onChange('number', e.target.value)} />
+              </label>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="grid gap-1">
+                <span className="text-sm font-medium text-stone-700">Code postal</span>
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.postcode} onChange={(e) => onChange('postcode', e.target.value)} required />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-sm font-medium text-stone-700">Localité</span>
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.city} onChange={(e) => onChange('city', e.target.value)} required />
+              </label>
+            </div>
             <label className="grid gap-1">
-              <span className="text-sm font-medium text-stone-700">Adresse</span>
-              <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.address} onChange={(event) => onChange('address', event.target.value)} required />
+              <span className="text-sm font-medium text-stone-700">Pays</span>
+              <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.country_name} onChange={(e) => onChange('country_name', e.target.value)} required />
             </label>
 
             <div className="grid sm:grid-cols-2 gap-3">
@@ -100,6 +124,264 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
   )
 }
 
+function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSubmit }) {
+  const [geocoding, setGeocoding] = React.useState(false)
+  const [geocodeError, setGeocodeError] = React.useState(null)
+
+  if (!open || !project) return null
+
+  const buildAddress = () => {
+    const parts = [values.street, values.number, values.postcode, values.city, values.country_name].filter(Boolean)
+    return parts.join(', ')
+  }
+
+  const geocodeAddress = async () => {
+    const address = buildAddress()
+    if (!address.trim()) {
+      setGeocodeError('Saisissez une adresse avant de géolocaliser.')
+      return
+    }
+    setGeocoding(true)
+    setGeocodeError(null)
+    try {
+      const query = encodeURIComponent(address.trim())
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&accept-language=fr`, {
+        headers: { 'User-Agent': 'Terranova/1.0' },
+      })
+      const results = await response.json()
+      if (results.length > 0) {
+        onChange('latitude', parseFloat(results[0].lat).toFixed(6))
+        onChange('longitude', parseFloat(results[0].lon).toFixed(6))
+      } else {
+        setGeocodeError('Aucun résultat trouvé pour cette adresse.')
+      }
+    } catch {
+      setGeocodeError('Erreur lors de la géolocalisation.')
+    } finally {
+      setGeocoding(false)
+    }
+  }
+
+  const inputClass = 'rounded-lg border border-stone-300 px-3 py-2.5 text-sm bg-white text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#AFBD00]/40 focus:border-[#AFBD00] transition-shadow'
+  const labelClass = 'text-xs font-medium text-stone-500 uppercase tracking-wider'
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/10">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-100">
+            <h2 className="text-lg font-semibold text-stone-900 tracking-tight">Modifier le projet</h2>
+            <p className="text-sm text-stone-500 mt-0.5">Mettez à jour les informations du projet</p>
+          </div>
+
+          <form
+            className="flex flex-col min-h-0 h-full"
+            onSubmit={(e) => { e.preventDefault(); onSubmit() }}
+          >
+            <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 p-6 space-y-8">
+              {/* Projet */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full bg-[#AFBD00]" />
+                  <h3 className="text-sm font-semibold text-stone-800">Projet</h3>
+                </div>
+                <div className="space-y-4 pl-3">
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Nom du projet</span>
+                    <input
+                      className={inputClass}
+                      value={values.name}
+                      onChange={(e) => onChange('name', e.target.value)}
+                      placeholder="Ex. Jardin-forêt Dupont"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Surface (m²)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      className={inputClass}
+                      value={values.area}
+                      onChange={(e) => onChange('area', Number(e.target.value || 0))}
+                      required
+                    />
+                  </label>
+                </div>
+              </section>
+
+              {/* Client */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full bg-[#AFBD00]" />
+                  <h3 className="text-sm font-semibold text-stone-800">Client</h3>
+                </div>
+                <div className="space-y-4 pl-3">
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Nom</span>
+                    <input
+                      className={inputClass}
+                      value={values.client_name}
+                      onChange={(e) => onChange('client_name', e.target.value)}
+                      placeholder="Nom du client"
+                      required
+                    />
+                  </label>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <label className="grid gap-1.5">
+                      <span className={labelClass}>Email</span>
+                      <input
+                        type="email"
+                        className={inputClass}
+                        value={values.client_email}
+                        onChange={(e) => onChange('client_email', e.target.value)}
+                        placeholder="client@exemple.be"
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className={labelClass}>Téléphone</span>
+                      <input
+                        className={inputClass}
+                        value={values.client_phone}
+                        onChange={(e) => onChange('client_phone', e.target.value)}
+                        placeholder="+32 470 00 00 00"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              {/* Adresse */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full bg-[#AFBD00]" />
+                  <h3 className="text-sm font-semibold text-stone-800">Adresse du site</h3>
+                </div>
+                <div className="space-y-4 pl-3 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                    <label className="grid gap-1.5 flex-1 min-w-0">
+                      <span className={labelClass}>Rue</span>
+                      <input
+                        className={`${inputClass} min-w-0`}
+                        value={values.street}
+                        onChange={(e) => onChange('street', e.target.value)}
+                        placeholder="Rue de la Forêt"
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1.5 sm:w-20 shrink-0">
+                      <span className={labelClass}>N°</span>
+                      <input
+                        className={inputClass}
+                        value={values.number}
+                        onChange={(e) => onChange('number', e.target.value)}
+                        placeholder="12"
+                      />
+                    </label>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <label className="grid gap-1.5">
+                      <span className={labelClass}>Code postal</span>
+                      <input
+                        className={inputClass}
+                        value={values.postcode}
+                        onChange={(e) => onChange('postcode', e.target.value)}
+                        placeholder="5000"
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className={labelClass}>Localité</span>
+                      <input
+                        className={inputClass}
+                        value={values.city}
+                        onChange={(e) => onChange('city', e.target.value)}
+                        placeholder="Namur"
+                        required
+                      />
+                    </label>
+                  </div>
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Pays</span>
+                    <input
+                      className={inputClass}
+                      value={values.country_name}
+                      onChange={(e) => onChange('country_name', e.target.value)}
+                      placeholder="Belgique"
+                      required
+                    />
+                  </label>
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className={`${labelClass} flex items-center gap-1.5`}>
+                        <svg className="h-4 w-4 text-[#AFBD00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Coordonnées GPS
+                      </span>
+                      <button
+                        type="button"
+                        disabled={geocoding || !buildAddress().trim()}
+                        onClick={geocodeAddress}
+                        className="flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition-all hover:border-stone-400 hover:bg-stone-50 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+                      >
+                        {geocoding ? (
+                          <svg className="h-3.5 w-3.5 animate-spin text-stone-500" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        ) : (
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        )}
+                        {geocoding ? 'Recherche...' : "Géolocaliser l'adresse"}
+                      </button>
+                    </div>
+                    {values.latitude && values.longitude ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                        <svg className="h-3.5 w-3.5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{values.latitude}, {values.longitude}</span>
+                        <button
+                          type="button"
+                          onClick={() => { onChange('latitude', ''); onChange('longitude', '') }}
+                          className="ml-auto text-emerald-600 transition-colors hover:text-emerald-800"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-stone-500">
+                        Saisissez une adresse puis cliquez sur « Géolocaliser » pour placer le site sur la carte.
+                      </p>
+                    )}
+                    {geocodeError && (
+                      <p className="mt-1 text-xs text-red-600">{geocodeError}</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </div>
+            <div className="shrink-0 px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex justify-end gap-3">
+              <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg border border-stone-300 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors">
+                Annuler
+              </button>
+              <button type="submit" disabled={busy} className="px-5 py-2.5 rounded-lg bg-[#AFBD00] text-stone-900 text-sm font-semibold hover:bg-[#9aa800] disabled:opacity-60 transition-colors">
+                {busy ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  )
+}
 
 const DESIGN_SECTIONS = [
   { id: 'projects', label: 'Projets' },
@@ -125,6 +407,8 @@ export default function DesignIndex({ initialProjectId }) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [expenseModal, setExpenseModal] = useState(null)
+  const [projectEditModal, setProjectEditModal] = useState(null)
+  const [editProjectForm, setEditProjectForm] = useState({ name: '', client_name: '', client_email: '', client_phone: '', street: '', number: '', city: '', postcode: '', country_name: '', latitude: '', longitude: '', area: 500 })
 
   const loadDashboard = useCallback(async () => {
     const payload = await apiRequest('/api/v1/design')
@@ -216,7 +500,11 @@ export default function DesignIndex({ initialProjectId }) {
           client_name: projectForm.client_name,
           client_email: projectForm.client_email,
           client_phone: projectForm.client_phone,
-          address: projectForm.address,
+          street: projectForm.street,
+          number: projectForm.number,
+          city: projectForm.city,
+          postcode: projectForm.postcode,
+          country_name: projectForm.country_name,
           area: Number(projectForm.area || 0),
         }),
       })
@@ -253,6 +541,36 @@ export default function DesignIndex({ initialProjectId }) {
       }),
     })
   }, [projects, projectDetail?.project?.id, runMutation])
+
+  const updateEditProjectForm = useCallback((field, value) => {
+    setEditProjectForm((prev) => ({ ...prev, [field]: value }))
+  }, [])
+
+  const submitEditProject = useCallback(async () => {
+    const projectId = projectEditModal?.project?.id
+    if (!projectId) return
+    const success = await runMutation(() => apiRequest(`/api/v1/design/${projectId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: editProjectForm.name,
+        client_name: editProjectForm.client_name,
+        client_email: editProjectForm.client_email,
+        client_phone: editProjectForm.client_phone,
+        street: editProjectForm.street,
+        number: editProjectForm.number,
+        city: editProjectForm.city,
+        postcode: editProjectForm.postcode,
+        country_name: editProjectForm.country_name,
+        latitude: parseFloat(editProjectForm.latitude) || 0,
+        longitude: parseFloat(editProjectForm.longitude) || 0,
+        area: Number(editProjectForm.area || 0),
+      }),
+    }), { refreshProjectId: projectId })
+    if (success) {
+      setProjectEditModal(null)
+      setNotice('Projet mis à jour.')
+    }
+  }, [editProjectForm, projectEditModal?.project?.id, runMutation])
 
   const duplicateProject = useCallback((projectId) => {
     runMutation(async () => {
@@ -302,11 +620,34 @@ export default function DesignIndex({ initialProjectId }) {
 
     return {
       refresh: () => loadProject(currentProjectId),
-      updateName: () => editProject(currentProjectId),
+      openEditProject: () => {
+        const p = projectDetail?.project
+        if (!p) return
+        setEditProjectForm({
+          name: p.name || '',
+          client_name: p.clientName || '',
+          client_email: p.clientEmail || '',
+          client_phone: p.clientPhone || '',
+          street: p.street || '',
+          number: p.number || '',
+          city: p.city || '',
+          postcode: p.postcode || '',
+          country_name: p.countryName || '',
+          latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
+          longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
+          area: p.area || 500,
+        })
+        setProjectEditModal({ project: p })
+      },
+      updatePhase: async (phase) => {
+        const success = await runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ phase }),
+        }), { refreshProjectId: currentProjectId })
+        if (success) setNotice('Phase mise à jour.')
+      },
       addTeamMember: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/team-members`, { method: 'POST', body: JSON.stringify({
-        member_id: `member-${Math.random().toString(36).slice(2, 8)}`,
-        member_name: values.member_name,
-        member_email: values.member_email,
+        member_id: values.member_id,
         role: values.role,
         is_paid: values.is_paid,
       }) }), { refreshProjectId: currentProjectId }),
@@ -531,7 +872,8 @@ export default function DesignIndex({ initialProjectId }) {
         window.history.pushState({}, '', '/design')
       },
       onRefresh: detailActions.refresh || noop,
-      onUpdateName: detailActions.updateName || noop,
+      onOpenEditProject: detailActions.openEditProject || noop,
+      onUpdatePhase: detailActions.updatePhase || undefined,
       onAddTeamMember: detailActions.addTeamMember || noop,
       onRemoveTeamMember: detailActions.removeTeamMember || noop,
       onAddTimesheet: detailActions.addTimesheet || noop,
@@ -640,6 +982,16 @@ export default function DesignIndex({ initialProjectId }) {
         onChange={updateForm}
         onClose={() => setProjectModalOpen(false)}
         onSubmit={submitCreate}
+      />
+
+      <ProjectEditModal
+        open={Boolean(projectEditModal)}
+        busy={busy}
+        project={projectEditModal?.project}
+        values={editProjectForm}
+        onChange={updateEditProjectForm}
+        onClose={() => setProjectEditModal(null)}
+        onSubmit={submitEditProject}
       />
 
       {deleteConfirm && (

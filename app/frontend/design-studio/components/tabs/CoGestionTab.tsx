@@ -120,8 +120,8 @@ export function CoGestionTab({
   return (
     <div className="space-y-8">
       {/* Plant records */}
-      <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <section className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Leaf className="w-4 h-4 text-[#AFBD00]" />
           Suivi des plantes
         </h3>
@@ -145,7 +145,7 @@ export function CoGestionTab({
             onChange={(e) =>
               setPlantRecordForm((p) => ({ ...p, marker_id: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             placeholder="Palette item ID (opt.)"
@@ -156,14 +156,14 @@ export function CoGestionTab({
                 palette_item_id: e.target.value,
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <select
             value={plantRecordForm.status}
             onChange={(e) =>
               setPlantRecordForm((p) => ({ ...p, status: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             {Object.entries(statusLabel).map(([v, l]) => (
               <option key={v} value={v}>
@@ -183,7 +183,7 @@ export function CoGestionTab({
                 health_score: Number(e.target.value || 0),
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             placeholder="Notes"
@@ -191,7 +191,7 @@ export function CoGestionTab({
             onChange={(e) =>
               setPlantRecordForm((p) => ({ ...p, notes: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-2"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-2"
           />
           <button
             type="submit"
@@ -201,7 +201,7 @@ export function CoGestionTab({
           </button>
         </form>
         {records.length === 0 ? (
-          <p className="text-sm text-stone-500 dark:text-stone-400">
+          <p className="text-sm text-stone-500">
             Aucun enregistrement plante.
           </p>
         ) : (
@@ -209,9 +209,9 @@ export function CoGestionTab({
             {records.map((r) => (
               <li
                 key={r.id}
-                className="flex items-center justify-between gap-3 py-2 border-b border-stone-100 dark:border-stone-700/50 last:border-0"
+                className="flex items-center justify-between gap-3 py-2 border-b border-stone-100 last:border-0"
               >
-                <span className="text-sm text-stone-700 dark:text-stone-300">
+                <span className="text-sm text-stone-700">
                   {statusLabel[r.status] ?? r.status} · santé {r.healthScore}/100
                   {r.notes && ` · ${r.notes}`}
                 </span>
@@ -224,7 +224,7 @@ export function CoGestionTab({
                     )
                     if (status) onUpdatePlantRecord(r.id, { status })
                   }}
-                  className="text-xs text-[#5B5781] dark:text-[#9B94BB] hover:underline"
+                  className="text-xs text-[#5B5781] hover:underline"
                 >
                   Changer
                 </button>
@@ -236,8 +236,8 @@ export function CoGestionTab({
 
       <div className="grid sm:grid-cols-2 gap-6">
         {/* Visits */}
-        <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-          <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-stone-900 mb-4">
             Visites
           </h3>
           <form
@@ -254,14 +254,14 @@ export function CoGestionTab({
               onChange={(e) =>
                 setVisitForm((p) => ({ ...p, date: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
             <select
               value={visitForm.visit_type}
               onChange={(e) =>
                 setVisitForm((p) => ({ ...p, visit_type: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             >
               <option value="follow-up">Suivi</option>
               <option value="intervention">Intervention</option>
@@ -273,21 +273,21 @@ export function CoGestionTab({
               onChange={(e) =>
                 setVisitForm((p) => ({ ...p, notes: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
             <button
               type="submit"
-              className="rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+              className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               Ajouter visite
             </button>
           </form>
           {visits.length === 0 ? (
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-stone-500">
               Aucune visite.
             </p>
           ) : (
-            <ul className="space-y-1 text-sm text-stone-600 dark:text-stone-400">
+            <ul className="space-y-1 text-sm text-stone-600">
               {visits.map((v) => (
                 <li key={v.id}>
                   {v.date} · {v.type} · {v.notes || '—'}
@@ -298,8 +298,8 @@ export function CoGestionTab({
         </section>
 
         {/* Interventions */}
-        <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-          <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-stone-900 mb-4">
             Interventions
           </h3>
           <form
@@ -319,7 +319,7 @@ export function CoGestionTab({
               onChange={(e) =>
                 setInterventionForm((p) => ({ ...p, date: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
             <select
               value={interventionForm.intervention_type}
@@ -329,7 +329,7 @@ export function CoGestionTab({
                   intervention_type: e.target.value,
                 }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             >
               <option value="planting">Plantation</option>
               <option value="mulching">Paillage</option>
@@ -345,21 +345,21 @@ export function CoGestionTab({
               onChange={(e) =>
                 setInterventionForm((p) => ({ ...p, notes: e.target.value }))
               }
-              className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             />
             <button
               type="submit"
-              className="rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+              className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               Ajouter intervention
             </button>
           </form>
           {interventions.length === 0 ? (
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-stone-500">
               Aucune intervention.
             </p>
           ) : (
-            <ul className="space-y-1 text-sm text-stone-600 dark:text-stone-400">
+            <ul className="space-y-1 text-sm text-stone-600">
               {interventions.map((i) => (
                 <li key={i.id}>
                   {i.date} · {i.type} · {i.notes || '—'}
@@ -371,8 +371,8 @@ export function CoGestionTab({
       </div>
 
       {/* Annotations */}
-      <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <section className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-[#AFBD00]" />
           Annotations sur les plans
         </h3>
@@ -390,7 +390,7 @@ export function CoGestionTab({
             onChange={(e) =>
               setAnnotationForm((p) => ({ ...p, document_id: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -406,7 +406,7 @@ export function CoGestionTab({
                 x: Number(e.target.value || 0),
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="number"
@@ -421,7 +421,7 @@ export function CoGestionTab({
                 y: Number(e.target.value || 0),
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <select
             value={annotationForm.author_type}
@@ -431,7 +431,7 @@ export function CoGestionTab({
                 author_type: e.target.value as 'team' | 'client',
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             <option value="team">Équipe</option>
             <option value="client">Client</option>
@@ -442,7 +442,7 @@ export function CoGestionTab({
             onChange={(e) =>
               setAnnotationForm((p) => ({ ...p, content: e.target.value }))
             }
-            className="lg:col-span-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="lg:col-span-2 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <div className="sm:col-span-2 lg:col-span-6">
@@ -455,7 +455,7 @@ export function CoGestionTab({
           </div>
         </form>
         {annotations.length === 0 ? (
-          <p className="text-sm text-stone-500 dark:text-stone-400">
+          <p className="text-sm text-stone-500">
             Aucune annotation.
           </p>
         ) : (
@@ -463,9 +463,9 @@ export function CoGestionTab({
             {annotations.map((a) => (
               <li
                 key={a.id}
-                className={`flex items-center justify-between gap-3 py-2 border-b border-stone-100 dark:border-stone-700/50 last:border-0 ${a.resolved ? 'opacity-60' : ''}`}
+                className={`flex items-center justify-between gap-3 py-2 border-b border-stone-100 last:border-0 ${a.resolved ? 'opacity-60' : ''}`}
               >
-                <span className="text-sm text-stone-700 dark:text-stone-300">
+                <span className="text-sm text-stone-700">
                   {a.authorType} · {a.content}
                   {a.resolved && ' · résolue'}
                 </span>
@@ -496,13 +496,13 @@ export function CoGestionTab({
 
       {/* Calendriers */}
       <div className="grid sm:grid-cols-2 gap-6">
-        <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-          <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#AFBD00]" />
             Calendrier des récoltes
           </h3>
           {(harvestCalendar?.months ?? []).length === 0 ? (
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-stone-500">
               Calendrier vide.
             </p>
           ) : (
@@ -512,7 +512,7 @@ export function CoGestionTab({
                   key={month.month}
                   className="flex items-center justify-between text-sm"
                 >
-                  <span className="text-stone-700 dark:text-stone-300">
+                  <span className="text-stone-700">
                     {month.name} : {(month.harvests ?? []).length} récolte(s)
                   </span>
                   <button
@@ -532,7 +532,7 @@ export function CoGestionTab({
                       ]
                       onUpdateHarvestCalendar(month.month, items)
                     }}
-                    className="text-xs text-[#5B5781] dark:text-[#9B94BB] hover:underline"
+                    className="text-xs text-[#5B5781] hover:underline"
                   >
                     Ajouter
                   </button>
@@ -541,13 +541,13 @@ export function CoGestionTab({
             </ul>
           )}
         </section>
-        <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-          <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
             <Stethoscope className="w-4 h-4 text-[#AFBD00]" />
             Calendrier de maintenance
           </h3>
           {(maintenanceCalendar?.months ?? []).length === 0 ? (
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-stone-500">
               Calendrier vide.
             </p>
           ) : (
@@ -557,7 +557,7 @@ export function CoGestionTab({
                   key={month.month}
                   className="flex items-center justify-between text-sm"
                 >
-                  <span className="text-stone-700 dark:text-stone-300">
+                  <span className="text-stone-700">
                     {month.name} : {(month.tasks ?? []).length} tâche(s)
                   </span>
                   <button
@@ -576,7 +576,7 @@ export function CoGestionTab({
                       ]
                       onUpdateMaintenanceCalendar(month.month, items)
                     }}
-                    className="text-xs text-[#5B5781] dark:text-[#9B94BB] hover:underline"
+                    className="text-xs text-[#5B5781] hover:underline"
                   >
                     Ajouter
                   </button>

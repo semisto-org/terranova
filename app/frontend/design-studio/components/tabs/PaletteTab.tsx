@@ -82,8 +82,8 @@ export function PaletteTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#AFBD00]" />
           Ajouter une espèce
         </h3>
@@ -98,7 +98,7 @@ export function PaletteTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, species_id: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -108,7 +108,7 @@ export function PaletteTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, species_name: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -118,14 +118,14 @@ export function PaletteTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, common_name: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <select
             value={form.layer}
             onChange={(e) =>
               setForm((p) => ({ ...p, layer: e.target.value as PlantLayer }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             {LAYERS.map((l) => (
               <option key={l} value={l}>
@@ -141,7 +141,7 @@ export function PaletteTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, quantity: Number(e.target.value || 1) }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="number"
@@ -155,7 +155,7 @@ export function PaletteTab({
                 unit_price: Number(e.target.value || 0),
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <button
             type="submit"
@@ -165,19 +165,19 @@ export function PaletteTab({
           </button>
         </form>
 
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-200 dark:border-stone-700">
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-200">
           <input
             type="text"
             placeholder="ID palette Plant DB"
             value={importId}
             onChange={(e) => setImportId(e.target.value)}
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm w-48 focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm w-48 focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <button
             type="button"
             onClick={() => importId && onImportPlantPalette(importId)}
             disabled={!importId}
-            className="rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Importer depuis Plant DB
           </button>
@@ -185,11 +185,11 @@ export function PaletteTab({
       </div>
 
       {totals && (totals.totalPlants > 0 || totals.totalCost > 0) && (
-        <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-[#e1e6d8]/50 dark:bg-[#AFBD00]/10 p-4 flex flex-wrap gap-6">
-          <span className="text-sm font-medium text-stone-800 dark:text-stone-200">
+        <div className="rounded-2xl border border-stone-200 bg-[#e1e6d8]/50 p-4 flex flex-wrap gap-6">
+          <span className="text-sm font-medium text-stone-800">
             Total : <strong>{totals.totalPlants}</strong> plants
           </span>
-          <span className="text-sm font-medium text-stone-800 dark:text-stone-200">
+          <span className="text-sm font-medium text-stone-800">
             Coût total :{' '}
             <strong>
               {Number(totals.totalCost).toLocaleString('fr-BE')} €
@@ -209,31 +209,31 @@ export function PaletteTab({
           {LAYERS.filter((layer) => byLayer[layer].length > 0).map((layer) => (
             <div
               key={layer}
-              className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden"
+              className="rounded-2xl border border-stone-200 overflow-hidden"
             >
-              <div className="px-4 py-2 bg-stone-50 dark:bg-stone-800/80 border-b border-stone-200 dark:border-stone-700">
-                <h4 className="text-sm font-semibold text-stone-700 dark:text-stone-300">
+              <div className="px-4 py-2 bg-stone-50 border-b border-stone-200">
+                <h4 className="text-sm font-semibold text-stone-700">
                   {layerLabels[layer]}
                 </h4>
               </div>
-              <ul className="divide-y divide-stone-100 dark:divide-stone-700">
+              <ul className="divide-y divide-stone-100">
                 {byLayer[layer].map((item) => (
                   <li
                     key={item.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50/50 dark:hover:bg-stone-800/30"
+                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50/50"
                   >
                     <div>
-                      <p className="font-medium text-stone-900 dark:text-stone-100">
+                      <p className="font-medium text-stone-900">
                         {item.speciesName}
                       </p>
                       {item.commonName && (
-                        <p className="text-xs text-stone-500 dark:text-stone-400">
+                        <p className="text-xs text-stone-500">
                           {item.commonName}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm text-stone-600 dark:text-stone-400">
+                      <span className="text-sm text-stone-600">
                         x{item.quantity} · {Number(item.unitPrice).toLocaleString('fr-BE')} €
                       </span>
                       <button

@@ -568,12 +568,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
   end
 
   create_table "design_projects", force: :cascade do |t|
-    t.string "address", default: "", null: false
     t.integer "area", default: 0, null: false
+    t.string "city", default: "", null: false
     t.string "client_email", default: "", null: false
     t.string "client_id", null: false
     t.string "client_name", null: false
     t.string "client_phone", default: "", null: false
+    t.string "country_name", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.decimal "expenses_actual", precision: 12, scale: 2, default: "0.0", null: false
@@ -589,13 +590,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
+    t.string "number", default: "", null: false
     t.string "phase", default: "offre", null: false
     t.string "place_id", default: "", null: false
     t.date "planting_date"
+    t.string "postcode", default: "", null: false
     t.string "project_manager_id", default: "", null: false
     t.string "project_type", default: "", null: false
     t.date "start_date"
     t.string "status", default: "pending", null: false
+    t.string "street", default: "", null: false
     t.bigint "template_id"
     t.datetime "updated_at", null: false
     t.string "website_url", default: "", null: false
@@ -705,6 +709,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
   end
 
   create_table "events", force: :cascade do |t|
+    t.boolean "all_day", default: false, null: false
     t.datetime "created_at", null: false
     t.bigint "cycle_id"
     t.datetime "deleted_at"
@@ -958,16 +963,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
   end
 
   create_table "notion_assets", force: :cascade do |t|
-    t.integer "attachable_id"
+    t.bigint "attachable_id"
     t.string "attachable_type"
-    t.integer "byte_size"
     t.string "content_type"
     t.datetime "created_at", null: false
     t.datetime "downloaded_at"
     t.string "filename"
     t.bigint "notion_record_id"
     t.string "notion_url"
-    t.text "original_url", null: false
+    t.string "original_url"
     t.string "property_name"
     t.string "source_id"
     t.string "source_type"

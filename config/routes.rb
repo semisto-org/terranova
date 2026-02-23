@@ -33,6 +33,7 @@ Rails.application.routes.draw do
   get "knowledge", to: "app#knowledge"
   get "admin", to: "app#admin"
   get "admin/settings", to: "app#admin"
+  get "parametres", to: "app#parametres"
 
   namespace :api do
     namespace :v1 do

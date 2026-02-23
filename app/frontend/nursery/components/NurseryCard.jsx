@@ -5,7 +5,7 @@ export function NurseryCard({ nursery, onView, onEdit, onDelete }) {
   const hasPlatform = nursery.integration === 'platform'
 
   return (
-    <div className="group relative bg-white dark:bg-stone-900 rounded-xl border border-stone-200 overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+    <div className="group relative bg-white rounded-xl border border-stone-200 overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
       <div className="relative px-6 pt-6 pb-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">

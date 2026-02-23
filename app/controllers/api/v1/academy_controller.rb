@@ -451,7 +451,7 @@ module Api
       end
 
       def serialize_expense(item)
-        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document) : nil
+        doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
         {
           id: item.id.to_s,
           trainingId: item.training_id&.to_s,

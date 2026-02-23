@@ -42,8 +42,8 @@ export function MeetingsTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#AFBD00]" />
           Planifier une réunion
         </h3>
@@ -58,7 +58,7 @@ export function MeetingsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, title: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -67,7 +67,7 @@ export function MeetingsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, date: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="time"
@@ -75,7 +75,7 @@ export function MeetingsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, time: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="number"
@@ -89,7 +89,7 @@ export function MeetingsTab({
                 duration: Number(e.target.value || 60),
               }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="text"
@@ -98,7 +98,7 @@ export function MeetingsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, location: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-1"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent lg:col-span-1"
           />
           <div className="sm:col-span-2 lg:col-span-5">
             <button
@@ -122,24 +122,24 @@ export function MeetingsTab({
           {sortedMeetings.map((meeting) => (
             <div
               key={meeting.id}
-              className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5 flex items-start justify-between gap-4 group"
+              className="rounded-2xl border border-stone-200 bg-white p-5 flex items-start justify-between gap-4 group"
             >
               <div className="flex gap-4 min-w-0">
-                <div className="w-14 h-14 rounded-xl bg-[#e1e6d8] dark:bg-[#AFBD00]/20 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-lg font-semibold text-[#6B7A00] dark:text-[#AFBD00]">
+                <div className="w-14 h-14 rounded-xl bg-[#e1e6d8] flex flex-col items-center justify-center flex-shrink-0">
+                  <span className="text-lg font-semibold text-[#6B7A00]">
                     {new Date(meeting.date).getDate()}
                   </span>
-                  <span className="text-[10px] uppercase text-stone-500 dark:text-stone-400">
+                  <span className="text-[10px] uppercase text-stone-500">
                     {new Date(meeting.date).toLocaleDateString('fr-BE', {
                       month: 'short',
                     })}
                   </span>
                 </div>
                 <div>
-                  <p className="font-medium text-stone-900 dark:text-stone-100">
+                  <p className="font-medium text-stone-900">
                     {meeting.title}
                   </p>
-                  <div className="flex flex-wrap gap-3 mt-1 text-sm text-stone-500 dark:text-stone-400">
+                  <div className="flex flex-wrap gap-3 mt-1 text-sm text-stone-500">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       {meeting.time} · {meeting.duration} min

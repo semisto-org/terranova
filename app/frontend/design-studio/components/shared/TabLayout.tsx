@@ -24,7 +24,7 @@ export function TabLayout({
   return (
     <div className={className}>
       <nav
-        className="flex gap-1 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide border-b border-stone-200 dark:border-stone-700 mb-6"
+        className="flex gap-1 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide border-b border-stone-200 mb-6"
         role="tablist"
       >
         {tabs.map((tab) => {
@@ -40,8 +40,8 @@ export function TabLayout({
                 transition-all duration-200 ease-out
                 ${
                   isActive
-                    ? 'bg-[#AFBD00] text-stone-900 shadow-sm border border-b-0 border-stone-200 dark:border-stone-700 -mb-px'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 border border-transparent'
+                    ? 'bg-[#AFBD00] text-stone-900 shadow-sm border border-b-0 border-stone-200 -mb-px'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-transparent'
                 }
               `}
             >

@@ -23,7 +23,11 @@ class DesignStudioDashboardTest < ActionDispatch::IntegrationTest
       client_email: 'jean@example.com',
       client_phone: '+32 470 00 00 00',
       place_id: 'place-dupont',
-      address: 'Rue des Tilleuls 12, Namur',
+      street: 'Rue des Tilleuls',
+      number: '12',
+      city: 'Namur',
+      postcode: '5000',
+      country_name: 'Belgique',
       latitude: 50.463,
       longitude: 4.867,
       area: 2500,
@@ -72,7 +76,11 @@ class DesignStudioDashboardTest < ActionDispatch::IntegrationTest
       client_name: 'Client Test',
       client_email: 'client@test.com',
       client_phone: '+33 6 00 00 00 00',
-      address: 'Avenue des Plantes 5',
+      street: 'Avenue des Plantes',
+      number: '5',
+      city: 'Bruxelles',
+      postcode: '1000',
+      country_name: 'Belgique',
       area: 900
     }, as: :json
 

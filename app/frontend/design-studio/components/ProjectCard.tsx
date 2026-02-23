@@ -13,7 +13,8 @@ const phaseLabels: Record<ProjectPhase, string> = {
   'pre-projet': 'Pré-projet',
   'projet-detaille': 'Projet détaillé',
   'mise-en-oeuvre': 'Mise en œuvre',
-  'co-gestion': 'Co-gestion'
+  'co-gestion': 'Co-gestion',
+  'termine': 'Autonome',
 }
 
 const phaseColors: Record<ProjectPhase, { bg: string; text: string; dot: string }> = {
@@ -21,7 +22,8 @@ const phaseColors: Record<ProjectPhase, { bg: string; text: string; dot: string 
   'pre-projet': { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-400' },
   'projet-detaille': { bg: 'bg-[#e1e6d8]', text: 'text-[#6B7A00]', dot: 'bg-[#AFBD00]' },
   'mise-en-oeuvre': { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  'co-gestion': { bg: 'bg-[#c8bfd2]', text: 'text-[#5B5781]', dot: 'bg-[#5B5781]' }
+  'co-gestion': { bg: 'bg-[#c8bfd2]', text: 'text-[#5B5781]', dot: 'bg-[#5B5781]' },
+  termine: { bg: 'bg-stone-100', text: 'text-stone-600', dot: 'bg-stone-400' },
 }
 
 export function ProjectCard({

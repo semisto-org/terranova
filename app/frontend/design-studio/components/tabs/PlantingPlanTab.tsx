@@ -57,8 +57,8 @@ export function PlantingPlanTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-[#AFBD00]" />
           Image du plan
         </h3>
@@ -70,14 +70,14 @@ export function PlantingPlanTab({
             onChange={(e) =>
               setPlanForm((p) => ({ ...p, image_url: e.target.value }))
             }
-            className="sm:col-span-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="sm:col-span-2 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <select
             value={planForm.layout}
             onChange={(e) =>
               setPlanForm((p) => ({ ...p, layout: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             <option value="split-3-4-1-4">Split 3/4 - 1/4</option>
             <option value="full">Plein</option>
@@ -94,12 +94,12 @@ export function PlantingPlanTab({
       </div>
 
       {imageUrl && (
-        <div className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden bg-stone-100 dark:bg-stone-800">
+        <div className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-100">
           <a
             href={imageUrl}
             target="_blank"
             rel="noreferrer"
-            className="block p-4 text-sm text-[#5B5781] dark:text-[#9B94BB] hover:underline"
+            className="block p-4 text-sm text-[#5B5781] hover:underline"
           >
             Voir l’image du plan →
           </a>
@@ -110,7 +110,7 @@ export function PlantingPlanTab({
         <button
           type="button"
           onClick={() => onExportPlan('pdf')}
-          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
         >
           <Download className="w-4 h-4" />
           Exporter PDF
@@ -118,15 +118,15 @@ export function PlantingPlanTab({
         <button
           type="button"
           onClick={() => onExportPlan('image')}
-          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
         >
           <Download className="w-4 h-4" />
           Exporter image
         </button>
       </div>
 
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#AFBD00]" />
           Ajouter un marqueur
         </h3>
@@ -141,7 +141,7 @@ export function PlantingPlanTab({
             onChange={(e) =>
               setMarkerForm((p) => ({ ...p, species_name: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -154,7 +154,7 @@ export function PlantingPlanTab({
             onChange={(e) =>
               setMarkerForm((p) => ({ ...p, x: Number(e.target.value || 0) }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="number"
@@ -166,7 +166,7 @@ export function PlantingPlanTab({
             onChange={(e) =>
               setMarkerForm((p) => ({ ...p, y: Number(e.target.value || 0) }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <input
             type="text"
@@ -175,7 +175,7 @@ export function PlantingPlanTab({
             onChange={(e) =>
               setMarkerForm((p) => ({ ...p, palette_item_id: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <button
             type="submit"
@@ -193,17 +193,17 @@ export function PlantingPlanTab({
           description="Ajoutez des marqueurs pour positionner les plants sur le plan."
         />
       ) : (
-        <div className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
-          <ul className="divide-y divide-stone-100 dark:divide-stone-700">
+        <div className="rounded-2xl border border-stone-200 overflow-hidden">
+          <ul className="divide-y divide-stone-100">
             {markers.map((marker) => (
               <li
                 key={marker.id}
-                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50/50 dark:hover:bg-stone-800/30"
+                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50/50"
               >
-                <span className="font-medium text-stone-900 dark:text-stone-100">
+                <span className="font-medium text-stone-900">
                   #{marker.number} · {marker.speciesName}
                 </span>
-                <span className="text-xs text-stone-500 dark:text-stone-400">
+                <span className="text-xs text-stone-500">
                   ({marker.x}, {marker.y})
                 </span>
                 <div className="flex items-center gap-1">
@@ -218,7 +218,7 @@ export function PlantingPlanTab({
                           y: Number(y),
                         })
                     }}
-                    className="p-1.5 text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg transition-colors"
+                    className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg transition-colors"
                     title="Déplacer"
                   >
                     <Move className="w-4 h-4" />

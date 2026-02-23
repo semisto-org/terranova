@@ -115,10 +115,6 @@ export default function IdeaNotesView({
             const config = CATEGORIES.find((c) => c.id === note.category) || CATEGORIES[3]
             const Icon = config.icon
             const tags = Array.isArray(note.tags) ? note.tags : []
-            const excerpt = (note.content || '')
-              .replace(/\n/g, ' ')
-              .slice(0, 120)
-            const hasMore = (note.content || '').length > 120
 
             return (
               <div
@@ -161,12 +157,6 @@ export default function IdeaNotesView({
                   <h3 className="text-lg font-semibold text-stone-900 leading-tight mb-2 line-clamp-2">
                     {note.title}
                   </h3>
-                  {excerpt && (
-                    <p className="text-sm text-stone-600 leading-relaxed mb-3 line-clamp-3">
-                      {excerpt}
-                      {hasMore ? '…' : ''}
-                    </p>
-                  )}
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {tags.slice(0, 5).map((tag, i) => (

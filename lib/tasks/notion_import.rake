@@ -867,7 +867,7 @@ namespace :notion do
             name: importer.extract(props, "Dénomination") || "Sans nom",
             status: status,
             project_type: importer.extract(props, "Type de projet") || "",
-            address: importer.extract(props, "Localisation") || "",
+            city: importer.extract(props, "Localisation") || "",
             client_id: client_contact&.id&.to_s || project.client_id || "notion-import",
             client_name: client_name,
             client_email: client_email,

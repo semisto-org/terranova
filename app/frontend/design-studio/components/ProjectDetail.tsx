@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import {
-  ArrowLeft,
-  RefreshCw,
   Search,
   LayoutDashboard,
   Users,
@@ -15,6 +13,7 @@ import {
   Image as ImageIcon,
   Calendar,
   Leaf,
+  Pencil,
 } from 'lucide-react'
 import { TabLayout, TabItem } from './shared/TabLayout'
 import { PhaseIndicator } from './shared/PhaseIndicator'
@@ -39,6 +38,13 @@ export interface ProjectDetailPayload {
     id: string
     name: string
     clientName: string
+    clientEmail?: string
+    clientPhone?: string
+    street?: string
+    number?: string
+    city?: string
+    postcode?: string
+    countryName?: string
     address: string
     phase: ProjectPhase
     status: string
@@ -131,7 +137,8 @@ export interface ProjectDetailPayload {
 export interface ProjectDetailActions {
   onBack: () => void
   onRefresh: () => void
-  onUpdateName: () => void
+  onOpenEditProject?: () => void
+  onUpdatePhase?: (phase: ProjectPhase) => void
   onAddTeamMember: (v: {
     member_name: string
     member_email: string
@@ -223,59 +230,37 @@ export function ProjectDetailView({
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 dark:bg-stone-950 px-4 py-6">
+    <main className="min-h-screen bg-stone-50 px-4 py-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <button
-            type="button"
-            onClick={a.onBack}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-stone-300 dark:border-stone-600 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour dashboard
-          </button>
-          <button
-            type="button"
-            onClick={a.onRefresh}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-stone-300 dark:border-stone-600 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${busy ? 'animate-spin' : ''}`} />
-            Rafraîchir
-          </button>
-          {busy && (
-            <span className="text-xs text-stone-500 dark:text-stone-400">
-              Mise à jour…
-            </span>
-          )}
-        </div>
-
-        <header className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-5 mb-6">
+        <header className="rounded-2xl border border-stone-200 bg-white p-5 mb-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <PhaseIndicator
                   phase={project.phase as ProjectPhase}
                   showLabel
+                  onPhaseChange={a.onUpdatePhase}
                 />
                 <button
                   type="button"
-                  onClick={a.onUpdateName}
-                  className="text-xs text-stone-500 dark:text-stone-400 hover:text-[#AFBD00] dark:hover:text-[#AFBD00] underline"
+                  onClick={a.onOpenEditProject}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
                 >
-                  Renommer
+                  <Pencil className="w-3.5 h-3.5" />
+                  Modifier
                 </button>
               </div>
-              <h1 className="text-2xl font-serif font-semibold text-stone-900 dark:text-stone-100 tracking-tight">
+              <h1 className="text-2xl font-serif font-semibold text-stone-900 tracking-tight">
                 {project.name}
               </h1>
-              <p className="text-stone-600 dark:text-stone-400 mt-0.5">
+              <p className="text-stone-600 mt-0.5">
                 {project.clientName} · {project.address}
               </p>
             </div>
           </div>
         </header>
 
-        <section className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-5 mb-6">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 mb-6">
           <form onSubmit={handleSearch} className="flex gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
@@ -284,22 +269,22 @@ export function ProjectDetailView({
                 placeholder="Rechercher dans le projet (devis, docs, annotations…)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
               />
             </div>
             <button
               type="submit"
-              className="rounded-xl border border-stone-300 dark:border-stone-600 px-4 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+              className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               Rechercher
             </button>
           </form>
           {searchResults.length > 0 && (
-            <div className="mb-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-3 space-y-1">
+            <div className="mb-4 rounded-xl border border-stone-200 bg-stone-50 p-3 space-y-1">
               {searchResults.map((item) => (
                 <p
                   key={item.id}
-                  className="text-xs text-stone-700 dark:text-stone-300"
+                  className="text-xs text-stone-700"
                 >
                   [{item.kind}] {item.excerpt}
                 </p>

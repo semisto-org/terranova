@@ -43,8 +43,8 @@ export function DocumentsTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-5">
-        <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 className="text-sm font-semibold text-stone-900 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#AFBD00]" />
           Ajouter un document
         </h3>
@@ -57,7 +57,7 @@ export function DocumentsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, category: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           >
             {CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>
@@ -72,7 +72,7 @@ export function DocumentsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, name: e.target.value }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -82,7 +82,7 @@ export function DocumentsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, url: e.target.value }))
             }
-            className="sm:col-span-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="sm:col-span-2 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
             required
           />
           <input
@@ -93,7 +93,7 @@ export function DocumentsTab({
             onChange={(e) =>
               setForm((p) => ({ ...p, size: Number(e.target.value || 0) }))
             }
-            className="rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
+            className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
           />
           <button
             type="submit"
@@ -115,13 +115,13 @@ export function DocumentsTab({
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800/50 p-4 flex items-center justify-between gap-3 group"
+              className="rounded-2xl border border-stone-200 bg-white p-4 flex items-center justify-between gap-3 group"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-stone-900 dark:text-stone-100 truncate">
+                <p className="font-medium text-stone-900 truncate">
                   {doc.name}
                 </p>
-                <p className="text-xs text-stone-500 dark:text-stone-400">
+                <p className="text-xs text-stone-500">
                   {CATEGORIES.find((c) => c.value === doc.category)?.label ??
                     doc.category}
                   {doc.size > 0 &&
@@ -133,7 +133,7 @@ export function DocumentsTab({
                   href={doc.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-2 text-stone-500 hover:text-[#5B5781] dark:hover:text-[#9B94BB] rounded-lg transition-colors"
+                  className="p-2 text-stone-500 hover:text-[#5B5781] rounded-lg transition-colors"
                   title="Ouvrir"
                 >
                   <ExternalLink className="w-4 h-4" />

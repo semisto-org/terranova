@@ -178,6 +178,7 @@ export interface Event {
   eventTypeId: string // ID of the event type
   startDate: string
   endDate: string
+  allDay: boolean
   location: string
   description: string
   attendeeIds: string[]
