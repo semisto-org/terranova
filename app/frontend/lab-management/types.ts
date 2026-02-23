@@ -33,6 +33,7 @@ export interface Member {
   walletId: string
   guildIds: string[]
   slackUserId: string | null
+  lastActivityAt: string | null
 }
 
 export interface Guild {

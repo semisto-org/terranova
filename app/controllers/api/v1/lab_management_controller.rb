@@ -908,7 +908,8 @@ module Api
           membershipType: member.membership_type,
           walletId: member.wallet&.id&.to_s,
           guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s },
-          slackUserId: member.slack_user_id
+          slackUserId: member.slack_user_id,
+          lastActivityAt: member.last_activity_at&.iso8601
         }
       end
 

@@ -1,6 +1,8 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
 
+  before_action :track_member_activity
+
   inertia_share do
     {
       auth: {
@@ -33,6 +35,12 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  def track_member_activity
+    return unless current_member
+    return if current_member.last_activity_at && current_member.last_activity_at > 5.minutes.ago
+    current_member.update_column(:last_activity_at, Time.current)
+  end
 
   def current_member
     @current_member ||= Member.find_by(id: session[:member_id]) if session[:member_id]
