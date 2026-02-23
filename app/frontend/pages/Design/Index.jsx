@@ -715,6 +715,8 @@ export default function DesignIndex({ initialProjectId }) {
             mode: values.mode,
             travel_km: values.travel_km,
             notes: values.notes,
+            details: values.details,
+            service_type_id: values.service_type_id,
           }),
         }), { refreshProjectId: currentProjectId })
       },

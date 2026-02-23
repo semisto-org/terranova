@@ -173,7 +173,7 @@ export interface ProjectDetailActions {
   }) => void
   onUpdateTimesheet?: (
     id: string,
-    v: { date: string; hours: number; phase: string; mode: string; travel_km: number; notes: string }
+    v: { date: string; hours: number; phase: string; mode: string; travel_km: number; notes: string; details?: string; service_type_id?: string | null }
   ) => Promise<void>
   onDeleteTimesheet: (id: string) => void
   timesheetEditBusy?: boolean
@@ -215,11 +215,11 @@ export interface ProjectDetailActions {
 
 const DETAIL_TABS: TabItem[] = [
   { id: 'overview', label: "Vue d'ensemble", icon: <LayoutDashboard className="w-4 h-4" /> },
-  { id: 'timesheets', label: 'Timesheets', icon: <Clock className="w-4 h-4" /> },
-  { id: 'expenses', label: 'Dépenses', icon: <Euro className="w-4 h-4" /> },
   { id: 'site-analysis', label: 'Analyse', icon: <Map className="w-4 h-4" /> },
   { id: 'palette', label: 'Palette', icon: <Palette className="w-4 h-4" /> },
   { id: 'planting-plan', label: 'Plan', icon: <MapPin className="w-4 h-4" /> },
+  { id: 'timesheets', label: 'Timesheets', icon: <Clock className="w-4 h-4" /> },
+  { id: 'expenses', label: 'Dépenses', icon: <Euro className="w-4 h-4" /> },
   { id: 'quotes', label: 'Offre', icon: <FileText className="w-4 h-4" /> },
   { id: 'documents', label: 'Documents', icon: <FileStack className="w-4 h-4" /> },
   { id: 'album', label: 'Album', icon: <ImageIcon className="w-4 h-4" /> },
@@ -368,8 +368,6 @@ export function ProjectDetailView({
             {activeTab === 'timesheets' && (
               <TimesheetsTab
                 timesheets={detail.timesheets as any}
-                projectPhase={project.phase as ProjectPhase}
-                onAddTimesheet={a.onAddTimesheet}
                 onUpdateTimesheet={a.onUpdateTimesheet}
                 onDeleteTimesheet={a.onDeleteTimesheet}
                 timesheetEditBusy={a.timesheetEditBusy}

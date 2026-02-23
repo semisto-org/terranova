@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_23_190001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -549,6 +549,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
     t.datetime "created_at", null: false
     t.date "date", null: false
     t.datetime "deleted_at"
+    t.string "details", default: "", null: false
     t.decimal "hours", precision: 5, scale: 2, default: "0.0", null: false
     t.string "member_id", null: false
     t.string "member_name", null: false
@@ -559,12 +560,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
     t.datetime "notion_updated_at"
     t.string "phase", null: false
     t.bigint "project_id", null: false
+    t.bigint "service_type_id"
     t.bigint "training_id"
     t.integer "travel_km", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_design_project_timesheets_on_deleted_at"
     t.index ["notion_id"], name: "index_design_project_timesheets_on_notion_id", unique: true
     t.index ["project_id"], name: "index_design_project_timesheets_on_project_id"
+    t.index ["service_type_id"], name: "index_design_project_timesheets_on_service_type_id"
   end
 
   create_table "design_projects", force: :cascade do |t|
@@ -1600,12 +1603,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
     t.index ["to_wallet_id"], name: "index_semos_transactions_on_to_wallet_id"
   end
 
+  create_table "timesheet_service_types", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "default_phase"
+    t.datetime "deleted_at"
+    t.string "label", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_timesheet_service_types_on_deleted_at"
+    t.index ["label"], name: "index_timesheet_service_types_on_label", unique: true
+  end
+
   create_table "timesheets", force: :cascade do |t|
     t.boolean "billed", default: false
     t.datetime "created_at", null: false
     t.date "date", null: false
     t.text "description"
     t.bigint "design_project_id"
+    t.string "details", default: "", null: false
     t.bigint "event_id"
     t.decimal "hours", precision: 5, scale: 2, default: "0.0"
     t.string "member_id", null: false
@@ -1616,6 +1630,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
     t.datetime "notion_updated_at"
     t.string "phase"
     t.bigint "pole_project_id"
+    t.bigint "service_type_id"
     t.bigint "training_id"
     t.integer "travel_km", default: 0
     t.datetime "updated_at", null: false
@@ -1625,6 +1640,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
     t.index ["member_id"], name: "index_timesheets_on_member_id"
     t.index ["notion_id"], name: "index_timesheets_on_notion_id", unique: true
     t.index ["pole_project_id"], name: "index_timesheets_on_pole_project_id"
+    t.index ["service_type_id"], name: "index_timesheets_on_service_type_id"
     t.index ["training_id"], name: "index_timesheets_on_training_id"
   end
 
@@ -1680,6 +1696,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
   add_foreign_key "design_project_palette_items", "design_project_palettes", column: "palette_id"
   add_foreign_key "design_project_palettes", "design_projects", column: "project_id"
   add_foreign_key "design_project_timesheets", "design_projects", column: "project_id"
+  add_foreign_key "design_project_timesheets", "timesheet_service_types", column: "service_type_id"
   add_foreign_key "design_projects", "design_project_templates", column: "template_id"
   add_foreign_key "design_quote_lines", "design_quotes", column: "quote_id"
   add_foreign_key "design_quotes", "design_projects", column: "project_id"
@@ -1752,5 +1769,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
   add_foreign_key "timesheets", "design_projects"
   add_foreign_key "timesheets", "events"
   add_foreign_key "timesheets", "pole_projects"
+  add_foreign_key "timesheets", "timesheet_service_types", column: "service_type_id"
   add_foreign_key "wallets", "members"
 end

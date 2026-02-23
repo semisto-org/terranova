@@ -11,6 +11,7 @@ module Api
       before_action :set_task, only: [:toggle_task]
       before_action :set_event, only: [:show_event, :update_event, :destroy_event]
       before_action :set_event_type, only: [:update_event_type, :destroy_event_type]
+      before_action :set_timesheet_service_type, only: [:update_timesheet_service_type, :destroy_timesheet_service_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
       before_action :set_expense, only: [:update_expense, :destroy_expense]
       before_action :set_revenue, only: [:update_revenue, :destroy_revenue]
@@ -394,6 +395,32 @@ module Api
         head :no_content
       end
 
+      def list_timesheet_service_types
+        render json: { items: serialize_timesheet_service_types }
+      end
+
+      def create_timesheet_service_type
+        st = TimesheetServiceType.new(timesheet_service_type_params)
+        if st.save
+          render json: serialize_timesheet_service_type(st), status: :created
+        else
+          render json: { error: st.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_timesheet_service_type
+        if @timesheet_service_type.update(timesheet_service_type_params)
+          render json: serialize_timesheet_service_type(@timesheet_service_type)
+        else
+          render json: { error: @timesheet_service_type.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_timesheet_service_type
+        @timesheet_service_type.soft_delete!
+        head :no_content
+      end
+
       def semos
         render json: {
           wallets: serialize_wallets,
@@ -720,6 +747,26 @@ module Api
 
       def set_event_type
         @event_type = EventType.find(params.require(:id))
+      end
+
+      def set_timesheet_service_type
+        @timesheet_service_type = TimesheetServiceType.find(params.require(:id))
+      end
+
+      def timesheet_service_type_params
+        params.permit(:label, :default_phase)
+      end
+
+      def serialize_timesheet_service_types
+        TimesheetServiceType.ordered.map { |st| serialize_timesheet_service_type(st) }
+      end
+
+      def serialize_timesheet_service_type(st)
+        {
+          id: st.id.to_s,
+          label: st.label,
+          defaultPhase: st.default_phase
+        }
       end
 
       def set_timesheet

@@ -6,6 +6,7 @@ module Design
     MODES = %w[billed semos].freeze
 
     belongs_to :project, class_name: 'Design::Project'
+    belongs_to :service_type, class_name: 'TimesheetServiceType', optional: true
 
     validates :member_id, :member_name, :date, :phase, :mode, presence: true
     validates :mode, inclusion: { in: MODES }

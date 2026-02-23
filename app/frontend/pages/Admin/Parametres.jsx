@@ -1,17 +1,20 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useShellNav } from '../../components/shell/ShellContext'
-import { EventTypesAdmin } from '../../lab-management/components'
+import { EventTypesAdmin, TimesheetServiceTypesAdmin } from '../../lab-management/components'
 
 const SECTION_TABS = [
   { id: 'event-types', label: "Types d'événements" },
+  { id: 'service-types', label: 'Types de prestation' },
 ]
 
 export default function AdminParametres() {
-  useShellNav({ sections: SECTION_TABS, activeSection: 'event-types', onSectionChange: () => {} })
+  const [activeSection, setActiveSection] = useState('event-types')
+  useShellNav({ sections: SECTION_TABS, activeSection, onSectionChange: setActiveSection })
 
   return (
     <div className="px-4 py-4">
-      <EventTypesAdmin />
+      {activeSection === 'event-types' && <EventTypesAdmin />}
+      {activeSection === 'service-types' && <TimesheetServiceTypesAdmin />}
     </div>
   )
 }

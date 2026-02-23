@@ -949,16 +949,26 @@ namespace :notion do
           mode_raw = importer.extract(props, "Rémunération") || ""
           mode = mode_map[mode_raw] || "billed"
 
+          # Service type from "Type de prestation" (multi_select or select)
+          raw_type = importer.extract(props, "Type de prestation")
+          service_type_label = raw_type.is_a?(Array) ? raw_type.first : raw_type
+          service_type = service_type_label.presence && TimesheetServiceType.find_or_create_by!(label: service_type_label)
+
+          # Phase: "Etape du design" or default from service type
+          phase_raw = importer.extract(props, "Etape du design")
+          phase = phase_raw.presence || service_type&.default_phase
+
           timesheet.assign_attributes(
             design_project_id: project&.id,
             training_id: training&.id,
             pole_project_id: pole_project&.id,
             event_id: event&.id,
-            description: importer.extract(props, "Descriptif court de l'activité") || "",
+            details: importer.extract(props, "Descriptif court de l'activité") || "",
+            service_type_id: service_type&.id,
             date: importer.extract(props, "Date de la prestation") || Date.today,
             hours: (importer.extract(props, "Heures prestées") || 0).to_d,
             travel_km: (importer.extract(props, "KM (A/R)") || 0).to_i,
-            phase: importer.extract(props, "Etape du design"),
+            phase: phase,
             mode: mode,
             member_id: member_name.parameterize,
             member_name: member_name,
@@ -968,6 +978,29 @@ namespace :notion do
           )
 
           timesheet.save!
+
+          # Sync to design_project_timesheets when linked to a design project
+          if project
+            dpt = Design::ProjectTimesheet.find_or_initialize_by(notion_id: notion_id)
+            dpt.assign_attributes(
+              project_id: project.id,
+              member_id: timesheet.member_id,
+              member_name: timesheet.member_name,
+              date: timesheet.date,
+              hours: timesheet.hours,
+              travel_km: timesheet.travel_km,
+              phase: phase.presence || "offre",
+              mode: mode,
+              details: timesheet.details,
+              service_type_id: service_type&.id,
+              notes: "",
+              billed: timesheet.billed,
+              training_id: training&.id,
+              notion_created_at: timesheet.notion_created_at,
+              notion_updated_at: timesheet.notion_updated_at
+            )
+            dpt.save!
+          end
 
           importer.upsert_notion_record(
             page,

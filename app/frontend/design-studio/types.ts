@@ -99,6 +99,16 @@ export interface Timesheet {
   mode: TimesheetMode
   travelKm: number
   notes: string
+  details?: string
+  serviceTypeId?: string | null
+  serviceTypeLabel?: string | null
+  billed?: boolean
+  trainingId?: string
+  notionId?: string
+  notionCreatedAt?: string
+  notionUpdatedAt?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Expense {

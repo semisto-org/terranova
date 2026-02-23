@@ -171,6 +171,12 @@ export interface EventTypeConfig {
   color?: string
 }
 
+export interface TimesheetServiceTypeConfig {
+  id: string
+  label: string
+  defaultPhase?: string | null
+}
+
 export interface Event {
   id: string
   title: string

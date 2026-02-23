@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Clock } from 'lucide-react'
+import { apiRequest } from '@/lib/api'
+import { Clock, ChevronDown, ChevronRight, Database } from 'lucide-react'
 import type { Timesheet, ProjectPhase } from '../../types'
 import { phaseLabels } from '../shared/PhaseIndicator'
+import type { TimesheetServiceTypeConfig } from '@/lab-management/types'
 
 const phaseOrder: ProjectPhase[] = [
   'offre',
@@ -27,6 +29,8 @@ interface TimesheetEditModalProps {
     mode: 'billed' | 'semos'
     travel_km: number
     notes: string
+    details?: string
+    service_type_id?: string | null
   }) => Promise<void>
   onClose: () => void
 }
@@ -44,6 +48,7 @@ export function TimesheetEditModal({
   const [mode, setMode] = useState<'billed' | 'semos'>('billed')
   const [travelKm, setTravelKm] = useState(0)
   const [notes, setNotes] = useState('')
+  const [showRawData, setShowRawData] = useState(false)
 
   useEffect(() => {
     if (timesheet) {
@@ -67,6 +72,8 @@ export function TimesheetEditModal({
       mode,
       travel_km: travelKm,
       notes,
+      details: details || undefined,
+      service_type_id: serviceTypeId || undefined,
     })
     onClose()
   }
@@ -77,16 +84,17 @@ export function TimesheetEditModal({
         className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/10 overflow-hidden">
-          <div className="px-6 py-5 border-b border-stone-100 flex items-center gap-2">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md max-h-[90vh] flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/10 overflow-hidden">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-100 flex items-center gap-2">
             <Clock className="w-5 h-5 text-[#AFBD00]" />
             <h2 className="text-lg font-semibold text-stone-900 tracking-tight">
               Modifier la prestation
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div>
               <label className={labelClass}>Membre</label>
               <input
@@ -162,6 +170,33 @@ export function TimesheetEditModal({
             </div>
 
             <div>
+              <label className={labelClass}>Type de prestation</label>
+              <select
+                value={serviceTypeId || ''}
+                onChange={(e) => setServiceTypeId(e.target.value || null)}
+                className={inputClass}
+              >
+                <option value="">— Aucun —</option>
+                {serviceTypes.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass}>Détails</label>
+              <input
+                type="text"
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                className={inputClass}
+                placeholder="Descriptif court de l'activité"
+              />
+            </div>
+
+            <div>
               <label className={labelClass}>Notes</label>
               <textarea
                 value={notes}
@@ -186,6 +221,56 @@ export function TimesheetEditModal({
               >
                 {busy ? 'Enregistrement…' : 'Enregistrer'}
               </button>
+            </div>
+
+            {/* Raw data section */}
+            <div className="mt-6 pt-4 border-t border-stone-200">
+              <button
+                type="button"
+                onClick={() => setShowRawData((v) => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors"
+              >
+                {showRawData ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+                <Database className="w-4 h-4" />
+                Tous les attributs en base
+              </button>
+              {showRawData && (
+                <div className="mt-3 rounded-xl bg-stone-50 border border-stone-200 p-4 overflow-x-auto">
+                  <pre className="text-xs text-stone-600 font-mono text-left leading-relaxed">
+                    {JSON.stringify(
+                      {
+                        id: timesheet.id,
+                        projectId: timesheet.projectId,
+                        memberId: timesheet.memberId,
+                        memberName: timesheet.memberName,
+                        date: timesheet.date,
+                        hours: timesheet.hours,
+                        phase: timesheet.phase,
+                        mode: timesheet.mode,
+                        travelKm: timesheet.travelKm,
+                        notes: timesheet.notes,
+                        details: timesheet.details,
+                        serviceTypeId: timesheet.serviceTypeId,
+                        serviceTypeLabel: timesheet.serviceTypeLabel,
+                        billed: timesheet.billed,
+                        trainingId: timesheet.trainingId,
+                        notionId: timesheet.notionId,
+                        notionCreatedAt: timesheet.notionCreatedAt,
+                        notionUpdatedAt: timesheet.notionUpdatedAt,
+                        createdAt: timesheet.createdAt,
+                        updatedAt: timesheet.updatedAt,
+                      },
+                      null,
+                      2
+                    )}
+                  </pre>
+                </div>
+              )}
+            </div>
             </div>
           </form>
         </div>

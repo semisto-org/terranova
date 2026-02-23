@@ -664,11 +664,15 @@ module Api
       end
 
       def timesheet_params
-        params.permit(:member_id, :member_name, :date, :hours, :phase, :mode, :travel_km, :notes)
+        p = params.permit(:member_id, :member_name, :date, :hours, :phase, :mode, :travel_km, :notes, :details, :service_type_id)
+        p[:service_type_id] = nil if p[:service_type_id].to_s.blank?
+        p
       end
 
       def timesheet_update_params
-        params.permit(:date, :hours, :phase, :mode, :travel_km, :notes)
+        p = params.permit(:date, :hours, :phase, :mode, :travel_km, :notes, :details, :service_type_id)
+        p[:service_type_id] = nil if p[:service_type_id].to_s.blank?
+        p
       end
 
       def expense_params
@@ -946,7 +950,17 @@ module Api
           phase: item.phase,
           mode: item.mode,
           travelKm: item.travel_km,
-          notes: item.notes
+          notes: item.notes,
+          details: item.details.to_s,
+          serviceTypeId: item.service_type_id&.to_s,
+          serviceTypeLabel: item.service_type&.label,
+          billed: item.billed,
+          trainingId: item.training_id&.to_s,
+          notionId: item.notion_id,
+          notionCreatedAt: item.notion_created_at&.iso8601,
+          notionUpdatedAt: item.notion_updated_at&.iso8601,
+          createdAt: item.created_at.iso8601,
+          updatedAt: item.updated_at.iso8601
         }
       end
 
