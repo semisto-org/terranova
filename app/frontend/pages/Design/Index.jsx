@@ -174,6 +174,7 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
 
           <form
             className="flex flex-col min-h-0 h-full"
+            data-1p-ignore
             onSubmit={(e) => { e.preventDefault(); onSubmit() }}
           >
             <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 p-6 space-y-8">
