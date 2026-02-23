@@ -539,10 +539,11 @@ export default function DesignIndex({ initialProjectId }) {
   }, [loadProject, runMutation])
 
   const deleteProject = useCallback((projectId) => {
-    const project = projects.find((p) => p.id === projectId)
+    const project = projects.find((p) => p.id === projectId) || projectDetail?.project
+    const projectName = project?.name || 'ce projet'
     setDeleteConfirm({
       title: 'Supprimer ce projet ?',
-      message: `Le projet « ${project?.name || ''} » sera supprimé définitivement.`,
+      message: `Le projet « ${projectName} » sera supprimé définitivement.`,
       action: () => runMutation(async () => {
         await apiRequest(`/api/v1/design/${projectId}`, { method: 'DELETE' })
         if (projectDetail?.project?.id === projectId) {
@@ -552,7 +553,7 @@ export default function DesignIndex({ initialProjectId }) {
         setNotice('Projet supprimé.')
       }),
     })
-  }, [projects, projectDetail?.project?.id, runMutation])
+  }, [projects, projectDetail?.project, runMutation])
 
   const updateEditProjectForm = useCallback((field, value) => {
     setEditProjectForm((prev) => ({ ...prev, [field]: value }))
@@ -907,6 +908,7 @@ export default function DesignIndex({ initialProjectId }) {
       onOpenEditProject: detailActions.openEditProject || noop,
       onUpdatePhase: detailActions.updatePhase || undefined,
       onUpdateStatus: detailActions.updateStatus || undefined,
+      onDeleteProject: deleteProject,
       onAddTeamMember: detailActions.addTeamMember || noop,
       onRemoveTeamMember: detailActions.removeTeamMember || noop,
       onAddTimesheet: detailActions.addTimesheet || noop,
@@ -948,7 +950,7 @@ export default function DesignIndex({ initialProjectId }) {
       onUpdateMaintenanceCalendar: detailActions.updateMaintenanceCalendar || noop,
       onSearch: detailActions.search || noopAsync,
     }
-  }, [detailActions])
+  }, [deleteProject, detailActions])
 
   if (loading || !stats) {
     return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Design Studio...</p></div>

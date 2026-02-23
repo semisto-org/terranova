@@ -14,6 +14,7 @@ import {
   Calendar,
   Leaf,
   Pencil,
+  Trash2,
 } from 'lucide-react'
 import { TabLayout, TabItem } from './shared/TabLayout'
 import { PhaseIndicator } from './shared/PhaseIndicator'
@@ -142,6 +143,7 @@ export interface ProjectDetailActions {
   onOpenEditProject?: () => void
   onUpdatePhase?: (phase: ProjectPhase) => void
   onUpdateStatus?: (status: ProjectStatus) => void
+  onDeleteProject?: (projectId: string) => void
   onAddTeamMember: (v: {
     member_name: string
     member_email: string
@@ -262,6 +264,16 @@ export function ProjectDetailView({
                   <Pencil className="w-3.5 h-3.5" />
                   Modifier
                 </button>
+                {a.onDeleteProject && (
+                  <button
+                    type="button"
+                    onClick={() => a.onDeleteProject?.(project.id)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Supprimer
+                  </button>
+                )}
               </div>
               <h1 className="text-2xl font-serif font-semibold text-stone-900 tracking-tight">
                 {project.name}

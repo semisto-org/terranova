@@ -34,7 +34,7 @@ export function ProjectDashboard({
 }: ProjectDashboardProps) {
   const [selectedStatuses, setSelectedStatuses] = useState<Set<ProjectStatus>>(new Set(['active', 'pending']))
   const [searchQuery, setSearchQuery] = useState('')
-  const [collapsedPhases, setCollapsedPhases] = useState<Set<ProjectPhase>>(new Set())
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<ProjectPhase>>(() => new Set(phaseOrder))
 
   const filteredProjects = useMemo(() => {
     let result = projects.filter(p => p.status !== 'archived')
