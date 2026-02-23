@@ -672,6 +672,21 @@ export default function DesignIndex({ initialProjectId }) {
         role: values.role,
         is_paid: values.is_paid,
       }) }), { refreshProjectId: currentProjectId }),
+      updateAddress: async (values) => {
+        const success = await runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            street: values.street,
+            number: values.number,
+            city: values.city,
+            postcode: values.postcode,
+            country_name: values.country_name,
+            latitude: values.latitude,
+            longitude: values.longitude,
+          }),
+        }), { refreshProjectId: currentProjectId })
+        if (success) setNotice('Adresse mise à jour.')
+      },
       removeTeamMember: (id) => {
         const member = projectDetail?.teamMembers?.find((m) => m.id === id)
         setDeleteConfirm({
@@ -910,6 +925,7 @@ export default function DesignIndex({ initialProjectId }) {
       onUpdatePhase: detailActions.updatePhase || undefined,
       onUpdateStatus: detailActions.updateStatus || undefined,
       onDeleteProject: deleteProject,
+      onUpdateAddress: detailActions.updateAddress || noopAsync,
       onAddTeamMember: detailActions.addTeamMember || noop,
       onRemoveTeamMember: detailActions.removeTeamMember || noop,
       onAddTimesheet: detailActions.addTimesheet || noop,

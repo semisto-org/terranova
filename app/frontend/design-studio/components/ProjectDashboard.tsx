@@ -333,8 +333,9 @@ export function ProjectDashboard({
                           <thead>
                             <tr className="border-b border-stone-100">
                               <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[28%]">Projet</th>
+                              <th className="text-center text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[10%]">Équipe</th>
                               <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[8%]">Surface</th>
-                              <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[20%]">Budget heures</th>
+                              <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[18%]">Budget heures</th>
                               <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[6%]"></th>
                             </tr>
                           </thead>
@@ -361,6 +362,41 @@ export function ProjectDashboard({
                                         {project.address.length > 30 ? `${project.address.slice(0, 30)}…` : project.address}
                                       </div>
                                     )}
+                                  </td>
+
+                                  {/* Team avatars stack */}
+                                  <td className="px-3 py-3">
+                                    <div className="flex justify-center">
+                                      {(project.teamMembers?.length ?? 0) > 0 ? (
+                                        <div className="flex -space-x-2" title={(project.teamMembers ?? []).map((m) => m.memberName).filter(Boolean).join(', ')}>
+                                          {(project.teamMembers ?? []).slice(0, 4).map((member) => (
+                                            <div
+                                              key={member.id}
+                                              className="w-8 h-8 rounded-full border-2 border-white bg-[#e1e6d8] flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-stone-200"
+                                            >
+                                              {member.memberAvatar ? (
+                                                <img
+                                                  src={member.memberAvatar}
+                                                  alt=""
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              ) : (
+                                                <span className="text-xs font-semibold text-[#6B7A00]">
+                                                  {(member.memberName || '?').charAt(0).toUpperCase()}
+                                                </span>
+                                              )}
+                                            </div>
+                                          ))}
+                                          {(project.teamMembers?.length ?? 0) > 4 && (
+                                            <div className="w-8 h-8 rounded-full border-2 border-white bg-stone-200 flex items-center justify-center shrink-0 ring-1 ring-stone-200 text-xs font-medium text-stone-600">
+                                              +{(project.teamMembers?.length ?? 0) - 4}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-stone-300">—</span>
+                                      )}
+                                    </div>
                                   </td>
 
                                   {/* Area */}

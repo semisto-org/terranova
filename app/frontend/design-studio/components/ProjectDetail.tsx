@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   Search,
   LayoutDashboard,
-  Users,
+  Settings,
   Clock,
   Euro,
   Map,
@@ -21,7 +21,7 @@ import { PhaseIndicator } from './shared/PhaseIndicator'
 import { StatusIndicator } from './shared/StatusIndicator'
 import {
   OverviewTab,
-  TeamTab,
+  SettingsTab,
   TimesheetsTab,
   ExpensesTab,
   SiteAnalysisTab,
@@ -49,6 +49,7 @@ export interface ProjectDetailPayload {
     postcode?: string
     countryName?: string
     address: string
+    coordinates?: { lat: number; lng: number }
     phase: ProjectPhase
     status: string
     area: number
@@ -68,6 +69,7 @@ export interface ProjectDetailPayload {
     id: string
     memberName: string
     memberEmail: string
+    memberAvatar?: string
     role: string
     isPaid: boolean
     assignedAt: string
@@ -144,6 +146,15 @@ export interface ProjectDetailActions {
   onUpdatePhase?: (phase: ProjectPhase) => void
   onUpdateStatus?: (status: ProjectStatus) => void
   onDeleteProject?: (projectId: string) => void
+  onUpdateAddress?: (v: {
+    street: string
+    number: string
+    city: string
+    postcode: string
+    country_name: string
+    latitude: number
+    longitude: number
+  }) => void | Promise<void>
   onAddTeamMember: (v: {
     member_name: string
     member_email: string
@@ -203,18 +214,18 @@ export interface ProjectDetailActions {
 }
 
 const DETAIL_TABS: TabItem[] = [
-  { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { id: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
+  { id: 'overview', label: "Vue d'ensemble", icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: 'timesheets', label: 'Timesheets', icon: <Clock className="w-4 h-4" /> },
-  { id: 'expenses', label: 'Expenses', icon: <Euro className="w-4 h-4" /> },
-  { id: 'site-analysis', label: 'Site Analysis', icon: <Map className="w-4 h-4" /> },
+  { id: 'expenses', label: 'Dépenses', icon: <Euro className="w-4 h-4" /> },
+  { id: 'site-analysis', label: 'Analyse', icon: <Map className="w-4 h-4" /> },
   { id: 'palette', label: 'Palette', icon: <Palette className="w-4 h-4" /> },
-  { id: 'planting-plan', label: 'Planting Plan', icon: <MapPin className="w-4 h-4" /> },
-  { id: 'quotes', label: 'Quotes', icon: <FileText className="w-4 h-4" /> },
+  { id: 'planting-plan', label: 'Plan', icon: <MapPin className="w-4 h-4" /> },
+  { id: 'quotes', label: 'Offre', icon: <FileText className="w-4 h-4" /> },
   { id: 'documents', label: 'Documents', icon: <FileStack className="w-4 h-4" /> },
   { id: 'album', label: 'Album', icon: <ImageIcon className="w-4 h-4" /> },
-  { id: 'meetings', label: 'Meetings', icon: <Calendar className="w-4 h-4" /> },
+  { id: 'meetings', label: 'Dates', icon: <Calendar className="w-4 h-4" /> },
   { id: 'co-gestion', label: 'Co-gestion', icon: <Leaf className="w-4 h-4" /> },
+  { id: 'settings', label: 'Paramètres', icon: <Settings className="w-4 h-4" /> },
 ]
 
 interface ProjectDetailViewProps {
@@ -243,8 +254,8 @@ export function ProjectDetailView({
     <main className="min-h-screen bg-stone-50 px-4 py-6">
       <div className="max-w-6xl mx-auto">
         <header className="rounded-2xl border border-stone-200 bg-white p-5 mb-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <PhaseIndicator
                   phase={project.phase as ProjectPhase}
@@ -282,6 +293,35 @@ export function ProjectDetailView({
                 {project.clientName} · {project.address}
               </p>
             </div>
+            {detail.teamMembers.length > 0 && (
+              <div className="flex items-center shrink-0" title={detail.teamMembers.map((m) => m.memberName).join(', ')}>
+                <div className="flex -space-x-2">
+                  {detail.teamMembers.slice(0, 5).map((member) => (
+                    <div
+                      key={member.id}
+                      className="w-10 h-10 rounded-full border-2 border-white bg-[#e1e6d8] flex items-center justify-center overflow-hidden shrink-0 shadow-sm ring-1 ring-stone-200"
+                    >
+                      {member.memberAvatar ? (
+                        <img
+                          src={member.memberAvatar}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-semibold text-[#6B7A00]">
+                          {(member.memberName || '?').charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {detail.teamMembers.length > 5 && (
+                    <div className="w-10 h-10 rounded-full border-2 border-white bg-stone-200 flex items-center justify-center shrink-0 shadow-sm ring-1 ring-stone-200 text-xs font-medium text-stone-600">
+                      +{detail.teamMembers.length - 5}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -324,14 +364,6 @@ export function ProjectDetailView({
           >
             {activeTab === 'overview' && (
               <OverviewTab project={project as import('../types').Project} />
-            )}
-            {activeTab === 'team' && (
-              <TeamTab
-                teamMembers={detail.teamMembers as any}
-                projectPhase={project.phase}
-                onAddTeamMember={a.onAddTeamMember}
-                onRemoveTeamMember={a.onRemoveTeamMember}
-              />
             )}
             {activeTab === 'timesheets' && (
               <TimesheetsTab
@@ -406,6 +438,23 @@ export function ProjectDetailView({
                 meetings={detail.meetings as import('../types').Meeting[]}
                 onAddMeeting={a.onAddMeeting}
                 onDeleteMeeting={a.onDeleteMeeting}
+              />
+            )}
+            {activeTab === 'settings' && (
+              <SettingsTab
+                project={{
+                  street: project.street,
+                  number: project.number,
+                  city: project.city,
+                  postcode: project.postcode,
+                  countryName: project.countryName,
+                  coordinates: project.coordinates,
+                }}
+                teamMembers={detail.teamMembers as any}
+                projectPhase={project.phase}
+                onUpdateAddress={a.onUpdateAddress ?? (async () => {})}
+                onAddTeamMember={a.onAddTeamMember}
+                onRemoveTeamMember={a.onRemoveTeamMember}
               />
             )}
             {activeTab === 'co-gestion' && (

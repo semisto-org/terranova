@@ -65,6 +65,7 @@ export interface Project {
   templateId: string | null
   createdAt: string
   updatedAt: string
+  teamMembers?: Array<{ id?: string; memberAvatar?: string; memberName?: string }>
 }
 
 // =============================================================================

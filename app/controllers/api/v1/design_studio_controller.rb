@@ -10,11 +10,11 @@ module Api
       before_action :require_effective_member, except: CLIENT_PORTAL_ACTIONS
       before_action :require_client_portal_access, only: CLIENT_PORTAL_ACTIONS
       def index
-        projects = Design::Project.order(updated_at: :desc)
+        projects = Design::Project.includes(:team_members).order(updated_at: :desc)
         templates = Design::ProjectTemplate.order(:name)
 
         render json: {
-          projects: projects.map { |project| serialize_project(project) },
+          projects: projects.map { |project| serialize_project(project).merge(teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) }) },
           stats: build_stats(projects),
           templates: templates.map { |template| serialize_template(template) }
         }
