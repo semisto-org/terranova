@@ -117,7 +117,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
       return
     }
 
-    if (selectedRoles.length === 0) {
+    if (false) {
       setError('Veuillez sélectionner au moins un rôle')
       return
     }
@@ -409,7 +409,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
                       )
                     })}
                   </div>
-                  {selectedRoles.length === 0 && (
+                  {false && selectedRoles.length === 0 && (
                     <p className="text-xs text-rose-500 mt-2">
                       Veuillez sélectionner au moins un rôle
                     </p>
@@ -497,7 +497,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
               </button>
               <button
                 type="submit"
-                disabled={busy || !firstName.trim() || !lastName.trim() || !email.trim() || selectedRoles.length === 0}
+                disabled={busy || !firstName.trim() || !lastName.trim() || !email.trim()}
                 className="px-5 py-2 rounded-xl font-medium text-white bg-[#5B5781] hover:bg-[#4a4669] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:shadow-none"
               >
                 {busy ? (

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { Member, Guild, Wallet, MemberRole, MemberStatus, MembershipType } from '../types'
 import { formatRelativeTime } from '../utils/formatRelativeTime'
+import slackIcon from '../../assets/slack-icon.svg'
 
 export interface MemberListProps {
   members: Member[]
@@ -103,12 +104,12 @@ function MemberTable({
   onEditMember?: (id: string) => void
   isAdmin: boolean
 }) {
-  // Sort: active first, then inactive
+  // Sort: alphabetical by last name, inactive at the end
   const sorted = useMemo(() => {
     return [...members].sort((a, b) => {
       if (a.status === 'active' && b.status !== 'active') return -1
       if (a.status !== 'active' && b.status === 'active') return 1
-      return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+      return a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
     })
   }, [members])
 
@@ -121,9 +122,8 @@ function MemberTable({
           <tr className="text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
             <th className="pl-4 pr-2 py-3">Membre</th>
             <th className="px-2 py-3 hidden md:table-cell">Email</th>
-            <th className="px-2 py-3">Rôles</th>
-            <th className="px-2 py-3">Statut</th>
             <th className="px-2 py-3 hidden md:table-cell">Dernière activité</th>
+            <th className="px-2 py-3 w-8" title="Slack"><img src={slackIcon} alt="Slack" className="w-4 h-4 opacity-50" /></th>
             <th className="px-2 pr-4 py-3 w-10"></th>
           </tr>
         </thead>
@@ -160,35 +160,21 @@ function MemberTable({
                   <span className="text-sm text-stone-500 truncate">{member.email}</span>
                 </td>
 
-                {/* Roles */}
-                <td className="px-2 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {member.roles.map((role) => (
-                      <span
-                        key={role}
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${roleColors[role] || 'bg-stone-100 text-stone-600'}`}
-                      >
-                        {roleLabels[role] || role}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-
-                {/* Status */}
-                <td className="px-2 py-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-2 h-2 rounded-full ${member.status === 'active' ? 'bg-emerald-500' : 'bg-stone-400'}`} />
-                    <span className="text-xs text-stone-600">
-                      {member.status === 'active' ? 'Actif' : 'Inactif'}
-                    </span>
-                  </div>
-                </td>
-
                 {/* Last activity */}
                 <td className="px-2 py-3 hidden md:table-cell">
                   <span className={`text-xs ${activity.isOnline ? 'text-emerald-600 font-medium' : activity.text === 'Jamais' ? 'text-stone-400' : 'text-stone-500'}`}>
                     {activity.text}
                   </span>
+                </td>
+
+                {/* Slack */}
+                <td className="px-2 py-3">
+                  <img
+                    src={slackIcon}
+                    alt="Slack"
+                    className={`w-4 h-4 ${(member as any).slackUserId ? '' : 'grayscale opacity-30'}`}
+                    title={(member as any).slackUserId ? `Slack: ${(member as any).slackUserId}` : 'Slack non lié'}
+                  />
                 </td>
 
                 {/* Actions */}
