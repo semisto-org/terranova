@@ -3,25 +3,32 @@
     "file": "assets/leaflet-CIGW-MKW.css",
     "src": "../../node_modules/leaflet/dist/leaflet.css"
   },
-  "_leaflet-src-Bbt1FprG.js": {
-    "file": "assets/leaflet-src-Bbt1FprG.js",
+  "_leaflet-src-Mr1qml5e.js": {
+    "file": "assets/leaflet-src-Mr1qml5e.js",
     "name": "leaflet-src",
     "isDynamicEntry": true,
     "imports": [
       "entrypoints/application.jsx"
     ]
   },
+  "components/nova-chat/nova-avatar.jpg": {
+    "file": "assets/nova-avatar-Zmmp7TEI.jpg",
+    "src": "components/nova-chat/nova-avatar.jpg"
+  },
   "entrypoints/application.jsx": {
-    "file": "assets/application-hsCd5dVE.js",
+    "file": "assets/application-BJio0aAQ.js",
     "name": "application",
     "src": "entrypoints/application.jsx",
     "isEntry": true,
     "dynamicImports": [
-      "_leaflet-src-Bbt1FprG.js",
-      "_leaflet-src-Bbt1FprG.js"
+      "_leaflet-src-Mr1qml5e.js",
+      "_leaflet-src-Mr1qml5e.js"
     ],
     "css": [
-      "assets/application-D_soDb69.css"
+      "assets/application-Dq8yh-78.css"
+    ],
+    "assets": [
+      "assets/nova-avatar-Zmmp7TEI.jpg"
     ]
   }
 }

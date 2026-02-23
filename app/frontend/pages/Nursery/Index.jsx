@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import { NurseryDashboard } from '../../nursery/components/NurseryDashboard'
 import { StockManagement } from '../../nursery/components/StockManagement'
 import { OrderList } from '../../nursery/components/OrderList'
@@ -26,7 +27,7 @@ export default function NurseryIndex() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
-  const [view, setView] = useState('dashboard')
+  const [view, setView] = useUrlState('tab', 'dashboard')
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [nurseryForm, setNurseryForm] = useState(null)
   useShellNav({ sections: NURSERY_SECTIONS, activeSection: view, onSectionChange: (v) => { setView(v); setSelectedOrderId(null) } })

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import LocationsMap from '../../components/academy/LocationsMap'
 import {
   TrainingDetail,
@@ -32,13 +33,12 @@ const ACADEMY_SECTIONS = [
 
 export default function AcademyIndex({ initialTrainingId }) {
   const initialPath = window.location.pathname
-  const urlParams = new URLSearchParams(window.location.search)
-  const initialView = urlParams.get('view') || (initialPath.includes('/academy/calendar') ? 'calendar' : 'kanban')
+  const calendarDefault = initialPath.includes('/academy/calendar') ? 'calendar' : 'kanban'
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
-  const [view, setView] = useState(initialView)
+  const [view, setView] = useUrlState('tab', calendarDefault)
   const handleViewChange = useCallback((id) => {
     if (id === 'reporting') {
       apiRequest('/api/v1/academy/reporting').then((payload) => setReporting(payload))

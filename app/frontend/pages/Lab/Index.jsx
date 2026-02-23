@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import {
   Dashboard,
   ShapeUpWorkboard,
@@ -146,7 +147,7 @@ function DetailModal({ title, data, onClose }) {
 }
 
 export default function LabIndex({ milestone, currentMemberId: initialMemberId }) {
-  const [tab, setTab] = useState('dashboard')
+  const [tab, setTab] = useUrlState('tab', 'dashboard')
   useShellNav({ sections: SECTION_TABS, activeSection: tab, onSectionChange: setTab })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)

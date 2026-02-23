@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import {
@@ -26,7 +27,7 @@ const SECTION_TABS = [
 ]
 
 export default function AdminSettings({ currentMemberId: initialMemberId }) {
-  const [tab, setTab] = useState('members')
+  const [tab, setTab] = useUrlState('tab', 'members')
   useShellNav({ sections: SECTION_TABS, activeSection: tab, onSectionChange: setTab })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
