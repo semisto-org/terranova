@@ -37,7 +37,9 @@ module Api
           --timeout 60000 2>&1`
 
         begin
-          parsed = JSON.parse(result)
+          # Extract JSON from "Gateway call: agent {...}" response
+          json_text = result.to_s.sub(/^Gateway call: agent\s*/, '').strip
+          parsed = JSON.parse(json_text)
           if parsed["result"] && parsed["result"]["payloads"]
             parsed["result"]["payloads"].map { |p| p["text"] }.compact.join("\n")
           elsif parsed["error"]
