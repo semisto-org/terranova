@@ -39,8 +39,8 @@ export function ActivityChart({ timesheets }: ActivityChartProps) {
   const chartHeight = 140
 
   return (
-    <div className="rounded-2xl border border-stone-200 overflow-visible bg-gradient-to-br from-white via-[#e1e6d8]/15 to-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="p-5 overflow-visible">
+    <div className="rounded-2xl border border-stone-200 overflow-hidden bg-gradient-to-br from-white via-[#e1e6d8]/15 to-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="p-5">
         <div className="flex items-center gap-2 mb-5">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#AFBD00]/15">
             <BarChart3 className="w-4.5 h-4.5 text-[#AFBD00]" strokeWidth={2} />
@@ -58,13 +58,13 @@ export function ActivityChart({ timesheets }: ActivityChartProps) {
         <div
           className="grid gap-x-3 gap-y-1"
           style={{
-            gridTemplateColumns: `auto repeat(${months.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: `auto repeat(${months.length}, minmax(40px, 1fr))`,
           }}
         >
           {/* Y-axis */}
           <div
-            className="flex flex-col justify-between text-xs font-medium text-stone-400 tabular-nums row-span-2 self-stretch"
-            style={{ height: chartHeight }}
+            className="flex flex-col justify-between text-xs font-medium text-stone-400 tabular-nums"
+            style={{ gridColumn: 1, gridRow: 1, height: chartHeight }}
           >
             <span>{maxHours}h</span>
             <span>{Math.round(maxHours / 2)}h</span>
