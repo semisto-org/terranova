@@ -146,9 +146,11 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             body.append('last_name', values.last_name)
             body.append('email', values.email)
             body.append('avatar_image', values.avatar_file)
-            body.append('status', 'active')
+            body.append('status', values.status)
             body.append('is_admin', String(values.is_admin))
             body.append('joined_at', new Date().toISOString().slice(0, 10))
+            body.append('membership_type', values.membership_type)
+            body.append('member_kind', 'human')
             values.roles.forEach((role) => body.append('roles[]', role))
             const response = await fetch('/api/v1/lab/members', {
               method: 'POST',
@@ -167,9 +169,11 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 last_name: values.last_name,
                 email: values.email,
                 avatar: '',
-                status: 'active',
+                status: values.status,
                 is_admin: values.is_admin,
                 joined_at: new Date().toISOString().slice(0, 10),
+                membership_type: values.membership_type,
+                member_kind: 'human',
                 roles: values.roles,
                 guild_ids: [],
               }),
@@ -201,6 +205,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             body.append('first_name', values.first_name)
             body.append('last_name', values.last_name)
             body.append('is_admin', String(values.is_admin))
+            body.append('status', values.status)
+            body.append('membership_type', values.membership_type)
             body.append('avatar_image', values.avatar_file)
             values.roles.forEach((role) => body.append('roles[]', role))
             const response = await fetch(`/api/v1/lab/members/${memberId}`, {
@@ -219,6 +225,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 first_name: values.first_name,
                 last_name: values.last_name,
                 is_admin: values.is_admin,
+                status: values.status,
+                membership_type: values.membership_type,
                 roles: values.roles,
               }),
             })
