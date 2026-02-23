@@ -21,6 +21,7 @@ export interface ExpenseItem {
   trainingId: string | null
   designProjectId: string | null
   notes: string
+  documentUrl: string | null
   createdAt: string
 }
 
@@ -198,6 +199,7 @@ export function ExpenseList({
                 <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">TVAC</th>
                 <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Statut</th>
                 <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Pôles</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Doc</th>
                 <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Liens</th>
                 <th className="px-4 py-3 w-12" />
               </tr>
@@ -459,6 +461,18 @@ function ExpenseRow({
         </span>
       </td>
       <td className="px-4 py-3 text-sm text-stone-600">{poleLabels}</td>
+      <td className="px-4 py-3 text-sm text-stone-600">
+        {expense.documentUrl ? (
+          <a href={expense.documentUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#5B5781] hover:text-[#4a4670] transition-colors" title="Voir le document">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+            <span className="text-xs">Facture</span>
+          </a>
+        ) : (
+          <span className="text-stone-300 text-xs">—</span>
+        )}
+      </td>
       <td className="px-4 py-3 text-sm text-stone-600 max-w-[140px] truncate" title={linksText}>
         {linksText}
       </td>
