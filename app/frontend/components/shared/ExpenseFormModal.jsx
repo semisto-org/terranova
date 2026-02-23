@@ -203,7 +203,7 @@ export function ExpenseFormModal({
       })
       .catch(() => {})
     return () => { cancelled = true }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- intentional: run once when modal opens
+  }, []) // eslint-disable-line -- intentional: run once when modal opens
 
   useEffect(() => {
     if (supplierRef.current && !showNewContactForm) {
