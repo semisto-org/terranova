@@ -22,7 +22,7 @@ const roleLabels: Record<string, string> = {
   IT: 'IT',
 }
 
-const allRoles: MemberRole[] = ['designer', 'shaper', 'formateur', 'comptable', 'coordination', 'communication', 'IT']
+const allRoles: MemberRole[] = ['designer', 'shaper', 'formateur', 'comptable', 'coordination', 'communication', 'IT', 'autre']
 
 export function MemberList({
   members,

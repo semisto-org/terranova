@@ -12,6 +12,7 @@ const AVAILABLE_ROLES = [
   { value: 'shaper', label: 'Shaper', description: 'Shape Up - définition produits' },
   { value: 'communication', label: 'Communication', description: 'Communication et marketing' },
   { value: 'IT', label: 'IT', description: 'Développement et maintenance outils' },
+  { value: 'autre', label: 'Autre', description: 'Autre rôle' },
 ]
 
 export interface MemberFormProps {
