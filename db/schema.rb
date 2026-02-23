@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_22_221900) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_23_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -482,7 +482,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_22_221900) do
     t.string "notion_id"
     t.datetime "notion_updated_at"
     t.string "phase", default: "", null: false
-    t.bigint "project_id", null: false
+    t.bigint "project_id"
     t.bigint "size", default: 0, null: false
     t.datetime "updated_at", null: false
     t.datetime "uploaded_at", null: false
@@ -633,7 +633,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_22_221900) do
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
-    t.bigint "project_id", null: false
+    t.bigint "project_id"
     t.date "sent_at"
     t.string "status", default: "draft", null: false
     t.decimal "subtotal", precision: 12, scale: 2, default: "0.0", null: false
@@ -927,6 +927,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_22_221900) do
     t.string "first_name", null: false
     t.boolean "is_admin", default: false, null: false
     t.date "joined_at", null: false
+    t.datetime "last_activity_at"
     t.string "last_name", null: false
     t.string "member_kind", default: "human", null: false
     t.string "membership_type", default: "effective", null: false
