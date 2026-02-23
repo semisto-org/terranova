@@ -144,19 +144,16 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
     setGeocoding(true)
     setGeocodeError(null)
     try {
-      const query = encodeURIComponent(address.trim())
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&accept-language=fr`, {
-        headers: { 'User-Agent': 'Terranova/1.0' },
-      })
-      const results = await response.json()
+      const data = await apiRequest(`/api/v1/geocoding?address=${encodeURIComponent(address.trim())}`)
+      const results = data?.results || []
       if (results.length > 0) {
         onChange('latitude', parseFloat(results[0].lat).toFixed(6))
-        onChange('longitude', parseFloat(results[0].lon).toFixed(6))
+        onChange('longitude', parseFloat(results[0].lng).toFixed(6))
       } else {
         setGeocodeError('Aucun résultat trouvé pour cette adresse.')
       }
-    } catch {
-      setGeocodeError('Erreur lors de la géolocalisation.')
+    } catch (err) {
+      setGeocodeError(err.message || 'Erreur lors de la géolocalisation.')
     } finally {
       setGeocoding(false)
     }
@@ -340,29 +337,35 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
                         {geocoding ? 'Recherche...' : "Géolocaliser l'adresse"}
                       </button>
                     </div>
-                    {values.latitude && values.longitude ? (
-                      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-                        <svg className="h-3.5 w-3.5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>{values.latitude}, {values.longitude}</span>
-                        <button
-                          type="button"
-                          onClick={() => { onChange('latitude', ''); onChange('longitude', '') }}
-                          className="ml-auto text-emerald-600 transition-colors hover:text-emerald-800"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-stone-500">
-                        Saisissez une adresse puis cliquez sur « Géolocaliser » pour placer le site sur la carte.
-                      </p>
-                    )}
+                    <p className="mb-3 text-xs text-stone-500">
+                      Cliquez sur « Géolocaliser » pour remplir automatiquement, ou saisissez les coordonnées manuellement.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="grid gap-1.5">
+                        <span className={labelClass}>Latitude</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className={inputClass}
+                          value={values.latitude}
+                          onChange={(e) => { onChange('latitude', e.target.value); setGeocodeError(null) }}
+                          placeholder="50.467388"
+                        />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className={labelClass}>Longitude</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className={inputClass}
+                          value={values.longitude}
+                          onChange={(e) => { onChange('longitude', e.target.value); setGeocodeError(null) }}
+                          placeholder="4.871985"
+                        />
+                      </label>
+                    </div>
                     {geocodeError && (
-                      <p className="mt-1 text-xs text-red-600">{geocodeError}</p>
+                      <p className="mt-2 text-xs text-red-600">{geocodeError}</p>
                     )}
                   </div>
                 </div>

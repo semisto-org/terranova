@@ -45,6 +45,8 @@ Rails.application.routes.draw do
       get "foundation/shell", to: "foundation#shell"
       get "foundation/milestone", to: "foundation#milestone"
 
+      get "geocoding", to: "geocoding#show"
+
       get "profile", to: "profile#show"
       patch "profile", to: "profile#update"
       delete "profile/avatar", to: "profile#remove_avatar"

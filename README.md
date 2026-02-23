@@ -97,6 +97,18 @@ Les assets frontend (React/Vite) sont compilees lors du deploiement via `rake as
 | `AWS_SES_REGION`            | Region SES (defaut : `eu-west-1`)        |
 | `APP_HOST`                  | Hostname pour les liens dans les emails  |
 | `MAILER_FROM`               | Adresse d'expedition (defaut : `noreply@terranova.semisto.org`) |
+| `GOOGLE_MAPS_API_KEY`       | Cle API Google pour la geolocalisation (Design Studio, Academy) |
+
+### Obtenir une cle API Google Geocoding
+
+1. Creer un projet dans [Google Cloud Console](https://console.cloud.google.com/)
+2. Activer la facturation (Google Maps Platform exige un compte de facturation)
+3. Activer l'API Geocoding : APIs & Services > Library > rechercher "Geocoding API" > Enable
+4. Creer une cle API : APIs & Services > Credentials > Create Credentials > API key
+5. (Recommandé) Restreindre la cle : Applications > IP addresses, ajouter l'IP de votre serveur (la requete part du backend, pas du navigateur). En dev local : `127.0.0.1` ou laisser sans restriction.
+6. Copier la cle et l'ajouter dans `.env` : `GOOGLE_MAPS_API_KEY=votre_cle`
+
+Sans cette variable, le bouton « Geolocaliser » affichera une erreur « Geocoding not configured ».
 
 ## API
 
@@ -106,6 +118,10 @@ Les assets frontend (React/Vite) sont compilees lors du deploiement via `rake as
 - `GET /api/v1/website/articles`
 - `GET /api/v1/website/events`
 - `GET /api/v1/website/courses`
+
+### Geocoding (authentifie)
+
+- `GET /api/v1/geocoding?address=...` — Geocodage via Google (proxy serveur)
 
 ### Foundation (milestone 1)
 
