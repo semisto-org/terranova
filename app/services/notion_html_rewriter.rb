@@ -45,7 +45,7 @@ class NotionHtmlRewriter
       asset = NotionAsset.find_by(notion_url: stable_url)
 
       if asset&.file&.attached?
-        new_url = Rails.application.routes.url_helpers.url_for(asset.file)
+        new_url = Rails.application.routes.url_helpers.rails_blob_path(asset.file, only_path: true)
         @logger.info "  [#{idx}/#{total}] Replacing image URL in #{record.notion_id}"
         img["src"] = new_url
         changed = true
@@ -65,7 +65,7 @@ class NotionHtmlRewriter
       asset = NotionAsset.find_by(notion_url: stable_url)
 
       if asset&.file&.attached?
-        new_url = Rails.application.routes.url_helpers.url_for(asset.file)
+        new_url = Rails.application.routes.url_helpers.rails_blob_path(asset.file, only_path: true)
         @logger.info "  [#{idx}/#{total}] Replacing link URL in #{record.notion_id}"
         link["href"] = new_url
         changed = true
