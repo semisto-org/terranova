@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Clock, Plus, Trash2 } from 'lucide-react'
 import type { Timesheet, ProjectPhase } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
+import { TimesheetEditModal } from './TimesheetEditModal'
 
 const phaseOrder: ProjectPhase[] = [
   'offre',
@@ -25,15 +26,30 @@ interface TimesheetsTabProps {
     travel_km: number
     notes: string
   }) => void
+  onUpdateTimesheet?: (
+    id: string,
+    values: {
+      date: string
+      hours: number
+      phase: ProjectPhase
+      mode: 'billed' | 'semos'
+      travel_km: number
+      notes: string
+    }
+  ) => Promise<void>
   onDeleteTimesheet: (id: string) => void
+  timesheetEditBusy?: boolean
 }
 
 export function TimesheetsTab({
   timesheets,
   projectPhase,
   onAddTimesheet,
+  onUpdateTimesheet,
   onDeleteTimesheet,
+  timesheetEditBusy = false,
 }: TimesheetsTabProps) {
+  const [editModalTimesheet, setEditModalTimesheet] = useState<Timesheet | null>(null)
   const [form, setForm] = useState({
     member_name: '',
     hours: 2,
@@ -211,7 +227,15 @@ export function TimesheetsTab({
                 {timesheets.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-stone-100 hover:bg-stone-50/50"
+                    className={`border-b border-stone-100 hover:bg-stone-50/50 ${
+                      onUpdateTimesheet ? 'cursor-pointer' : ''
+                    }`}
+                    onClick={() => {
+                      if (onUpdateTimesheet) {
+                        const ts = timesheets.find((t) => t.id === item.id)
+                        if (ts) setEditModalTimesheet(ts)
+                      }
+                    }}
                   >
                     <td className="px-4 py-3 text-stone-600">
                       {new Date(item.date).toLocaleDateString('fr-BE')}
@@ -236,7 +260,7 @@ export function TimesheetsTab({
                         {item.mode === 'billed' ? 'Facturé' : 'Semos'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         onClick={() => onDeleteTimesheet(item.id)}
@@ -252,6 +276,20 @@ export function TimesheetsTab({
             </table>
           </div>
         </div>
+      )}
+
+      {onUpdateTimesheet && (
+        <TimesheetEditModal
+          timesheet={editModalTimesheet}
+          open={Boolean(editModalTimesheet)}
+          busy={timesheetEditBusy}
+          onSave={async (values) => {
+            if (editModalTimesheet) {
+              await onUpdateTimesheet(editModalTimesheet.id, values)
+            }
+          }}
+          onClose={() => setEditModalTimesheet(null)}
+        />
       )}
     </div>
   )

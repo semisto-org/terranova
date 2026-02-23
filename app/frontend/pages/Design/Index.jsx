@@ -256,8 +256,8 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
                   <h3 className="text-sm font-semibold text-stone-800">Adresse du site</h3>
                 </div>
                 <div className="space-y-4 pl-3 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-                    <label className="grid gap-1.5 flex-1 min-w-0">
+                  <div className="grid grid-cols-[1fr_5rem] gap-4">
+                    <label className="grid gap-1.5 min-w-0">
                       <span className={labelClass}>Rue</span>
                       <input
                         className={`${inputClass} min-w-0`}
@@ -267,10 +267,10 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
                         required
                       />
                     </label>
-                    <label className="grid gap-1.5 sm:w-20 shrink-0">
+                    <label className="grid gap-1.5 min-w-0">
                       <span className={labelClass}>N°</span>
                       <input
-                        className={inputClass}
+                        className={`${inputClass} min-w-0 w-full`}
                         value={values.number}
                         onChange={(e) => onChange('number', e.target.value)}
                         placeholder="12"
@@ -391,7 +391,17 @@ const DESIGN_SECTIONS = [
 ]
 
 export default function DesignIndex({ initialProjectId }) {
-  useShellNav({ sections: DESIGN_SECTIONS, activeSection: 'projects', onSectionChange: () => {} })
+  const [projectDetail, setProjectDetail] = useState(null)
+  useShellNav({
+    sections: DESIGN_SECTIONS,
+    activeSection: 'projects',
+    onSectionChange: (id) => {
+      if (id === 'projects' && projectDetail) {
+        setProjectDetail(null)
+        window.history.pushState({}, '', '/design')
+      }
+    },
+  })
   const paletteIdFromQuery = new URLSearchParams(window.location.search).get('palette_id')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -402,7 +412,6 @@ export default function DesignIndex({ initialProjectId }) {
   const [stats, setStats] = useState(null)
   const [templates, setTemplates] = useState([])
 
-  const [projectDetail, setProjectDetail] = useState(null)
   const [searchResults, setSearchResults] = useState([])
 
   const [projectModalOpen, setProjectModalOpen] = useState(false)
@@ -649,6 +658,13 @@ export default function DesignIndex({ initialProjectId }) {
         }), { refreshProjectId: currentProjectId })
         if (success) setNotice('Phase mise à jour.')
       },
+      updateStatus: async (status) => {
+        const success = await runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status }),
+        }), { refreshProjectId: currentProjectId })
+        if (success) setNotice('Statut mis à jour.')
+      },
       addTeamMember: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/team-members`, { method: 'POST', body: JSON.stringify({
         member_id: values.member_id,
         role: values.role,
@@ -672,6 +688,19 @@ export default function DesignIndex({ initialProjectId }) {
         travel_km: values.travel_km,
         notes: values.notes,
       }) }), { refreshProjectId: currentProjectId }),
+      updateTimesheet: async (id, values) => {
+        await runMutation(() => apiRequest(`/api/v1/design/timesheets/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            date: values.date,
+            hours: values.hours,
+            phase: values.phase,
+            mode: values.mode,
+            travel_km: values.travel_km,
+            notes: values.notes,
+          }),
+        }), { refreshProjectId: currentProjectId })
+      },
       deleteTimesheet: (id) => {
         const ts = projectDetail?.timesheets?.find((t) => t.id === id)
         setDeleteConfirm({
@@ -877,10 +906,13 @@ export default function DesignIndex({ initialProjectId }) {
       onRefresh: detailActions.refresh || noop,
       onOpenEditProject: detailActions.openEditProject || noop,
       onUpdatePhase: detailActions.updatePhase || undefined,
+      onUpdateStatus: detailActions.updateStatus || undefined,
       onAddTeamMember: detailActions.addTeamMember || noop,
       onRemoveTeamMember: detailActions.removeTeamMember || noop,
       onAddTimesheet: detailActions.addTimesheet || noop,
+      onUpdateTimesheet: detailActions.updateTimesheet || undefined,
       onDeleteTimesheet: detailActions.deleteTimesheet || noop,
+      timesheetEditBusy: busy,
       onOpenExpenseAdd: () => setExpenseModal({ expense: null }),
       onEditExpense: (expense) => setExpenseModal({ expense }),
       onApproveExpense: detailActions.approveExpense || noop,

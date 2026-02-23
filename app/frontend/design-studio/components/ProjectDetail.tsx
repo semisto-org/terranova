@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { TabLayout, TabItem } from './shared/TabLayout'
 import { PhaseIndicator } from './shared/PhaseIndicator'
+import { StatusIndicator } from './shared/StatusIndicator'
 import {
   OverviewTab,
   TeamTab,
@@ -32,6 +33,7 @@ import {
   CoGestionTab,
 } from './tabs'
 import type { ProjectPhase } from './shared/PhaseIndicator'
+import type { ProjectStatus } from './shared/StatusIndicator'
 
 export interface ProjectDetailPayload {
   project: {
@@ -139,6 +141,7 @@ export interface ProjectDetailActions {
   onRefresh: () => void
   onOpenEditProject?: () => void
   onUpdatePhase?: (phase: ProjectPhase) => void
+  onUpdateStatus?: (status: ProjectStatus) => void
   onAddTeamMember: (v: {
     member_name: string
     member_email: string
@@ -155,7 +158,12 @@ export interface ProjectDetailActions {
     travel_km?: number
     notes?: string
   }) => void
+  onUpdateTimesheet?: (
+    id: string,
+    v: { date: string; hours: number; phase: string; mode: string; travel_km: number; notes: string }
+  ) => Promise<void>
   onDeleteTimesheet: (id: string) => void
+  timesheetEditBusy?: boolean
   onOpenExpenseAdd: () => void
   onEditExpense: (expense: ProjectDetailPayload['expenses'][0]) => void
   onApproveExpense: (id: string) => void
@@ -241,6 +249,11 @@ export function ProjectDetailView({
                   showLabel
                   onPhaseChange={a.onUpdatePhase}
                 />
+                <StatusIndicator
+                  status={(project.status || 'pending') as ProjectStatus}
+                  showLabel
+                  onStatusChange={a.onUpdateStatus}
+                />
                 <button
                   type="button"
                   onClick={a.onOpenEditProject}
@@ -313,7 +326,9 @@ export function ProjectDetailView({
                 timesheets={detail.timesheets as any}
                 projectPhase={project.phase as ProjectPhase}
                 onAddTimesheet={a.onAddTimesheet}
+                onUpdateTimesheet={a.onUpdateTimesheet}
                 onDeleteTimesheet={a.onDeleteTimesheet}
+                timesheetEditBusy={a.timesheetEditBusy}
               />
             )}
             {activeTab === 'expenses' && (

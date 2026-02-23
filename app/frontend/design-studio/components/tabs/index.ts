@@ -1,6 +1,7 @@
 export { OverviewTab } from './OverviewTab'
 export { TeamTab } from './TeamTab'
 export { TimesheetsTab } from './TimesheetsTab'
+export { TimesheetEditModal } from './TimesheetEditModal'
 export { ExpensesTab } from './ExpensesTab'
 export { SiteAnalysisTab } from './SiteAnalysisTab'
 export { PaletteTab } from './PaletteTab'

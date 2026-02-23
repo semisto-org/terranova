@@ -1,5 +1,7 @@
 export { EmptyState } from './EmptyState'
 export { PhaseIndicator, phaseLabels, phaseColors } from './PhaseIndicator'
 export type { ProjectPhase } from './PhaseIndicator'
+export { StatusIndicator, statusLabels, statusColors } from './StatusIndicator'
+export type { ProjectStatus } from './StatusIndicator'
 export { TabLayout } from './TabLayout'
 export type { TabItem } from './TabLayout'
