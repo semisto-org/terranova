@@ -170,6 +170,7 @@ Rails.application.routes.draw do
       post "plants/references", to: "plants#create_reference"
 
       get "design", to: "design_studio#index"
+      get "design_studio/reporting", to: "design_studio#reporting"
       get "design/:project_id", to: "design_studio#show"
       post "design", to: "design_studio#create"
       patch "design/:project_id", to: "design_studio#update"
