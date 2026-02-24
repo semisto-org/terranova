@@ -4,7 +4,8 @@
   "packageManager": "yarn@1.22.22",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "test:frontend": "node --test app/frontend/components/shell/__tests__/globalSearchKeyboard.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
