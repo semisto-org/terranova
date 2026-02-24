@@ -91,6 +91,11 @@ Rails.application.routes.draw do
       patch "lab/timesheet-service-types/:id", to: "lab_management#update_timesheet_service_type"
       delete "lab/timesheet-service-types/:id", to: "lab_management#destroy_timesheet_service_type"
 
+      get "settings/cycles", to: "settings/cycles#index"
+      post "settings/cycles", to: "settings/cycles#create"
+      patch "settings/cycles/:id", to: "settings/cycles#update"
+      delete "settings/cycles/:id", to: "settings/cycles#destroy"
+
       get "lab/events", to: "lab_management#list_events"
       get "lab/events/:id", to: "lab_management#show_event"
       get "lab/calendar", to: "lab_management#calendar"

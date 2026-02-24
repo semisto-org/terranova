@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_23_190001) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_24_193000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -319,6 +319,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_190001) do
     t.index ["name"], name: "index_contacts_on_name"
     t.index ["notion_id"], name: "index_contacts_on_notion_id", unique: true
     t.index ["organization_id"], name: "index_contacts_on_organization_id"
+  end
+
+  create_table "cycle_periods", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "color", default: "#5B5781", null: false
+    t.date "cooldown_ends_on", null: false
+    t.date "cooldown_starts_on", null: false
+    t.datetime "created_at", null: false
+    t.date "ends_on", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.date "starts_on", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_cycle_periods_on_active"
+    t.index ["starts_on"], name: "index_cycle_periods_on_starts_on"
   end
 
   create_table "cycles", force: :cascade do |t|

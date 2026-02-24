@@ -315,7 +315,9 @@ module Api
       def calendar
         render json: {
           cycles: serialize_cycles,
-          events: serialize_events
+          events: serialize_events,
+          cyclePeriods: serialize_cycle_periods,
+          cycleEvents: serialize_cycle_period_events
         }
       end
 
@@ -985,6 +987,51 @@ module Api
             status: cycle.status,
             betIds: cycle.bets.map { |bet| bet.id.to_s }
           }
+        end
+      end
+
+      def serialize_cycle_periods
+        CyclePeriod.ordered.map do |cycle|
+          {
+            id: cycle.id.to_s,
+            name: cycle.name,
+            startsOn: cycle.starts_on.iso8601,
+            endsOn: cycle.ends_on.iso8601,
+            cooldownStartsOn: cycle.cooldown_starts_on.iso8601,
+            cooldownEndsOn: cycle.cooldown_ends_on.iso8601,
+            color: cycle.color,
+            notes: cycle.notes,
+            active: cycle.active
+          }
+        end
+      end
+
+      def serialize_cycle_period_events
+        CyclePeriod.active.ordered.flat_map do |cycle|
+          [
+            {
+              id: "cycle-period-#{cycle.id}-work",
+              title: "#{cycle.name} · Cycle",
+              type: "cycle_work",
+              color: cycle.color,
+              startDate: cycle.starts_on.iso8601,
+              endDate: cycle.ends_on.iso8601,
+              allDay: true,
+              source: "cycle_period",
+              cyclePeriodId: cycle.id.to_s
+            },
+            {
+              id: "cycle-period-#{cycle.id}-cooldown",
+              title: "#{cycle.name} · Cooldown",
+              type: "cycle_cooldown",
+              color: cycle.color,
+              startDate: cycle.cooldown_starts_on.iso8601,
+              endDate: cycle.cooldown_ends_on.iso8601,
+              allDay: true,
+              source: "cycle_period",
+              cyclePeriodId: cycle.id.to_s
+            }
+          ]
         end
       end
 
