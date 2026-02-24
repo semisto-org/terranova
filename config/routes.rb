@@ -35,6 +35,9 @@ Rails.application.routes.draw do
   get "admin/settings", to: "app#admin"
   get "parametres", to: "app#parametres"
 
+  get "calendar/semisto.ics", to: "calendar_feeds#semisto"
+  get "calendar/trainings.ics", to: "calendar_feeds#trainings"
+
   namespace :api do
     namespace :v1 do
       get "health", to: "health#show"
@@ -231,6 +234,7 @@ Rails.application.routes.draw do
       get "academy", to: "academy#index"
       get "academy/calendar", to: "academy#calendar"
       get "academy/reporting", to: "academy#reporting"
+      get "academy/calendar-links", to: "academy#calendar_links"
       post "academy/training-types", to: "academy#create_training_type"
       patch "academy/training-types/:training_type_id", to: "academy#update_training_type"
       delete "academy/training-types/:training_type_id", to: "academy#destroy_training_type"

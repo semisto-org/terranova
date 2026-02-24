@@ -63,6 +63,7 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [reporting, setReporting] = useState(null)
   const [calendarView, setCalendarView] = useState('month')
   const [calendarDate, setCalendarDate] = useState(() => new Date())
+  const [calendarLinks, setCalendarLinks] = useState(null)
   const [search, setSearch] = useState('')
   const [activeModal, setActiveModal] = useState(null)
   const [modalData, setModalData] = useState(null)
@@ -104,6 +105,25 @@ export default function AcademyIndex({ initialTrainingId }) {
       setBusy(false)
     }
   }, [loadAcademy])
+
+  const fetchCalendarLinks = useCallback(async () => {
+    try {
+      const payload = await apiRequest('/api/v1/academy/calendar-links')
+      setCalendarLinks(payload)
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [])
+
+  const copyText = useCallback(async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setNotice('Lien copié ✅')
+      setTimeout(() => setNotice(null), 2500)
+    } catch {
+      setError('Impossible de copier automatiquement le lien')
+    }
+  }, [])
 
   // Modal submission handlers
   const handleTrainingSubmit = useCallback(async (values) => {
@@ -734,6 +754,38 @@ export default function AcademyIndex({ initialTrainingId }) {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+
+            <div className="rounded-xl border border-stone-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-stone-900">Ajouter à Google Agenda</p>
+                  <p className="text-xs text-stone-500">Export iCal en lecture seule (Semisto + Formations)</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100"
+                  onClick={fetchCalendarLinks}
+                >
+                  Générer les liens iCal
+                </button>
+              </div>
+
+              {calendarLinks && (
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-stone-700">Semisto:</span>
+                    <button type="button" className="text-[#B01A19] underline" onClick={() => copyText(calendarLinks.semisto.url)}>Copier le lien</button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-stone-700">Formations:</span>
+                    <button type="button" className="text-[#B01A19] underline" onClick={() => copyText(calendarLinks.trainings.url)}>Copier le lien</button>
+                  </div>
+                  <ol className="mt-2 list-decimal pl-5 text-xs text-stone-600">
+                    {(calendarLinks.instructions || []).map((step) => <li key={step}>{step}</li>)}
+                  </ol>
+                </div>
+              )}
             </div>
             {calendarView === 'month' ? (
               <CalendarMonthView
