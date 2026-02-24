@@ -129,6 +129,7 @@ Rails.application.routes.draw do
       delete "lab/expenses/:id", to: "lab_management#destroy_expense"
 
       get "lab/revenues", to: "lab_management#list_revenues"
+      get "lab/reporting", to: "lab_management#reporting"
       post "lab/revenues", to: "lab_management#create_revenue"
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"

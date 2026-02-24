@@ -617,6 +617,10 @@ module Api
         head :no_content
       end
 
+      def reporting
+        render json: LabReportingService.new(reporting_filters).call
+      end
+
       def list_albums
         scope = Album.includes(:albumable).order(updated_at: :desc)
         scope = scope.where(albumable_type: params[:albumable_type]) if params[:albumable_type].present?
@@ -797,6 +801,10 @@ module Api
 
       def album_params
         params.permit(:title, :description, :status, :albumable_type, :albumable_id)
+      end
+
+      def reporting_filters
+        params.permit(:from, :to, :pole, :category, :supplier, :spike_threshold)
       end
 
       def revenue_params
