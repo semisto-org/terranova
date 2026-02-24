@@ -37,3 +37,4 @@ export { RevenueList, type RevenueItem, type RevenueListProps } from './RevenueL
 export { RevenueDetailModal } from './RevenueDetailModal'
 export { AlbumList, type AlbumItem } from './AlbumList'
 export { AlbumDetail } from './AlbumDetail'
+export { ReportingDashboard } from './ReportingDashboard'
