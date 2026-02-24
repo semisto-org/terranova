@@ -20,6 +20,10 @@ module Api
         }
       end
 
+      def reporting
+        render json: DesignReportingService.new(reporting_filters).call
+      end
+
       def show
         project = find_project
         palette = ensure_palette(project)
@@ -646,6 +650,10 @@ module Api
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
           maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project))
         }
+      end
+
+      def reporting_filters
+        params.permit(:from, :to, :project_id, :client_id, :member_id, :group_by).to_h.symbolize_keys
       end
 
       def project_params
