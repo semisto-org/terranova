@@ -35,6 +35,9 @@ Rails.application.routes.draw do
   get "admin/settings", to: "app#admin"
   get "parametres", to: "app#parametres"
 
+  get "calendar/semisto.ics", to: "calendar_feeds#semisto"
+  get "calendar/trainings.ics", to: "calendar_feeds#trainings"
+
   namespace :api do
     namespace :v1 do
       get "health", to: "health#show"
@@ -90,6 +93,11 @@ Rails.application.routes.draw do
       post "lab/timesheet-service-types", to: "lab_management#create_timesheet_service_type"
       patch "lab/timesheet-service-types/:id", to: "lab_management#update_timesheet_service_type"
       delete "lab/timesheet-service-types/:id", to: "lab_management#destroy_timesheet_service_type"
+
+      get "settings/cycles", to: "settings/cycles#index"
+      post "settings/cycles", to: "settings/cycles#create"
+      patch "settings/cycles/:id", to: "settings/cycles#update"
+      delete "settings/cycles/:id", to: "settings/cycles#destroy"
 
       get "lab/events", to: "lab_management#list_events"
       get "lab/events/:id", to: "lab_management#show_event"
@@ -226,6 +234,7 @@ Rails.application.routes.draw do
       get "academy", to: "academy#index"
       get "academy/calendar", to: "academy#calendar"
       get "academy/reporting", to: "academy#reporting"
+      get "academy/calendar-links", to: "academy#calendar_links"
       post "academy/training-types", to: "academy#create_training_type"
       patch "academy/training-types/:training_type_id", to: "academy#update_training_type"
       delete "academy/training-types/:training_type_id", to: "academy#destroy_training_type"
