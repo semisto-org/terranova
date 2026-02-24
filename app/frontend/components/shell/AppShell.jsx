@@ -5,6 +5,7 @@ import MainNav from './MainNav'
 import { NovaChat } from '../nova-chat'
 import { TimesheetForm } from '../../lab-management/components'
 import { apiRequest } from '@/lib/api'
+import GlobalSearchPalette from './GlobalSearchPalette'
 
 function ShellLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -51,13 +52,7 @@ function ShellLayout({ children }) {
 
           <div className="flex-1" />
 
-          {/* Search placeholder */}
-          <button className="flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-400 hover:border-stone-300 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className="hidden sm:inline">Rechercher...</span>
-          </button>
+          <GlobalSearchPalette />
 
           {/* Timesheet quick-add */}
           <button
