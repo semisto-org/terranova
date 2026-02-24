@@ -344,6 +344,18 @@ Rails.application.routes.draw do
       patch "nursery/timesheets/:entry_id", to: "nursery#update_timesheet"
       delete "nursery/timesheets/:entry_id", to: "nursery#destroy_timesheet"
 
+      get "economics/inputs", to: "economics#inputs"
+      post "economics/inputs", to: "economics#create_input"
+      patch "economics/inputs/:id", to: "economics#update_input"
+      delete "economics/inputs/:id", to: "economics#destroy_input"
+
+      get "economics/outputs", to: "economics#outputs"
+      post "economics/outputs", to: "economics#create_output"
+      patch "economics/outputs/:id", to: "economics#update_output"
+      delete "economics/outputs/:id", to: "economics#destroy_output"
+
+      get "economics/dashboard", to: "economics#dashboard"
+
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"
       get "website/events", to: "website#events"
