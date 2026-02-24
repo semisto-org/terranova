@@ -309,6 +309,33 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
       })
     },
 
+    onUpdateRevenue: (revenueId, patch) =>
+      runAndRefresh(async () => {
+        const body = {
+          status: patch.status,
+          pole: patch.pole,
+          category: patch.category,
+          date: patch.date,
+          amount_excl_vat: patch.amountExclVat,
+          amount: patch.amount,
+        }
+        await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'PATCH', body: JSON.stringify(body) })
+        await loadRevenues()
+      }),
+
+    onBulkUpdateRevenues: async (ids, patch) => {
+      await runAndRefresh(async () => {
+        const body = {
+          status: patch.status,
+          pole: patch.pole,
+          category: patch.category,
+          date: patch.date,
+        }
+        await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/revenues/${id}`, { method: 'PATCH', body: JSON.stringify(body) })))
+        await loadRevenues()
+      })
+    },
+
     onViewGuild: (guildId) => {
       const guild = (data?.guilds || []).find((item) => item.id === guildId)
       if (!guild) return
@@ -387,6 +414,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onEditRevenue={callbacks.onEditRevenue}
           onDeleteRevenue={callbacks.onDeleteRevenue}
           onViewRevenue={callbacks.onViewRevenue}
+          onUpdateRevenue={callbacks.onUpdateRevenue}
+          onBulkUpdateRevenues={callbacks.onBulkUpdateRevenues}
         />
       )}
 
