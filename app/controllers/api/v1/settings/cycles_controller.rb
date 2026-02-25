@@ -37,7 +37,7 @@ module Api
         end
 
         def cycle_params
-          params.permit(:name, :starts_on, :ends_on, :cooldown_starts_on, :cooldown_ends_on, :color, :notes, :active)
+          params.permit(:name, :starts_on, :ends_on, :cooldown_starts_on, :cooldown_ends_on).merge(active: true)
         end
 
         def serialize_cycle(cycle)

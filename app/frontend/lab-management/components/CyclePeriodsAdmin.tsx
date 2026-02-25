@@ -9,9 +9,13 @@ interface CyclePeriod {
   endsOn: string
   cooldownStartsOn: string
   cooldownEndsOn: string
-  color: string
-  notes: string | null
-  active: boolean
+}
+
+interface SchoolHoliday {
+  id: string
+  title: string
+  startDate: string
+  endDate: string
 }
 
 const inputBase =
@@ -23,9 +27,6 @@ const emptyForm = {
   ends_on: '',
   cooldown_starts_on: '',
   cooldown_ends_on: '',
-  color: '#5B5781',
-  notes: '',
-  active: true,
 }
 
 export function CyclePeriodsAdmin() {
@@ -37,6 +38,7 @@ export function CyclePeriodsAdmin() {
   const [editing, setEditing] = useState<CyclePeriod | null>(null)
   const [formValues, setFormValues] = useState(emptyForm)
   const [deleteConfirm, setDeleteConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null)
+  const [schoolHolidays, setSchoolHolidays] = useState<SchoolHoliday[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   const loadCycles = async () => {
@@ -52,8 +54,26 @@ export function CyclePeriodsAdmin() {
     }
   }
 
+  const loadSchoolHolidays = async () => {
+    try {
+      const response = await apiRequest('/api/v1/academy')
+      const events = (response?.schoolHolidays || []) as any[]
+      setSchoolHolidays(
+        events.map((event) => ({
+          id: String(event.id),
+          title: event.title || 'Période scolaire',
+          startDate: event.startDate,
+          endDate: event.endDate,
+        })),
+      )
+    } catch {
+      setSchoolHolidays([])
+    }
+  }
+
   useEffect(() => {
     loadCycles()
+    loadSchoolHolidays()
   }, [])
 
   useEffect(() => {
@@ -78,9 +98,6 @@ export function CyclePeriodsAdmin() {
       ends_on: cycle.endsOn,
       cooldown_starts_on: cycle.cooldownStartsOn,
       cooldown_ends_on: cycle.cooldownEndsOn,
-      color: cycle.color || '#5B5781',
-      notes: cycle.notes || '',
-      active: cycle.active,
     })
     setError(null)
     setModalOpen(true)
@@ -166,9 +183,7 @@ export function CyclePeriodsAdmin() {
             <div key={cycle.id} className="p-4 rounded-xl border border-stone-200 bg-white flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: cycle.color }} />
                   <div className="font-semibold text-stone-900">{cycle.name}</div>
-                  {!cycle.active && <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">Inactif</span>}
                 </div>
                 <div className="text-sm text-stone-600">Cycle: {cycle.startsOn} → {cycle.endsOn}</div>
                 <div className="text-sm text-stone-600">Cooldown: {cycle.cooldownStartsOn} → {cycle.cooldownEndsOn}</div>
@@ -193,20 +208,54 @@ export function CyclePeriodsAdmin() {
                 </div>
                 <div className="p-6 space-y-4">
                   <input ref={inputRef} className={inputBase} placeholder="Nom" value={formValues.name} onChange={(e) => setFormValues({ ...formValues, name: e.target.value })} required />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input type="date" className={inputBase} value={formValues.starts_on} onChange={(e) => setFormValues({ ...formValues, starts_on: e.target.value })} required />
-                    <input type="date" className={inputBase} value={formValues.ends_on} onChange={(e) => setFormValues({ ...formValues, ends_on: e.target.value })} required />
-                    <input type="date" className={inputBase} value={formValues.cooldown_starts_on} onChange={(e) => setFormValues({ ...formValues, cooldown_starts_on: e.target.value })} required />
-                    <input type="date" className={inputBase} value={formValues.cooldown_ends_on} onChange={(e) => setFormValues({ ...formValues, cooldown_ends_on: e.target.value })} required />
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-stone-500">Période du cycle</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="date" className={inputBase} value={formValues.starts_on} onChange={(e) => setFormValues({ ...formValues, starts_on: e.target.value })} required />
+                      <input type="date" className={inputBase} value={formValues.ends_on} onChange={(e) => setFormValues({ ...formValues, ends_on: e.target.value })} required />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 items-center">
-                    <input type="color" className="h-10 w-full rounded-xl border border-stone-200 bg-stone-50" value={formValues.color} onChange={(e) => setFormValues({ ...formValues, color: e.target.value })} />
-                    <label className="inline-flex items-center gap-2 text-sm text-stone-700">
-                      <input type="checkbox" checked={formValues.active} onChange={(e) => setFormValues({ ...formValues, active: e.target.checked })} />
-                      Actif
-                    </label>
+
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-stone-500">Période de cooldown</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="date" className={inputBase} value={formValues.cooldown_starts_on} onChange={(e) => setFormValues({ ...formValues, cooldown_starts_on: e.target.value })} required />
+                      <input type="date" className={inputBase} value={formValues.cooldown_ends_on} onChange={(e) => setFormValues({ ...formValues, cooldown_ends_on: e.target.value })} required />
+                    </div>
+                    <p className="text-xs text-stone-500">Le cycle est toujours actif. La couleur et les notes ont été retirées pour simplifier.</p>
                   </div>
-                  <textarea className={inputBase} placeholder="Notes" rows={3} value={formValues.notes} onChange={(e) => setFormValues({ ...formValues, notes: e.target.value })} />
+
+                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-stone-500">Périodes scolaires Wallonie (référence)</p>
+                    {schoolHolidays.length === 0 ? (
+                      <p className="text-sm text-stone-500">Aucune période scolaire disponible pour le moment.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-44 overflow-auto pr-1">
+                        {schoolHolidays.map((holiday) => (
+                          <div key={holiday.id} className="rounded-lg border border-stone-200 bg-white p-2">
+                            <div className="text-sm font-medium text-stone-900">{holiday.title}</div>
+                            <div className="text-xs text-stone-500 mb-2">{holiday.startDate?.slice(0, 10)} → {holiday.endDate?.slice(0, 10)}</div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                className="px-2.5 py-1 rounded-lg text-xs border border-stone-200 hover:bg-stone-100"
+                                onClick={() => setFormValues((prev) => ({ ...prev, starts_on: holiday.startDate?.slice(0, 10), ends_on: holiday.endDate?.slice(0, 10) }))}
+                              >
+                                Utiliser pour cycle
+                              </button>
+                              <button
+                                type="button"
+                                className="px-2.5 py-1 rounded-lg text-xs border border-stone-200 hover:bg-stone-100"
+                                onClick={() => setFormValues((prev) => ({ ...prev, cooldown_starts_on: holiday.startDate?.slice(0, 10), cooldown_ends_on: holiday.endDate?.slice(0, 10) }))}
+                              >
+                                Utiliser pour cooldown
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
                   <button type="button" onClick={closeModal} className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100">Annuler</button>

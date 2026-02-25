@@ -1,4 +1,6 @@
 class CyclePeriod < ApplicationRecord
+  before_validation :apply_defaults
+
   validates :name, :starts_on, :ends_on, :cooldown_starts_on, :cooldown_ends_on, :color, presence: true
 
   validate :coherent_dates
@@ -22,5 +24,10 @@ class CyclePeriod < ApplicationRecord
     if cooldown_ends_on < cooldown_starts_on
       errors.add(:cooldown_ends_on, "doit être après le début du cooldown")
     end
+  end
+
+  def apply_defaults
+    self.color = '#5B5781' if color.blank?
+    self.active = true if active.nil? || active == false
   end
 end
