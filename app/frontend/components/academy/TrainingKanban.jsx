@@ -306,7 +306,7 @@ export default function TrainingKanban({
               {filteredRows.map((row) => (
                 <tr key={row.training.id} className="border-t border-stone-100 align-top hover:bg-stone-50/60">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-900">{row.training.title}</p>
+                    <button type="button" onClick={() => onViewTraining?.(row.training.id)} className="font-medium text-stone-900 text-left hover:text-[#B01A19] underline-offset-2 hover:underline">{row.training.title}</button>
                     <p className="text-xs text-stone-500">{row.trainingType?.name || '—'}</p>
                   </td>
                   <td className="px-4 py-3">
@@ -360,7 +360,7 @@ export default function TrainingKanban({
           <article key={row.training.id} className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="text-sm font-semibold text-stone-900">{row.training.title}</h3>
+                <h3><button type="button" onClick={() => onViewTraining?.(row.training.id)} className="text-sm font-semibold text-stone-900 hover:text-[#B01A19] underline-offset-2 hover:underline">{row.training.title}</button></h3>
                 <p className="text-xs text-stone-500">{row.trainingType?.name || '—'} · {formatDate(row.nextSession?.startDate)}</p>
               </div>
               <span className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${STATUS_TONE[row.training.status] || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
