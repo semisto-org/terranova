@@ -64,12 +64,18 @@ export function ReportingDashboard({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
 
+  const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+
   const safeSummary = data?.summary || { revenue: 0, costs: 0, marginValue: 0, marginPct: 0, totalHours: 0, revenuePerHour: 0 }
-  const safeSeries = data?.series || []
-  const safeRows = data?.projectProfitability || []
-  const safeMemberProductivity = data?.memberProductivity || []
-  const safeAlerts = data?.alerts || []
-  const safeFilterOptions = data?.filters || { projects: [], clients: [], members: [] }
+  const safeSeries = asArray<{ period: string; revenue: number; costs: number; margin: number }>(data?.series)
+  const safeRows = asArray<ReportingRow>(data?.projectProfitability)
+  const safeMemberProductivity = asArray<ReportingMember>(data?.memberProductivity)
+  const safeAlerts = asArray<{ level: string; kind: string; message: string; projectId?: string }>(data?.alerts)
+  const safeFilterOptions = {
+    projects: asArray<{ id: string; name: string }>(data?.filters?.projects),
+    clients: asArray<string>(data?.filters?.clients),
+    members: asArray<{ id: string; name: string }>(data?.filters?.members),
+  }
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
