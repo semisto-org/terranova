@@ -482,6 +482,11 @@ export default function AcademyIndex({ initialTrainingId }) {
   }), [data, runMutation, setDeleteConfirm])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
+  useEffect(() => {
+    if (!selectedTrainingId || loading) return
+    if (!selectedTraining) setSelectedTrainingId(null)
+  }, [loading, selectedTraining, selectedTrainingId])
+
   const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
     if (search.trim() !== '') {
       const query = search.trim().toLowerCase()
@@ -491,6 +496,37 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
     return true
   }), [data.trainingTypes, data.trainings, search])
+  const drawerTrainings = filteredTrainings.length > 0 ? filteredTrainings : data.trainings
+  const selectedTrainingIndex = selectedTraining ? drawerTrainings.findIndex((item) => item.id === selectedTraining.id) : -1
+  const hasPreviousTraining = selectedTrainingIndex > 0
+  const hasNextTraining = selectedTrainingIndex >= 0 && selectedTrainingIndex < drawerTrainings.length - 1
+
+  const openTrainingDrawer = useCallback((id) => {
+    setSelectedTrainingId(id)
+  }, [])
+
+  const closeTrainingDrawer = useCallback(() => {
+    setSelectedTrainingId(null)
+  }, [])
+
+  useEffect(() => {
+    if (!selectedTrainingId) return
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') closeTrainingDrawer()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [closeTrainingDrawer, selectedTrainingId])
+
+  const openPreviousTraining = useCallback(() => {
+    if (!hasPreviousTraining) return
+    setSelectedTrainingId(drawerTrainings[selectedTrainingIndex - 1].id)
+  }, [drawerTrainings, hasPreviousTraining, selectedTrainingIndex])
+
+  const openNextTraining = useCallback(() => {
+    if (!hasNextTraining) return
+    setSelectedTrainingId(drawerTrainings[selectedTrainingIndex + 1].id)
+  }, [drawerTrainings, hasNextTraining, selectedTrainingIndex])
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
 
   const renderModals = () => (
@@ -611,35 +647,6 @@ export default function AcademyIndex({ initialTrainingId }) {
     </>
   )
 
-  if (selectedTraining) {
-    return (
-      <>
-        <TrainingDetail
-          training={selectedTraining}
-          data={data}
-          busy={busy}
-          onBack={() => {
-            setSelectedTrainingId(null)
-            window.history.pushState({}, '', '/academy')
-          }}
-          onRefresh={loadAcademy}
-          actions={actions}
-        />
-        {renderModals()}
-        {deleteConfirm && (
-          <ConfirmDeleteModal
-            title={deleteConfirm.title}
-            message={deleteConfirm.message}
-            onConfirm={() => {
-              deleteConfirm.action()
-              setDeleteConfirm(null)
-            }}
-            onCancel={() => setDeleteConfirm(null)}
-          />
-        )}
-      </>
-    )
-  }
 
   return (
     <>
@@ -676,10 +683,7 @@ export default function AcademyIndex({ initialTrainingId }) {
             search={search}
             onSearchChange={setSearch}
             onCreateTraining={actions.createTraining}
-            onViewTraining={(id) => {
-              setSelectedTrainingId(id)
-              window.history.pushState({}, '', `/academy/${id}`)
-            }}
+            onViewTraining={openTrainingDrawer}
             onEditTraining={actions.editTraining}
             onDeleteTraining={actions.deleteTraining}
             onViewCalendar={() => setView('calendar')}
@@ -804,20 +808,14 @@ export default function AcademyIndex({ initialTrainingId }) {
                 trainingSessions={data.trainingSessions}
                 trainingLocations={data.trainingLocations}
                 trainingRegistrations={data.trainingRegistrations}
-                onViewTraining={(id) => {
-                  setSelectedTrainingId(id)
-                  window.history.pushState({}, '', `/academy/${id}`)
-                }}
+                onViewTraining={openTrainingDrawer}
               />
             ) : (
               <CalendarYearView
                 currentDate={calendarDate}
                 trainings={data.trainings}
                 trainingSessions={data.trainingSessions}
-                onViewTraining={(id) => {
-                  setSelectedTrainingId(id)
-                  window.history.pushState({}, '', `/academy/${id}`)
-                }}
+                onViewTraining={openTrainingDrawer}
               />
             )}
           </section>
@@ -960,6 +958,31 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
       </div>
     </div>
+
+    {selectedTraining && (
+      <>
+        <div
+          className="fixed inset-0 z-40 bg-stone-900/25 backdrop-blur-[1px] transition-opacity"
+          onClick={closeTrainingDrawer}
+          aria-hidden="true"
+        />
+        <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-4xl border-l border-stone-200 bg-white shadow-2xl transition-transform duration-300">
+          <TrainingDetail
+            training={selectedTraining}
+            data={data}
+            busy={busy}
+            onRefresh={loadAcademy}
+            actions={actions}
+            layout="drawer"
+            onClose={closeTrainingDrawer}
+            onPrevious={openPreviousTraining}
+            onNext={openNextTraining}
+            hasPrevious={hasPreviousTraining}
+            hasNext={hasNextTraining}
+          />
+        </aside>
+      </>
+    )}
 
     {renderModals()}
     {deleteConfirm && (

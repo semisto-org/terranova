@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import {
   ArrowLeft,
+  X,
   RefreshCw,
   Edit,
   MoreVertical,
@@ -53,8 +54,22 @@ const TABS = [
   { id: 'finances', label: 'Finances', icon: DollarSign },
 ]
 
-export default function TrainingDetail({ training, data, busy, onBack, onRefresh, actions }) {
+export default function TrainingDetail({
+  training,
+  data,
+  busy,
+  onBack,
+  onRefresh,
+  actions,
+  layout = 'page',
+  onClose,
+  onPrevious,
+  onNext,
+  hasPrevious = false,
+  hasNext = false,
+}) {
   const [tab, setTab] = useState('info')
+  const isDrawer = layout === 'drawer'
 
   const trainingType = data.trainingTypes?.find((t) => t.id === training.trainingTypeId) || null
   const sessions = data.trainingSessions?.filter((s) => s.trainingId === training.id) || []
@@ -83,17 +98,49 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
     checklistItems.length > 0 ? Math.round((checkedItems.length / checklistItems.length) * 100) : 0
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <main className={isDrawer ? 'h-full bg-stone-50' : 'min-h-screen bg-stone-50 px-4 py-6'}>
+      <div className={`${isDrawer ? 'h-full space-y-4 p-4 sm:p-5' : 'max-w-6xl mx-auto space-y-6'}`}>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour Kanban
-          </button>
+          {isDrawer ? (
+            <>
+              <button
+                type="button"
+                onClick={onPrevious}
+                disabled={!hasPrevious}
+                className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Précédente
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!hasNext}
+                className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Suivante
+              </button>
+              <div className="ml-auto">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                >
+                  <X className="w-4 h-4" />
+                  Fermer
+                </button>
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour Kanban
+            </button>
+          )}
           <button
             type="button"
             onClick={onRefresh}
@@ -107,13 +154,14 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
           )}
         </div>
 
-        <header className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <div className={`${isDrawer ? 'h-[calc(100%-56px)] overflow-y-auto pr-1 space-y-4' : 'space-y-6'}`}>
+        <header className={`rounded-2xl border border-stone-200 bg-white shadow-sm ${isDrawer ? 'p-4 sm:p-5' : 'p-6'}`}>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-4 mb-3">
                 <div className="h-12 w-1 bg-[#B01A19] rounded-full shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-3xl font-bold text-stone-900 tracking-tight break-words">
+                  <h1 className={`${isDrawer ? 'text-2xl' : 'text-3xl'} font-bold text-stone-900 tracking-tight break-words`}>
                     {training.title}
                   </h1>
                   <p className="text-sm text-stone-500 mt-1.5 font-medium">
@@ -150,7 +198,7 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
           </div>
         </header>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="group bg-white rounded-xl p-5 border border-stone-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#B01A19] to-[#eac7b8] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="flex items-center gap-2 mb-2">
@@ -290,7 +338,7 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
             )}
           </div>
 
-          <div className="p-6">
+          <div className={`${isDrawer ? 'p-4 sm:p-5' : 'p-6'}`}>
             {tab === 'info' && (
               <TrainingInfoTab
                 training={training}
@@ -371,6 +419,7 @@ export default function TrainingDetail({ training, data, busy, onBack, onRefresh
             )}
           </div>
         </section>
+        </div>
       </div>
     </main>
   )
