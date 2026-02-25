@@ -51,22 +51,7 @@ module Api
       end
 
       def reporting
-        projects = scoped_reporting_projects
-        rows = projects.map { |project| reporting_project_row(project) }
-
-        monthly = build_reporting_series(projects)
-        summary = build_reporting_summary(rows)
-        member_productivity = build_member_productivity(projects)
-        alerts = build_reporting_alerts(rows)
-
-        render json: {
-          summary: summary,
-          series: monthly,
-          projectProfitability: rows,
-          memberProductivity: member_productivity,
-          alerts: alerts,
-          filters: reporting_filter_options
-        }
+        render json: DesignReportingService.new(reporting_filters).call
       end
 
       def show
@@ -695,6 +680,10 @@ module Api
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
           maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project))
         }
+      end
+
+      def reporting_filters
+        params.permit(:from, :to, :project_id, :client_id, :member_id, :group_by).to_h.symbolize_keys
       end
 
       def project_params
