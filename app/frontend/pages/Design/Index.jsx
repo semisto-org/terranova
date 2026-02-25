@@ -389,6 +389,7 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
 
 const DESIGN_SECTIONS = [
   { id: 'projects', label: 'Projets' },
+  { id: 'locations', label: 'Lieux' },
   { id: 'reporting', label: 'Reporting' },
 ]
 
@@ -1036,6 +1037,60 @@ export default function DesignIndex({ initialProjectId }) {
             searchResults={searchResults}
           />
         )
+      ) : activeSection === 'locations' ? (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-stone-900 tracking-tight">Lieux</h2>
+            <p className="text-sm text-stone-500 mt-1">Configure les lieux des projets Design Studio.</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
+            <div className="grid grid-cols-12 gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-stone-500 border-b border-stone-200 bg-stone-50">
+              <div className="col-span-4">Projet</div>
+              <div className="col-span-4">Lieu</div>
+              <div className="col-span-2">Coordonnées</div>
+              <div className="col-span-2 text-right">Action</div>
+            </div>
+            {projects.map((p) => (
+              <div key={p.id} className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-stone-100 last:border-b-0 items-center">
+                <div className="col-span-4">
+                  <p className="font-medium text-stone-900">{p.name}</p>
+                  <p className="text-xs text-stone-500">{p.clientName || '—'}</p>
+                </div>
+                <div className="col-span-4 text-sm text-stone-700">
+                  {p.locationAddress || 'Lieu non défini'}
+                </div>
+                <div className="col-span-2 text-xs text-stone-500">
+                  {p.coordinates ? `${p.coordinates.lat}, ${p.coordinates.lng}` : '—'}
+                </div>
+                <div className="col-span-2 text-right">
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-lg border border-stone-200 text-sm text-stone-700 hover:bg-stone-100"
+                    onClick={() => {
+                      setEditProjectForm({
+                        name: p.name || '',
+                        client_name: p.clientName || '',
+                        client_email: p.clientEmail || '',
+                        client_phone: p.clientPhone || '',
+                        street: p.street || '',
+                        number: p.number || '',
+                        city: p.city || '',
+                        postcode: p.postcode || '',
+                        country_name: p.countryName || '',
+                        latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
+                        longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
+                        area: p.area || 500,
+                      })
+                      setProjectEditModal({ project: p })
+                    }}
+                  >
+                    Configurer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       ) : activeSection === 'reporting' ? (
         reportingLoading ? (
           <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement du reporting…</p></div>
