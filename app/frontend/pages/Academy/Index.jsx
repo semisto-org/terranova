@@ -68,6 +68,7 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [activeModal, setActiveModal] = useState(null)
   const [modalData, setModalData] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [designProjectOptions, setDesignProjectOptions] = useState([])
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
     setData(payload)
@@ -78,7 +79,15 @@ export default function AcademyIndex({ initialTrainingId }) {
     async function boot() {
       setLoading(true)
       try {
-        await loadAcademy()
+        await Promise.all([
+          loadAcademy(),
+          apiRequest('/api/v1/design').then((payload) => {
+            if (!mounted) return
+            setDesignProjectOptions((payload?.projects || []).map((p) => ({ value: p.id, label: p.name })))
+          }).catch(() => {
+            if (mounted) setDesignProjectOptions([])
+          }),
+        ])
       } catch (err) {
         if (mounted) setError(err.message)
       } finally {
@@ -574,7 +583,7 @@ export default function AcademyIndex({ initialTrainingId }) {
             return { id: contact.id, name: contact.name, contactType: contact.contactType }
           }}
           trainingOptions={data.trainings.map((t) => ({ value: t.id, label: t.title }))}
-          designProjectOptions={[]}
+          designProjectOptions={designProjectOptions}
           showTrainingLink={true}
           showDesignProjectLink={true}
           accentColor="#B01A19"

@@ -38,6 +38,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   const [expenses, setExpenses] = useState([])
   const [expensesLoading, setExpensesLoading] = useState(false)
   const [expenseFormModal, setExpenseFormModal] = useState(null)
+  const [expenseLinkOptions, setExpenseLinkOptions] = useState({ trainings: [], designProjects: [] })
   const [revenues, setRevenues] = useState([])
   const [revenuesLoading, setRevenuesLoading] = useState(false)
   const [revenueFormModal, setRevenueFormModal] = useState(null)
@@ -92,6 +93,31 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   useEffect(() => {
     if (tab === 'revenues') loadRevenues()
   }, [tab, loadRevenues])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!expenseFormModal) return
+
+    ;(async () => {
+      try {
+        const [academyPayload, designPayload] = await Promise.all([
+          apiRequest('/api/v1/academy'),
+          apiRequest('/api/v1/design'),
+        ])
+        if (cancelled) return
+        setExpenseLinkOptions({
+          trainings: (academyPayload?.trainings || []).map((t) => ({ value: t.id, label: t.title })),
+          designProjects: (designPayload?.projects || []).map((p) => ({ value: p.id, label: p.name })),
+        })
+      } catch {
+        if (!cancelled) setExpenseLinkOptions({ trainings: [], designProjects: [] })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [expenseFormModal])
 
   const members = data?.members || []
   const timesheets = data?.timesheets || []
@@ -445,8 +471,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onInlineUpdate={callbacks.onInlineExpenseUpdate}
           onBulkUpdate={callbacks.onBulkExpenseUpdate}
           onBulkDelete={callbacks.onBulkExpenseDelete}
-          trainingOptions={[]}
-          designProjectOptions={[]}
+          trainingOptions={expenseLinkOptions.trainings}
+          designProjectOptions={expenseLinkOptions.designProjects}
         />
       )}
 
@@ -576,8 +602,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           }}
           showTrainingLink={true}
           showDesignProjectLink={true}
-          trainingOptions={[]}
-          designProjectOptions={[]}
+          trainingOptions={expenseLinkOptions.trainings}
+          designProjectOptions={expenseLinkOptions.designProjects}
           accentColor="#64748B"
           onSubmit={async (payload) => {
             const isEdit = Boolean(expenseFormModal.expense?.id)

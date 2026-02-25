@@ -421,6 +421,7 @@ export default function DesignIndex({ initialProjectId }) {
   const [reportingFilters, setReportingFilters] = useState({ period: '12m', projectId: '', client: '', memberId: '', groupBy: 'month' })
 
   const [searchResults, setSearchResults] = useState([])
+  const [academyTrainingOptions, setAcademyTrainingOptions] = useState([])
 
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [projectForm, setProjectForm] = useState(defaultProjectForm)
@@ -451,6 +452,16 @@ export default function DesignIndex({ initialProjectId }) {
     setSearchResults([])
   }, [])
 
+  const loadAcademyTrainingOptions = useCallback(async () => {
+    try {
+      const payload = await apiRequest('/api/v1/academy')
+      const options = (payload?.trainings || []).map((t) => ({ value: t.id, label: t.title }))
+      setAcademyTrainingOptions(options)
+    } catch {
+      setAcademyTrainingOptions([])
+    }
+  }, [])
+
   const loadReporting = useCallback(async (filters = reportingFilters) => {
     setReportingLoading(true)
     setReportingError(null)
@@ -477,7 +488,7 @@ export default function DesignIndex({ initialProjectId }) {
       setLoading(true)
       setError(null)
       try {
-        await loadDashboard()
+        await Promise.all([loadDashboard(), loadAcademyTrainingOptions()])
 
         if (initialProjectId) {
           await loadProject(initialProjectId)
@@ -496,7 +507,7 @@ export default function DesignIndex({ initialProjectId }) {
     return () => {
       active = false
     }
-  }, [initialProjectId, loadDashboard, loadProject, paletteIdFromQuery])
+  }, [initialProjectId, loadDashboard, loadAcademyTrainingOptions, loadProject, paletteIdFromQuery])
 
   const runMutation = useCallback(async (mutation, opts = {}) => {
     setBusy(true)
@@ -1068,8 +1079,8 @@ export default function DesignIndex({ initialProjectId }) {
             })
             return { id: contact.id, name: contact.name, contactType: contact.contactType }
           }}
-          trainingOptions={[]}
-          designProjectOptions={[]}
+          trainingOptions={academyTrainingOptions}
+          designProjectOptions={projects.map((p) => ({ value: p.id, label: p.name }))}
           showTrainingLink={true}
           showDesignProjectLink={true}
           accentColor="#AFBD00"
