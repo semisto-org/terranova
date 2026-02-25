@@ -166,8 +166,10 @@ export function ExpenseList({
   const cycleSort = (key: SortKey) => {
     setSort((prev) => {
       const current = prev.find((s) => s.key === key)
-      if (!current) return [{ key, dir: 'asc' }, ...prev].slice(0, 2)
-      if (current.dir === 'asc') return prev.map((s) => s.key === key ? { ...s, dir: 'desc' } : s)
+      if (!current) return [{ key, dir: 'asc' as const }, ...prev].slice(0, 2)
+      if (current.dir === 'asc') {
+        return prev.map((s) => (s.key === key ? { ...s, dir: 'desc' as const } : s))
+      }
       return prev.filter((s) => s.key !== key)
     })
   }

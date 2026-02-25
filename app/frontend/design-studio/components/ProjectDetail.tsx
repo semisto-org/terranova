@@ -35,6 +35,7 @@ import {
 } from './tabs'
 import type { ProjectPhase } from './shared/PhaseIndicator'
 import type { ProjectStatus } from './shared/StatusIndicator'
+import type { TeamRole } from '../types'
 
 export interface ProjectDetailPayload {
   project: {
@@ -156,9 +157,8 @@ export interface ProjectDetailActions {
     longitude: number
   }) => void | Promise<void>
   onAddTeamMember: (v: {
-    member_name: string
-    member_email: string
-    role: string
+    member_id: string
+    role: TeamRole
     is_paid: boolean
   }) => void
   onRemoveTeamMember: (id: string) => void

@@ -48,6 +48,9 @@ export function TimesheetEditModal({
   const [mode, setMode] = useState<'billed' | 'semos'>('billed')
   const [travelKm, setTravelKm] = useState(0)
   const [notes, setNotes] = useState('')
+  const [details, setDetails] = useState('')
+  const [serviceTypeId, setServiceTypeId] = useState<string | null>(null)
+  const [serviceTypes, setServiceTypes] = useState<TimesheetServiceTypeConfig[]>([])
   const [showRawData, setShowRawData] = useState(false)
 
   useEffect(() => {
@@ -58,8 +61,26 @@ export function TimesheetEditModal({
       setMode((timesheet.mode as 'billed' | 'semos') || 'billed')
       setTravelKm(Number(timesheet.travelKm) || 0)
       setNotes(timesheet.notes || '')
+      setDetails(timesheet.details || '')
+      setServiceTypeId(timesheet.serviceTypeId || null)
     }
   }, [timesheet])
+
+  useEffect(() => {
+    let cancelled = false
+
+    apiRequest('/api/v1/lab/timesheet-service-types')
+      .then((response: { items?: TimesheetServiceTypeConfig[] }) => {
+        if (!cancelled) setServiceTypes(response.items || [])
+      })
+      .catch(() => {
+        if (!cancelled) setServiceTypes([])
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (!open || !timesheet) return null
 

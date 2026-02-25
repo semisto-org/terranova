@@ -45,9 +45,9 @@ export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnal
 
   const [form, setForm] = useState(() => {
     const a = siteAnalysis
-    const socio = (a?.socioEconomic as Record<string, unknown>) || {}
-    const geo = (a?.geomorphology as Record<string, unknown>) || {}
-    const water = (a?.water as Record<string, unknown>) || {}
+    const socio = (a?.socioEconomic ?? {}) as unknown as Record<string, unknown>
+    const geo = (a?.geomorphology ?? {}) as unknown as Record<string, unknown>
+    const water = (a?.water ?? {}) as unknown as Record<string, unknown>
 
     return {
       hardinessZone: (a?.climate as { hardinessZone?: string })?.hardinessZone ?? '',
@@ -67,9 +67,9 @@ export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnal
 
   useEffect(() => {
     const a = siteAnalysis
-    const socio = (a?.socioEconomic as Record<string, unknown>) || {}
-    const geo = (a?.geomorphology as Record<string, unknown>) || {}
-    const water = (a?.water as Record<string, unknown>) || {}
+    const socio = (a?.socioEconomic ?? {}) as unknown as Record<string, unknown>
+    const geo = (a?.geomorphology ?? {}) as unknown as Record<string, unknown>
+    const water = (a?.water ?? {}) as unknown as Record<string, unknown>
 
     setForm({
       hardinessZone: (a?.climate as { hardinessZone?: string })?.hardinessZone ?? '',
