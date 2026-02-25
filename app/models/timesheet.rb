@@ -10,5 +10,6 @@ class Timesheet < ApplicationRecord
   belongs_to :service_type, class_name: "TimesheetServiceType", optional: true
 
   validates :member_id, :member_name, :date, presence: true
+  validates :hours, numericality: { greater_than: 0 }
   validates :mode, inclusion: { in: MODES }, allow_blank: true
 end

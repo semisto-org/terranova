@@ -517,7 +517,7 @@ module Api
       end
 
       def create_timesheet
-        timesheet = Timesheet.new(timesheet_params)
+        timesheet = Timesheet.new(normalized_timesheet_params)
 
         if timesheet.save
           render json: serialize_timesheet(timesheet), status: :created
@@ -527,7 +527,7 @@ module Api
       end
 
       def update_timesheet
-        if @timesheet.update(timesheet_params)
+        if @timesheet.update(normalized_timesheet_params)
           render json: serialize_timesheet(@timesheet)
         else
           render json: { error: @timesheet.errors.full_messages.to_sentence }, status: :unprocessable_entity
@@ -721,6 +721,27 @@ module Api
 
       def timesheet_params
         params.permit(:member_id, :member_name, :date, :hours, :description, :phase, :mode, :billed, :travel_km, :design_project_id, :training_id, :pole_project_id, :event_id)
+      end
+
+      def normalized_timesheet_params
+        attrs = timesheet_params.to_h.symbolize_keys
+
+        attrs[:travel_km] = params[:kilometers] if attrs[:travel_km].blank? && params[:kilometers].present?
+        if attrs[:mode].blank? && params[:payment_type].present?
+          attrs[:mode] = case params[:payment_type].to_s
+                         when 'invoice' then 'billed'
+                         when 'semos' then 'semos'
+                         else params[:payment_type]
+                         end
+        end
+        attrs[:phase] = params[:category] if attrs[:phase].blank? && params[:category].present?
+
+        if attrs[:member_name].blank? && attrs[:member_id].present?
+          member = Member.find_by(id: attrs[:member_id])
+          attrs[:member_name] = [member&.first_name, member&.last_name].compact.join(' ').strip.presence || member&.email
+        end
+
+        attrs
       end
 
       def contact_params
@@ -1250,7 +1271,9 @@ module Api
           phase: timesheet.phase,
           mode: timesheet.mode,
           billed: timesheet.billed,
+          invoiced: timesheet.billed,
           travelKm: timesheet.travel_km,
+          kilometers: timesheet.travel_km,
           designProjectId: timesheet.design_project_id,
           trainingId: timesheet.training_id,
           poleProjectId: timesheet.pole_project_id,
