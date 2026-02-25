@@ -64,9 +64,16 @@ export function ReportingDashboard({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
 
+  const safeSummary = data?.summary || { revenue: 0, costs: 0, marginValue: 0, marginPct: 0, totalHours: 0, revenuePerHour: 0 }
+  const safeSeries = data?.series || []
+  const safeRows = data?.projectProfitability || []
+  const safeMemberProductivity = data?.memberProductivity || []
+  const safeAlerts = data?.alerts || []
+  const safeFilterOptions = data?.filters || { projects: [], clients: [], members: [] }
+
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const filtered = (data.projectProfitability || []).filter((row) => {
+    const filtered = safeRows.filter((row) => {
       if (!q) return true
       return row.projectName.toLowerCase().includes(q) || row.clientName.toLowerCase().includes(q)
     })
@@ -78,7 +85,7 @@ export function ReportingDashboard({
       }
       return sortDir === 'asc' ? Number(left) - Number(right) : Number(right) - Number(left)
     })
-  }, [data.projectProfitability, search, sortKey, sortDir])
+  }, [safeRows, search, sortKey, sortDir])
 
   const toggleSort = (key: keyof ReportingRow) => {
     if (sortKey === key) {
@@ -90,7 +97,7 @@ export function ReportingDashboard({
   }
 
   const maxSeriesValue = Math.max(
-    ...data.series.map((s) => Math.max(s.revenue, s.costs, Math.abs(s.margin))),
+    ...safeSeries.map((s) => Math.max(s.revenue, s.costs, Math.abs(s.margin))),
     1,
   )
 
@@ -109,13 +116,13 @@ export function ReportingDashboard({
           <option value="30d">30 jours</option><option value="90d">90 jours</option><option value="12m">12 mois</option><option value="all">Tout</option>
         </select>
         <select className="rounded-lg border border-stone-300 px-3 py-2 text-sm" value={filters.projectId} onChange={(e) => onFilterChange('projectId', e.target.value)}>
-          <option value="">Tous projets</option>{data.filters.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          <option value="">Tous projets</option>{safeFilterOptions.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <select className="rounded-lg border border-stone-300 px-3 py-2 text-sm" value={filters.client} onChange={(e) => onFilterChange('client', e.target.value)}>
-          <option value="">Tous clients</option>{data.filters.clients.map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="">Tous clients</option>{safeFilterOptions.clients.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select className="rounded-lg border border-stone-300 px-3 py-2 text-sm" value={filters.memberId} onChange={(e) => onFilterChange('memberId', e.target.value)}>
-          <option value="">Tous membres</option>{data.filters.members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          <option value="">Tous membres</option>{safeFilterOptions.members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
         <select className="rounded-lg border border-stone-300 px-3 py-2 text-sm" value={filters.groupBy} onChange={(e) => onFilterChange('groupBy', e.target.value)}>
           <option value="month">Regroupement mensuel</option><option value="project">Regroupement projet</option><option value="member">Regroupement membre</option>
@@ -124,12 +131,12 @@ export function ReportingDashboard({
 
       <section className="grid lg:grid-cols-6 md:grid-cols-3 sm:grid-cols-2 gap-3">
         {[
-          ['CA', euro.format(data.summary.revenue)],
-          ['Coûts', euro.format(data.summary.costs)],
-          ['Marge €', euro.format(data.summary.marginValue)],
-          ['Marge %', `${number.format(data.summary.marginPct)}%`],
-          ['Heures', `${number.format(data.summary.totalHours)} h`],
-          ['€/h', euro.format(data.summary.revenuePerHour)],
+          ['CA', euro.format(safeSummary.revenue)],
+          ['Coûts', euro.format(safeSummary.costs)],
+          ['Marge €', euro.format(safeSummary.marginValue)],
+          ['Marge %', `${number.format(safeSummary.marginPct)}%`],
+          ['Heures', `${number.format(safeSummary.totalHours)} h`],
+          ['€/h', euro.format(safeSummary.revenuePerHour)],
         ].map(([label, value]) => (
           <div key={label} className="bg-white border border-stone-200 rounded-2xl p-4">
             <p className="text-xs uppercase tracking-wider text-stone-500">{label}</p>
@@ -142,7 +149,7 @@ export function ReportingDashboard({
         <div className="bg-white border border-stone-200 rounded-2xl p-4 lg:col-span-2">
           <h3 className="font-medium text-stone-900 mb-3">Évolution CA / coûts / marge</h3>
           <div className="flex items-end gap-2 h-48">
-            {data.series.map((point) => (
+            {safeSeries.map((point) => (
               <div key={point.period} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full flex items-end gap-1 h-40">
                   <div className="flex-1 rounded-t bg-[#AFBD00]/70" style={{ height: `${(point.revenue / maxSeriesValue) * 100}%` }} title={`CA ${euro.format(point.revenue)}`} />
@@ -158,7 +165,7 @@ export function ReportingDashboard({
         <div className="bg-white border border-stone-200 rounded-2xl p-4">
           <h3 className="font-medium text-stone-900 mb-3">Alertes</h3>
           <div className="space-y-2">
-            {data.alerts.length === 0 ? <p className="text-sm text-stone-500">Aucune alerte critique.</p> : data.alerts.map((a, idx) => (
+            {safeAlerts.length === 0 ? <p className="text-sm text-stone-500">Aucune alerte critique.</p> : safeAlerts.map((a, idx) => (
               <div key={idx} className={`rounded-lg px-3 py-2 text-sm ${a.level === 'high' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>{a.message}</div>
             ))}
           </div>
@@ -198,7 +205,7 @@ export function ReportingDashboard({
       <section className="bg-white border border-stone-200 rounded-2xl p-4">
         <h3 className="font-medium text-stone-900 mb-3">Productivité par membre</h3>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {data.memberProductivity.map((m) => (
+          {safeMemberProductivity.map((m) => (
             <div key={m.memberId} className="rounded-xl border border-stone-200 p-3">
               <p className="font-medium text-stone-900">{m.memberName}</p>
               <p className="text-sm text-stone-500">{number.format(m.hours)} h</p>
