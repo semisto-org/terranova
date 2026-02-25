@@ -50,6 +50,25 @@ module Api
         }
       end
 
+      def reporting
+        projects = scoped_reporting_projects
+        rows = projects.map { |project| reporting_project_row(project) }
+
+        monthly = build_reporting_series(projects)
+        summary = build_reporting_summary(rows)
+        member_productivity = build_member_productivity(projects)
+        alerts = build_reporting_alerts(rows)
+
+        render json: {
+          summary: summary,
+          series: monthly,
+          projectProfitability: rows,
+          memberProductivity: member_productivity,
+          alerts: alerts,
+          filters: reporting_filter_options
+        }
+      end
+
       def show
         project = find_project
         palette = ensure_palette(project)
@@ -901,6 +920,129 @@ module Api
         total = subtotal.to_f + vat_amount
 
         quote.update!(subtotal: subtotal, vat_amount: vat_amount, total: total)
+      end
+
+      def scoped_reporting_projects
+        scope = Design::Project
+        case params[:period].to_s
+        when '30d' then scope = scope.where('updated_at >= ?', 30.days.ago)
+        when '90d' then scope = scope.where('updated_at >= ?', 90.days.ago)
+        when '12m' then scope = scope.where('updated_at >= ?', 12.months.ago)
+        end
+
+        scope = scope.where(id: params[:project_id]) if params[:project_id].present?
+        scope = scope.where(client_name: params[:client]) if params[:client].present?
+        scope.includes(:quotes, :timesheets, :expenses, :team_members).to_a
+      end
+
+      def reporting_project_row(project)
+        revenue = project.quotes.where(status: %w[sent approved]).sum(:total).to_f
+        timesheets = project.timesheets
+        timesheets = timesheets.where(member_id: params[:member_id]) if params[:member_id].present?
+        hours = timesheets.sum(:hours).to_f
+
+        labor_cost = hours * 45.0
+        expenses = project.expenses.sum(:total_incl_vat).to_f
+        costs = expenses + labor_cost
+        margin = revenue - costs
+        margin_pct = revenue.positive? ? ((margin / revenue) * 100.0) : 0.0
+        revenue_per_hour = hours.positive? ? revenue / hours : 0.0
+        cost_per_hour = hours.positive? ? costs / hours : 0.0
+
+        month_revenue = project.quotes.where('created_at >= ?', 30.days.ago).where(status: %w[sent approved]).sum(:total).to_f
+        prev_month_revenue = project.quotes.where(created_at: 60.days.ago..30.days.ago).where(status: %w[sent approved]).sum(:total).to_f
+        trend = prev_month_revenue.positive? ? (((month_revenue - prev_month_revenue) / prev_month_revenue) * 100.0) : 0.0
+
+        {
+          projectId: project.id.to_s,
+          projectName: project.name,
+          clientName: project.client_name.to_s,
+          revenue: revenue.round(2),
+          costs: costs.round(2),
+          margin: margin.round(2),
+          marginPct: margin_pct.round(1),
+          hours: hours.round(1),
+          revenuePerHour: revenue_per_hour.round(2),
+          costPerHour: cost_per_hour.round(2),
+          trend: trend.round(1),
+          alertNegativeMargin: margin.negative?,
+          alertCostOverrun: project.expenses_budget.to_f.positive? && expenses > project.expenses_budget.to_f
+        }
+      end
+
+      def build_reporting_series(projects)
+        month_keys = (0..5).to_a.reverse.map { |i| (Date.current - i.months).strftime('%Y-%m') }
+        month_keys.map do |key|
+          from = Date.parse("#{key}-01").beginning_of_month
+          to = from.end_of_month
+          revenue = projects.sum { |p| p.quotes.where(created_at: from..to, status: %w[sent approved]).sum(:total).to_f }
+          costs = projects.sum { |p| p.expenses.where(invoice_date: from..to).sum(:total_incl_vat).to_f }
+          {
+            period: from.strftime('%b %y'),
+            revenue: revenue.round(2),
+            costs: costs.round(2),
+            margin: (revenue - costs).round(2)
+          }
+        end
+      end
+
+      def build_reporting_summary(rows)
+        revenue = rows.sum { |r| r[:revenue] }
+        costs = rows.sum { |r| r[:costs] }
+        margin = revenue - costs
+        hours = rows.sum { |r| r[:hours] }
+        {
+          revenue: revenue.round(2),
+          costs: costs.round(2),
+          marginValue: margin.round(2),
+          marginPct: revenue.positive? ? ((margin / revenue) * 100.0).round(1) : 0.0,
+          totalHours: hours.round(1),
+          revenuePerHour: hours.positive? ? (revenue / hours).round(2) : 0.0
+        }
+      end
+
+      def build_member_productivity(projects)
+        grouped = Hash.new { |h, k| h[k] = { memberId: k, memberName: 'Membre', hours: 0.0, revenue: 0.0 } }
+        projects.each do |project|
+          revenue = project.quotes.where(status: %w[sent approved]).sum(:total).to_f
+          total_hours = project.timesheets.sum(:hours).to_f
+          project.timesheets.each do |t|
+            member = grouped[t.member_id.to_s]
+            member[:memberName] = t.member_name if t.member_name.present?
+            member[:hours] += t.hours.to_f
+            member[:revenue] += total_hours.positive? ? (revenue * (t.hours.to_f / total_hours)) : 0.0
+          end
+        end
+
+        grouped.values.map do |item|
+          item[:hours] = item[:hours].round(1)
+          item[:revenue] = item[:revenue].round(2)
+          item[:revenuePerHour] = item[:hours].positive? ? (item[:revenue] / item[:hours]).round(2) : 0.0
+          item
+        end.sort_by { |m| -m[:hours] }
+      end
+
+      def build_reporting_alerts(rows)
+        alerts = []
+        rows.each do |row|
+          if row[:alertNegativeMargin]
+            alerts << { level: 'high', kind: 'negative_margin', projectId: row[:projectId], message: "Marge négative sur #{row[:projectName]}" }
+          end
+          if row[:alertCostOverrun]
+            alerts << { level: 'medium', kind: 'cost_overrun', projectId: row[:projectId], message: "Dépassement de coûts sur #{row[:projectName]}" }
+          end
+        end
+        alerts.first(12)
+      end
+
+      def reporting_filter_options
+        {
+          period: params[:period].presence || '12m',
+          groupBy: params[:group_by].presence || 'month',
+          projects: Design::Project.order(:name).pluck(:id, :name).map { |id, name| { id: id.to_s, name: name } },
+          clients: Design::Project.distinct.where.not(client_name: [nil, '']).order(:client_name).pluck(:client_name),
+          members: Design::ProjectTeamMember.distinct.order(:member_name).pluck(:member_id, :member_name).map { |id, name| { id: id.to_s, name: name.presence || 'Membre' } }
+        }
       end
 
       def serialize_project(project)

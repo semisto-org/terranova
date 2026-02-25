@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
-import { ProjectDashboard, ProjectDetailView } from '../../design-studio/components'
+import { ProjectDashboard, ProjectDetailView, ReportingDashboard } from '../../design-studio/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
@@ -389,14 +389,17 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
 
 const DESIGN_SECTIONS = [
   { id: 'projects', label: 'Projets' },
+  { id: 'reporting', label: 'Reporting' },
 ]
 
 export default function DesignIndex({ initialProjectId }) {
   const [projectDetail, setProjectDetail] = useState(null)
+  const [activeSection, setActiveSection] = useState('projects')
   useShellNav({
     sections: DESIGN_SECTIONS,
-    activeSection: 'projects',
+    activeSection,
     onSectionChange: (id) => {
+      setActiveSection(id)
       if (id === 'projects' && projectDetail) {
         setProjectDetail(null)
         window.history.pushState({}, '', '/design')
@@ -412,6 +415,10 @@ export default function DesignIndex({ initialProjectId }) {
   const [projects, setProjects] = useState([])
   const [stats, setStats] = useState(null)
   const [templates, setTemplates] = useState([])
+  const [reporting, setReporting] = useState(null)
+  const [reportingLoading, setReportingLoading] = useState(false)
+  const [reportingError, setReportingError] = useState(null)
+  const [reportingFilters, setReportingFilters] = useState({ period: '12m', projectId: '', client: '', memberId: '', groupBy: 'month' })
 
   const [searchResults, setSearchResults] = useState([])
 
@@ -443,6 +450,25 @@ export default function DesignIndex({ initialProjectId }) {
     setProjectDetail(payload)
     setSearchResults([])
   }, [])
+
+  const loadReporting = useCallback(async (filters = reportingFilters) => {
+    setReportingLoading(true)
+    setReportingError(null)
+    try {
+      const params = new URLSearchParams()
+      if (filters.period) params.set('period', filters.period)
+      if (filters.projectId) params.set('project_id', filters.projectId)
+      if (filters.client) params.set('client', filters.client)
+      if (filters.memberId) params.set('member_id', filters.memberId)
+      if (filters.groupBy) params.set('group_by', filters.groupBy)
+      const payload = await apiRequest(`/api/v1/design_studio/reporting?${params.toString()}`)
+      setReporting(payload)
+    } catch (err) {
+      setReportingError(err.message)
+    } finally {
+      setReportingLoading(false)
+    }
+  }, [reportingFilters])
 
   useEffect(() => {
     let active = true
@@ -533,6 +559,7 @@ export default function DesignIndex({ initialProjectId }) {
   const viewProject = useCallback(async (projectId) => {
     const success = await runMutation(async () => {
       await loadProject(projectId)
+      setActiveSection('projects')
       window.history.pushState({}, '', `/design/${projectId}`)
     }, { refreshDashboard: false })
 
@@ -920,6 +947,11 @@ export default function DesignIndex({ initialProjectId }) {
     detailActions.importPlantPalette(paletteIdFromQuery)
   }, [currentProjectId, detailActions, paletteIdFromQuery])
 
+  useEffect(() => {
+    if (activeSection !== 'reporting') return
+    loadReporting(reportingFilters)
+  }, [activeSection, loadReporting, reportingFilters])
+
   const projectDetailActions = useMemo(() => {
     if (!detailActions) return null
     const noop = () => {}
@@ -992,6 +1024,33 @@ export default function DesignIndex({ initialProjectId }) {
             actions={projectDetailActions}
             searchResults={searchResults}
           />
+        )
+      ) : activeSection === 'reporting' ? (
+        reportingLoading ? (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement du reporting…</p></div>
+        ) : reportingError ? (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-red-600">{reportingError}</p></div>
+        ) : reporting ? (
+          <ReportingDashboard
+            data={reporting}
+            filters={reportingFilters}
+            onFilterChange={(key, value) => setReportingFilters((prev) => ({ ...prev, [key]: value }))}
+            onExportCsv={() => {
+              if (!reporting?.projectProfitability?.length) return
+              const header = ['Projet', 'Client', 'CA', 'Coûts', 'Marge', 'Marge %', 'Heures', 'Revenu/h', 'Coût/h', 'Tendance']
+              const rows = reporting.projectProfitability.map((r) => [r.projectName, r.clientName, r.revenue, r.costs, r.margin, r.marginPct, r.hours, r.revenuePerHour, r.costPerHour, r.trend])
+              const csv = [header, ...rows].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `design-reporting-${new Date().toISOString().slice(0, 10)}.csv`
+              a.click()
+              URL.revokeObjectURL(url)
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Aucune donnée disponible.</p></div>
         )
       ) : (
         <ProjectDashboard {...dashboardProps} />
