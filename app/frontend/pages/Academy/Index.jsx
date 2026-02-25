@@ -23,7 +23,7 @@ import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Formations' },
+  { id: 'kanban', label: 'Opérations formations' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'types', label: 'Types de formations' },
   { id: 'locations', label: 'Lieux' },
@@ -684,6 +684,7 @@ export default function AcademyIndex({ initialTrainingId }) {
             onDeleteTraining={actions.deleteTraining}
             onViewCalendar={() => setView('calendar')}
             onViewReporting={actions.viewReporting}
+            onToggleChecklistItem={actions.toggleChecklistItem}
           />
         )}
 

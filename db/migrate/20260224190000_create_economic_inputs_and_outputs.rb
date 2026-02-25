@@ -16,9 +16,6 @@ class CreateEconomicInputsAndOutputs < ActiveRecord::Migration[8.0]
 
     add_index :economic_inputs, :date
     add_index :economic_inputs, :category
-    add_index :economic_inputs, :location_id
-    add_index :economic_inputs, :zone_id
-    add_index :economic_inputs, :design_project_id
 
     create_table :economic_outputs do |t|
       t.date :date, null: false
@@ -37,8 +34,5 @@ class CreateEconomicInputsAndOutputs < ActiveRecord::Migration[8.0]
 
     add_index :economic_outputs, :date
     add_index :economic_outputs, :category
-    add_index :economic_outputs, :location_id
-    add_index :economic_outputs, :zone_id
-    add_index :economic_outputs, :design_project_id
   end
 end
