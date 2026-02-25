@@ -30,4 +30,14 @@ Rails.application.configure do
 
   config.i18n.fallbacks = true
   config.active_support.report_deprecations = false
+
+  app_host = ENV.fetch("APP_HOST", "terranova.semisto.org")
+  config.action_cable.url = ENV.fetch("ACTION_CABLE_URL", "wss://#{app_host}/cable")
+
+  allowed_origins_env = ENV["ACTION_CABLE_ALLOWED_ORIGINS"].to_s
+  config.action_cable.allowed_request_origins = if allowed_origins_env.present?
+    allowed_origins_env.split(",").map(&:strip).reject(&:blank?)
+  else
+    ["https://#{app_host}", "http://#{app_host}"]
+  end
 end

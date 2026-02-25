@@ -48,40 +48,58 @@ module Api
         item.checklist_items = training_type.checklist_template if item.checklist_items.blank?
         item.save!
 
+        broadcast_training_change(action: "created", training: item)
         render json: serialize_training(item), status: :created
       end
 
       def update_training
         item = Academy::Training.find(params.require(:training_id))
         item.update!(training_update_params)
+
+        broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
       end
 
       def destroy_training
-        Academy::Training.find(params.require(:training_id)).soft_delete!
+        item = Academy::Training.find(params.require(:training_id))
+        training_id = item.id.to_s
+        item.soft_delete!
+
+        broadcast_training_destroy(training_id: training_id)
         head :no_content
       end
 
       def update_training_status
         item = Academy::Training.find(params.require(:training_id))
         item.update!(status: params.require(:status))
+
+        broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
       end
 
       def create_session
         training = Academy::Training.find(params.require(:training_id))
         item = training.sessions.create!(session_params)
+
+        broadcast_session_change(action: "created", session: item)
         render json: serialize_session(item), status: :created
       end
 
       def update_session
         item = Academy::TrainingSession.find(params.require(:session_id))
         item.update!(session_params)
+
+        broadcast_session_change(action: "updated", session: item)
         render json: serialize_session(item)
       end
 
       def destroy_session
-        Academy::TrainingSession.find(params.require(:session_id)).soft_delete!
+        item = Academy::TrainingSession.find(params.require(:session_id))
+        session_id = item.id.to_s
+        training_id = item.training_id.to_s
+        item.soft_delete!
+
+        broadcast_session_destroy(session_id: session_id, training_id: training_id)
         head :no_content
       end
 
@@ -311,6 +329,39 @@ module Api
             schoolHolidaysSyncedAt: school_holidays[:syncedAt]
           }
         }
+      end
+
+      def broadcast_training_change(action:, training:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "training",
+          action: action,
+          training: serialize_training(training)
+        })
+      end
+
+      def broadcast_training_destroy(training_id:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "training",
+          action: "destroyed",
+          trainingId: training_id
+        })
+      end
+
+      def broadcast_session_change(action:, session:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "session",
+          action: action,
+          session: serialize_session(session)
+        })
+      end
+
+      def broadcast_session_destroy(session_id:, training_id:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "session",
+          action: "destroyed",
+          sessionId: session_id,
+          trainingId: training_id
+        })
       end
 
       def training_type_params

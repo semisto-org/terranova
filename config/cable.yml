@@ -1,0 +1,15 @@
+development:
+  adapter: async
+
+test:
+  adapter: test
+
+production:
+<% redis_url = ENV["ACTION_CABLE_REDIS_URL"].presence || ENV["REDIS_URL"].presence %>
+<% if redis_url %>
+  adapter: redis
+  url: <%= redis_url %>
+  channel_prefix: terranova_production
+<% else %>
+  adapter: async
+<% end %>

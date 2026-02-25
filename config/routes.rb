@@ -38,6 +38,8 @@ Rails.application.routes.draw do
   get "calendar/semisto.ics", to: "calendar_feeds#semisto"
   get "calendar/trainings.ics", to: "calendar_feeds#trainings"
 
+  mount ActionCable.server => "/cable"
+
   namespace :api do
     namespace :v1 do
       get "health", to: "health#show"

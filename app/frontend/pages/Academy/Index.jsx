@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
+import { getCableConsumer } from '@/lib/cable'
+import { applyAcademyRealtimeUpdate } from './realtime'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
 import LocationsMap from '../../components/academy/LocationsMap'
@@ -99,6 +101,20 @@ export default function AcademyIndex({ initialTrainingId }) {
       mounted = false
     }
   }, [loadAcademy])
+
+  useEffect(() => {
+    const consumer = getCableConsumer()
+    const subscription = consumer.subscriptions.create(
+      { channel: 'Academy::TrainingsChannel' },
+      {
+        received: (payload) => {
+          setData((prev) => applyAcademyRealtimeUpdate(prev, payload))
+        },
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const runMutation = useCallback(async (handler, options = { refresh: true }) => {
     setBusy(true)
