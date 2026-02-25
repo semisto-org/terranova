@@ -5,7 +5,7 @@ import { useShellNav } from '@/components/shell/ShellContext'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Formations' },
+  { id: 'kanban', label: 'Opérations formations' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'types', label: 'Types de formations' },
   { id: 'locations', label: 'Lieux' },
