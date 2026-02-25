@@ -69,11 +69,31 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
 
     body = JSON.parse(response.body)
     assert_equal @project.name, body['project']['name']
+    assert body['project'].key?('projectType')
+    assert body['project'].key?('clientInterests')
+    assert body['project'].key?('acquisitionChannel')
     assert body.key?('teamMembers')
     assert body.key?('timesheets')
     assert body.key?('expenses')
     assert body.key?('siteAnalysis')
     assert body.key?('plantPalette')
+  end
+
+  test 'project update supports project parameters fields' do
+    patch "/api/v1/design/#{@project.id}", params: {
+      project_type: 'public',
+      client_interests: %w[design five_year_follow_up],
+      acquisition_channel: 'presse'
+    }, as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 'public', body['projectType']
+    assert_equal 'Public', body['projectTypeLabel']
+    assert_equal %w[design five_year_follow_up], body['clientInterests']
+    assert_equal ['Design', 'Suivi sur 5 ans'], body['clientInterestsLabels']
+    assert_equal 'presse', body['acquisitionChannel']
+    assert_equal 'Presse', body['acquisitionChannelLabel']
   end
 
   test 'team member crud works' do
@@ -129,10 +149,17 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
   test 'site analysis and palette import from plant database work' do
     patch "/api/v1/design/#{@project.id}/site-analysis", params: {
       climate: { hardinessZone: 'H7' },
-      soil: { type: 'loam' }
+      soil: { type: 'loam' },
+      water_access: true,
+      zoning_categories: %w[zone_agricole zone_habitat]
     }, as: :json
     assert_response :success
-    assert_equal 'H7', JSON.parse(response.body)['climate']['hardinessZone']
+
+    analysis = JSON.parse(response.body)
+    assert_equal 'H7', analysis['climate']['hardinessZone']
+    assert_equal true, analysis['waterAccess']
+    assert_equal %w[zone_agricole zone_habitat], analysis['zoningCategories']
+    assert_includes analysis['zoningCategoriesLabels'], 'Zone agricole'
 
     post "/api/v1/design/#{@project.id}/palette/import/#{@plant_palette.id}", as: :json
     assert_response :success

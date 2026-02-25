@@ -6,6 +6,36 @@ module Api
         client_submit_questionnaire client_add_wishlist_item client_add_journal_entry
       ].freeze
 
+      PROJECT_TYPE_LABELS = {
+        'prive' => 'Privé',
+        'professionnel' => 'Professionnel',
+        'collectif' => 'Collectif',
+        'public' => 'Public'
+      }.freeze
+
+      CLIENT_INTEREST_LABELS = {
+        'design' => 'Design',
+        'plant_selection' => 'Sélection des plantes',
+        'personalized_coaching' => 'Coaching personnalisé',
+        'implementation_support' => 'Accompagnement à la mise en œuvre',
+        'five_year_follow_up' => 'Suivi sur 5 ans'
+      }.freeze
+
+      ACQUISITION_CHANNEL_LABELS = {
+        'bouche_a_oreille' => 'Bouche-à-oreille',
+        'presse' => 'Presse',
+        'autre' => 'Autre'
+      }.freeze
+
+      ZONING_CATEGORY_LABELS = {
+        'zone_agricole' => 'Zone agricole',
+        'zone_habitat' => "Zone d'habitat",
+        'zone_forestiere' => 'Zone forestière',
+        'zone_naturelle' => 'Zone naturelle',
+        'zone_mixte' => 'Zone mixte',
+        'autre' => 'Autre'
+      }.freeze
+
       skip_before_action :require_authentication, only: CLIENT_PORTAL_ACTIONS
       before_action :require_effective_member, except: CLIENT_PORTAL_ACTIONS
       before_action :require_client_portal_access, only: CLIENT_PORTAL_ACTIONS
@@ -649,11 +679,19 @@ module Api
       end
 
       def project_params
-        params.permit(:name, :client_id, :client_name, :client_email, :client_phone, :place_id, :street, :number, :city, :postcode, :country_name, :latitude, :longitude, :area, :phase, :status, :start_date, :planting_date, :project_manager_id, :hours_planned, :hours_worked, :hours_billed, :hours_semos, :expenses_budget, :expenses_actual)
+        params.permit(
+          :name, :client_id, :client_name, :client_email, :client_phone, :place_id, :street, :number, :city, :postcode,
+          :country_name, :latitude, :longitude, :area, :phase, :status, :start_date, :planting_date, :project_manager_id,
+          :hours_planned, :hours_worked, :hours_billed, :hours_semos, :expenses_budget, :expenses_actual, :project_type,
+          :acquisition_channel, client_interests: []
+        )
       end
 
       def project_update_params
-        params.permit(:name, :client_name, :client_email, :client_phone, :phase, :status, :street, :number, :city, :postcode, :country_name, :latitude, :longitude, :area)
+        params.permit(
+          :name, :client_name, :client_email, :client_phone, :phase, :status, :street, :number, :city, :postcode,
+          :country_name, :latitude, :longitude, :area, :project_type, :acquisition_channel, client_interests: []
+        )
       end
 
       def team_member_params
@@ -687,7 +725,22 @@ module Api
       end
 
       def site_analysis_params
-        params.permit(climate: {}, geomorphology: {}, water: {}, socio_economic: {}, access_data: {}, vegetation: {}, microclimate: {}, buildings: {}, soil: {}, client_observations: {}, client_photos: [], client_usage_map: [])
+        params.permit(
+          :water_access,
+          climate: {},
+          geomorphology: {},
+          water: {},
+          socio_economic: {},
+          access_data: {},
+          vegetation: {},
+          microclimate: {},
+          buildings: {},
+          soil: {},
+          client_observations: {},
+          client_photos: [],
+          client_usage_map: [],
+          zoning_categories: []
+        )
       end
 
       def palette_item_params
@@ -872,6 +925,12 @@ module Api
           startDate: project.start_date&.iso8601,
           plantingDate: project.planting_date&.iso8601,
           projectManagerId: project.project_manager_id,
+          projectType: project.project_type.presence,
+          projectTypeLabel: PROJECT_TYPE_LABELS[project.project_type],
+          clientInterests: project.client_interests || [],
+          clientInterestsLabels: Array(project.client_interests).map { |interest| CLIENT_INTEREST_LABELS[interest] || interest },
+          acquisitionChannel: project.acquisition_channel.presence,
+          acquisitionChannelLabel: ACQUISITION_CHANNEL_LABELS[project.acquisition_channel],
           budget: {
             hoursPlanned: project.hours_planned,
             hoursWorked: project.hours_worked,
@@ -1018,6 +1077,9 @@ module Api
           microclimate: item.microclimate,
           buildings: item.buildings,
           soil: item.soil,
+          waterAccess: item.water_access,
+          zoningCategories: item.zoning_categories || [],
+          zoningCategoriesLabels: Array(item.zoning_categories).map { |category| ZONING_CATEGORY_LABELS[category] || category },
           clientObservations: item.client_observations,
           clientPhotos: item.client_photos,
           clientUsageMap: item.client_usage_map

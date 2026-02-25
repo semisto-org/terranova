@@ -181,7 +181,7 @@ export interface ProjectDetailActions {
   onEditExpense: (expense: ProjectDetailPayload['expenses'][0]) => void
   onApproveExpense: (id: string) => void
   onDeleteExpense: (id: string) => void
-  onSaveSiteAnalysis: (v: Record<string, unknown>) => void
+  onSaveSiteAnalysis: (v: Record<string, unknown>) => Promise<void> | void
   onAddPaletteItem: (v: Record<string, unknown>) => void
   onDeletePaletteItem: (id: string) => void
   onImportPlantPalette: (paletteId: string) => void
@@ -386,6 +386,7 @@ export function ProjectDetailView({
               <SiteAnalysisTab
                 siteAnalysis={detail.siteAnalysis as any}
                 onSave={a.onSaveSiteAnalysis}
+                busy={busy}
               />
             )}
             {activeTab === 'palette' && (

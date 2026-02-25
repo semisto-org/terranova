@@ -10,6 +10,7 @@ import {
   ContactForm,
   EventForm,
   AlbumList,
+  ReportingDashboard,
 } from '../../lab-management/components'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
@@ -18,6 +19,7 @@ const SECTION_TABS = [
   { id: 'shapeup', label: 'Shape Up' },
   { id: 'contacts', label: 'Contacts' },
   { id: 'albums', label: 'Albums' },
+  { id: 'reporting', label: 'Reporting' },
 ]
 
 const EVENT_TYPES = [
@@ -153,6 +155,17 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
+  const [reporting, setReporting] = useState(null)
+  const [reportingLoading, setReportingLoading] = useState(false)
+  const [reportingError, setReportingError] = useState(null)
+  const [reportFilters, setReportFilters] = useState(() => {
+    const now = new Date()
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const from = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+    const toIso = to.toISOString().slice(0, 10)
+    const fromIso = from.toISOString().slice(0, 10)
+    return { from: fromIso, to: toIso, pole: '', category: '', supplier: '' }
+  })
 
   const [formModal, setFormModal] = useState(null)
   const [detailModal, setDetailModal] = useState(null)
@@ -177,6 +190,29 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   useEffect(() => {
     loadOverview()
   }, [loadOverview])
+
+  useEffect(() => {
+    if (tab !== 'reporting') return
+
+    const loadReporting = async () => {
+      setReportingLoading(true)
+      setReportingError(null)
+      try {
+        const params = new URLSearchParams()
+        Object.entries(reportFilters).forEach(([key, value]) => {
+          if (value) params.append(key, value)
+        })
+        const payload = await apiRequest(`/api/v1/lab/reporting?${params.toString()}`)
+        setReporting(payload)
+      } catch (err) {
+        setReportingError(err.message)
+      } finally {
+        setReportingLoading(false)
+      }
+    }
+
+    loadReporting()
+  }, [tab, reportFilters])
 
   const members = data?.members || []
   const pitches = data?.pitches || []
@@ -607,6 +643,35 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         <AlbumList
           albums={data?.albums ?? []}
           onRefresh={() => loadOverview(false)}
+        />
+      )}
+
+      {tab === 'reporting' && (
+        <ReportingDashboard
+          data={reporting}
+          loading={reportingLoading}
+          error={reportingError}
+          filters={reportFilters}
+          onChangeFilters={(next) => setReportFilters((prev) => ({ ...prev, ...next }))}
+          onApplyPreset={(preset) => {
+            const now = new Date()
+            if (preset === 'ytd') {
+              setReportFilters((prev) => ({
+                ...prev,
+                from: `${now.getFullYear()}-01-01`,
+                to: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10),
+              }))
+              return
+            }
+            const months = preset === '3m' ? 3 : preset === '6m' ? 6 : 12
+            const from = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1)
+            const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+            setReportFilters((prev) => ({
+              ...prev,
+              from: from.toISOString().slice(0, 10),
+              to: to.toISOString().slice(0, 10),
+            }))
+          }}
         />
       )}
 

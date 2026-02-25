@@ -81,7 +81,10 @@ class DesignStudioDashboardTest < ActionDispatch::IntegrationTest
       city: 'Bruxelles',
       postcode: '1000',
       country_name: 'Belgique',
-      area: 900
+      area: 900,
+      project_type: 'professionnel',
+      client_interests: %w[design plant_selection],
+      acquisition_channel: 'bouche_a_oreille'
     }, as: :json
 
     assert_response :created
@@ -92,6 +95,10 @@ class DesignStudioDashboardTest < ActionDispatch::IntegrationTest
     assert_equal @template.id.to_s, body['templateId']
     assert_equal 120, body['budget']['hoursPlanned']
     assert_equal 6500.0, body['budget']['expensesBudget']
+    assert_equal 'professionnel', body['projectType']
+    assert_equal 'Professionnel', body['projectTypeLabel']
+    assert_equal %w[design plant_selection], body['clientInterests']
+    assert_equal 'bouche_a_oreille', body['acquisitionChannel']
   end
 
   test 'delete project removes it from dashboard' do

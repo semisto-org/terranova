@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_24_193000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_25_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -615,6 +615,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_24_193000) do
     t.string "postcode", default: "", null: false
     t.string "project_manager_id", default: "", null: false
     t.string "project_type", default: "", null: false
+    t.jsonb "client_interests", default: [], null: false
+    t.string "acquisition_channel"
     t.date "start_date"
     t.string "status", default: "pending", null: false
     t.string "street", default: "", null: false
@@ -684,6 +686,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_24_193000) do
     t.bigint "project_id", null: false
     t.jsonb "socio_economic", default: {}, null: false
     t.jsonb "soil", default: {}, null: false
+    t.boolean "water_access"
+    t.jsonb "zoning_categories", default: [], null: false
     t.datetime "updated_at", null: false
     t.jsonb "vegetation", default: {}, null: false
     t.jsonb "water", default: {}, null: false
