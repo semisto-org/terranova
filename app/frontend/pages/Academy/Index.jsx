@@ -347,7 +347,19 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ isEdit: true, training: current })
       setActiveModal('training')
     },
-    updateTrainingStatus: (id, status) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })),
+    updateTrainingStatus: (id, status) => runMutation(async () => {
+      const updated = await apiRequest(`/api/v1/academy/trainings/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+
+      setData((prev) => ({
+        ...prev,
+        trainings: prev.trainings.map((item) =>
+          item.id === id ? { ...item, ...updated } : item
+        ),
+      }))
+    }, { refresh: true }),
     addSession: (trainingId) => {
       setModalData({ isEdit: false, trainingId })
       setActiveModal('session')
