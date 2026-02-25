@@ -294,6 +294,47 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         }),
       })
     },
+    onInlineExpenseUpdate: async (expenseId, changes) => {
+      const payload = {
+        ...(changes.status ? { status: changes.status } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'category') ? { category: changes.category || '' } : {}),
+        ...(changes.poles ? { poles: changes.poles } : {}),
+      }
+      if (!Object.keys(payload).length) return
+      await runAndRefresh(async () => {
+        await apiRequest(`/api/v1/lab/expenses/${expenseId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        })
+        await loadExpenses()
+      })
+    },
+    onBulkExpenseUpdate: async (ids, changes) => {
+      const payload = {
+        ...(changes.status ? { status: changes.status } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'category') ? { category: changes.category || '' } : {}),
+        ...(changes.poles ? { poles: changes.poles } : {}),
+      }
+      if (!Object.keys(payload).length || !ids?.length) return
+      await runAndRefresh(async () => {
+        await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/expenses/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        })))
+        await loadExpenses()
+      })
+    },
+    onBulkExpenseDelete: (ids) => {
+      if (!ids?.length) return
+      setDeleteConfirm({
+        title: `Supprimer ${ids.length} dépenses ?`,
+        message: 'Cette action est définitive. Confirmez la suppression en lot.',
+        action: () => runAndRefresh(async () => {
+          await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/expenses/${id}`, { method: 'DELETE' })))
+          await loadExpenses()
+        }),
+      })
+    },
 
     onCreateRevenue: () => setRevenueFormModal({ revenue: null }),
     onEditRevenue: (revenue) => setRevenueFormModal({ revenue }),
@@ -401,6 +442,9 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onCreateExpense={callbacks.onCreateExpense}
           onEditExpense={callbacks.onEditExpense}
           onDeleteExpense={callbacks.onDeleteExpense}
+          onInlineUpdate={callbacks.onInlineExpenseUpdate}
+          onBulkUpdate={callbacks.onBulkExpenseUpdate}
+          onBulkDelete={callbacks.onBulkExpenseDelete}
           trainingOptions={[]}
           designProjectOptions={[]}
         />
