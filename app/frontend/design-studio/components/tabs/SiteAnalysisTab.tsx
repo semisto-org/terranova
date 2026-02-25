@@ -1,125 +1,296 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Map, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Loader2, Map, Navigation } from 'lucide-react'
 import type { SiteAnalysis } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
 
 interface SiteAnalysisTabProps {
   siteAnalysis: SiteAnalysis | null
-  onSave: (values: {
-    hardinessZone?: string
-    soilType?: string
-    notes?: string
-    accessToWater?: boolean
-    sectorPlanZones?: string[]
-    projectType?: string
-    clientInterestedIn?: string[]
-    knownViaSemisto?: string
-    [key: string]: unknown
-  }) => Promise<void> | void
+  onSave: (values: Record<string, unknown>) => Promise<void> | void
   busy?: boolean
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
-const SECTIONS = [
-  { key: 'climate', label: 'Climat', fields: ['hardinessZone', 'frostFreeDays', 'annualRainfall', 'notes'] },
-  { key: 'geomorphology', label: 'Géomorphologie', fields: ['slope', 'aspect', 'elevation', 'soilType', 'notes'] },
-  { key: 'water', label: 'Eau', fields: ['sources', 'wetZones', 'drainage', 'notes'] },
-  { key: 'socioEconomic', label: 'Socio-économique', fields: ['ownership', 'easements', 'neighbors', 'localMarket', 'notes'] },
-  { key: 'access', label: 'Accès', fields: ['mainAccess', 'secondaryAccess', 'parking', 'notes'] },
-  { key: 'vegetation', label: 'Végétation', fields: ['existingTrees', 'problematicSpecies', 'notableFeatures', 'notes'] },
-  { key: 'microclimate', label: 'Microclimat', fields: ['windExposure', 'sunPatterns', 'frostPockets', 'notes'] },
-  { key: 'buildings', label: 'Bâtiments', fields: ['existing', 'utilities', 'notes'] },
-  { key: 'soil', label: 'Sol', fields: ['type', 'ph', 'organic', 'texture', 'notes'] },
-  { key: 'clientObservations', label: 'Observations client', fields: ['sunnyAreas', 'wetAreas', 'windyAreas', 'favoriteSpots', 'historyNotes'] },
-] as const
+type FieldConfig = {
+  key: string
+  label: string
+  placeholder?: string
+}
 
-const PROJECT_TYPES = ['Forêt-jardin', 'Haie fruitière', 'Verger', 'Agroforesterie', 'Potager vivant', 'Autre']
-const CLIENT_INTERESTS = ['Design complet', 'Accompagnement', 'Plantation', 'Co-gestion', 'Formation']
-const KNOWN_VIA_OPTIONS = ['Bouche-à-oreille', 'Instagram', 'LinkedIn', 'Site web', 'Événement', 'Partenaire']
-const SECTOR_PLAN_OPTIONS = ['Zone agricole', 'Zone d’habitat', 'Zone naturelle', 'Zone forestière', 'Zone mixte']
+type SectionConfig = {
+  key: string
+  label: string
+  sourceKeys: string[]
+  fields: FieldConfig[]
+}
+
+const SECTION_CONFIG: SectionConfig[] = [
+  {
+    key: 'climate',
+    label: 'Climat',
+    sourceKeys: ['climate'],
+    fields: [
+      { key: 'temperature', label: 'Température', placeholder: 'Amplitude, périodes extrêmes' },
+      { key: 'rain', label: 'Pluie', placeholder: 'Pluviométrie, saisonnalité' },
+      { key: 'wind', label: 'Vent', placeholder: 'Dominants, rafales, zones exposées' },
+      { key: 'sun', label: 'Ensoleillement', placeholder: 'Orientation, ombres portées' },
+      { key: 'exposure_constraints', label: 'Contraintes d’exposition', placeholder: 'Éléments bloquants relevés' },
+    ],
+  },
+  {
+    key: 'geomorphology',
+    label: 'Géomorphologie',
+    sourceKeys: ['geomorphology'],
+    fields: [
+      { key: 'topography', label: 'Topographie' },
+      { key: 'slope', label: 'Pente' },
+      { key: 'orientation', label: 'Orientation' },
+      { key: 'relief', label: 'Relief' },
+      { key: 'constraints', label: 'Contraintes' },
+    ],
+  },
+  {
+    key: 'water',
+    label: 'Eau',
+    sourceKeys: ['water'],
+    fields: [
+      { key: 'network', label: 'Réseau disponible' },
+      { key: 'rainwater', label: 'Eaux pluviales' },
+      { key: 'runoff', label: 'Ruissellement' },
+      { key: 'flood_risk', label: 'Risque inondation' },
+      { key: 'drainage', label: 'Drainage' },
+    ],
+  },
+  {
+    key: 'biodiversity',
+    label: 'Biodiversité',
+    sourceKeys: ['biodiversity', 'vegetation'],
+    fields: [
+      { key: 'existing_flora', label: 'Flore existante' },
+      { key: 'existing_fauna', label: 'Faune observée' },
+      { key: 'habitats', label: 'Habitats' },
+      { key: 'ecological_pressures', label: 'Pressions écologiques' },
+    ],
+  },
+  {
+    key: 'socio_economic',
+    label: 'Socio-économique',
+    sourceKeys: ['socio_economic', 'socioEconomic'],
+    fields: [
+      { key: 'neighbors', label: 'Voisinage' },
+      { key: 'uses', label: 'Usages du lieu' },
+      { key: 'nuisances', label: 'Nuisances' },
+      { key: 'opportunities', label: 'Opportunités' },
+      { key: 'regulations', label: 'Réglementations locales' },
+    ],
+  },
+  {
+    key: 'access',
+    label: 'Accès',
+    sourceKeys: ['access', 'accessData'],
+    fields: [
+      { key: 'road_access', label: 'Accès routier' },
+      { key: 'pedestrian_access', label: 'Accès piéton' },
+      { key: 'logistics', label: 'Logistique chantier' },
+      { key: 'parking', label: 'Stationnement' },
+      { key: 'constraints', label: 'Contraintes d’accès' },
+    ],
+  },
+  {
+    key: 'microclimate',
+    label: 'Microclimat',
+    sourceKeys: ['microclimate'],
+    fields: [
+      { key: 'heat_islands', label: 'Îlots de chaleur' },
+      { key: 'wind_corridors', label: 'Couloirs de vent' },
+      { key: 'shade', label: 'Zones d’ombre' },
+      { key: 'frost_pockets', label: 'Poches de gel' },
+    ],
+  },
+  {
+    key: 'built_environment',
+    label: 'Environnement bâti',
+    sourceKeys: ['built_environment', 'buildings'],
+    fields: [
+      { key: 'adjacent_buildings', label: 'Bâtiments adjacents' },
+      { key: 'heritage', label: 'Patrimoine / contraintes' },
+      { key: 'networks', label: 'Réseaux techniques' },
+      { key: 'constraints', label: 'Contraintes bâties' },
+    ],
+  },
+  {
+    key: 'zoning',
+    label: 'Zonage',
+    sourceKeys: ['zoning'],
+    fields: [
+      { key: 'categories', label: 'Catégories de zone' },
+      { key: 'prescriptions', label: 'Prescriptions' },
+      { key: 'opportunities', label: 'Opportunités règlementaires' },
+      { key: 'constraints', label: 'Contraintes règlementaires' },
+    ],
+  },
+  {
+    key: 'soil',
+    label: 'Sol',
+    sourceKeys: ['soil'],
+    fields: [
+      { key: 'texture', label: 'Texture' },
+      { key: 'structure', label: 'Structure' },
+      { key: 'ph', label: 'pH' },
+      { key: 'organic_matter', label: 'Matière organique' },
+      { key: 'contamination', label: 'Contamination potentielle' },
+    ],
+  },
+  {
+    key: 'aesthetics',
+    label: 'Paysage & esthétique',
+    sourceKeys: ['aesthetics'],
+    fields: [
+      { key: 'views', label: 'Vues' },
+      { key: 'identity', label: 'Identité du lieu' },
+      { key: 'materials', label: 'Matériaux dominants' },
+      { key: 'ambience', label: 'Ambiance' },
+      { key: 'references', label: 'Références client' },
+    ],
+  },
+]
+
+const CATEGORY_OPTIONS = [
+  { value: 'zone_agricole', label: 'Zone agricole' },
+  { value: 'zone_habitat', label: 'Zone habitat' },
+  { value: 'zone_forestiere', label: 'Zone forestière' },
+  { value: 'zone_naturelle', label: 'Zone naturelle' },
+  { value: 'zone_mixte', label: 'Zone mixte' },
+  { value: 'autre', label: 'Autre' },
+]
+
+const normalizeField = (raw: unknown) => {
+  if (raw && typeof raw === 'object' && 'value' in (raw as Record<string, unknown>)) {
+    const field = raw as Record<string, unknown>
+    return {
+      value: String(field.value ?? ''),
+      note: String(field.note ?? ''),
+    }
+  }
+  return { value: String(raw ?? ''), note: '' }
+}
+
+const buildInitialForm = (analysis: SiteAnalysis | null) => {
+  const form: Record<string, Record<string, { value: string; note: string }>> = {}
+
+  SECTION_CONFIG.forEach((section) => {
+    const source = (section.sourceKeys
+      .map((key) => analysis?.[key as keyof SiteAnalysis] as Record<string, unknown> | undefined)
+      .find(Boolean) || {}) as Record<string, unknown>
+
+    form[section.key] = {}
+    section.fields.forEach((field) => {
+      form[section.key][field.key] = normalizeField(source[field.key])
+    })
+  })
+
+  const analysisRecord = (analysis ?? {}) as Record<string, unknown>
+  const zoningRaw = ((analysis?.zoning as Record<string, unknown>)?.categories ?? analysisRecord.zoningCategories) as unknown
+  const zoningCategories = Array.isArray(zoningRaw) ? zoningRaw.map((v) => String(v)) : []
+
+  return {
+    sections: form,
+    waterAccess: Boolean(analysis?.waterAccess),
+    zoningCategories,
+    clientObservations: {
+      sunnyAreas: String((analysis?.clientObservations as Record<string, unknown>)?.sunnyAreas ?? ''),
+      wetAreas: String((analysis?.clientObservations as Record<string, unknown>)?.wetAreas ?? ''),
+      windyAreas: String((analysis?.clientObservations as Record<string, unknown>)?.windyAreas ?? ''),
+      favoriteSpots: String((analysis?.clientObservations as Record<string, unknown>)?.favoriteSpots ?? ''),
+      historyNotes: String((analysis?.clientObservations as Record<string, unknown>)?.historyNotes ?? ''),
+    },
+  }
+}
 
 export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnalysisTabProps) {
-  const [openSection, setOpenSection] = useState<string | null>('climate')
+  const [activeSection, setActiveSection] = useState(SECTION_CONFIG[0].key)
   const [saveState, setSaveState] = useState<SaveState>('idle')
-
-  const [form, setForm] = useState(() => {
-    const a = siteAnalysis
-    const socio = (a?.socioEconomic ?? {}) as unknown as Record<string, unknown>
-    const geo = (a?.geomorphology ?? {}) as unknown as Record<string, unknown>
-    const water = (a?.water ?? {}) as unknown as Record<string, unknown>
-
-    return {
-      hardinessZone: (a?.climate as { hardinessZone?: string })?.hardinessZone ?? '',
-      soilType: (a?.soil as { type?: string })?.type ?? '',
-      notes: (a?.climate as { notes?: string })?.notes ?? '',
-      accessToWater: Boolean(water.accessToWater),
-      sectorPlanZones: Array.isArray(geo.sectorPlanZones) ? (geo.sectorPlanZones as string[]) : [],
-      projectType: typeof socio.projectType === 'string' ? socio.projectType : '',
-      clientInterestedIn: Array.isArray(socio.clientInterestedIn) ? (socio.clientInterestedIn as string[]) : [],
-      knownViaSemisto: typeof socio.knownViaSemisto === 'string' ? socio.knownViaSemisto : '',
-    }
-  })
+  const [form, setForm] = useState(() => buildInitialForm(siteAnalysis))
 
   useEffect(() => {
     if (busy) setSaveState('saving')
   }, [busy])
 
   useEffect(() => {
-    const a = siteAnalysis
-    const socio = (a?.socioEconomic ?? {}) as unknown as Record<string, unknown>
-    const geo = (a?.geomorphology ?? {}) as unknown as Record<string, unknown>
-    const water = (a?.water ?? {}) as unknown as Record<string, unknown>
-
-    setForm({
-      hardinessZone: (a?.climate as { hardinessZone?: string })?.hardinessZone ?? '',
-      soilType: (a?.soil as { type?: string })?.type ?? '',
-      notes: (a?.climate as { notes?: string })?.notes ?? '',
-      accessToWater: Boolean(water.accessToWater),
-      sectorPlanZones: Array.isArray(geo.sectorPlanZones) ? (geo.sectorPlanZones as string[]) : [],
-      projectType: typeof socio.projectType === 'string' ? socio.projectType : '',
-      clientInterestedIn: Array.isArray(socio.clientInterestedIn) ? (socio.clientInterestedIn as string[]) : [],
-      knownViaSemisto: typeof socio.knownViaSemisto === 'string' ? socio.knownViaSemisto : '',
-    })
+    setForm(buildInitialForm(siteAnalysis))
   }, [siteAnalysis])
+
+  const completion = useMemo(() => {
+    return SECTION_CONFIG.map((section) => {
+      const fields = section.fields.length
+      const filled = section.fields.filter((field) => {
+        const item = form.sections[section.key]?.[field.key]
+        return Boolean(item?.value?.trim() || item?.note?.trim())
+      }).length
+      return { key: section.key, label: section.label, filled, fields }
+    })
+  }, [form.sections])
 
   const warnings = useMemo(() => {
     const items: string[] = []
-    if (form.hardinessZone && !/^([A-Z])\d{1,2}$/i.test(form.hardinessZone.trim())) {
-      items.push('La zone de rusticité semble inhabituelle (format conseillé: H7).')
-    }
-    if (form.clientInterestedIn.length > 3) {
-      items.push('Beaucoup d’intérêts sélectionnés: prioriser 1 à 3 choix peut aider le cadrage.')
-    }
-    if (!form.accessToWater) {
-      items.push('Sans accès à l’eau, prévoir une stratégie d’installation/rétention dès le pré-projet.')
+    if (!form.waterAccess) items.push('Aucun accès à l’eau indiqué : prévoir une stratégie de rétention et d’installation.')
+    if ((form.sections.soil?.ph?.value || '').trim() !== '' && Number.isNaN(Number(form.sections.soil?.ph?.value))) {
+      items.push('Le pH du sol doit être une valeur numérique (ex: 6.8).')
     }
     return items
   }, [form])
 
-  const toggleInArray = (key: 'sectorPlanZones' | 'clientInterestedIn', value: string) => {
+  const updateField = (sectionKey: string, fieldKey: string, part: 'value' | 'note', value: string) => {
     setForm((prev) => ({
       ...prev,
-      [key]: prev[key].includes(value)
-        ? prev[key].filter((item) => item !== value)
-        : [...prev[key], value],
+      sections: {
+        ...prev.sections,
+        [sectionKey]: {
+          ...prev.sections[sectionKey],
+          [fieldKey]: {
+            ...prev.sections[sectionKey][fieldKey],
+            [part]: value,
+          },
+        },
+      },
     }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const toggleCategory = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      zoningCategories: prev.zoningCategories.includes(value)
+        ? prev.zoningCategories.filter((item) => item !== value)
+        : [...prev.zoningCategories, value],
+    }))
+  }
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     setSaveState('saving')
+
     try {
-      await onSave({
-        hardinessZone: form.hardinessZone,
-        soilType: form.soilType,
-        notes: form.notes,
-        accessToWater: form.accessToWater,
-        sectorPlanZones: form.sectorPlanZones,
-        projectType: form.projectType,
-        clientInterestedIn: form.clientInterestedIn,
-        knownViaSemisto: form.knownViaSemisto,
-      })
+      const payload: Record<string, unknown> = {
+        climate: form.sections.climate,
+        geomorphology: form.sections.geomorphology,
+        water: form.sections.water,
+        biodiversity: form.sections.biodiversity,
+        socio_economic: form.sections.socio_economic,
+        access: form.sections.access,
+        microclimate: form.sections.microclimate,
+        built_environment: form.sections.built_environment,
+        zoning: {
+          ...form.sections.zoning,
+          categories: form.zoningCategories,
+        },
+        soil: form.sections.soil,
+        aesthetics: form.sections.aesthetics,
+        zoning_categories: form.zoningCategories,
+        water_access: form.waterAccess,
+        client_observations: form.clientObservations,
+      }
+
+      await onSave(payload)
       setSaveState('saved')
       setTimeout(() => setSaveState('idle'), 1800)
     } catch {
@@ -127,245 +298,180 @@ export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnal
     }
   }
 
-  const hasAnyData = siteAnalysis && (
-    (siteAnalysis.climate as unknown as Record<string, unknown>)?.hardinessZone ||
-    (siteAnalysis.soil as unknown as Record<string, unknown>)?.type ||
-    (siteAnalysis.clientObservations as unknown as Record<string, unknown>)?.sunnyAreas
-  )
+  const currentSection = SECTION_CONFIG.find((item) => item.key === activeSection) || SECTION_CONFIG[0]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="rounded-2xl border border-stone-200 bg-white p-5">
-        <h3 className="text-sm font-semibold text-stone-900 mb-1 flex items-center gap-2">
-          <Map className="w-4 h-4 text-[#AFBD00]" />
-          Analyse terrain
+        <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-900">
+          <Map className="h-4 w-4 text-[#AFBD00]" />
+          Analyse UX terrain
         </h3>
-        <p className="text-xs text-stone-500 mb-4">Structurée en blocs pour un diagnostic rapide et une passation claire.</p>
+        <p className="text-xs text-stone-500">Navigation par sections, édition complète des blocs et sauvegarde en payload canonique.</p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <section className="grid md:grid-cols-2 gap-4 rounded-xl border border-stone-100 bg-stone-50/40 p-4">
-            <h4 className="md:col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Fondamentaux du site</h4>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+          <aside className="rounded-2xl border border-stone-200 bg-white p-3 lg:sticky lg:top-4 lg:self-start">
+            <div className="mb-2 flex items-center gap-2 px-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <Navigation className="h-3.5 w-3.5" /> Sections
+            </div>
+            <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-1">
+              {completion.map((section) => {
+                const isActive = activeSection === section.key
+                const isCompleted = section.filled === section.fields && section.fields > 0
+                return (
+                  <button
+                    key={section.key}
+                    type="button"
+                    onClick={() => setActiveSection(section.key)}
+                    className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition-colors ${isActive ? 'bg-[#EEF4C8] text-stone-900' : 'text-stone-600 hover:bg-stone-50'}`}
+                  >
+                    <span className="font-medium">{section.label}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] ${isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'}`}>
+                      {section.filled}/{section.fields}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </aside>
 
-            <label className="grid gap-1">
-              <span className="text-xs font-medium text-stone-600">Zone de rusticité</span>
-              <input
-                type="text"
-                placeholder="ex. H7"
-                value={form.hardinessZone}
-                onChange={(e) => setForm((p) => ({ ...p, hardinessZone: e.target.value }))}
-                className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
-              />
-              <span className="text-[11px] text-stone-500">Aide: zone climatique locale (Belgique souvent H7-H8).</span>
-            </label>
+          <section className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 space-y-4">
+            <h4 className="text-sm font-semibold text-stone-900">{currentSection.label}</h4>
+            <div className="space-y-3">
+              {currentSection.fields.map((field) => {
+                const fieldValue = form.sections[currentSection.key]?.[field.key] || { value: '', note: '' }
+                return (
+                  <div key={field.key} className="rounded-xl border border-stone-100 bg-stone-50/50 p-3">
+                    <label className="grid gap-1">
+                      <span className="text-xs font-medium text-stone-700">{field.label}</span>
+                      <input
+                        type="text"
+                        value={fieldValue.value}
+                        placeholder={field.placeholder || 'Valeur'}
+                        onChange={(event) => updateField(currentSection.key, field.key, 'value', event.target.value)}
+                        className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-[#AFBD00]"
+                      />
+                    </label>
+                    <label className="mt-2 grid gap-1">
+                      <span className="text-[11px] font-medium text-stone-600">Note</span>
+                      <textarea
+                        rows={2}
+                        value={fieldValue.note}
+                        onChange={(event) => updateField(currentSection.key, field.key, 'note', event.target.value)}
+                        className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-[#AFBD00]"
+                      />
+                    </label>
+                  </div>
+                )
+              })}
+            </div>
 
-            <label className="grid gap-1">
-              <span className="text-xs font-medium text-stone-600">Type de sol</span>
-              <input
-                type="text"
-                placeholder="ex. limon, argile"
-                value={form.soilType}
-                onChange={(e) => setForm((p) => ({ ...p, soilType: e.target.value }))}
-                className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
-              />
-              <span className="text-[11px] text-stone-500">Aide: texture dominante observée à ce stade.</span>
-            </label>
-
-            <label className="md:col-span-2 grid gap-1">
-              <span className="text-xs font-medium text-stone-600">Notes climat / sol</span>
-              <textarea
-                rows={2}
-                placeholder="Notes générales"
-                value={form.notes}
-                onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
-              />
-            </label>
+            {currentSection.key === 'zoning' && (
+              <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-3">
+                <p className="mb-2 text-xs font-medium text-stone-700">Catégories plan de secteur</p>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_OPTIONS.map((option) => {
+                    const selected = form.zoningCategories.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => toggleCategory(option.value)}
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${selected ? 'border-[#AFBD00] bg-[#EEF4C8] text-stone-900 font-medium' : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-50'}`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </section>
+        </div>
 
-          <section className="grid md:grid-cols-2 gap-4 rounded-xl border border-stone-100 bg-stone-50/40 p-4">
-            <h4 className="md:col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Cadrage projet</h4>
-
+        <section className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 space-y-4">
+          <h4 className="text-sm font-semibold text-stone-900">Synthèse opérationnelle</h4>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-2">
               <span className="text-xs font-medium text-stone-600">Accès à l’eau</span>
               <button
                 type="button"
-                onClick={() => setForm((p) => ({ ...p, accessToWater: !p.accessToWater }))}
-                className={`w-fit rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${form.accessToWater ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-stone-300 bg-white text-stone-600'}`}
+                onClick={() => setForm((prev) => ({ ...prev, waterAccess: !prev.waterAccess }))}
+                className={`w-fit rounded-full border px-3 py-1.5 text-xs font-medium ${form.waterAccess ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-stone-300 bg-white text-stone-600'}`}
               >
-                {form.accessToWater ? 'Oui, accès disponible' : 'Non, pas d’accès'}
+                {form.waterAccess ? 'Oui, accès disponible' : 'Non, pas d’accès'}
               </button>
-              <span className="text-[11px] text-stone-500">Source sur place ou raccordement exploitable.</span>
             </div>
 
-            <label className="grid gap-1">
-              <span className="text-xs font-medium text-stone-600">Connu Semisto via</span>
-              <select
-                value={form.knownViaSemisto}
-                onChange={(e) => setForm((p) => ({ ...p, knownViaSemisto: e.target.value }))}
-                className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-[#AFBD00] focus:border-transparent"
-              >
-                <option value="">Sélectionner…</option>
-                {KNOWN_VIA_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
-            </label>
-
-            <div className="md:col-span-2 grid gap-2">
-              <span className="text-xs font-medium text-stone-600">Type de projet</span>
-              <div className="flex flex-wrap gap-2">
-                {PROJECT_TYPES.map((option) => {
-                  const selected = form.projectType === option
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setForm((p) => ({ ...p, projectType: option }))}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${selected ? 'border-[#AFBD00] bg-[#EEF4C8] text-stone-900 font-semibold' : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-50'}`}
-                    >
-                      {option}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-4 rounded-xl border border-stone-100 bg-stone-50/40 p-4">
-            <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wide">Contexte administratif & besoins</h4>
-            <TagPicker
-              label="Zones au plan de secteur"
-              hint="Multi-sélection utile pour anticiper faisabilité et permis."
-              options={SECTOR_PLAN_OPTIONS}
-              values={form.sectorPlanZones}
-              onToggle={(value) => toggleInArray('sectorPlanZones', value)}
-            />
-            <TagPicker
-              label="Client intéressé par"
-              hint="Choix multiples pour préparer l’offre la plus pertinente."
-              options={CLIENT_INTERESTS}
-              values={form.clientInterestedIn}
-              onToggle={(value) => toggleInArray('clientInterestedIn', value)}
-            />
-          </section>
-
-          {warnings.length > 0 && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
-              <div className="flex items-start gap-2 text-amber-800">
-                <AlertTriangle className="w-4 h-4 mt-0.5" />
-                <ul className="text-xs space-y-1">
-                  {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={saveState === 'saving' || busy}
-              className="rounded-xl bg-[#AFBD00] px-4 py-2 text-sm font-medium text-stone-900 hover:bg-[#9BAA00] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {saveState === 'saving' || busy ? 'Sauvegarde…' : 'Sauvegarder l’analyse'}
-            </button>
-
-            <SaveIndicator state={saveState === 'saving' && !busy ? 'saving' : saveState} />
+            {[
+              ['sunnyAreas', 'Zones ensoleillées'],
+              ['wetAreas', 'Zones humides'],
+              ['windyAreas', 'Zones venteuses'],
+              ['favoriteSpots', 'Espaces préférés'],
+              ['historyNotes', 'Historique du lieu'],
+            ].map(([key, label]) => (
+              <label key={key} className="grid gap-1 sm:col-span-2">
+                <span className="text-xs font-medium text-stone-600">{label}</span>
+                <textarea
+                  rows={2}
+                  value={form.clientObservations[key as keyof typeof form.clientObservations]}
+                  onChange={(event) => setForm((prev) => ({
+                    ...prev,
+                    clientObservations: { ...prev.clientObservations, [key]: event.target.value },
+                  }))}
+                  className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-[#AFBD00]"
+                />
+              </label>
+            ))}
           </div>
-        </form>
-      </div>
+        </section>
 
-      <div className="space-y-2">
-        {SECTIONS.map(({ key, label }) => {
-          const isOpen = openSection === key
-          const sectionData = siteAnalysis?.[key as keyof SiteAnalysis]
-          const hasContent = sectionData && typeof sectionData === 'object' && Object.values(sectionData).some(Boolean)
-          return (
-            <div
-              key={key}
-              className="rounded-2xl border border-stone-200 bg-white overflow-hidden"
-            >
-              <button
-                type="button"
-                onClick={() => setOpenSection(isOpen ? null : key)}
-                className="w-full flex items-center gap-2 px-5 py-3 text-left text-sm font-medium text-stone-900 hover:bg-stone-50 transition-colors"
-              >
-                {isOpen ? (
-                  <ChevronDown className="w-4 h-4 text-stone-500" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-stone-500" />
-                )}
-                {label}
-                {hasContent && (
-                  <span className="ml-2 w-2 h-2 rounded-full bg-[#AFBD00]" />
-                )}
-              </button>
-              {isOpen && (
-                <div className="px-5 pb-4 pt-0 border-t border-stone-100">
-                  <p className="text-xs text-stone-500 mt-3">
-                    Les champs détaillés pour « {label} » peuvent être ajoutés
-                    ici (formulaire complet à étendre selon les types).
-                  </p>
-                </div>
-              )}
+        {warnings.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+            <div className="flex items-start gap-2 text-amber-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4" />
+              <ul className="space-y-1 text-xs">
+                {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
+              </ul>
             </div>
-          )
-        })}
-      </div>
+          </div>
+        )}
 
-      {!hasAnyData && !form.hardinessZone && !form.soilType && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={saveState === 'saving' || busy}
+            className="rounded-xl bg-[#AFBD00] px-4 py-2 text-sm font-medium text-stone-900 transition-colors hover:bg-[#9BAA00] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {saveState === 'saving' || busy ? 'Sauvegarde…' : 'Sauvegarder l’analyse'}
+          </button>
+
+          <SaveIndicator state={saveState === 'saving' && !busy ? 'saving' : saveState} />
+        </div>
+      </form>
+
+      {!siteAnalysis && (
         <EmptyState
-          icon={<Map className="w-10 h-10 text-stone-400" />}
+          icon={<Map className="h-10 w-10 text-stone-400" />}
           title="Analyse terrain non commencée"
-          description="Renseignez les fondamentaux et le cadrage projet pour démarrer une analyse claire et exploitable."
+          description="Complétez les sections pour disposer d’un diagnostic exploitable en pré-projet et en passation d’équipe."
         />
       )}
     </div>
   )
 }
 
-function TagPicker({
-  label,
-  hint,
-  options,
-  values,
-  onToggle,
-}: {
-  label: string
-  hint: string
-  options: string[]
-  values: string[]
-  onToggle: (value: string) => void
-}) {
-  return (
-    <div className="grid gap-2">
-      <span className="text-xs font-medium text-stone-600">{label}</span>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const selected = values.includes(option)
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onToggle(option)}
-              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${selected ? 'border-[#AFBD00] bg-[#EEF4C8] text-stone-900 font-medium' : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-50'}`}
-            >
-              {option}
-            </button>
-          )
-        })}
-      </div>
-      <span className="text-[11px] text-stone-500">{hint}</span>
-    </div>
-  )
-}
-
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === 'saving') {
-    return <span className="inline-flex items-center gap-1 text-xs text-stone-500"><Loader2 className="w-3.5 h-3.5 animate-spin" />Enregistrement…</span>
+    return <span className="inline-flex items-center gap-1 text-xs text-stone-500"><Loader2 className="h-3.5 w-3.5 animate-spin" />Enregistrement…</span>
   }
   if (state === 'saved') {
-    return <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" />Enregistré</span>
+    return <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />Enregistré</span>
   }
   if (state === 'error') {
-    return <span className="inline-flex items-center gap-1 text-xs text-rose-700"><AlertTriangle className="w-3.5 h-3.5" />Erreur de sauvegarde</span>
+    return <span className="inline-flex items-center gap-1 text-xs text-rose-700"><AlertTriangle className="h-3.5 w-3.5" />Erreur de sauvegarde</span>
   }
   return null
 }

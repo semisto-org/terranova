@@ -825,17 +825,10 @@ export default function DesignIndex({ initialProjectId }) {
           action: () => runMutation(() => apiRequest(`/api/v1/design/expenses/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
         })
       },
-      saveSiteAnalysis: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/site-analysis`, { method: 'PATCH', body: JSON.stringify({
-        climate: { hardinessZone: values.hardinessZone, notes: values.notes },
-        soil: { type: values.soilType },
-        water: { accessToWater: values.accessToWater },
-        geomorphology: { sectorPlanZones: values.sectorPlanZones || [] },
-        socio_economic: {
-          projectType: values.projectType,
-          clientInterestedIn: values.clientInterestedIn || [],
-          knownViaSemisto: values.knownViaSemisto,
-        },
-      }) }), { refreshProjectId: currentProjectId }),
+      saveSiteAnalysis: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/site-analysis`, {
+        method: 'PATCH',
+        body: JSON.stringify(values),
+      }), { refreshProjectId: currentProjectId }),
       addPaletteItem: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette-items`, { method: 'POST', body: JSON.stringify({
         species_id: values.species_id,
         species_name: values.species_name,
