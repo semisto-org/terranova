@@ -215,7 +215,7 @@ module Api
       def upsert_site_analysis
         project = find_project
         item = project.site_analysis || project.build_site_analysis
-        item.assign_attributes(site_analysis_params)
+        item.assign_attributes(normalized_site_analysis_params)
         item.save!
 
         render json: serialize_site_analysis(item)
@@ -738,17 +738,39 @@ module Api
           climate: {},
           geomorphology: {},
           water: {},
+          biodiversity: {},
           socio_economic: {},
+          access: {},
           access_data: {},
           vegetation: {},
           microclimate: {},
+          built_environment: {},
           buildings: {},
+          zoning: {},
           soil: {},
+          aesthetics: {},
           client_observations: {},
           client_photos: [],
           client_usage_map: [],
           zoning_categories: []
         )
+      end
+
+      def normalized_site_analysis_params
+        attrs = site_analysis_params.to_h.deep_symbolize_keys
+
+        attrs[:vegetation] ||= attrs.delete(:biodiversity)
+        attrs[:buildings] ||= attrs.delete(:built_environment)
+        attrs[:access_data] ||= attrs.delete(:access)
+
+        zoning = attrs[:zoning].is_a?(Hash) ? attrs[:zoning].deep_dup : {}
+        zoning_categories = Array(attrs[:zoning_categories]).presence || Array(zoning['categories'] || zoning[:categories])
+        zoning['categories'] = zoning_categories if zoning_categories.any?
+
+        attrs[:zoning] = zoning
+        attrs[:zoning_categories] = zoning_categories
+
+        attrs
       end
 
       def palette_item_params
@@ -1195,22 +1217,34 @@ module Api
       def serialize_site_analysis(item)
         return nil unless item
 
+        zoning_categories = item.zoning_categories_list
+
         {
           id: item.id.to_s,
           projectId: item.project_id.to_s,
           updatedAt: item.updated_at.iso8601,
+
+          # Canonical API contract
           climate: item.climate,
           geomorphology: item.geomorphology,
           water: item.water,
-          socioEconomic: item.socio_economic,
-          access: item.access_data,
-          vegetation: item.vegetation,
+          biodiversity: item.biodiversity,
+          socio_economic: item.socio_economic,
+          access: item.access,
           microclimate: item.microclimate,
-          buildings: item.buildings,
+          built_environment: item.built_environment,
+          zoning: item.zoning,
           soil: item.soil,
+          aesthetics: item.aesthetics,
+
+          # Backward compatible aliases
+          socioEconomic: item.socio_economic,
+          accessData: item.access,
+          vegetation: item.biodiversity,
+          buildings: item.built_environment,
           waterAccess: item.water_access,
-          zoningCategories: item.zoning_categories || [],
-          zoningCategoriesLabels: Array(item.zoning_categories).map { |category| ZONING_CATEGORY_LABELS[category] || category },
+          zoningCategories: zoning_categories,
+          zoningCategoriesLabels: zoning_categories.map { |category| ZONING_CATEGORY_LABELS[category] || category },
           clientObservations: item.client_observations,
           clientPhotos: item.client_photos,
           clientUsageMap: item.client_usage_map

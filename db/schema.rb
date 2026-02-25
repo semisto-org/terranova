@@ -675,6 +675,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070000) do
 
   create_table "design_site_analyses", force: :cascade do |t|
     t.jsonb "access_data", default: {}, null: false
+    t.jsonb "aesthetics", default: {}, null: false
     t.jsonb "buildings", default: {}, null: false
     t.jsonb "client_observations", default: {}, null: false
     t.jsonb "client_photos", default: [], null: false
@@ -687,6 +688,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070000) do
     t.jsonb "socio_economic", default: {}, null: false
     t.jsonb "soil", default: {}, null: false
     t.boolean "water_access"
+    t.jsonb "zoning", default: {}, null: false
     t.jsonb "zoning_categories", default: [], null: false
     t.datetime "updated_at", null: false
     t.jsonb "vegetation", default: {}, null: false
