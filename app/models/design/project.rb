@@ -40,7 +40,7 @@ module Design
     validates :name, :client_id, :client_name, :phase, :status, presence: true
     validates :phase, inclusion: { in: PHASES }
     validates :status, inclusion: { in: STATUSES }
-    validates :project_type, inclusion: { in: PROJECT_TYPES }, allow_blank: true
+    validate :project_type_is_supported_when_provided
     validates :acquisition_channel, inclusion: { in: ACQUISITION_CHANNELS }, allow_blank: true
     validate :client_interests_are_supported
 
@@ -60,6 +60,15 @@ module Design
       return if unsupported.empty?
 
       errors.add(:client_interests, "contains unsupported values: #{unsupported.join(', ')}")
+    end
+
+    def project_type_is_supported_when_provided
+      value = project_type.to_s
+      return if value.blank?
+      return if PROJECT_TYPES.include?(value)
+      return unless will_save_change_to_project_type?
+
+      errors.add(:project_type, 'is not included in the list')
     end
   end
 end

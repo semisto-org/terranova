@@ -83,7 +83,11 @@ module Design
       hash = raw_value.is_a?(Hash) ? raw_value.deep_stringify_keys : {}
 
       SECTION_CORE_FIELDS.fetch(section, []).each do |field|
-        hash[field] = normalize_value_note(hash[field])
+        if section == :zoning && field == 'categories'
+          hash[field] = Array(hash[field]).map(&:to_s).reject(&:blank?).uniq
+        else
+          hash[field] = normalize_value_note(hash[field])
+        end
       end
 
       hash
