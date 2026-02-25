@@ -149,10 +149,14 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
   test 'site analysis and palette import from plant database work' do
     patch "/api/v1/design/#{@project.id}/site-analysis", params: {
       climate: { hardinessZone: 'H7' },
+      geomorphology: { slope: { value: 'moderate', note: '' } },
+      water: { network: { value: 'public', note: '' } },
       soil: { type: 'loam' },
       biodiversity: { existing_flora: { value: 'orchard', note: 'old trees' } },
+      socio_economic: { neighbors: { value: 'residential', note: '' } },
       built_environment: { adjacent_buildings: { value: 'farmhouse', note: '' } },
       access: { road_access: { value: 'direct', note: '' } },
+      microclimate: { shade: { value: 'west edge', note: '' } },
       zoning: { categories: %w[zone_agricole zone_habitat], constraints: { value: 'none', note: '' } },
       aesthetics: { views: { value: 'valley', note: 'panoramic' } },
       water_access: true
@@ -164,11 +168,19 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     assert_equal true, analysis['waterAccess']
     assert_equal %w[zone_agricole zone_habitat], analysis['zoningCategories']
     assert_equal %w[zone_agricole zone_habitat], analysis['zoning']['categories']
+    assert_equal 'moderate', analysis['geomorphology']['slope']['value']
+    assert_equal 'public', analysis['water']['network']['value']
     assert_equal 'orchard', analysis['biodiversity']['existing_flora']['value']
+    assert_equal 'residential', analysis['socio_economic']['neighbors']['value']
     assert_equal 'farmhouse', analysis['built_environment']['adjacent_buildings']['value']
     assert_equal 'direct', analysis['access']['road_access']['value']
+    assert_equal 'west edge', analysis['microclimate']['shade']['value']
     assert_equal 'valley', analysis['aesthetics']['views']['value']
+
     assert_equal 'orchard', analysis['vegetation']['existing_flora']['value']
+    assert_equal 'farmhouse', analysis['buildings']['adjacent_buildings']['value']
+    assert_equal 'direct', analysis['accessData']['road_access']['value']
+    assert_equal 'residential', analysis['socioEconomic']['neighbors']['value']
     assert_includes analysis['zoningCategoriesLabels'], 'Zone agricole'
 
     post "/api/v1/design/#{@project.id}/palette/import/#{@plant_palette.id}", as: :json

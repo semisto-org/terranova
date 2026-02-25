@@ -129,70 +129,12 @@ export interface Expense {
 // Site Analysis
 // =============================================================================
 
-export interface ClimateAnalysis {
-  hardinessZone: string
-  frostFreeDays: number
-  annualRainfall: number
-  notes: string
+export type AnalysisField = {
+  value: string | null
+  note: string
 }
 
-export interface GeomorphologyAnalysis {
-  slope: string
-  aspect: string
-  elevation: number
-  soilType: string
-  notes: string
-}
-
-export interface WaterAnalysis {
-  sources: string[]
-  wetZones: string
-  drainage: string
-  notes: string
-}
-
-export interface SocioEconomicAnalysis {
-  ownership: string
-  easements: string
-  neighbors: string
-  localMarket: string
-  notes: string
-}
-
-export interface AccessAnalysis {
-  mainAccess: string
-  secondaryAccess: string
-  parking: string
-  notes: string
-}
-
-export interface VegetationAnalysis {
-  existingTrees: string[]
-  problematicSpecies: string[]
-  notableFeatures: string
-  notes: string
-}
-
-export interface MicroclimateAnalysis {
-  windExposure: string
-  sunPatterns: string
-  frostPockets: string
-  notes: string
-}
-
-export interface BuildingsAnalysis {
-  existing: string[]
-  utilities: string
-  notes: string
-}
-
-export interface SoilAnalysis {
-  type: string
-  ph: number
-  organic: string
-  texture: string
-  notes: string
-}
+export type AnalysisSection = Record<string, AnalysisField>
 
 export interface ClientObservations {
   sunnyAreas: string
@@ -221,15 +163,28 @@ export interface SiteAnalysis {
   id: string
   projectId: string
   updatedAt: string
-  climate: ClimateAnalysis
-  geomorphology: GeomorphologyAnalysis
-  water: WaterAnalysis
-  socioEconomic: SocioEconomicAnalysis
-  access: AccessAnalysis
-  vegetation: VegetationAnalysis
-  microclimate: MicroclimateAnalysis
-  buildings: BuildingsAnalysis
-  soil: SoilAnalysis
+
+  // Canonical API contract
+  climate: AnalysisSection
+  geomorphology: AnalysisSection
+  water: AnalysisSection
+  biodiversity: AnalysisSection
+  socio_economic: AnalysisSection
+  access: AnalysisSection
+  microclimate: AnalysisSection
+  built_environment: AnalysisSection
+  zoning: AnalysisSection & { categories?: string[] }
+  soil: AnalysisSection
+  aesthetics: AnalysisSection
+  waterAccess?: boolean
+  zoningCategories?: string[]
+
+  // Backward-compatible aliases
+  socioEconomic?: AnalysisSection
+  accessData?: AnalysisSection
+  vegetation?: AnalysisSection
+  buildings?: AnalysisSection
+
   clientObservations: ClientObservations
   clientPhotos: ClientPhoto[]
   clientUsageMap: UsageMapItem[]

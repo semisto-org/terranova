@@ -39,7 +39,7 @@ const SECTION_CONFIG: SectionConfig[] = [
   },
   {
     key: 'geomorphology',
-    label: 'Géomorphologie',
+    label: 'Géomorphologie / paysage',
     sourceKeys: ['geomorphology'],
     fields: [
       { key: 'topography', label: 'Topographie' },
@@ -231,6 +231,13 @@ export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnal
     })
   }, [form.sections])
 
+  const completionTotals = useMemo(() => {
+    const totalFields = completion.reduce((sum, section) => sum + section.fields, 0)
+    const totalFilled = completion.reduce((sum, section) => sum + section.filled, 0)
+    const percent = totalFields > 0 ? Math.round((totalFilled / totalFields) * 100) : 0
+    return { totalFields, totalFilled, percent }
+  }, [completion])
+
   const warnings = useMemo(() => {
     const items: string[] = []
     if (!form.waterAccess) items.push('Aucun accès à l’eau indiqué : prévoir une stratégie de rétention et d’installation.')
@@ -308,6 +315,15 @@ export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnal
           Analyse UX terrain
         </h3>
         <p className="text-xs text-stone-500">Navigation par sections, édition complète des blocs et sauvegarde en payload canonique.</p>
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-stone-600">
+            <span>Complétude globale</span>
+            <span className="font-medium text-stone-700">{completionTotals.totalFilled}/{completionTotals.totalFields} champs ({completionTotals.percent}%)</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-stone-100">
+            <div className="h-full bg-[#AFBD00] transition-all" style={{ width: `${completionTotals.percent}%` }} />
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">

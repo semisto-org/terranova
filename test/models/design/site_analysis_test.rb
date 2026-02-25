@@ -56,4 +56,28 @@ class DesignSiteAnalysisTest < ActiveSupport::TestCase
     assert_equal analysis.buildings, analysis.built_environment
     assert_equal analysis.access_data, analysis.access
   end
+
+  test 'normalizes all analysis subsections with value/note structure' do
+    analysis = Design::SiteAnalysis.create!(
+      project: @project,
+      water: { network: { value: 'city', note: 'metered' } },
+      microclimate: { shade: { value: 'afternoon', note: '' } },
+      buildings: { heritage: { value: 'listed facade', note: '' } },
+      zoning: { categories: %w[zone_agricole], prescriptions: { value: 'low impact', note: '' } }
+    )
+
+    Design::SiteAnalysis::SECTION_CORE_FIELDS.each do |section, fields|
+      payload = analysis.public_send(section)
+      assert_kind_of Hash, payload
+
+      fields.each do |field|
+        next if section == :zoning && field == 'categories'
+
+        assert_equal(%w[note value], payload.fetch(field).keys.sort, "#{section}.#{field} not normalized")
+      end
+    end
+
+    assert_equal ['zone_agricole'], analysis.zoning['categories']
+    assert_equal ['zone_agricole'], analysis.zoning_categories
+  end
 end
