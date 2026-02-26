@@ -13,6 +13,7 @@
 ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "academy_idea_notes", force: :cascade do |t|
     t.string "category", null: false
@@ -164,6 +165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.index ["deleted_at"], name: "index_academy_trainings_on_deleted_at"
     t.index ["notion_id"], name: "index_academy_trainings_on_notion_id", unique: true
     t.index ["status"], name: "index_academy_trainings_on_status"
+    t.index ["title"], name: "idx_academy_trainings_title_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["training_type_id"], name: "index_academy_trainings_on_training_type_id"
   end
 
@@ -322,6 +324,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.datetime "updated_at", null: false
     t.index ["contact_type"], name: "index_contacts_on_contact_type"
     t.index ["deleted_at"], name: "index_contacts_on_deleted_at"
+    t.index ["name"], name: "idx_contacts_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["name"], name: "index_contacts_on_name"
     t.index ["notion_id"], name: "index_contacts_on_notion_id", unique: true
     t.index ["organization_id"], name: "index_contacts_on_organization_id"
@@ -510,6 +513,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.string "uploaded_by", default: "team", null: false
     t.string "url", null: false
     t.index ["deleted_at"], name: "index_design_project_documents_on_deleted_at"
+    t.index ["name"], name: "idx_design_project_documents_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["notion_id"], name: "index_design_project_documents_on_notion_id", unique: true
     t.index ["project_id"], name: "index_design_project_documents_on_project_id"
   end
@@ -630,6 +634,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.datetime "updated_at", null: false
     t.string "website_url", default: "", null: false
     t.index ["deleted_at"], name: "index_design_projects_on_deleted_at"
+    t.index ["name"], name: "idx_design_projects_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["notion_id"], name: "index_design_projects_on_notion_id", unique: true
     t.index ["phase"], name: "index_design_projects_on_phase"
     t.index ["status"], name: "index_design_projects_on_status"
@@ -741,6 +746,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.index ["deleted_at"], name: "index_design_team_members_on_deleted_at"
     t.index ["project_id", "member_id", "role"], name: "idx_design_team_member_unique_role", unique: true
     t.index ["project_id"], name: "index_design_team_members_on_project_id"
+  end
+
+  create_table "economic_inputs", force: :cascade do |t|
+    t.integer "amount_cents", default: 0, null: false
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.bigint "design_project_id"
+    t.bigint "location_id"
+    t.text "notes"
+    t.decimal "quantity", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "unit", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "zone_id"
+    t.index ["category"], name: "index_economic_inputs_on_category"
+    t.index ["date"], name: "index_economic_inputs_on_date"
+    t.index ["design_project_id"], name: "index_economic_inputs_on_design_project_id"
+    t.index ["location_id"], name: "index_economic_inputs_on_location_id"
+    t.index ["zone_id"], name: "index_economic_inputs_on_zone_id"
+  end
+
+  create_table "economic_outputs", force: :cascade do |t|
+    t.integer "amount_cents"
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.bigint "design_project_id"
+    t.bigint "location_id"
+    t.text "notes"
+    t.decimal "quantity", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "species_name"
+    t.string "unit", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "zone_id"
+    t.index ["category"], name: "index_economic_outputs_on_category"
+    t.index ["date"], name: "index_economic_outputs_on_date"
+    t.index ["design_project_id"], name: "index_economic_outputs_on_design_project_id"
+    t.index ["location_id"], name: "index_economic_outputs_on_location_id"
+    t.index ["zone_id"], name: "index_economic_outputs_on_zone_id"
   end
 
   create_table "event_attendees", force: :cascade do |t|
@@ -944,6 +988,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.index ["pinned"], name: "index_knowledge_topics_on_pinned"
     t.index ["section_id"], name: "index_knowledge_topics_on_section_id"
     t.index ["status"], name: "index_knowledge_topics_on_status"
+    t.index ["title"], name: "idx_knowledge_topics_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "location_zones", force: :cascade do |t|
@@ -1018,6 +1063,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.string "url"
     t.index ["notion_id"], name: "index_notes_on_notion_id", unique: true
     t.index ["pole_project_id"], name: "index_notes_on_pole_project_id"
+    t.index ["title"], name: "idx_notes_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "notion_assets", force: :cascade do |t|
@@ -1052,6 +1098,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.datetime "updated_at", null: false
     t.index ["database_name"], name: "index_notion_records_on_database_name"
     t.index ["notion_id"], name: "index_notion_records_on_notion_id", unique: true
+    t.index ["title"], name: "idx_notion_records_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "nursery_containers", force: :cascade do |t|
@@ -1505,6 +1552,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.datetime "updated_at", null: false
     t.string "watering_need", default: "3", null: false
     t.index ["genus_id"], name: "index_plant_species_on_genus_id"
+    t.index ["latin_name"], name: "idx_plant_species_latin_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["latin_name"], name: "index_plant_species_on_latin_name", unique: true
     t.index ["notion_id"], name: "index_plant_species_on_notion_id", unique: true
   end
@@ -1775,6 +1823,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
   add_foreign_key "design_tasks", "design_task_lists", column: "task_list_id"
   add_foreign_key "design_tasks", "members", column: "assignee_id"
   add_foreign_key "design_team_members", "design_projects", column: "project_id"
+  add_foreign_key "economic_inputs", "design_projects"
+  add_foreign_key "economic_inputs", "location_zones", column: "zone_id"
+  add_foreign_key "economic_inputs", "locations"
+  add_foreign_key "economic_outputs", "design_projects"
+  add_foreign_key "economic_outputs", "location_zones", column: "zone_id"
+  add_foreign_key "economic_outputs", "locations"
   add_foreign_key "event_attendees", "events"
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"

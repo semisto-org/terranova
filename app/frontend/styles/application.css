@@ -79,9 +79,112 @@
 
 .nova-animate-badge {
   animation: nova-zoom-in 0.2s ease-out both;
+}
 
-  /* Typography */
+/* Typography (moved out of .nova-animate-badge) */
+:root {
   --font-heading: 'Sole Serif Small', 'DM Serif Display', serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Auth Pages — Login / ForgotPassword / ResetPassword */
+@keyframes auth-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-animate-in {
+  animation: auth-fade-up 0.6s ease-out both;
+}
+
+.auth-stagger-1 { animation-delay: 0ms; }
+.auth-stagger-2 { animation-delay: 100ms; }
+.auth-stagger-3 { animation-delay: 200ms; }
+.auth-stagger-4 { animation-delay: 300ms; }
+.auth-stagger-5 { animation-delay: 400ms; }
+.auth-stagger-6 { animation-delay: 500ms; }
+
+.auth-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* Animated gradient blobs for auth background */
+@keyframes auth-blob-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -50px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.95); }
+  75% { transform: translate(50px, 30px) scale(1.05); }
+}
+
+@keyframes auth-blob-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-40px, 30px) scale(1.08); }
+  50% { transform: translate(30px, -40px) scale(0.92); }
+  75% { transform: translate(-20px, -20px) scale(1.12); }
+}
+
+@keyframes auth-blob-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, 40px) scale(1.15); }
+  66% { transform: translate(-30px, -30px) scale(0.9); }
+}
+
+@keyframes auth-blob-4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  20% { transform: translate(-50px, 20px) scale(1.1); }
+  40% { transform: translate(20px, -30px) scale(0.95); }
+  60% { transform: translate(40px, 40px) scale(1.05); }
+  80% { transform: translate(-20px, -40px) scale(1.12); }
+}
+
+@keyframes auth-blob-5 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(35px, -25px) scale(1.08); }
+  60% { transform: translate(-25px, 35px) scale(0.93); }
+}
+
+.auth-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  will-change: transform;
+}
+
+.auth-blob-1 {
+  width: 500px; height: 500px;
+  background: #5B5781;
+  top: -15%; left: -10%;
+  animation: auth-blob-1 20s ease-in-out infinite;
+}
+
+.auth-blob-2 {
+  width: 450px; height: 450px;
+  background: #AFBD00;
+  top: -10%; right: -10%;
+  animation: auth-blob-2 25s ease-in-out infinite;
+}
+
+.auth-blob-3 {
+  width: 400px; height: 400px;
+  background: #B01A19;
+  bottom: -15%; left: 20%;
+  animation: auth-blob-3 22s ease-in-out infinite;
+}
+
+.auth-blob-4 {
+  width: 350px; height: 350px;
+  background: #EF9B0D;
+  bottom: 10%; right: -5%;
+  animation: auth-blob-4 28s ease-in-out infinite;
+}
+
+.auth-blob-5 {
+  width: 380px; height: 380px;
+  background: #234766;
+  top: 40%; left: -5%;
+  animation: auth-blob-5 24s ease-in-out infinite;
 }

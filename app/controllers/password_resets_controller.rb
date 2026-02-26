@@ -47,7 +47,7 @@ class PasswordResetsController < ApplicationController
       return
     end
 
-    member = Member.find_by(id: member_data[:member_id])
+    member = Member.find_by(id: member_data["member_id"] || member_data[:member_id])
 
     if member.nil?
       redirect_to forgot_password_path, alert: "Compte introuvable."
