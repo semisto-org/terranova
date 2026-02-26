@@ -101,6 +101,7 @@ class AppController < ApplicationController
   end
 
   def admin
+    return redirect_to root_path, alert: "Accès non autorisé" unless current_member.is_admin
     render inertia: "Admin/Settings", props: {
       milestone: "Administration",
       currentMemberId: current_member.id.to_s
@@ -108,6 +109,7 @@ class AppController < ApplicationController
   end
 
   def parametres
+    return redirect_to root_path, alert: "Accès non autorisé" unless current_member.is_admin
     render inertia: "Admin/Parametres", props: {
       milestone: "Paramètres"
     }

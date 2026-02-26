@@ -1061,6 +1061,10 @@ namespace :notion do
 
           location = importer.extract(props, "Lieu ou URL") || ""
 
+          # Pole project relation
+          project_notion_ids = importer.extract_relations(props, "Projet(s)")
+          pole_project = project_notion_ids.first && PoleProject.find_by(notion_id: project_notion_ids.first)
+
           event.assign_attributes(
             title: importer.extract(props, "Libellé") || "Sans titre",
             start_date: start_date || Time.current,
@@ -1068,6 +1072,7 @@ namespace :notion do
             location: location,
             description: description_parts.join("\n"),
             event_type: event_type,
+            pole_project_id: pole_project&.id,
             notion_created_at: page["created_time"],
             notion_updated_at: page["last_edited_time"]
           )

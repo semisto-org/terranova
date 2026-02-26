@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
+import { getSchoolHoliday } from '../../lib/schoolHolidays'
 
 const MONTH_NAMES = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -63,6 +64,13 @@ function getTrainingsForDate(date, trainingSessions, getTraining) {
     .filter(Boolean)
 }
 
+function toLocalDateStr(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 function isToday(date) {
   const today = new Date()
   return (
@@ -120,6 +128,10 @@ export default function CalendarYearView({
               <span className="text-sm text-stone-600">{STATUS_LABELS[status]}</span>
             </div>
           ))}
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-violet-200 border border-violet-300" />
+            <span className="text-sm text-stone-600">Congé scolaire</span>
+          </div>
         </div>
       </div>
 
@@ -158,21 +170,24 @@ export default function CalendarYearView({
                       getTraining
                     )
                     const today = isToday(day.date)
-                    const dateStr = day.date.toISOString().split('T')[0]
+                    const dateStr = toLocalDateStr(day.date)
                     const isSelected = selectedDate === dateStr
                     const isFirstDay = isFirstDayOfMonth(day.date)
+                    const holiday = getSchoolHoliday(dateStr)
 
                     return (
                       <div
                         key={dayIndex}
-                        className={`relative p-3 sm:p-4 min-h-[80px] sm:min-h-[100px] transition-all duration-200 ${
+                        className={`group/holiday relative p-3 sm:p-4 min-h-[80px] sm:min-h-[100px] transition-all duration-200 ${
                           !day.isCurrentYear
                             ? 'opacity-30 bg-stone-50'
                             : today
                               ? 'bg-[#B01A19]/10 ring-2 ring-[#B01A19] ring-inset'
                               : isSelected && trainingsForDate.length > 0
                                 ? 'bg-stone-100'
-                                : 'hover:bg-stone-50/50 bg-white'
+                                : holiday
+                                  ? 'bg-violet-50 hover:bg-violet-100/50'
+                                  : 'hover:bg-stone-50/50 bg-white'
                         } ${trainingsForDate.length > 0 ? 'cursor-pointer' : ''} ${
                           isFirstDay && day.isCurrentYear
                             ? 'border-l-2 border-stone-300'
@@ -217,6 +232,12 @@ export default function CalendarYearView({
                             {trainingsForDate.length > 3 && (
                               <div className="w-1.5 h-1.5 rounded-full bg-stone-400" />
                             )}
+                          </div>
+                        )}
+                        {holiday && !isSelected && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-stone-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/holiday:opacity-100 transition-opacity z-20">
+                            {holiday.label}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-1.5 h-1.5 bg-stone-900 rotate-45" />
                           </div>
                         )}
                         {isSelected && trainingsForDate.length > 0 && (

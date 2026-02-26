@@ -15,6 +15,7 @@ import {
   Leaf,
   Pencil,
   Trash2,
+  ListTodo,
 } from 'lucide-react'
 import { TabLayout, TabItem } from './shared/TabLayout'
 import { PhaseIndicator } from './shared/PhaseIndicator'
@@ -32,6 +33,7 @@ import {
   AlbumTab,
   MeetingsTab,
   CoGestionTab,
+  TasksTab,
 } from './tabs'
 import type { ProjectPhase } from './shared/PhaseIndicator'
 import type { ProjectStatus } from './shared/StatusIndicator'
@@ -128,6 +130,21 @@ export interface ProjectDetailPayload {
   mediaItems: Array<{ id: string; type: string; url: string; thumbnailUrl?: string; caption: string }>
   meetings: Array<{ id: string; title: string; date: string; time: string; duration: number; location?: string }>
   annotations: Array<{ id: string; content: string; authorType: string; resolved: boolean }>
+  taskLists: Array<{
+    id: string
+    name: string
+    position: number
+    tasks: Array<{
+      id: string
+      name: string
+      status: string
+      dueDate: string | null
+      assigneeName: string | null
+      notes: string | null
+      position: number
+      completed: boolean
+    }>
+  }>
   plantFollowUp: {
     plantRecords?: Array<{ id: string; status: string; healthScore: number; notes?: string }>
     plants?: Array<{ id: string; status: string; healthScore: number; notes?: string }>
@@ -210,6 +227,13 @@ export interface ProjectDetailActions {
   onAddIntervention: (v: Record<string, unknown>) => void
   onUpdateHarvestCalendar: (month: number, items: unknown[]) => void
   onUpdateMaintenanceCalendar: (month: number, items: unknown[]) => void
+  onCreateDesignTaskList: (name: string) => void
+  onUpdateDesignTaskList: (id: string, name: string) => void
+  onDeleteDesignTaskList: (id: string) => void
+  onCreateDesignTask: (taskListId: string, data: { name: string; due_date?: string; assignee_id?: string; notes?: string }) => void
+  onUpdateDesignTask: (id: string, data: { name: string; due_date?: string; assignee_id?: string; notes?: string }) => void
+  onToggleDesignTask: (id: string) => void
+  onDeleteDesignTask: (id: string) => void
   onSearch: (query: string) => void
 }
 
@@ -224,6 +248,7 @@ const DETAIL_TABS: TabItem[] = [
   { id: 'documents', label: 'Documents', icon: <FileStack className="w-4 h-4" /> },
   { id: 'album', label: 'Album', icon: <ImageIcon className="w-4 h-4" /> },
   { id: 'meetings', label: 'Dates', icon: <Calendar className="w-4 h-4" /> },
+  { id: 'tasks', label: 'Tâches', icon: <ListTodo className="w-4 h-4" /> },
   { id: 'co-gestion', label: 'Co-gestion', icon: <Leaf className="w-4 h-4" /> },
   { id: 'settings', label: 'Paramètres', icon: <Settings className="w-4 h-4" /> },
 ]
@@ -453,6 +478,21 @@ export function ProjectDetailView({
                 onUpdateAddress={a.onUpdateAddress ?? (async () => {})}
                 onAddTeamMember={a.onAddTeamMember}
                 onRemoveTeamMember={a.onRemoveTeamMember}
+              />
+            )}
+            {activeTab === 'tasks' && (
+              <TasksTab
+                taskLists={detail.taskLists || []}
+                teamMembers={detail.teamMembers.map(m => ({ id: m.id, memberName: m.memberName }))}
+                projectId={project.id}
+                onCreateTaskList={a.onCreateDesignTaskList}
+                onUpdateTaskList={a.onUpdateDesignTaskList}
+                onDeleteTaskList={a.onDeleteDesignTaskList}
+                onCreateTask={a.onCreateDesignTask}
+                onUpdateTask={a.onUpdateDesignTask}
+                onToggleTask={a.onToggleDesignTask}
+                onDeleteTask={a.onDeleteDesignTask}
+                busy={busy}
               />
             )}
             {activeTab === 'co-gestion' && (

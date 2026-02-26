@@ -1,15 +1,29 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
+import GlobalSearch from './GlobalSearch'
 import { NovaChat } from '../nova-chat'
 import { TimesheetForm } from '../../lab-management/components'
 import { apiRequest } from '@/lib/api'
 
 function ShellLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [timesheetModalOpen, setTimesheetModalOpen] = useState(false)
   const [timesheetBusy, setTimesheetBusy] = useState(false)
+
+  // Cmd+K / Ctrl+K global shortcut
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(prev => !prev)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className="flex h-screen overflow-hidden bg-stone-50" style={{ fontFamily: 'var(--font-body)' }}>
@@ -51,12 +65,18 @@ function ShellLayout({ children }) {
 
           <div className="flex-1" />
 
-          {/* Search placeholder */}
-          <button className="flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-400 hover:border-stone-300 transition-colors">
+          {/* Global search trigger */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-400 hover:border-stone-300 hover:text-stone-500 transition-colors"
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <span className="hidden sm:inline">Rechercher...</span>
+            <kbd className="hidden md:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-stone-100 text-[10px] font-mono text-stone-400 border border-stone-200">
+              ⌘K
+            </kbd>
           </button>
 
           {/* Timesheet quick-add */}
@@ -98,6 +118,9 @@ function ShellLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Global search modal */}
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Timesheet quick-add modal */}
       {timesheetModalOpen && (

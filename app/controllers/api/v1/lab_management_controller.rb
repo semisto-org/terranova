@@ -16,6 +16,9 @@ module Api
       before_action :set_expense, only: [:update_expense, :destroy_expense]
       before_action :set_revenue, only: [:update_revenue, :destroy_revenue]
       before_action :set_album, only: [:update_album, :destroy_album, :album_media, :upload_album_media, :delete_album_media]
+      before_action :set_pole_project, only: [:show_project, :update_project, :destroy_project, :create_project_task_list]
+      before_action :set_project_task_list, only: [:update_project_task_list, :destroy_project_task_list, :create_project_action]
+      before_action :set_project_action, only: [:update_project_action, :toggle_project_action, :destroy_project_action]
 
       def overview
         render json: {
@@ -615,6 +618,119 @@ module Api
         head :no_content
       end
 
+      # ── Projects ──
+
+      def list_projects
+        projects = PoleProject.includes(:actions, :task_lists).order(:name)
+        render json: { items: projects.map { |p| serialize_project_summary(p) } }
+      end
+
+      def show_project
+        render json: serialize_project_detail(@pole_project)
+      end
+
+      def create_project
+        project = PoleProject.new(project_params)
+        if project.save
+          render json: serialize_project_summary(project), status: :created
+        else
+          render json: { error: project.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_project
+        if @pole_project.update(project_params)
+          render json: serialize_project_summary(@pole_project)
+        else
+          render json: { error: @pole_project.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_project
+        @pole_project.destroy!
+        head :no_content
+      end
+
+      # ── Project Task Lists ──
+
+      def create_project_task_list
+        task_list = @pole_project.task_lists.new(task_list_params)
+        if task_list.save
+          render json: serialize_project_task_list(task_list), status: :created
+        else
+          render json: { error: task_list.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_project_task_list
+        if @project_task_list.update(task_list_params)
+          render json: serialize_project_task_list(@project_task_list)
+        else
+          render json: { error: @project_task_list.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_project_task_list
+        @project_task_list.destroy!
+        head :no_content
+      end
+
+      # ── Project Actions (tasks) ──
+
+      def create_project_action
+        action = @project_task_list.actions.new(project_action_params)
+        action.pole_project = @project_task_list.pole_project
+        if action.save
+          render json: serialize_project_action(action), status: :created
+        else
+          render json: { error: action.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_project_action
+        if @project_action.update(project_action_params)
+          render json: serialize_project_action(@project_action)
+        else
+          render json: { error: @project_action.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def toggle_project_action
+        new_status = @project_action.status == "Terminé" ? "En attente" : "Terminé"
+        @project_action.update!(status: new_status)
+        render json: serialize_project_action(@project_action)
+      end
+
+      def destroy_project_action
+        @project_action.destroy!
+        head :no_content
+      end
+
+      # ── My Tasks (dashboard) ──
+
+      def my_tasks
+        member = current_member
+        name_variants = [
+          member.first_name,
+          "#{member.first_name} #{member.last_name}".strip
+        ].reject(&:blank?)
+
+        lab_actions = Action.includes(:pole_project, :task_list)
+          .where(assignee_name: name_variants)
+          .where.not(status: "Terminé")
+          .order(Arel.sql("due_date ASC NULLS LAST"), created_at: :desc)
+
+        design_tasks = Design::Task.includes(task_list: :project)
+          .where(assignee_id: member.id)
+          .where(status: "pending")
+          .order(Arel.sql("due_date ASC NULLS LAST"), created_at: :desc)
+
+        render json: {
+          labActions: lab_actions.map { |a| serialize_my_action(a) },
+          designTasks: design_tasks.map { |t| serialize_my_design_task(t) }
+        }
+      end
+
       def list_albums
         scope = Album.includes(:albumable).order(updated_at: :desc)
         scope = scope.where(albumable_type: params[:albumable_type]) if params[:albumable_type].present?
@@ -783,6 +899,30 @@ module Api
 
       def set_album
         @album = Album.find(params.require(:id))
+      end
+
+      def set_pole_project
+        @pole_project = PoleProject.find(params.require(:id))
+      end
+
+      def set_project_task_list
+        @project_task_list = TaskList.find(params.require(:id))
+      end
+
+      def set_project_action
+        @project_action = Action.find(params.require(:id))
+      end
+
+      def project_params
+        params.permit(:name, :status, :lead_name, :needs_reclassification, team_names: [])
+      end
+
+      def task_list_params
+        params.permit(:name, :position)
+      end
+
+      def project_action_params
+        params.permit(:name, :status, :due_date, :assignee_name, :priority, :time_minutes, :task_list_id, tags: [])
       end
 
       def active_storage_url_options
@@ -1200,6 +1340,76 @@ module Api
           trainingId: timesheet.training_id,
           poleProjectId: timesheet.pole_project_id,
           eventId: timesheet.event_id
+        }
+      end
+
+      def serialize_project_summary(p)
+        actions = p.actions
+        {
+          id: p.id.to_s,
+          name: p.name,
+          status: p.status,
+          leadName: p.lead_name,
+          teamNames: p.team_names || [],
+          needsReclassification: p.needs_reclassification,
+          totalActions: actions.size,
+          completedActions: actions.count { |a| a.status == "Terminé" },
+          createdAt: p.created_at.iso8601
+        }
+      end
+
+      def serialize_project_detail(p)
+        serialize_project_summary(p).merge(
+          taskLists: p.task_lists.order(:position).includes(:actions).map { |tl| serialize_project_task_list(tl) },
+          unlistedActions: p.actions.where(task_list_id: nil).order(:created_at).map { |a| serialize_project_action(a) },
+          events: p.events.includes(:event_type).order(:start_date).map { |e| serialize_event(e) }
+        )
+      end
+
+      def serialize_project_task_list(tl)
+        {
+          id: tl.id.to_s,
+          name: tl.name,
+          position: tl.position,
+          actions: tl.actions.order(:created_at).map { |a| serialize_project_action(a) }
+        }
+      end
+
+      def serialize_project_action(a)
+        {
+          id: a.id.to_s,
+          name: a.name,
+          status: a.status,
+          dueDate: a.due_date&.iso8601,
+          timeMinutes: a.time_minutes,
+          assigneeName: a.assignee_name,
+          tags: a.tags || [],
+          priority: a.priority,
+          completed: a.status == "Terminé",
+          taskListId: a.task_list_id&.to_s,
+          createdAt: a.created_at.iso8601
+        }
+      end
+
+      def serialize_my_action(a)
+        serialize_project_action(a).merge(
+          projectId: a.pole_project_id&.to_s,
+          projectName: a.pole_project&.name
+        )
+      end
+
+      def serialize_my_design_task(t)
+        project = t.task_list.project
+        {
+          id: t.id.to_s,
+          name: t.name,
+          status: t.status,
+          dueDate: t.due_date&.iso8601,
+          assigneeName: t.assignee_name,
+          projectId: project.id.to_s,
+          projectName: project.name,
+          taskListName: t.task_list.name,
+          createdAt: t.created_at.iso8601
         }
       end
 

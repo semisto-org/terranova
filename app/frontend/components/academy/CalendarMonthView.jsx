@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
 import { MapPin, Users, ArrowRight } from 'lucide-react'
+import { getSchoolHoliday } from '../../lib/schoolHolidays'
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -19,6 +20,13 @@ function getSessionsForDate(date, trainingSessions) {
     const end = new Date(session.endDate).toISOString().split('T')[0]
     return dateStr >= start && dateStr <= end
   })
+}
+
+function toLocalDateStr(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function isToday(date) {
@@ -126,7 +134,8 @@ export default function CalendarMonthView({
         {calendarDays.map((day, index) => {
           const sessions = getSessionsForDate(day.date, trainingSessions)
           const today = isToday(day.date)
-          const dateStr = day.date.toISOString().split('T')[0]
+          const dateStr = toLocalDateStr(day.date)
+          const holiday = getSchoolHoliday(dateStr)
           const uniqueTrainingIds = new Set(
             sessions
               .filter((s) => {
@@ -203,6 +212,17 @@ export default function CalendarMonthView({
                 {uniqueTrainingIds.size > 3 && (
                   <div className="text-[10px] text-stone-500 font-medium px-1">
                     +{uniqueTrainingIds.size - 3} autre{(uniqueTrainingIds.size - 3) > 1 ? 's' : ''}
+                  </div>
+                )}
+                {holiday && (
+                  <div className="relative group/holiday">
+                    <div className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-700 text-center truncate cursor-default">
+                      Congé scolaire
+                    </div>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-stone-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/holiday:opacity-100 transition-opacity z-20">
+                      {holiday.label}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-1.5 h-1.5 bg-stone-900 rotate-45" />
+                    </div>
                   </div>
                 )}
               </div>

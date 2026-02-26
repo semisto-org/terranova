@@ -493,6 +493,63 @@ module Api
         head :no_content
       end
 
+      # ── Design Task Lists & Tasks ──
+
+      def create_design_task_list
+        project = find_project
+        task_list = project.task_lists.new(params.permit(:name, :position))
+        if task_list.save
+          render json: serialize_design_task_list(task_list), status: :created
+        else
+          render json: { error: task_list.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_design_task_list
+        task_list = Design::TaskList.find(params.require(:id))
+        if task_list.update(params.permit(:name, :position))
+          render json: serialize_design_task_list(task_list)
+        else
+          render json: { error: task_list.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_design_task_list
+        Design::TaskList.find(params.require(:id)).destroy!
+        head :no_content
+      end
+
+      def create_design_task
+        task_list = Design::TaskList.find(params.require(:task_list_id))
+        task = task_list.tasks.new(design_task_params)
+        if task.save
+          render json: serialize_design_task(task), status: :created
+        else
+          render json: { error: task.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_design_task
+        task = Design::Task.find(params.require(:id))
+        if task.update(design_task_params)
+          render json: serialize_design_task(task)
+        else
+          render json: { error: task.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def toggle_design_task
+        task = Design::Task.find(params.require(:id))
+        new_status = task.status == "completed" ? "pending" : "completed"
+        task.update!(status: new_status)
+        render json: serialize_design_task(task)
+      end
+
+      def destroy_design_task
+        Design::Task.find(params.require(:id)).destroy!
+        head :no_content
+      end
+
       def client_portal
         project = find_project
 
@@ -644,7 +701,8 @@ module Api
           plantFollowUp: serialize_plant_follow_up(project),
           clientContributions: serialize_client_contribution(ensure_client_contribution(project)),
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
-          maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project))
+          maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project)),
+          taskLists: project.task_lists.includes(:tasks).order(:position).map { |tl| serialize_design_task_list(tl) }
         }
       end
 
@@ -1138,6 +1196,36 @@ module Api
           content: item.content,
           createdAt: item.created_at.iso8601,
           resolved: item.resolved
+        }
+      end
+
+      def design_task_params
+        params.permit(:name, :status, :due_date, :assignee_id, :assignee_name, :notes, :position)
+      end
+
+      def serialize_design_task_list(tl)
+        {
+          id: tl.id.to_s,
+          name: tl.name,
+          position: tl.position,
+          projectId: tl.project_id.to_s,
+          tasks: tl.tasks.order(:position, :created_at).map { |t| serialize_design_task(t) }
+        }
+      end
+
+      def serialize_design_task(t)
+        {
+          id: t.id.to_s,
+          name: t.name,
+          status: t.status,
+          dueDate: t.due_date&.iso8601,
+          assigneeId: t.assignee_id&.to_s,
+          assigneeName: t.assignee_name,
+          notes: t.notes,
+          position: t.position,
+          completed: t.status == "completed",
+          taskListId: t.task_list_id.to_s,
+          createdAt: t.created_at.iso8601
         }
       end
 

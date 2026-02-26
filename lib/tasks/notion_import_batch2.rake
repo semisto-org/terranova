@@ -355,69 +355,82 @@ namespace :notion do
       puts "✅ Design Actions: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
     end
 
-    desc "Import post-its from Notion"
+    desc "Import Academy post-its from Notion as Academy::IdeaNote"
     task post_its: :environment do
       importer = NotionImporter.new
-      puts "📥 Importing post-its..."
+      puts "📥 Importing Academy post-its..."
 
       database_id = "7cd57a4c-6b5b-405f-85fb-6b7115655c45"
+      academy_pole_notion_id = "28df6f30-efe3-421c-9e87-6c111e61c07d"
+
+      # Map Notion "Type" values to Academy::IdeaNote categories
+      category_map = {
+        "Sujet" => "subject", "Subject" => "subject",
+        "Formateur" => "trainer", "Formatrice" => "trainer", "Trainer" => "trainer",
+        "Lieu" => "location", "Location" => "location"
+      }
+
       pages = importer.fetch_database(database_id)
-      created = updated = errors = 0
+      created = updated = skipped = errors = 0
 
       pages.each do |page|
         props = page["properties"]
         notion_id = page["id"]
 
         begin
-          post_it = PostIt.find_or_initialize_by(notion_id: notion_id)
-          is_new = post_it.new_record?
+          # Filter: only import post-its linked to Academy pole
+          pole_relation_ids = importer.extract_relations(props, "Pôle(s)/Département(s)")
+          unless pole_relation_ids.include?(academy_pole_notion_id)
+            skipped += 1
+            next
+          end
 
-          design_project = resolve_relation(importer, props, "Design(s)", Design::Project)
-          training = resolve_relation(importer, props, "Formation", Academy::Training)
-          pole_project = resolve_relation(importer, props, "Projet(s)", PoleProject)
-
-          # Extract created_by for author
-          author = extract_created_by_name(props, "Collé par")
+          idea_note = Academy::IdeaNote.find_or_initialize_by(notion_id: notion_id)
+          is_new = idea_note.new_record?
 
           # Fetch page content
-          body = nil
+          content = nil
           begin
             _blocks, html = importer.fetch_and_convert_page_content(notion_id)
-            body = html if html.present?
+            content = html if html.present?
           rescue => e
             puts "  ⚠️ Could not fetch content for PostIt #{notion_id}: #{e.message}"
           end
 
-          post_it.assign_attributes(
-            title: importer.extract(props, "Titre") || "",
-            body: body,
-            post_type: importer.extract(props, "Type") || "",
-            author_name: author || "",
-            date: importer.extract(props, "Date"),
-            design_project: design_project,
-            training: training,
-            pole_project: pole_project,
+          title = importer.extract(props, "Titre") || "Sans titre"
+          post_type = importer.extract(props, "Type") || ""
+          category = category_map[post_type] || "other"
+
+          # Build tags from available metadata
+          tags = []
+          tags << post_type if post_type.present? && category == "other"
+
+          idea_note.assign_attributes(
+            title: title,
+            content: content || "",
+            category: category,
+            tags: tags,
             notion_created_at: page["created_time"],
             notion_updated_at: page["last_edited_time"]
           )
 
-          post_it.save!
+          idea_note.save!
 
           importer.upsert_notion_record(
             page,
             database_name: "Post-its",
             database_id: database_id,
-            content_html: body
+            content_html: content
           )
 
           is_new ? created += 1 : updated += 1
         rescue => e
           errors += 1
-          puts "  ❌ PostIt #{notion_id}: #{e.message}"
+          puts "  ❌ PostIt→IdeaNote #{notion_id}: #{e.message}"
         end
       end
 
-      puts "✅ Post-its: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+      puts "✅ Academy Post-its: #{pages.size} fetched, #{created} created, #{updated} updated, #{skipped} skipped (non-Academy), #{errors} errors"
     end
 
     desc "Import notes from Notion"
