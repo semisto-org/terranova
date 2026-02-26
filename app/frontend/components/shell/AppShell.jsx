@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { usePage } from '@inertiajs/react'
 import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
@@ -9,6 +10,7 @@ import { apiRequest } from '@/lib/api'
 import GlobalSearchPalette from './GlobalSearchPalette'
 
 function ShellLayout({ children }) {
+  const { auth } = usePage().props
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [timesheetModalOpen, setTimesheetModalOpen] = useState(false)
@@ -117,14 +119,20 @@ function ShellLayout({ children }) {
           onSubmit={async (values) => {
             setTimesheetBusy(true)
             try {
+              const member = auth.member
               await apiRequest('/api/v1/lab/timesheets', {
                 method: 'POST',
-                body: JSON.stringify({ timesheet: values }),
+                body: JSON.stringify({
+                  ...values,
+                  member_id: member.id,
+                  member_name: `${member.firstName} ${member.lastName}`,
+                }),
               })
-              setTimesheetModalOpen(false)
+              return true
             } catch (err) {
               console.error('Failed to create timesheet:', err)
               alert('Erreur lors de la création de la prestation')
+              return false
             } finally {
               setTimesheetBusy(false)
             }
