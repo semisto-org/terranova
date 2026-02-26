@@ -229,6 +229,7 @@ export function Dashboard({
                 </div>
               )}
             </section>
+
           </div>
 
           {/* Right column - Sidebar */}

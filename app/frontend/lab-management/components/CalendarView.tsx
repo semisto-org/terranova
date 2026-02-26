@@ -16,9 +16,22 @@ export interface CalendarViewProps {
 
 type ViewMode = 'month' | 'week'
 
-// Helper function to get event type label (fallback for unknown types)
-function getEventTypeLabel(type: string): string {
-  return type || 'Événement'
+// Event type visual configuration (keyed by event type label)
+const eventTypeConfig: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
+  'Réunion projet': { label: 'Réunion projet', icon: '📋', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+  'Réunion porteurs': { label: 'Réunion porteurs', icon: '👥', color: 'text-violet-700', bgColor: 'bg-violet-100' },
+  'Design Day': { label: 'Design Day', icon: '🎨', color: 'text-[#7a8200]', bgColor: 'bg-[#AFBD00]/20' },
+  'Réunion guilde': { label: 'Réunion guilde', icon: '⚙️', color: 'text-stone-700', bgColor: 'bg-stone-100' },
+  'Betting Table': { label: 'Betting Table', icon: '🎲', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+  'Semisto Day': { label: 'Semisto Day', icon: '🌳', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
+  'Semos Fest': { label: 'Semos Fest', icon: '🎉', color: 'text-pink-700', bgColor: 'bg-pink-100' },
+  'Formation': { label: 'Formation', icon: '📚', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+}
+
+const defaultEventConfig = { label: 'Événement', icon: '📌', color: 'text-stone-700', bgColor: 'bg-stone-100' }
+
+function getEventConfig(type: string) {
+  return eventTypeConfig[type] || { ...defaultEventConfig, label: type || 'Événement' }
 }
 
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -381,10 +394,10 @@ export function CalendarView({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
-              Bienvenue, {firstName || 'utilisateur'}
+              Calendrier
             </h1>
             <p className="text-stone-500 mt-1">
-              Tableau de bord du Lab{labName ? ` ${labName}` : ''}
+              Cycles, réunions et événements du Lab
             </p>
           </div>
 
@@ -474,8 +487,7 @@ export function CalendarView({
           {/* Filters */}
           <div className="flex flex-wrap gap-2 p-4 border-b border-stone-200 bg-stone-50">
             <span className="text-xs text-stone-500 self-center mr-2">Filtres:</span>
-            {/* Note: Filter by event types from events list */}
-            {Array.from(new Set(events.map(e => e.type))).map((type) => {
+            {Object.entries(eventTypeConfig).map(([type, config]) => {
               const isActive = filterTypes.length === 0 || filterTypes.includes(type as EventType)
               return (
                 <button
@@ -485,12 +497,13 @@ export function CalendarView({
                     inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all
                     ${
                       isActive
-                        ? 'bg-stone-100 text-stone-700'
+                        ? `${config.bgColor} ${config.color}`
                         : 'bg-stone-200 text-stone-400 opacity-50'
                     }
                   `}
                 >
-                  <span className="hidden sm:inline">{getEventTypeLabel(type)}</span>
+                  <span>{config.icon}</span>
+                  <span className="hidden sm:inline">{config.label}</span>
                 </button>
               )
             })}
@@ -547,11 +560,11 @@ export function CalendarView({
             event={selectedEvent}
             members={members}
             onClose={() => setSelectedEventId(null)}
-            onEdit={() => {
+            onEdit={(selectedEvent as any)._isTrainingSession ? undefined : () => {
               onEditEvent?.(selectedEvent.id)
               setSelectedEventId(null)
             }}
-            onDelete={() => {
+            onDelete={(selectedEvent as any)._isTrainingSession ? undefined : () => {
               onDeleteEvent?.(selectedEvent.id)
               setSelectedEventId(null)
             }}
@@ -631,6 +644,7 @@ function MonthView({
             <div key={weekIndex} className="relative grid grid-cols-7 gap-px">
               {/* Spanning events layer - positioned absolutely over the grid */}
               {spanningEvents.map((spanEvent, eventIndex) => {
+                const config = getEventConfig(spanEvent.event.type)
                 // Calculate left position and width based on columns
                 // Each column is 1/7 of the width (14.2857%)
                 const colWidth = 100 / 7
@@ -644,7 +658,7 @@ function MonthView({
                     className={`
                       absolute z-10 text-left px-1.5 py-0.5 text-[10px] font-medium truncate
                       transition-opacity hover:opacity-80
-                      bg-stone-100 text-stone-700
+                      ${config.bgColor} ${config.color}
                       ${!spanEvent.continuesFromPrevWeek ? 'rounded-l' : 'rounded-l-none'}
                       ${!spanEvent.continuesToNextWeek ? 'rounded-r' : 'rounded-r-none'}
                     `}
@@ -656,6 +670,7 @@ function MonthView({
                     }}
                     title={spanEvent.event.title}
                   >
+                    <span className="mr-0.5">{config.icon}</span>
                     <span className="hidden lg:inline">{spanEvent.event.title}</span>
                   </button>
                 )
@@ -698,6 +713,7 @@ function MonthView({
                     {/* Single-day events */}
                     <div className="space-y-0.5">
                       {singleDayEvents.slice(0, 3).map((singleEvent) => {
+                        const config = getEventConfig(singleEvent.event.type)
                         return (
                           <button
                             key={singleEvent.event.id}
@@ -705,10 +721,11 @@ function MonthView({
                             className={`
                               w-full text-left px-1.5 py-0.5 text-[10px] font-medium truncate
                               transition-opacity hover:opacity-80 rounded
-                              bg-stone-100 text-stone-700
+                              ${config.bgColor} ${config.color}
                             `}
                             title={singleEvent.event.title}
                           >
+                            <span className="mr-0.5">{config.icon}</span>
                             <span className="hidden lg:inline">{singleEvent.event.title}</span>
                           </button>
                         )
@@ -829,6 +846,7 @@ function WeekView({
     <div className="relative">
       {/* Spanning events - single vertical bars */}
       {spanningEvents.map((spanEvent, eventIndex) => {
+        const config = getEventConfig(spanEvent.event.type)
         const { top, height } = calculateSpanPosition(spanEvent)
 
         return (
@@ -837,7 +855,7 @@ function WeekView({
             onClick={() => onSelectEvent(spanEvent.event.id)}
             className={`
               absolute left-[108px] w-8 z-10 transition-all hover:opacity-80 hover:scale-[1.02]
-              bg-stone-100
+              ${config.bgColor}
               ${!spanEvent.continuesFromPrevWeek ? 'rounded-t-lg' : 'rounded-t-none'}
               ${!spanEvent.continuesToNextWeek ? 'rounded-b-lg' : 'rounded-b-none'}
             `}
@@ -849,7 +867,7 @@ function WeekView({
             title={spanEvent.event.title}
           >
             <div
-              className="h-full flex items-center justify-center text-stone-700"
+              className={`h-full flex items-center justify-center ${config.color}`}
             >
               <span
                 className="text-[11px] font-semibold whitespace-nowrap px-1"
@@ -859,7 +877,7 @@ function WeekView({
                   transform: 'rotate(180deg)',
                 }}
               >
-                {spanEvent.event.title}
+                {config.icon} {spanEvent.event.title}
               </span>
             </div>
           </button>
@@ -919,6 +937,7 @@ function WeekView({
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {singleDayEvents.map((singleEvent) => {
+                      const config = getEventConfig(singleEvent.event.type)
                       const attendees = singleEvent.event.attendeeIds
                         .map((id) => members.find((m) => m.id === id))
                         .filter(Boolean) as Member[]
@@ -927,14 +946,15 @@ function WeekView({
                         <button
                           key={singleEvent.event.id}
                           onClick={() => onSelectEvent(singleEvent.event.id)}
-                          className="relative overflow-hidden text-left p-3 rounded-lg transition-all hover:shadow-md hover:scale-[1.02] w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px] bg-stone-100 border border-transparent hover:border-stone-200"
+                          className={`relative overflow-hidden text-left p-3 rounded-lg transition-all hover:shadow-md hover:scale-[1.02] w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px] ${config.bgColor} border border-transparent hover:border-stone-200`}
                         >
                           <div>
-                            <p className="text-[10px] font-medium text-stone-500 opacity-70">
+                            <p className={`text-[10px] font-medium ${config.color} opacity-70`}>
                               {formatTime(singleEvent.event.startDate)}
                             </p>
                             <div className="flex items-start gap-1.5 mt-1">
-                              <p className="text-xs font-semibold text-stone-700 line-clamp-2">
+                              <span className="text-sm shrink-0">{config.icon}</span>
+                              <p className={`text-xs font-semibold ${config.color} line-clamp-2`}>
                                 {singleEvent.event.title}
                               </p>
                             </div>
@@ -990,6 +1010,7 @@ interface EventDetailModalProps {
 
 function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDetailModalProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const config = getEventConfig(event.type)
 
   const attendees = event.attendeeIds
     .map((id) => members.find((m) => m.id === id))
@@ -1014,13 +1035,14 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="shrink-0 px-6 py-4 bg-stone-100">
+        {/* Header with colored banner */}
+        <div className={`shrink-0 px-6 py-4 ${config.bgColor}`}>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
+              <span className="text-3xl">{config.icon}</span>
               <div>
-                <span className="text-xs font-medium uppercase tracking-wide text-stone-500">
-                  {getEventTypeLabel(event.type)}
+                <span className={`text-xs font-medium uppercase tracking-wide ${config.color}`}>
+                  {config.label}
                 </span>
                 <h2 className="text-lg font-semibold text-stone-800 mt-0.5">
                   {event.title}

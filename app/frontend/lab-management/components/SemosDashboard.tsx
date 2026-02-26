@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type {
   Member,
   Wallet,
@@ -41,15 +41,164 @@ function formatAmount(amount: number): string {
   }).format(amount)
 }
 
+// --- Demo data for when no real data is available ---
+function getDemoData() {
+  const demoMembers: Member[] = [
+    {
+      id: 'demo-member-1',
+      firstName: 'Sophie',
+      lastName: 'Dubois',
+      email: 'sophie@semisto.org',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie',
+      roles: ['coordination'],
+      status: 'active',
+      isAdmin: true,
+      memberKind: 'human',
+      membershipType: 'effective',
+      joinedAt: '2025-03-15',
+      walletId: 'demo-wallet-1',
+      guildIds: ['demo-guild-1'],
+      slackUserId: null,
+      lastActivityAt: '2026-02-25',
+    },
+    {
+      id: 'demo-member-2',
+      firstName: 'Marc',
+      lastName: 'Lejeune',
+      email: 'marc@semisto.org',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marc',
+      roles: ['designer'],
+      status: 'active',
+      isAdmin: false,
+      memberKind: 'human',
+      membershipType: 'effective',
+      joinedAt: '2025-05-20',
+      walletId: 'demo-wallet-2',
+      guildIds: [],
+      slackUserId: null,
+      lastActivityAt: '2026-02-24',
+    },
+    {
+      id: 'demo-member-3',
+      firstName: 'Lucie',
+      lastName: 'Martin',
+      email: 'lucie@semisto.org',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucie',
+      roles: ['formateur'],
+      status: 'active',
+      isAdmin: false,
+      memberKind: 'human',
+      membershipType: 'adherent',
+      joinedAt: '2025-09-01',
+      walletId: 'demo-wallet-3',
+      guildIds: [],
+      slackUserId: null,
+      lastActivityAt: '2026-02-23',
+    },
+  ]
+
+  const demoWallets: Wallet[] = [
+    { id: 'demo-wallet-1', memberId: 'demo-member-1', balance: 245.5, floor: -50, ceiling: 500 },
+    { id: 'demo-wallet-2', memberId: 'demo-member-2', balance: 120, floor: -50, ceiling: 500 },
+    { id: 'demo-wallet-3', memberId: 'demo-member-3', balance: 80, floor: -50, ceiling: 500 },
+  ]
+
+  const demoTransactions: SemosTransaction[] = [
+    {
+      id: 'demo-tx-1',
+      fromWalletId: 'demo-wallet-2',
+      toWalletId: 'demo-wallet-1',
+      amount: 30,
+      description: 'Design atelier permaculture',
+      createdAt: '2026-02-24T14:30:00Z',
+      type: 'transfer',
+    },
+    {
+      id: 'demo-tx-2',
+      fromWalletId: 'demo-wallet-1',
+      toWalletId: 'demo-wallet-3',
+      amount: 25,
+      description: 'Participation formation taille',
+      createdAt: '2026-02-22T10:00:00Z',
+      type: 'payment',
+    },
+    {
+      id: 'demo-tx-3',
+      fromWalletId: 'demo-wallet-3',
+      toWalletId: 'demo-wallet-1',
+      amount: 20,
+      description: 'Échange plants fruitiers',
+      createdAt: '2026-02-18T16:45:00Z',
+      type: 'exchange',
+    },
+    {
+      id: 'demo-tx-4',
+      fromWalletId: 'demo-wallet-1',
+      toWalletId: 'demo-wallet-2',
+      amount: 15,
+      description: 'Contribution cartographie',
+      createdAt: '2026-02-15T09:20:00Z',
+      type: 'transfer',
+    },
+  ]
+
+  const demoEmissions: SemosEmission[] = [
+    {
+      id: 'demo-em-1',
+      walletId: 'demo-wallet-1',
+      amount: 50,
+      reason: 'volunteer_work',
+      description: 'Animation journée design collectif',
+      createdAt: '2026-02-20T12:00:00Z',
+      createdBy: 'demo-member-1',
+    },
+    {
+      id: 'demo-em-2',
+      walletId: 'demo-wallet-1',
+      amount: 25,
+      reason: 'participation',
+      description: 'Cotisation membre actif — février',
+      createdAt: '2026-02-01T08:00:00Z',
+      createdBy: 'demo-member-1',
+    },
+    {
+      id: 'demo-em-3',
+      walletId: 'demo-wallet-2',
+      amount: 40,
+      reason: 'volunteer_work',
+      description: 'Bénévolat chantier participatif',
+      createdAt: '2026-02-19T14:00:00Z',
+      createdBy: 'demo-member-1',
+    },
+  ]
+
+  const demoRates: SemosRate[] = [
+    { id: 'demo-rate-1', type: 'cotisation_member_active', amount: 25, description: 'Cotisation mensuelle membre actif' },
+    { id: 'demo-rate-2', type: 'cotisation_member_support', amount: 10, description: 'Cotisation mensuelle membre adhérent' },
+    { id: 'demo-rate-3', type: 'volunteer_hourly', amount: 15, description: 'Taux horaire bénévolat' },
+    { id: 'demo-rate-4', type: 'provider_fee_percentage', amount: 5, description: 'Commission prestataire (%)' },
+    { id: 'demo-rate-5', type: 'peer_review', amount: 10, description: 'Évaluation par les pairs' },
+  ]
+
+  return {
+    members: demoMembers,
+    wallets: demoWallets,
+    transactions: demoTransactions,
+    emissions: demoEmissions,
+    rates: demoRates,
+    currentMemberId: 'demo-member-1',
+  }
+}
+
 type FilterType = 'all' | 'incoming' | 'outgoing' | 'emissions'
 
 export function SemosDashboard({
-  members,
-  wallets,
-  transactions,
-  emissions,
-  rates,
-  currentMemberId,
+  members: propMembers,
+  wallets: propWallets,
+  transactions: propTransactions,
+  emissions: propEmissions,
+  rates: propRates,
+  currentMemberId: propCurrentMemberId,
   onTransferSemos,
   onEmitSemos,
   onUpdateRate,
@@ -59,19 +208,26 @@ export function SemosDashboard({
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
 
-  // Get current member and wallet
-  const currentMember = members.find((m) => m.id === currentMemberId)
-  const currentWallet = currentMember
-    ? wallets.find((w) => w.memberId === currentMember.id)
-    : null
+  // Use demo data if no real member/wallet can be resolved
+  const needsDemo = useMemo(() => {
+    const member = propMembers.find((m) => m.id === propCurrentMemberId)
+    if (!member) return true
+    const wallet = propWallets.find((w) => w.memberId === member.id)
+    return !wallet
+  }, [propMembers, propWallets, propCurrentMemberId])
 
-  if (!currentMember || !currentWallet) {
-    return (
-      <div className="p-8 text-center text-stone-500">
-        Membre ou portefeuille non trouvé
-      </div>
-    )
-  }
+  const demo = useMemo(() => (needsDemo ? getDemoData() : null), [needsDemo])
+
+  const members = demo ? demo.members : propMembers
+  const wallets = demo ? demo.wallets : propWallets
+  const transactions = demo ? demo.transactions : propTransactions
+  const emissions = demo ? demo.emissions : propEmissions
+  const rates = demo ? demo.rates : propRates
+  const currentMemberId = demo ? demo.currentMemberId : propCurrentMemberId
+
+  // Get current member and wallet
+  const currentMember = members.find((m) => m.id === currentMemberId)!
+  const currentWallet = wallets.find((w) => w.memberId === currentMember.id)!
 
   // Create activity items for the current wallet
   const allActivity = createActivityItems(

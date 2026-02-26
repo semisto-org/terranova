@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
+import GlobalSearch from './GlobalSearch'
 import { NovaChat } from '../nova-chat'
 import { TimesheetForm } from '../../lab-management/components'
 import { apiRequest } from '@/lib/api'
@@ -9,8 +10,21 @@ import GlobalSearchPalette from './GlobalSearchPalette'
 
 function ShellLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [timesheetModalOpen, setTimesheetModalOpen] = useState(false)
   const [timesheetBusy, setTimesheetBusy] = useState(false)
+
+  // Cmd+K / Ctrl+K global shortcut
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(prev => !prev)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className="flex h-screen overflow-hidden bg-stone-50" style={{ fontFamily: 'var(--font-body)' }}>
@@ -93,6 +107,9 @@ function ShellLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Global search modal */}
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Timesheet quick-add modal */}
       {timesheetModalOpen && (

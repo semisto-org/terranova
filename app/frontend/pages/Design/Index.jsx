@@ -944,6 +944,25 @@ export default function DesignIndex({ initialProjectId }) {
         const payload = await apiRequest(`/api/v1/design/${currentProjectId}/search?q=${encodeURIComponent(query)}`)
         setSearchResults(payload.results || [])
       },
+      createDesignTaskList: (name) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/task-lists`, { method: 'POST', body: JSON.stringify({ name }) }), { refreshProjectId: currentProjectId }),
+      updateDesignTaskList: (id, name) => runMutation(() => apiRequest(`/api/v1/design/task-lists/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }), { refreshProjectId: currentProjectId }),
+      deleteDesignTaskList: (id) => {
+        setDeleteConfirm({
+          title: 'Supprimer cette liste ?',
+          message: 'La liste et toutes ses tâches seront supprimées définitivement.',
+          action: () => runMutation(() => apiRequest(`/api/v1/design/task-lists/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
+      createDesignTask: (taskListId, data) => runMutation(() => apiRequest(`/api/v1/design/task-lists/${taskListId}/tasks`, { method: 'POST', body: JSON.stringify(data) }), { refreshProjectId: currentProjectId }),
+      updateDesignTask: (id, data) => runMutation(() => apiRequest(`/api/v1/design/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(data) }), { refreshProjectId: currentProjectId }),
+      toggleDesignTask: (id) => runMutation(() => apiRequest(`/api/v1/design/tasks/${id}/toggle`, { method: 'PATCH' }), { refreshProjectId: currentProjectId }),
+      deleteDesignTask: (id) => {
+        setDeleteConfirm({
+          title: 'Supprimer cette tâche ?',
+          message: 'Cette tâche sera supprimée définitivement.',
+          action: () => runMutation(() => apiRequest(`/api/v1/design/tasks/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
+        })
+      },
     }
   }, [currentProjectId, editProject, projectDetail, runMutation, loadProject])
 
@@ -1012,6 +1031,13 @@ export default function DesignIndex({ initialProjectId }) {
       onUpdateHarvestCalendar: detailActions.updateHarvestCalendar || noop,
       onUpdateMaintenanceCalendar: detailActions.updateMaintenanceCalendar || noop,
       onSearch: detailActions.search || noopAsync,
+      onCreateDesignTaskList: detailActions.createDesignTaskList || noop,
+      onUpdateDesignTaskList: detailActions.updateDesignTaskList || noop,
+      onDeleteDesignTaskList: detailActions.deleteDesignTaskList || noop,
+      onCreateDesignTask: detailActions.createDesignTask || noop,
+      onUpdateDesignTask: detailActions.updateDesignTask || noop,
+      onToggleDesignTask: detailActions.toggleDesignTask || noop,
+      onDeleteDesignTask: detailActions.deleteDesignTask || noop,
     }
   }, [deleteProject, detailActions])
 

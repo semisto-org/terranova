@@ -9,6 +9,7 @@ import {
   ContactDetail,
   ContactForm,
   EventForm,
+  ProjectBoard,
   AlbumList,
   ReportingDashboard,
 } from '../../lab-management/components'
@@ -16,6 +17,7 @@ import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'projects', label: 'Projets' },
   { id: 'shapeup', label: 'Shape Up' },
   { id: 'contacts', label: 'Contacts' },
   { id: 'albums', label: 'Albums' },
@@ -597,6 +599,10 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onCreateEvent={callbacks.onCreateEvent}
           onViewMember={callbacks.onViewMember}
         />
+      )}
+
+      {tab === 'projects' && (
+        <ProjectBoard />
       )}
 
       {tab === 'shapeup' && (

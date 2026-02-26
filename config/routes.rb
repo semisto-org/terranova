@@ -12,7 +12,7 @@ Rails.application.routes.draw do
 
   # Inertia-powered application frontend
   root "app#index"
-  get "lab", to: "app#lab"
+  get "lab", to: redirect("/")
   get "academy", to: "app#academy"
   get "academy/calendar", to: "app#academy"
   get "academy/training-types/new", to: "app#academy_training_type_form"
@@ -45,6 +45,8 @@ Rails.application.routes.draw do
       get "health", to: "health#show"
 
       post "nova/chat", to: "nova#chat"
+
+      get "search", to: "search#index"
 
       get "foundation/routes", to: "foundation#routes"
       get "foundation/shell", to: "foundation#shell"
@@ -136,6 +138,20 @@ Rails.application.routes.draw do
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
 
+      get "lab/projects", to: "lab_management#list_projects"
+      get "lab/projects/:id", to: "lab_management#show_project"
+      post "lab/projects", to: "lab_management#create_project"
+      patch "lab/projects/:id", to: "lab_management#update_project"
+      delete "lab/projects/:id", to: "lab_management#destroy_project"
+      post "lab/projects/:id/task-lists", to: "lab_management#create_project_task_list"
+      patch "lab/task-lists/:id", to: "lab_management#update_project_task_list"
+      delete "lab/task-lists/:id", to: "lab_management#destroy_project_task_list"
+      post "lab/task-lists/:id/actions", to: "lab_management#create_project_action"
+      patch "lab/actions/:id", to: "lab_management#update_project_action"
+      patch "lab/actions/:id/toggle", to: "lab_management#toggle_project_action"
+      delete "lab/actions/:id", to: "lab_management#destroy_project_action"
+      get "lab/my-tasks", to: "lab_management#my_tasks"
+
       get "lab/albums", to: "lab_management#list_albums"
       post "lab/albums", to: "lab_management#create_album"
       patch "lab/albums/:id", to: "lab_management#update_album"
@@ -220,6 +236,13 @@ Rails.application.routes.draw do
       post "design/:project_id/meetings", to: "design_studio#create_meeting"
       patch "design/meetings/:meeting_id", to: "design_studio#update_meeting"
       delete "design/meetings/:meeting_id", to: "design_studio#destroy_meeting"
+      post "design/:project_id/task-lists", to: "design_studio#create_design_task_list"
+      patch "design/task-lists/:id", to: "design_studio#update_design_task_list"
+      delete "design/task-lists/:id", to: "design_studio#destroy_design_task_list"
+      post "design/task-lists/:task_list_id/tasks", to: "design_studio#create_design_task"
+      patch "design/tasks/:id", to: "design_studio#update_design_task"
+      patch "design/tasks/:id/toggle", to: "design_studio#toggle_design_task"
+      delete "design/tasks/:id", to: "design_studio#destroy_design_task"
       post "design/:project_id/annotations", to: "design_studio#create_annotation"
       patch "design/annotations/:annotation_id/resolve", to: "design_studio#resolve_annotation"
       delete "design/annotations/:annotation_id", to: "design_studio#destroy_annotation"

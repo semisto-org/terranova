@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom'
 import { Link, usePage, router } from '@inertiajs/react'
 
 const POLES = [
-  { id: 'lab', label: 'Gestion du Lab', path: '/lab', accent: '#5B5781', bg: '#c8bfd2', icon: '/semisto-global.png' },
+  { id: 'home', label: 'Accueil', path: '/', accent: '#78716C', bg: '#e7e5e4', icon: '/semisto-global.png' },
   { id: 'design', label: 'Design Studio', path: '/design', accent: '#AFBD00', bg: '#e1e6d8', icon: '/icons/design.png' },
   { id: 'academy', label: 'Academy', path: '/academy', accent: '#B01A19', bg: '#eac7b8', icon: '/icons/academy.png' },
-  { id: 'nursery', label: 'Nursery', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },
+  { id: 'nursery', label: 'Pépinière-école', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },
   { id: 'plants', label: 'Bases de données végétales', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
   { id: 'knowledge', label: 'Base de connaissances', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
   { id: 'admin', label: 'Administration', path: '/admin', accent: '#64748B', bg: '#e2e8f0' },
@@ -15,6 +15,7 @@ const POLES = [
 
 export function getPoleFromPath(pathname) {
   const segment = pathname.split('/').filter(Boolean)[0] || ''
+  if (segment === '') return POLES.find((p) => p.id === 'home')
   return POLES.find((p) => p.id === segment) || POLES[0]
 }
 
@@ -92,9 +93,31 @@ export default function ContextSwitcher() {
             zIndex: 99999,
           }}
         >
-          {!isAdherent && (<div className="py-1.5">
+          <div className="py-1.5">
+            {(() => {
+              const homePole = POLES.find((p) => p.id === 'home')
+              return (
+                <Link
+                  href={homePole.path}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
+                    currentPole.id === homePole.id
+                      ? 'bg-stone-50 text-stone-900 font-medium'
+                      : 'text-stone-700 hover:bg-stone-50'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z" />
+                  </svg>
+                  {homePole.label}
+                </Link>
+              )
+            })()}
+          </div>
+
+          {!isAdherent && (<div className="py-1.5 border-t border-stone-100">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Lab Wallonie</p>
-            {POLES.filter((p) => !['plants', 'knowledge', 'parametres'].includes(p.id)).map((pole) => (
+            {POLES.filter((p) => !['home', 'plants', 'knowledge', 'parametres', 'admin'].includes(p.id)).map((pole) => (
               <Link
                 key={pole.id}
                 href={pole.path}
@@ -150,6 +173,23 @@ export default function ContextSwitcher() {
 
           {auth?.member?.isAdmin && (
           <div className="py-1.5 border-t border-stone-100">
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
+                window.location.pathname.startsWith('/admin')
+                  ? 'bg-stone-50 text-stone-900 font-medium'
+                  : 'text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              <span
+                className="w-5 h-5 rounded flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                style={{ backgroundColor: '#64748B' }}
+              >
+                A
+              </span>
+              Administration
+            </Link>
             <Link
               href="/parametres"
               onClick={() => setOpen(false)}

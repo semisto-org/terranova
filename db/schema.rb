@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -19,10 +19,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
     t.text "content", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
     t.jsonb "tags", default: [], null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_academy_idea_notes_on_deleted_at"
+    t.index ["notion_id"], name: "index_academy_idea_notes_on_notion_id", unique: true
   end
 
   create_table "academy_training_attendances", force: :cascade do |t|
@@ -177,12 +181,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
     t.string "priority"
     t.string "status"
     t.jsonb "tags", default: []
+    t.bigint "task_list_id"
     t.integer "time_minutes"
     t.bigint "training_id"
     t.datetime "updated_at", null: false
     t.index ["notion_id"], name: "index_actions_on_notion_id", unique: true
     t.index ["parent_id"], name: "index_actions_on_parent_id"
     t.index ["pole_project_id"], name: "index_actions_on_pole_project_id"
+    t.index ["task_list_id"], name: "index_actions_on_task_list_id"
     t.index ["training_id"], name: "index_actions_on_training_id"
   end
 
@@ -696,6 +702,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
     t.index ["project_id"], name: "index_design_site_analyses_on_project_id", unique: true
   end
 
+  create_table "design_task_lists", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_task_lists_on_project_id"
+  end
+
+  create_table "design_tasks", force: :cascade do |t|
+    t.bigint "assignee_id"
+    t.string "assignee_name"
+    t.datetime "created_at", null: false
+    t.date "due_date"
+    t.string "name", null: false
+    t.text "notes"
+    t.integer "position", default: 0
+    t.string "status", default: "pending"
+    t.bigint "task_list_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assignee_id"], name: "index_design_tasks_on_assignee_id"
+    t.index ["task_list_id"], name: "index_design_tasks_on_task_list_id"
+  end
+
   create_table "design_team_members", force: :cascade do |t|
     t.datetime "assigned_at", null: false
     t.datetime "created_at", null: false
@@ -744,6 +774,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
+    t.bigint "pole_project_id"
     t.datetime "start_date", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
@@ -751,6 +782,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
     t.index ["deleted_at"], name: "index_events_on_deleted_at"
     t.index ["event_type_id"], name: "index_events_on_event_type_id"
     t.index ["notion_id"], name: "index_events_on_notion_id", unique: true
+    t.index ["pole_project_id"], name: "index_events_on_pole_project_id"
   end
 
   create_table "expenses", force: :cascade do |t|
@@ -1628,6 +1660,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
     t.index ["to_wallet_id"], name: "index_semos_transactions_on_to_wallet_id"
   end
 
+  create_table "task_lists", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "pole_project_id"
+    t.integer "position", default: 0
+    t.bigint "training_id"
+    t.datetime "updated_at", null: false
+    t.index ["pole_project_id"], name: "index_task_lists_on_pole_project_id"
+    t.index ["training_id"], name: "index_task_lists_on_training_id"
+  end
+
   create_table "timesheet_service_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "default_phase"
@@ -1690,6 +1733,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
   add_foreign_key "actions", "academy_trainings", column: "training_id"
   add_foreign_key "actions", "actions", column: "parent_id"
   add_foreign_key "actions", "pole_projects"
+  add_foreign_key "actions", "task_lists"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "album_media_items", "albums"
@@ -1727,11 +1771,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
   add_foreign_key "design_quote_lines", "design_quotes", column: "quote_id"
   add_foreign_key "design_quotes", "design_projects", column: "project_id"
   add_foreign_key "design_site_analyses", "design_projects", column: "project_id"
+  add_foreign_key "design_task_lists", "design_projects", column: "project_id"
+  add_foreign_key "design_tasks", "design_task_lists", column: "task_list_id"
+  add_foreign_key "design_tasks", "members", column: "assignee_id"
   add_foreign_key "design_team_members", "design_projects", column: "project_id"
   add_foreign_key "event_attendees", "events"
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
   add_foreign_key "events", "event_types"
+  add_foreign_key "events", "pole_projects"
   add_foreign_key "expenses", "academy_trainings", column: "training_id"
   add_foreign_key "expenses", "contacts", column: "supplier_contact_id"
   add_foreign_key "expenses", "design_projects"
@@ -1791,6 +1839,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_103000) do
   add_foreign_key "semos_emissions", "wallets"
   add_foreign_key "semos_transactions", "wallets", column: "from_wallet_id"
   add_foreign_key "semos_transactions", "wallets", column: "to_wallet_id"
+  add_foreign_key "task_lists", "academy_trainings", column: "training_id"
+  add_foreign_key "task_lists", "pole_projects"
   add_foreign_key "timesheets", "academy_trainings", column: "training_id"
   add_foreign_key "timesheets", "design_projects"
   add_foreign_key "timesheets", "events"

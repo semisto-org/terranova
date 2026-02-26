@@ -198,11 +198,11 @@ const buildInitialForm = (analysis: SiteAnalysis | null) => {
     waterAccess: Boolean(analysis?.waterAccess),
     zoningCategories,
     clientObservations: {
-      sunnyAreas: String((analysis?.clientObservations as Record<string, unknown>)?.sunnyAreas ?? ''),
-      wetAreas: String((analysis?.clientObservations as Record<string, unknown>)?.wetAreas ?? ''),
-      windyAreas: String((analysis?.clientObservations as Record<string, unknown>)?.windyAreas ?? ''),
-      favoriteSpots: String((analysis?.clientObservations as Record<string, unknown>)?.favoriteSpots ?? ''),
-      historyNotes: String((analysis?.clientObservations as Record<string, unknown>)?.historyNotes ?? ''),
+      sunnyAreas: String((analysis?.clientObservations as unknown as Record<string, unknown>)?.sunnyAreas ?? ''),
+      wetAreas: String((analysis?.clientObservations as unknown as Record<string, unknown>)?.wetAreas ?? ''),
+      windyAreas: String((analysis?.clientObservations as unknown as Record<string, unknown>)?.windyAreas ?? ''),
+      favoriteSpots: String((analysis?.clientObservations as unknown as Record<string, unknown>)?.favoriteSpots ?? ''),
+      historyNotes: String((analysis?.clientObservations as unknown as Record<string, unknown>)?.historyNotes ?? ''),
     },
   }
 }
