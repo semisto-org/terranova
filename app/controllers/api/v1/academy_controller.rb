@@ -48,40 +48,58 @@ module Api
         item.checklist_items = training_type.checklist_template if item.checklist_items.blank?
         item.save!
 
+        broadcast_training_change(action: "created", training: item)
         render json: serialize_training(item), status: :created
       end
 
       def update_training
         item = Academy::Training.find(params.require(:training_id))
         item.update!(training_update_params)
+
+        broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
       end
 
       def destroy_training
-        Academy::Training.find(params.require(:training_id)).soft_delete!
+        item = Academy::Training.find(params.require(:training_id))
+        training_id = item.id.to_s
+        item.soft_delete!
+
+        broadcast_training_destroy(training_id: training_id)
         head :no_content
       end
 
       def update_training_status
         item = Academy::Training.find(params.require(:training_id))
         item.update!(status: params.require(:status))
+
+        broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
       end
 
       def create_session
         training = Academy::Training.find(params.require(:training_id))
         item = training.sessions.create!(session_params)
+
+        broadcast_session_change(action: "created", session: item)
         render json: serialize_session(item), status: :created
       end
 
       def update_session
         item = Academy::TrainingSession.find(params.require(:session_id))
         item.update!(session_params)
+
+        broadcast_session_change(action: "updated", session: item)
         render json: serialize_session(item)
       end
 
       def destroy_session
-        Academy::TrainingSession.find(params.require(:session_id)).soft_delete!
+        item = Academy::TrainingSession.find(params.require(:session_id))
+        session_id = item.id.to_s
+        training_id = item.training_id.to_s
+        item.soft_delete!
+
+        broadcast_session_destroy(session_id: session_id, training_id: training_id)
         head :no_content
       end
 
@@ -254,6 +272,27 @@ module Api
         }
       end
 
+      def calendar_links
+        base_url = request.base_url
+        semisto_token = CalendarFeedToken.issue(feed: "semisto")
+        trainings_token = CalendarFeedToken.issue(feed: "trainings")
+
+        render json: {
+          semisto: {
+            url: "#{base_url}/calendar/semisto.ics?token=#{CGI.escape(semisto_token)}",
+            plainUrl: "#{base_url}/calendar/semisto.ics"
+          },
+          trainings: {
+            url: "#{base_url}/calendar/trainings.ics?token=#{CGI.escape(trainings_token)}",
+            plainUrl: "#{base_url}/calendar/trainings.ics"
+          },
+          instructions: [
+            "Dans Google Agenda, cliquez sur + à côté de ‘Autres agendas’.",
+            "Choisissez ‘À partir de l’URL’, collez le lien puis validez."
+          ]
+        }
+      end
+
       private
 
       def academy_payload
@@ -267,11 +306,15 @@ module Api
         expenses = Expense.where.not(training_id: nil).order(invoice_date: :desc)
         idea_notes = Academy::IdeaNote.order(created_at: :desc)
         members = Member.order(:first_name, :last_name)
+        school_holidays = Academy::SchoolHolidaysFetcher.new.fetch
+        serialized_sessions = sessions.map { |item| serialize_session(item) }
 
         {
           trainingTypes: training_types.map { |item| serialize_training_type(item) },
           trainings: trainings.map { |item| serialize_training(item) },
-          trainingSessions: sessions.map { |item| serialize_session(item) },
+          trainingSessions: serialized_sessions,
+          schoolHolidays: school_holidays[:events],
+          calendarEvents: serialized_sessions.map { |session| session.slice(:id, :startDate, :endDate).merge(type: 'training_session', readOnly: false, trainingId: session[:trainingId]) } + school_holidays[:events],
           trainingLocations: locations.map { |item| serialize_location(item) },
           trainingRegistrations: registrations.map { |item| serialize_registration(item) },
           trainingAttendances: attendances.map { |item| serialize_attendance(item) },
@@ -279,8 +322,46 @@ module Api
           trainingExpenses: expenses.map { |item| serialize_expense(item) },
           ideaNotes: idea_notes.map { |item| serialize_idea_note(item) },
           members: members.map { |item| serialize_member(item) },
-          stats: build_stats(trainings)
+          stats: build_stats(trainings),
+          meta: {
+            schoolHolidaysSource: school_holidays[:source],
+            schoolHolidaysRegion: school_holidays[:region],
+            schoolHolidaysSyncedAt: school_holidays[:syncedAt]
+          }
         }
+      end
+
+      def broadcast_training_change(action:, training:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "training",
+          action: action,
+          training: serialize_training(training)
+        })
+      end
+
+      def broadcast_training_destroy(training_id:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "training",
+          action: "destroyed",
+          trainingId: training_id
+        })
+      end
+
+      def broadcast_session_change(action:, session:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "session",
+          action: action,
+          session: serialize_session(session)
+        })
+      end
+
+      def broadcast_session_destroy(session_id:, training_id:)
+        ActionCable.server.broadcast("academy_trainings", {
+          type: "session",
+          action: "destroyed",
+          sessionId: session_id,
+          trainingId: training_id
+        })
       end
 
       def training_type_params

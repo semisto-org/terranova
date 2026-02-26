@@ -3,7 +3,10 @@ module Academy
     include SoftDeletable
     self.table_name = 'academy_trainings'
 
-    STATUSES = %w[idea to_organize in_preparation to_publish published in_progress post_training cancelled completed].freeze
+    STATUSES = %w[
+      draft planned registrations_open in_progress completed cancelled
+      idea to_organize in_preparation to_publish published post_training
+    ].freeze
     REGISTRATION_MODES = %w[open closed].freeze
 
     belongs_to :training_type, class_name: 'Academy::TrainingType'

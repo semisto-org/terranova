@@ -180,6 +180,7 @@ export function ExpenseFormModal({
   const [trainingId, setTrainingId] = useState(expense?.trainingId ?? expense?.training_id ?? defaultTrainingId ?? '')
   const [designProjectId, setDesignProjectId] = useState(expense?.designProjectId ?? expense?.design_project_id ?? defaultDesignProjectId ?? '')
   const [documentFile, setDocumentFile] = useState(null)
+  const [isDragOverDocument, setIsDragOverDocument] = useState(false)
   const [error, setError] = useState(null)
 
   // Sync from parent only when parent actually provides a list (e.g. Lab). When contactOptionsProp
@@ -298,6 +299,14 @@ export function ExpenseFormModal({
   }
 
   const accent = accentColor || '#B01A19'
+
+  const handleDocumentDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOverDocument(false)
+    const file = e.dataTransfer?.files?.[0]
+    if (file) setDocumentFile(file)
+  }
 
   return (
     <>
@@ -747,12 +756,47 @@ export function ExpenseFormModal({
 
               <section>
                 <h4 className="text-sm font-semibold text-stone-700 mb-3">Document</h4>
-                <input
-                  type="file"
-                  accept=".pdf,image/*"
-                  onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)}
-                  className="block w-full text-sm text-stone-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-stone-100 file:text-stone-800"
-                />
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsDragOverDocument(true)
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsDragOverDocument(true)
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsDragOverDocument(false)
+                  }}
+                  onDrop={handleDocumentDrop}
+                  className={`rounded-xl border-2 border-dashed p-4 text-center transition-all ${
+                    isDragOverDocument ? 'border-[var(--expense-accent,#B01A19)] bg-[var(--expense-accent,#B01A19)]/5' : 'border-stone-300 bg-stone-50'
+                  }`}
+                >
+                  <input
+                    id="expense-document-input"
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)}
+                    className="hidden"
+                  />
+                  <p className="text-sm text-stone-700">Glissez-déposez un fichier ici</p>
+                  <p className="text-xs text-stone-500 mt-1">PDF ou image</p>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('expense-document-input')?.click()}
+                    className="mt-3 px-3 py-1.5 rounded-lg bg-stone-200 text-stone-800 text-xs font-medium hover:bg-stone-300"
+                  >
+                    Choisir un fichier
+                  </button>
+                </div>
+                {documentFile && (
+                  <p className="mt-2 text-sm text-stone-700">Nouveau fichier : <strong>{documentFile.name}</strong></p>
+                )}
                 {expense?.documentFilename && !documentFile && (
                   <p className="mt-2 text-sm text-stone-500">Fichier actuel : {expense.documentFilename}</p>
                 )}

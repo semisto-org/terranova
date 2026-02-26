@@ -44,6 +44,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   const [expenses, setExpenses] = useState([])
   const [expensesLoading, setExpensesLoading] = useState(false)
   const [expenseFormModal, setExpenseFormModal] = useState(null)
+  const [expenseLinkOptions, setExpenseLinkOptions] = useState({ trainings: [], designProjects: [] })
   const [revenues, setRevenues] = useState([])
   const [revenuesLoading, setRevenuesLoading] = useState(false)
   const [revenueFormModal, setRevenueFormModal] = useState(null)
@@ -100,6 +101,31 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   useEffect(() => {
     if (tab === 'revenues') loadRevenues()
   }, [tab, loadRevenues])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!expenseFormModal) return
+
+    ;(async () => {
+      try {
+        const [academyPayload, designPayload] = await Promise.all([
+          apiRequest('/api/v1/academy'),
+          apiRequest('/api/v1/design'),
+        ])
+        if (cancelled) return
+        setExpenseLinkOptions({
+          trainings: (academyPayload?.trainings || []).map((t) => ({ value: t.id, label: t.title })),
+          designProjects: (designPayload?.projects || []).map((p) => ({ value: p.id, label: p.name })),
+        })
+      } catch {
+        if (!cancelled) setExpenseLinkOptions({ trainings: [], designProjects: [] })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [expenseFormModal])
 
   const members = data?.members || []
   const timesheets = data?.timesheets || []
@@ -303,6 +329,47 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         }),
       })
     },
+    onInlineExpenseUpdate: async (expenseId, changes) => {
+      const payload = {
+        ...(changes.status ? { status: changes.status } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'category') ? { category: changes.category || '' } : {}),
+        ...(changes.poles ? { poles: changes.poles } : {}),
+      }
+      if (!Object.keys(payload).length) return
+      await runAndRefresh(async () => {
+        await apiRequest(`/api/v1/lab/expenses/${expenseId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        })
+        await loadExpenses()
+      })
+    },
+    onBulkExpenseUpdate: async (ids, changes) => {
+      const payload = {
+        ...(changes.status ? { status: changes.status } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'category') ? { category: changes.category || '' } : {}),
+        ...(changes.poles ? { poles: changes.poles } : {}),
+      }
+      if (!Object.keys(payload).length || !ids?.length) return
+      await runAndRefresh(async () => {
+        await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/expenses/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        })))
+        await loadExpenses()
+      })
+    },
+    onBulkExpenseDelete: (ids) => {
+      if (!ids?.length) return
+      setDeleteConfirm({
+        title: `Supprimer ${ids.length} dépenses ?`,
+        message: 'Cette action est définitive. Confirmez la suppression en lot.',
+        action: () => runAndRefresh(async () => {
+          await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/expenses/${id}`, { method: 'DELETE' })))
+          await loadExpenses()
+        }),
+      })
+    },
 
     onCreateRevenue: () => setRevenueFormModal({ revenue: null }),
     onEditRevenue: (revenue) => setRevenueFormModal({ revenue }),
@@ -315,6 +382,33 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'DELETE' })
           loadRevenues()
         }),
+      })
+    },
+
+    onUpdateRevenue: (revenueId, patch) =>
+      runAndRefresh(async () => {
+        const body = {
+          status: patch.status,
+          pole: patch.pole,
+          category: patch.category,
+          date: patch.date,
+          amount_excl_vat: patch.amountExclVat,
+          amount: patch.amount,
+        }
+        await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'PATCH', body: JSON.stringify(body) })
+        await loadRevenues()
+      }),
+
+    onBulkUpdateRevenues: async (ids, patch) => {
+      await runAndRefresh(async () => {
+        const body = {
+          status: patch.status,
+          pole: patch.pole,
+          category: patch.category,
+          date: patch.date,
+        }
+        await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/revenues/${id}`, { method: 'PATCH', body: JSON.stringify(body) })))
+        await loadRevenues()
       })
     },
 
@@ -408,8 +502,11 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onCreateExpense={callbacks.onCreateExpense}
           onEditExpense={callbacks.onEditExpense}
           onDeleteExpense={callbacks.onDeleteExpense}
-          trainingOptions={[]}
-          designProjectOptions={[]}
+          onInlineUpdate={callbacks.onInlineExpenseUpdate}
+          onBulkUpdate={callbacks.onBulkExpenseUpdate}
+          onBulkDelete={callbacks.onBulkExpenseDelete}
+          trainingOptions={expenseLinkOptions.trainings}
+          designProjectOptions={expenseLinkOptions.designProjects}
         />
       )}
 
@@ -421,6 +518,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onEditRevenue={callbacks.onEditRevenue}
           onDeleteRevenue={callbacks.onDeleteRevenue}
           onViewRevenue={callbacks.onViewRevenue}
+          onUpdateRevenue={callbacks.onUpdateRevenue}
+          onBulkUpdateRevenues={callbacks.onBulkUpdateRevenues}
         />
       )}
 
@@ -554,8 +653,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           }}
           showTrainingLink={true}
           showDesignProjectLink={true}
-          trainingOptions={[]}
-          designProjectOptions={[]}
+          trainingOptions={expenseLinkOptions.trainings}
+          designProjectOptions={expenseLinkOptions.designProjects}
           accentColor="#64748B"
           onSubmit={async (payload) => {
             const isEdit = Boolean(expenseFormModal.expense?.id)

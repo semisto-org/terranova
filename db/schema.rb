@@ -327,6 +327,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.index ["organization_id"], name: "index_contacts_on_organization_id"
   end
 
+  create_table "cycle_periods", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "color", default: "#5B5781", null: false
+    t.date "cooldown_ends_on", null: false
+    t.date "cooldown_starts_on", null: false
+    t.datetime "created_at", null: false
+    t.date "ends_on", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.date "starts_on", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_cycle_periods_on_active"
+    t.index ["starts_on"], name: "index_cycle_periods_on_starts_on"
+  end
+
   create_table "cycles", force: :cascade do |t|
     t.date "cooldown_end", null: false
     t.date "cooldown_start", null: false
@@ -577,10 +592,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
   end
 
   create_table "design_projects", force: :cascade do |t|
+    t.string "acquisition_channel"
     t.integer "area", default: 0, null: false
     t.string "city", default: "", null: false
     t.string "client_email", default: "", null: false
     t.string "client_id", null: false
+    t.jsonb "client_interests", default: [], null: false
     t.string "client_name", null: false
     t.string "client_phone", default: "", null: false
     t.string "country_name", default: "", null: false
@@ -664,6 +681,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
 
   create_table "design_site_analyses", force: :cascade do |t|
     t.jsonb "access_data", default: {}, null: false
+    t.jsonb "aesthetics", default: {}, null: false
     t.jsonb "buildings", default: {}, null: false
     t.jsonb "client_observations", default: {}, null: false
     t.jsonb "client_photos", default: [], null: false
@@ -678,6 +696,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.datetime "updated_at", null: false
     t.jsonb "vegetation", default: {}, null: false
     t.jsonb "water", default: {}, null: false
+    t.boolean "water_access"
+    t.jsonb "zoning", default: {}, null: false
+    t.jsonb "zoning_categories", default: [], null: false
     t.index ["project_id"], name: "index_design_site_analyses_on_project_id", unique: true
   end
 
@@ -799,7 +820,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
     t.string "vat_rate"
     t.index ["deleted_at"], name: "index_expenses_on_deleted_at"
+    t.index ["design_project_id", "invoice_date"], name: "idx_expenses_design_project_invoice_date"
     t.index ["design_project_id"], name: "index_expenses_on_design_project_id"
+    t.index ["invoice_date"], name: "index_expenses_on_invoice_date"
     t.index ["notion_id"], name: "index_expenses_on_notion_id", unique: true
     t.index ["supplier_contact_id"], name: "index_expenses_on_supplier_contact_id"
     t.index ["training_id"], name: "index_expenses_on_training_id"
@@ -1575,7 +1598,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.boolean "vat_exemption", default: false, null: false
     t.string "vat_rate", default: "", null: false
     t.index ["contact_id"], name: "index_revenues_on_contact_id"
+    t.index ["date"], name: "index_revenues_on_date"
     t.index ["deleted_at"], name: "index_revenues_on_deleted_at"
+    t.index ["design_project_id", "date"], name: "idx_revenues_design_project_date"
     t.index ["design_project_id"], name: "index_revenues_on_design_project_id"
     t.index ["notion_id"], name: "index_revenues_on_notion_id", unique: true
     t.index ["pole"], name: "index_revenues_on_pole"
@@ -1678,6 +1703,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.integer "travel_km", default: 0
     t.datetime "updated_at", null: false
     t.index ["date"], name: "index_timesheets_on_date"
+    t.index ["design_project_id", "date"], name: "idx_timesheets_design_project_date"
     t.index ["design_project_id"], name: "index_timesheets_on_design_project_id"
     t.index ["event_id"], name: "index_timesheets_on_event_id"
     t.index ["member_id"], name: "index_timesheets_on_member_id"

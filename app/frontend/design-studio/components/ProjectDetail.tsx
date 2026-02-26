@@ -37,6 +37,7 @@ import {
 } from './tabs'
 import type { ProjectPhase } from './shared/PhaseIndicator'
 import type { ProjectStatus } from './shared/StatusIndicator'
+import type { TeamRole } from '../types'
 
 export interface ProjectDetailPayload {
   project: {
@@ -173,9 +174,8 @@ export interface ProjectDetailActions {
     longitude: number
   }) => void | Promise<void>
   onAddTeamMember: (v: {
-    member_name: string
-    member_email: string
-    role: string
+    member_id: string
+    role: TeamRole
     is_paid: boolean
   }) => void
   onRemoveTeamMember: (id: string) => void
@@ -198,7 +198,7 @@ export interface ProjectDetailActions {
   onEditExpense: (expense: ProjectDetailPayload['expenses'][0]) => void
   onApproveExpense: (id: string) => void
   onDeleteExpense: (id: string) => void
-  onSaveSiteAnalysis: (v: Record<string, unknown>) => void
+  onSaveSiteAnalysis: (v: Record<string, unknown>) => Promise<void> | void
   onAddPaletteItem: (v: Record<string, unknown>) => void
   onDeletePaletteItem: (id: string) => void
   onImportPlantPalette: (paletteId: string) => void
@@ -411,6 +411,7 @@ export function ProjectDetailView({
               <SiteAnalysisTab
                 siteAnalysis={detail.siteAnalysis as any}
                 onSave={a.onSaveSiteAnalysis}
+                busy={busy}
               />
             )}
             {activeTab === 'palette' && (

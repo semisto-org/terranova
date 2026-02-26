@@ -80,10 +80,20 @@ function isToday(date) {
   )
 }
 
+function getSchoolHolidaysForDate(date, schoolHolidays) {
+  const dateStr = date.toISOString().split('T')[0]
+  return (schoolHolidays || []).filter((holiday) => {
+    const start = new Date(holiday.startDate).toISOString().split('T')[0]
+    const end = new Date(holiday.endDate).toISOString().split('T')[0]
+    return dateStr >= start && dateStr <= end
+  })
+}
+
 export default function CalendarYearView({
   currentDate,
   trainings = [],
   trainingSessions = [],
+  schoolHolidays = [],
   onViewTraining,
 }) {
   const year = currentDate.getFullYear()
@@ -169,6 +179,7 @@ export default function CalendarYearView({
                       trainingSessions,
                       getTraining
                     )
+                    const holidaysForDate = getSchoolHolidaysForDate(day.date, schoolHolidays)
                     const today = isToday(day.date)
                     const dateStr = toLocalDateStr(day.date)
                     const isSelected = selectedDate === dateStr
@@ -210,6 +221,11 @@ export default function CalendarYearView({
                         >
                           {day.date.getDate()}
                         </div>
+                        {holidaysForDate.length > 0 && (
+                          <div className="mb-1 inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
+                            Congé
+                          </div>
+                        )}
                         {trainingsForDate.length > 0 && (
                           <div className="flex items-center justify-center gap-0.5 flex-wrap">
                             {Array.from(

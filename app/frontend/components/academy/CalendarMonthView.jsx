@@ -29,6 +29,15 @@ function toLocalDateStr(date) {
   return `${y}-${m}-${d}`
 }
 
+function getSchoolHolidaysForDate(date, schoolHolidays) {
+  const dateStr = date.toISOString().split('T')[0]
+  return (schoolHolidays || []).filter((holiday) => {
+    const start = new Date(holiday.startDate).toISOString().split('T')[0]
+    const end = new Date(holiday.endDate).toISOString().split('T')[0]
+    return dateStr >= start && dateStr <= end
+  })
+}
+
 function isToday(date) {
   const today = new Date()
   return (
@@ -54,6 +63,7 @@ export default function CalendarMonthView({
   trainingSessions = [],
   trainingLocations = [],
   trainingRegistrations = [],
+  schoolHolidays = [],
   onViewTraining,
 }) {
   const [selectedTrainingId, setSelectedTrainingId] = useState(null)
@@ -133,6 +143,7 @@ export default function CalendarMonthView({
       <div className="grid grid-cols-7 divide-x divide-y divide-stone-200">
         {calendarDays.map((day, index) => {
           const sessions = getSessionsForDate(day.date, trainingSessions)
+          const holidaysForDate = getSchoolHolidaysForDate(day.date, schoolHolidays)
           const today = isToday(day.date)
           const dateStr = toLocalDateStr(day.date)
           const holiday = getSchoolHoliday(dateStr)
@@ -171,6 +182,11 @@ export default function CalendarMonthView({
                 )}
               </div>
               <div className="space-y-1.5">
+                {holidaysForDate.length > 0 && (
+                  <div className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+                    Congé scolaire
+                  </div>
+                )}
                 {trainingsToShow.map(({ training: t, sessions: sess }) => {
                   const colors = STATUS_CARD_COLORS[t.status] || STATUS_CARD_COLORS.draft
                   const firstSess = sess[0]

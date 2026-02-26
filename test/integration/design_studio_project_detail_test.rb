@@ -69,11 +69,31 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
 
     body = JSON.parse(response.body)
     assert_equal @project.name, body['project']['name']
+    assert body['project'].key?('projectType')
+    assert body['project'].key?('clientInterests')
+    assert body['project'].key?('acquisitionChannel')
     assert body.key?('teamMembers')
     assert body.key?('timesheets')
     assert body.key?('expenses')
     assert body.key?('siteAnalysis')
     assert body.key?('plantPalette')
+  end
+
+  test 'project update supports project parameters fields' do
+    patch "/api/v1/design/#{@project.id}", params: {
+      project_type: 'public',
+      client_interests: %w[design five_year_follow_up],
+      acquisition_channel: 'presse'
+    }, as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 'public', body['projectType']
+    assert_equal 'Public', body['projectTypeLabel']
+    assert_equal %w[design five_year_follow_up], body['clientInterests']
+    assert_equal ['Design', 'Suivi sur 5 ans'], body['clientInterestsLabels']
+    assert_equal 'presse', body['acquisitionChannel']
+    assert_equal 'Presse', body['acquisitionChannelLabel']
   end
 
   test 'team member crud works' do
@@ -129,10 +149,39 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
   test 'site analysis and palette import from plant database work' do
     patch "/api/v1/design/#{@project.id}/site-analysis", params: {
       climate: { hardinessZone: 'H7' },
-      soil: { type: 'loam' }
+      geomorphology: { slope: { value: 'moderate', note: '' } },
+      water: { network: { value: 'public', note: '' } },
+      soil: { type: 'loam' },
+      biodiversity: { existing_flora: { value: 'orchard', note: 'old trees' } },
+      socio_economic: { neighbors: { value: 'residential', note: '' } },
+      built_environment: { adjacent_buildings: { value: 'farmhouse', note: '' } },
+      access: { road_access: { value: 'direct', note: '' } },
+      microclimate: { shade: { value: 'west edge', note: '' } },
+      zoning: { categories: %w[zone_agricole zone_habitat], constraints: { value: 'none', note: '' } },
+      aesthetics: { views: { value: 'valley', note: 'panoramic' } },
+      water_access: true
     }, as: :json
     assert_response :success
-    assert_equal 'H7', JSON.parse(response.body)['climate']['hardinessZone']
+
+    analysis = JSON.parse(response.body)
+    assert_equal 'H7', analysis['climate']['hardinessZone']
+    assert_equal true, analysis['waterAccess']
+    assert_equal %w[zone_agricole zone_habitat], analysis['zoningCategories']
+    assert_equal %w[zone_agricole zone_habitat], analysis['zoning']['categories']
+    assert_equal 'moderate', analysis['geomorphology']['slope']['value']
+    assert_equal 'public', analysis['water']['network']['value']
+    assert_equal 'orchard', analysis['biodiversity']['existing_flora']['value']
+    assert_equal 'residential', analysis['socio_economic']['neighbors']['value']
+    assert_equal 'farmhouse', analysis['built_environment']['adjacent_buildings']['value']
+    assert_equal 'direct', analysis['access']['road_access']['value']
+    assert_equal 'west edge', analysis['microclimate']['shade']['value']
+    assert_equal 'valley', analysis['aesthetics']['views']['value']
+
+    assert_equal 'orchard', analysis['vegetation']['existing_flora']['value']
+    assert_equal 'farmhouse', analysis['buildings']['adjacent_buildings']['value']
+    assert_equal 'direct', analysis['accessData']['road_access']['value']
+    assert_equal 'residential', analysis['socioEconomic']['neighbors']['value']
+    assert_includes analysis['zoningCategoriesLabels'], 'Zone agricole'
 
     post "/api/v1/design/#{@project.id}/palette/import/#{@plant_palette.id}", as: :json
     assert_response :success
@@ -140,6 +189,22 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_operator body['items'].size, :>=, 1
     assert_equal 'Malus domestica', body['items'].first['speciesName']
+  end
+
+  test 'legacy analysis aliases remain supported' do
+    patch "/api/v1/design/#{@project.id}/site-analysis", params: {
+      vegetation: { existing_flora: { value: 'hedges', note: '' } },
+      buildings: { adjacent_buildings: { value: 'barn', note: '' } },
+      access_data: { road_access: { value: 'narrow', note: '' } },
+      zoning_categories: ['zone_naturelle']
+    }, as: :json
+
+    assert_response :success
+    analysis = JSON.parse(response.body)
+    assert_equal 'hedges', analysis['biodiversity']['existing_flora']['value']
+    assert_equal 'barn', analysis['built_environment']['adjacent_buildings']['value']
+    assert_equal 'narrow', analysis['access']['road_access']['value']
+    assert_equal ['zone_naturelle'], analysis['zoning']['categories']
   end
 
   test 'planting plan and co-gestion flows work' do

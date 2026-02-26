@@ -35,6 +35,11 @@ Rails.application.routes.draw do
   get "admin/settings", to: "app#admin"
   get "parametres", to: "app#parametres"
 
+  get "calendar/semisto.ics", to: "calendar_feeds#semisto"
+  get "calendar/trainings.ics", to: "calendar_feeds#trainings"
+
+  mount ActionCable.server => "/cable"
+
   namespace :api do
     namespace :v1 do
       get "health", to: "health#show"
@@ -93,6 +98,11 @@ Rails.application.routes.draw do
       patch "lab/timesheet-service-types/:id", to: "lab_management#update_timesheet_service_type"
       delete "lab/timesheet-service-types/:id", to: "lab_management#destroy_timesheet_service_type"
 
+      get "settings/cycles", to: "settings/cycles#index"
+      post "settings/cycles", to: "settings/cycles#create"
+      patch "settings/cycles/:id", to: "settings/cycles#update"
+      delete "settings/cycles/:id", to: "settings/cycles#destroy"
+
       get "lab/events", to: "lab_management#list_events"
       get "lab/events/:id", to: "lab_management#show_event"
       get "lab/calendar", to: "lab_management#calendar"
@@ -123,6 +133,7 @@ Rails.application.routes.draw do
       delete "lab/expenses/:id", to: "lab_management#destroy_expense"
 
       get "lab/revenues", to: "lab_management#list_revenues"
+      get "lab/reporting", to: "lab_management#reporting"
       post "lab/revenues", to: "lab_management#create_revenue"
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
@@ -178,6 +189,8 @@ Rails.application.routes.draw do
       post "plants/references", to: "plants#create_reference"
 
       get "design", to: "design_studio#index"
+      get "design/reporting", to: "design_studio#reporting"
+      get "design_studio/reporting", to: "design_studio#reporting"
       get "design/:project_id", to: "design_studio#show"
       post "design", to: "design_studio#create"
       patch "design/:project_id", to: "design_studio#update"
@@ -249,6 +262,7 @@ Rails.application.routes.draw do
       get "academy", to: "academy#index"
       get "academy/calendar", to: "academy#calendar"
       get "academy/reporting", to: "academy#reporting"
+      get "academy/calendar-links", to: "academy#calendar_links"
       post "academy/training-types", to: "academy#create_training_type"
       patch "academy/training-types/:training_type_id", to: "academy#update_training_type"
       delete "academy/training-types/:training_type_id", to: "academy#destroy_training_type"
@@ -374,6 +388,18 @@ Rails.application.routes.draw do
       post "nursery/timesheets", to: "nursery#create_timesheet"
       patch "nursery/timesheets/:entry_id", to: "nursery#update_timesheet"
       delete "nursery/timesheets/:entry_id", to: "nursery#destroy_timesheet"
+
+      get "economics/inputs", to: "economics#inputs"
+      post "economics/inputs", to: "economics#create_input"
+      patch "economics/inputs/:id", to: "economics#update_input"
+      delete "economics/inputs/:id", to: "economics#destroy_input"
+
+      get "economics/outputs", to: "economics#outputs"
+      post "economics/outputs", to: "economics#create_output"
+      patch "economics/outputs/:id", to: "economics#update_output"
+      delete "economics/outputs/:id", to: "economics#destroy_output"
+
+      get "economics/dashboard", to: "economics#dashboard"
 
       get "website/home", to: "website#home"
       get "website/articles", to: "website#articles"

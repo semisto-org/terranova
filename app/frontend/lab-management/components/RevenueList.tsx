@@ -1,8 +1,15 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  Plus, MoreVertical, Edit, Eye, Trash2, FileText, X,
-  Search, Clock, CheckCircle, TrendingUp,
-  ChevronUp, ChevronDown,
+  Plus,
+  Edit3,
+  Trash2,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  ArrowUp,
+  ArrowDown,
+  X,
 } from 'lucide-react'
 
 export interface RevenueItem {
@@ -32,24 +39,16 @@ export interface RevenueItem {
   updatedAt: string
 }
 
-// --- Constants ---
-
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Brouillon',
   confirmed: 'Confirmé',
-  received: 'Reçu',
+  received: 'Encaissée',
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-stone-100 text-stone-600',
+  draft: 'bg-stone-100 text-stone-700',
   confirmed: 'bg-amber-100 text-amber-700',
   received: 'bg-emerald-100 text-emerald-700',
-}
-
-const STATUS_ORDER: Record<string, number> = {
-  draft: 0,
-  confirmed: 1,
-  received: 2,
 }
 
 const POLE_LABELS: Record<string, string> = {
@@ -59,35 +58,13 @@ const POLE_LABELS: Record<string, string> = {
   roots: 'Roots',
 }
 
-const POLE_COLORS: Record<string, string> = {
-  academy: '#B01A19',
-  design_studio: '#AFBD00',
-  nursery: '#EF9B0D',
-  roots: '#5B5781',
-}
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  transfer: 'Virement',
-  card: 'Carte',
-  cash: 'Cash',
-  stripe: 'Stripe',
-  other: 'Autre',
-}
-
-const selectStyle = {
-  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-  backgroundPosition: 'right 0.5rem center',
-  backgroundRepeat: 'no-repeat',
-  backgroundSize: '1.5em 1.5em',
-  paddingRight: '2.5rem',
-}
-
-// --- Helpers ---
+type Density = 'compact' | 'comfortable'
+type SortKey = 'date' | 'contactName' | 'pole' | 'amountExclVat' | 'status' | 'category'
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric',
+    day: '2-digit',
     month: 'short',
     year: 'numeric',
   })
@@ -97,529 +74,490 @@ function formatCurrency(value: number): string {
   return Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 }
 
-function computeTtc(r: RevenueItem): number {
-  return r.amountExclVat + r.vat6 + r.vat21
+function normalizeText(v: string | null | undefined): string {
+  return (v || '').toLowerCase().trim()
 }
 
-// --- Sub-components ---
-
-function SortableHeader({
-  label,
-  column,
-  currentSort,
-  currentDir,
-  onSort,
-  className = '',
-}: {
-  label: string
-  column: string
-  currentSort: string
-  currentDir: 'asc' | 'desc'
-  onSort: (col: string) => void
-  className?: string
-}) {
-  const isActive = currentSort === column
-  return (
-    <th
-      className={`px-4 py-3 text-xs font-semibold text-stone-600 uppercase cursor-pointer hover:text-stone-900 select-none ${className}`}
-      onClick={() => onSort(column)}
-    >
-      <span className="inline-flex items-center gap-1">
-        {label}
-        {isActive ? (
-          currentDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-        ) : (
-          <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-30" />
-        )}
-      </span>
-    </th>
-  )
+function startOfMonth(d = new Date()) {
+  return new Date(d.getFullYear(), d.getMonth(), 1)
 }
 
-// --- Main component ---
+function endOfMonth(d = new Date()) {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999)
+}
+
+function toDate(v: string | null | undefined): Date | null {
+  if (!v) return null
+  const d = new Date(v)
+  return Number.isNaN(d.getTime()) ? null : d
+}
 
 export interface RevenueListProps {
   revenues: RevenueItem[]
   loading?: boolean
+  error?: string | null
   onCreateRevenue: () => void
   onEditRevenue: (revenue: RevenueItem) => void
   onDeleteRevenue: (revenueId: string) => void
   onViewRevenue: (revenue: RevenueItem) => void
+  onUpdateRevenue?: (revenueId: string, patch: Partial<RevenueItem>) => Promise<void>
+  onBulkUpdateRevenues?: (ids: string[], patch: Partial<RevenueItem>) => Promise<void>
 }
 
 export function RevenueList({
   revenues,
   loading = false,
+  error = null,
   onCreateRevenue,
   onEditRevenue,
   onDeleteRevenue,
   onViewRevenue,
+  onUpdateRevenue,
+  onBulkUpdateRevenues,
 }: RevenueListProps) {
-  // Filters
-  const [searchQuery, setSearchQuery] = useState('')
+  const [density, setDensity] = useState<Density>('comfortable')
+  const [rowsPerPage, setRowsPerPage] = useState(25)
+  const [page, setPage] = useState(1)
+
+  const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [poleFilter, setPoleFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [paymentFilter, setPaymentFilter] = useState<string>('all')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [sourceFilter, setSourceFilter] = useState<string>('all')
+  const [minAmount, setMinAmount] = useState('')
+  const [maxAmount, setMaxAmount] = useState('')
+  const [periodStart, setPeriodStart] = useState<string>(startOfMonth().toISOString().slice(0, 10))
+  const [periodEnd, setPeriodEnd] = useState<string>(endOfMonth().toISOString().slice(0, 10))
 
-  // Sort
-  const [sortColumn, setSortColumn] = useState('date')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [sorts, setSorts] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'date', dir: 'desc' }])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [inlineBusyId, setInlineBusyId] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [drawerIndex, setDrawerIndex] = useState<number | null>(null)
 
-  // KPI stats (unfiltered)
-  const summaryStats = useMemo(() => {
-    const byStatus: Record<string, { total: number; count: number }> = {
-      draft: { total: 0, count: 0 },
-      confirmed: { total: 0, count: 0 },
-      received: { total: 0, count: 0 },
-    }
-    let grandTotal = 0
-    revenues.forEach((r) => {
-      const ttc = computeTtc(r)
-      grandTotal += ttc
-      if (byStatus[r.status]) {
-        byStatus[r.status].total += ttc
-        byStatus[r.status].count += 1
+  const statuses = useMemo(() => Array.from(new Set(revenues.map((r) => r.status))).filter(Boolean), [revenues])
+  const poles = useMemo(() => Array.from(new Set(revenues.map((r) => r.pole).filter(Boolean) as string[])), [revenues])
+  const categories = useMemo(() => Array.from(new Set(revenues.map((r) => r.category).filter(Boolean) as string[])), [revenues])
+  const sources = useMemo(() => Array.from(new Set(revenues.map((r) => r.contactName).filter(Boolean) as string[])), [revenues])
+
+  const filtered = useMemo(() => {
+    const q = normalizeText(search)
+    const min = minAmount ? Number(minAmount) : null
+    const max = maxAmount ? Number(maxAmount) : null
+    const start = toDate(periodStart)
+    const end = toDate(periodEnd)
+
+    return revenues.filter((r) => {
+      if (statusFilter !== 'all' && r.status !== statusFilter) return false
+      if (poleFilter !== 'all' && r.pole !== poleFilter) return false
+      if (categoryFilter !== 'all' && r.category !== categoryFilter) return false
+      if (sourceFilter !== 'all' && r.contactName !== sourceFilter) return false
+
+      const refDate = toDate(r.date || r.createdAt)
+      if (start && refDate && refDate < start) return false
+      if (end && refDate && refDate > end) return false
+
+      if (min !== null && r.amountExclVat < min) return false
+      if (max !== null && r.amountExclVat > max) return false
+
+      if (q) {
+        const haystack = [r.contactName, r.description, r.label, r.category, r.revenueType, r.status, r.pole].map(normalizeText).join(' ')
+        if (!haystack.includes(q)) return false
       }
+      return true
     })
-    return { byStatus, grandTotal, totalCount: revenues.length }
-  }, [revenues])
+  }, [revenues, statusFilter, poleFilter, categoryFilter, sourceFilter, periodStart, periodEnd, minAmount, maxAmount, search])
 
-  // Filtering
-  const filtered = useMemo(() => revenues.filter((r) => {
-    if (statusFilter !== 'all' && r.status !== statusFilter) return false
-    if (poleFilter !== 'all' && r.pole !== poleFilter) return false
-    if (typeFilter !== 'all' && r.revenueType !== typeFilter) return false
-    if (paymentFilter !== 'all' && r.paymentMethod !== paymentFilter) return false
-    if (dateFrom && (!r.date || r.date < dateFrom)) return false
-    if (dateTo && (!r.date || r.date > dateTo)) return false
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      const searchable = [r.contactName, r.description, r.label, r.notes, r.category, r.revenueType].filter(Boolean).join(' ').toLowerCase()
-      if (!searchable.includes(q)) return false
+  const sorted = useMemo(() => {
+    const arr = [...filtered]
+    const compare = (a: RevenueItem, b: RevenueItem, key: SortKey) => {
+      switch (key) {
+        case 'date':
+          return (toDate(a.date || a.createdAt)?.getTime() || 0) - (toDate(b.date || b.createdAt)?.getTime() || 0)
+        case 'amountExclVat':
+          return a.amountExclVat - b.amountExclVat
+        case 'contactName':
+          return normalizeText(a.contactName).localeCompare(normalizeText(b.contactName))
+        case 'pole':
+          return normalizeText(a.pole).localeCompare(normalizeText(b.pole))
+        case 'status':
+          return normalizeText(a.status).localeCompare(normalizeText(b.status))
+        case 'category':
+          return normalizeText(a.category).localeCompare(normalizeText(b.category))
+      }
     }
-    return true
-  }), [revenues, statusFilter, poleFilter, typeFilter, paymentFilter, dateFrom, dateTo, searchQuery])
 
-  // Sorting
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection((d) => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortColumn(column)
-      setSortDirection(column === 'date' ? 'desc' : 'asc')
+    arr.sort((a, b) => {
+      for (const s of sorts) {
+        const c = compare(a, b, s.key)
+        if (c !== 0) return s.dir === 'asc' ? c : -c
+      }
+      return 0
+    })
+    return arr
+  }, [filtered, sorts])
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / rowsPerPage))
+  const safePage = Math.min(page, pageCount)
+  const pageItems = useMemo(() => {
+    const start = (safePage - 1) * rowsPerPage
+    return sorted.slice(start, start + rowsPerPage)
+  }, [sorted, safePage, rowsPerPage])
+
+  const totalHtv = useMemo(() => filtered.reduce((sum, r) => sum + r.amountExclVat, 0), [filtered])
+  const totalVat = useMemo(() => filtered.reduce((sum, r) => sum + r.vat6 + r.vat21, 0), [filtered])
+  const totalTtc = totalHtv + totalVat
+  const receivedAmount = useMemo(() => filtered.filter((r) => r.status === 'received').reduce((s, r) => s + r.amountExclVat, 0), [filtered])
+  const pendingAmount = totalHtv - receivedAmount
+
+  const topSources = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const r of filtered) {
+      const k = r.contactName || 'Sans source'
+      map.set(k, (map.get(k) || 0) + r.amountExclVat)
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3)
+  }, [filtered])
+
+  const trendPct = useMemo(() => {
+    const start = toDate(periodStart)
+    const end = toDate(periodEnd)
+    if (!start || !end) return null
+    const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)))
+    const prevEnd = new Date(start.getTime() - 1)
+    const prevStart = new Date(prevEnd.getTime() - days * 24 * 3600 * 1000)
+
+    const current = revenues
+      .filter((r) => {
+        const d = toDate(r.date || r.createdAt)
+        return d ? d >= start && d <= end : false
+      })
+      .reduce((s, r) => s + r.amountExclVat, 0)
+
+    const previous = revenues
+      .filter((r) => {
+        const d = toDate(r.date || r.createdAt)
+        return d ? d >= prevStart && d <= prevEnd : false
+      })
+      .reduce((s, r) => s + r.amountExclVat, 0)
+
+    if (previous <= 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
+  }, [revenues, periodStart, periodEnd])
+
+  const allPageSelected = pageItems.length > 0 && pageItems.every((r) => selectedIds.has(r.id))
+
+  const applyPreset = (preset: 'thisMonth' | 'pending' | 'received' | 'followUp') => {
+    if (preset === 'thisMonth') {
+      setPeriodStart(startOfMonth().toISOString().slice(0, 10))
+      setPeriodEnd(endOfMonth().toISOString().slice(0, 10))
+      setStatusFilter('all')
+    }
+    if (preset === 'pending') {
+      setStatusFilter('confirmed')
+    }
+    if (preset === 'received') {
+      setStatusFilter('received')
+    }
+    if (preset === 'followUp') {
+      setStatusFilter('confirmed')
+      setMaxAmount('')
+      setMinAmount('')
+    }
+    setPage(1)
+  }
+
+  const toggleSort = (key: SortKey, multi = false) => {
+    setSorts((prev) => {
+      const existing = prev.find((s) => s.key === key)
+      const base = multi ? [...prev] : []
+      if (!existing) return [...base, { key, dir: 'asc' }]
+      if (existing.dir === 'asc') return [...base.filter((s) => s.key !== key), { key, dir: 'desc' }]
+      return base.filter((s) => s.key !== key)
+    })
+  }
+
+  const toggleSelectAllPage = () => {
+    const next = new Set(selectedIds)
+    if (allPageSelected) pageItems.forEach((r) => next.delete(r.id))
+    else pageItems.forEach((r) => next.add(r.id))
+    setSelectedIds(next)
+  }
+
+  const patchRevenue = async (id: string, patch: Partial<RevenueItem>) => {
+    if (!onUpdateRevenue) return
+    try {
+      setInlineBusyId(id)
+      await onUpdateRevenue(id, patch)
+    } finally {
+      setInlineBusyId(null)
     }
   }
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      let cmp = 0
-      switch (sortColumn) {
-        case 'date':
-          cmp = new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-          break
-        case 'client':
-          cmp = (a.contactName || '').localeCompare(b.contactName || '', 'fr')
-          break
-        case 'htva':
-          cmp = a.amountExclVat - b.amountExclVat
-          break
-        case 'ttc':
-          cmp = computeTtc(a) - computeTtc(b)
-          break
-        case 'status':
-          cmp = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)
-          break
-        default:
-          cmp = new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-      }
-      return sortDirection === 'asc' ? cmp : -cmp
-    })
-  }, [filtered, sortColumn, sortDirection])
-
-  // Filtered totals
-  const filteredTotals = useMemo(() => ({
-    htva: sorted.reduce((sum, r) => sum + r.amountExclVat, 0),
-    vat: sorted.reduce((sum, r) => sum + r.vat6 + r.vat21, 0),
-    ttc: sorted.reduce((sum, r) => sum + computeTtc(r), 0),
-  }), [sorted])
-
-  // Filter options (derived from data)
-  const statuses = Array.from(new Set(revenues.map((r) => r.status)))
-  const poles = Array.from(new Set(revenues.map((r) => r.pole).filter(Boolean) as string[]))
-  const types = Array.from(new Set(revenues.map((r) => r.revenueType).filter(Boolean) as string[]))
-  const paymentMethods = Array.from(new Set(revenues.map((r) => r.paymentMethod).filter(Boolean) as string[]))
-
-  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || poleFilter !== 'all' ||
-    typeFilter !== 'all' || paymentFilter !== 'all' || dateFrom !== '' || dateTo !== ''
-
-  const clearAllFilters = () => {
-    setSearchQuery('')
-    setStatusFilter('all')
-    setPoleFilter('all')
-    setTypeFilter('all')
-    setPaymentFilter('all')
-    setDateFrom('')
-    setDateTo('')
+  const bulkApply = async (patch: Partial<RevenueItem>) => {
+    const ids = Array.from(selectedIds)
+    if (!ids.length || !onBulkUpdateRevenues) return
+    try {
+      setBulkBusy(true)
+      await onBulkUpdateRevenues(ids, patch)
+      setSelectedIds(new Set())
+    } finally {
+      setBulkBusy(false)
+    }
   }
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-stone-900">Recettes</h3>
-          <p className="text-sm text-stone-500 mt-1">
-            Toutes les recettes consolidées (Academy, Design Studio, Nursery, Roots)
-          </p>
+          <p className="text-sm text-stone-500 mt-1">Pilotage et opérations centralisées des revenus</p>
         </div>
-        <button
-          type="button"
-          onClick={onCreateRevenue}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#5B5781] px-4 py-2 text-sm font-medium text-white hover:opacity-90 w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4" />
-          Ajouter une recette
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setDensity((d) => (d === 'compact' ? 'comfortable' : 'compact'))} className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700">
+            Densité: {density === 'compact' ? 'Compacte' : 'Confort'}
+          </button>
+          <button type="button" onClick={onCreateRevenue} className="inline-flex items-center gap-2 rounded-lg bg-[#5B5781] px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+            <Plus className="w-4 h-4" /> Ajouter une recette
+          </button>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      {!loading && revenues.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-stone-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-stone-500" />
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Total</p>
-            </div>
-            <p className="text-2xl font-bold text-stone-800 tabular-nums">{formatCurrency(summaryStats.grandTotal)}</p>
-            <p className="text-xs text-stone-400 mt-1">{summaryStats.totalCount} recette{summaryStats.totalCount !== 1 ? 's' : ''}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-stone-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-stone-400" />
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Brouillon</p>
-            </div>
-            <p className="text-2xl font-bold text-stone-500 tabular-nums">{formatCurrency(summaryStats.byStatus.draft.total)}</p>
-            <p className="text-xs text-stone-400 mt-1">{summaryStats.byStatus.draft.count} recette{summaryStats.byStatus.draft.count !== 1 ? 's' : ''}</p>
-          </div>
-          <div className={`rounded-2xl border p-4 ${
-            summaryStats.byStatus.confirmed.count > 0
-              ? 'bg-amber-50/50 border-amber-300'
-              : 'bg-white border-stone-200'
-          }`}>
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle className="w-4 h-4 text-amber-500" />
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Confirmé</p>
-            </div>
-            <p className="text-2xl font-bold text-amber-600 tabular-nums">{formatCurrency(summaryStats.byStatus.confirmed.total)}</p>
-            <p className="text-xs text-stone-400 mt-1">{summaryStats.byStatus.confirmed.count} recette{summaryStats.byStatus.confirmed.count !== 1 ? 's' : ''}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-stone-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Reçu</p>
-            </div>
-            <p className="text-2xl font-bold text-emerald-600 tabular-nums">{formatCurrency(summaryStats.byStatus.received.total)}</p>
-            <p className="text-xs text-stone-400 mt-1">{summaryStats.byStatus.received.count} recette{summaryStats.byStatus.received.count !== 1 ? 's' : ''}</p>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+        <KpiCard label="Total HTVA" value={formatCurrency(totalHtv)} />
+        <KpiCard label="TVA" value={formatCurrency(totalVat)} />
+        <KpiCard label="Total TTC" value={formatCurrency(totalTtc)} />
+        <KpiCard label="En attente" value={formatCurrency(pendingAmount)} />
+        <KpiCard label="Tendance" value={trendPct === null ? '—' : `${trendPct >= 0 ? '+' : ''}${trendPct.toFixed(1)}%`} />
+      </div>
+
+      {topSources.length > 0 && (
+        <div className="rounded-xl border border-stone-200 bg-white p-3 text-sm text-stone-700">
+          Top sources: {topSources.map(([name, amount]) => `${name} (${formatCurrency(amount)})`).join(' • ')}
         </div>
       )}
 
-      {/* Filter panel */}
-      <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-6">
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="w-5 h-5 text-stone-400" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher par client, description, catégorie, notes..."
-            className="w-full pl-12 pr-10 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-400 hover:text-stone-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+      <div className="rounded-xl border border-stone-200 bg-white p-3 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => applyPreset('thisMonth')} className="rounded-full border border-stone-300 px-3 py-1 text-xs font-medium">Ce mois</button>
+          <button type="button" onClick={() => applyPreset('pending')} className="rounded-full border border-stone-300 px-3 py-1 text-xs font-medium">En attente</button>
+          <button type="button" onClick={() => applyPreset('received')} className="rounded-full border border-stone-300 px-3 py-1 text-xs font-medium">Encaissées</button>
+          <button type="button" onClick={() => applyPreset('followUp')} className="rounded-full border border-stone-300 px-3 py-1 text-xs font-medium">À relancer</button>
         </div>
-
-        {/* Filter grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">Statut</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
-              style={selectStyle}
-            >
-              <option value="all">Tous les statuts</option>
-              {statuses.map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">Pôle</label>
-            <select
-              value={poleFilter}
-              onChange={(e) => setPoleFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
-              style={selectStyle}
-            >
-              <option value="all">Tous les pôles</option>
-              {poles.map((p) => (
-                <option key={p} value={p}>{POLE_LABELS[p] ?? p}</option>
-              ))}
-            </select>
-          </div>
-          {types.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">Type</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
-                style={selectStyle}
-              >
-                <option value="all">Tous les types</option>
-                {types.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          {paymentMethods.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">Paiement</label>
-              <select
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors appearance-none cursor-pointer"
-                style={selectStyle}
-              >
-                <option value="all">Tous</option>
-                {paymentMethods.map((m) => (
-                  <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m] ?? m}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1.5 uppercase tracking-wide">Période</label>
-            <div className="flex gap-1.5">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
-                title="Du"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/50 focus:border-[#5B5781] transition-colors"
-                title="Au"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+          <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} placeholder="Recherche" className="rounded-lg border border-stone-300 px-3 py-2 text-sm" />
+          <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm" />
+          <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm" />
+          <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm"><option value="all">Source/client</option>{sources.map((v) => <option key={v} value={v}>{v}</option>)}</select>
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm"><option value="all">Catégorie</option>{categories.map((v) => <option key={v} value={v}>{v}</option>)}</select>
+          <select value={poleFilter} onChange={(e) => setPoleFilter(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm"><option value="all">Pôle</option>{poles.map((v) => <option key={v} value={v}>{POLE_LABELS[v] ?? v}</option>)}</select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm"><option value="all">Statut paiement</option>{statuses.map((v) => <option key={v} value={v}>{STATUS_LABELS[v] ?? v}</option>)}</select>
+          <input value={minAmount} onChange={(e) => setMinAmount(e.target.value)} type="number" min={0} placeholder="Montant min" className="rounded-lg border border-stone-300 px-3 py-2 text-sm" />
+          <input value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} type="number" min={0} placeholder="Montant max" className="rounded-lg border border-stone-300 px-3 py-2 text-sm" />
         </div>
-
-        {/* Active filters indicator + clear */}
-        {hasActiveFilters && (
-          <div className="mt-4 pt-4 border-t border-stone-200 flex items-center justify-between">
-            <p className="text-sm text-stone-500">
-              {sorted.length} recette{sorted.length !== 1 ? 's' : ''} sur {revenues.length}
-            </p>
-            <button
-              onClick={clearAllFilters}
-              className="inline-flex items-center gap-2 text-sm text-[#5B5781] hover:text-[#4a4670] font-medium transition-colors"
-            >
-              <X className="w-4 h-4" />
-              Effacer les filtres
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Table */}
+      {selectedIds.size > 0 && (
+        <div className="rounded-xl border border-[#5B5781]/30 bg-[#5B5781]/5 p-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium">{selectedIds.size} sélectionnée(s)</span>
+          <BulkQuickEdit label="Statut" options={statuses.map((s) => ({ value: s, label: STATUS_LABELS[s] ?? s }))} onApply={(v) => bulkApply({ status: v })} busy={bulkBusy} />
+          <BulkQuickEdit label="Pôle" options={poles.map((s) => ({ value: s, label: POLE_LABELS[s] ?? s }))} onApply={(v) => bulkApply({ pole: v })} busy={bulkBusy} />
+          <BulkQuickEdit label="Catégorie" options={categories.map((s) => ({ value: s, label: s }))} onApply={(v) => bulkApply({ category: v })} busy={bulkBusy} />
+          <button type="button" onClick={() => setSelectedIds(new Set())} className="ml-auto inline-flex items-center gap-1 text-stone-600 hover:text-stone-900"><X className="w-4 h-4" /> Effacer</button>
+        </div>
+      )}
+
       {loading ? (
-        <div className="py-12 text-center text-stone-500">Chargement...</div>
+        <div className="rounded-xl border border-stone-200 bg-white p-10 text-center text-stone-500">Chargement des recettes…</div>
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">Erreur: {error}</div>
       ) : sorted.length === 0 ? (
-        <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-12 text-center">
-          <FileText className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-          <p className="text-stone-500 mb-4">
-            {hasActiveFilters ? 'Aucune recette ne correspond aux filtres' : 'Aucune recette'}
-          </p>
-          {hasActiveFilters ? (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-            >
-              <X className="w-4 h-4" />
-              Effacer les filtres
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onCreateRevenue}
-              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-            >
-              <Plus className="w-4 h-4" />
-              Ajouter une recette
-            </button>
-          )}
+        <div className="rounded-xl border border-stone-200 bg-stone-50/60 p-10 text-center">
+          <FileText className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+          <p className="text-stone-600 mb-4">Aucune recette sur ce filtre</p>
+          <button type="button" onClick={onCreateRevenue} className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"><Plus className="w-4 h-4" />Ajouter</button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-stone-200 bg-stone-50">
-                <SortableHeader label="Date" column="date" currentSort={sortColumn} currentDir={sortDirection} onSort={handleSort} />
-                <SortableHeader label="Client" column="client" currentSort={sortColumn} currentDir={sortDirection} onSort={handleSort} />
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Description</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">Pôle</th>
-                <SortableHeader label="HTVA" column="htva" currentSort={sortColumn} currentDir={sortDirection} onSort={handleSort} className="text-right" />
-                <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">TVA</th>
-                <SortableHeader label="TTC" column="ttc" currentSort={sortColumn} currentDir={sortDirection} onSort={handleSort} className="text-right" />
-                <SortableHeader label="Statut" column="status" currentSort={sortColumn} currentDir={sortDirection} onSort={handleSort} />
-                <th className="px-4 py-3 w-12" />
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((revenue) => (
-                <RevenueRow
-                  key={revenue.id}
-                  revenue={revenue}
-                  onView={() => onViewRevenue(revenue)}
-                  onEdit={() => onEditRevenue(revenue)}
-                  onDelete={() => onDeleteRevenue(revenue.id)}
-                />
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-stone-300 bg-stone-50">
-                <td className="px-4 py-3 text-sm font-semibold text-stone-700" colSpan={4}>
-                  Total ({sorted.length} recette{sorted.length !== 1 ? 's' : ''})
-                </td>
-                <td className="px-4 py-3 text-sm text-right font-semibold text-stone-900 tabular-nums">
-                  {formatCurrency(filteredTotals.htva)}
-                </td>
-                <td className="px-4 py-3 text-sm text-right font-semibold text-stone-700 tabular-nums">
-                  {formatCurrency(filteredTotals.vat)}
-                </td>
-                <td className="px-4 py-3 text-sm text-right font-bold text-stone-900 tabular-nums">
-                  {formatCurrency(filteredTotals.ttc)}
-                </td>
-                <td colSpan={2} />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <>
+          <div className="overflow-auto rounded-xl border border-stone-200 bg-white max-h-[70vh]">
+            <table className="w-full text-left">
+              <thead className="sticky top-0 z-10 bg-stone-50 border-b border-stone-200">
+                <tr>
+                  <th className="px-3 py-2"><input type="checkbox" checked={allPageSelected} onChange={toggleSelectAllPage} /></th>
+                  <SortableHead label="Date" sortKey="date" sorts={sorts} onToggle={toggleSort} />
+                  <SortableHead label="Client / source" sortKey="contactName" sorts={sorts} onToggle={toggleSort} />
+                  <th className="px-3 py-2 text-xs uppercase text-stone-600">Description</th>
+                  <SortableHead label="Pôle" sortKey="pole" sorts={sorts} onToggle={toggleSort} />
+                  <SortableHead label="Catégorie" sortKey="category" sorts={sorts} onToggle={toggleSort} />
+                  <SortableHead label="Montant HTVA" sortKey="amountExclVat" sorts={sorts} onToggle={toggleSort} align="right" />
+                  <SortableHead label="Statut" sortKey="status" sorts={sorts} onToggle={toggleSort} />
+                  <th className="px-3 py-2 w-16" />
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((revenue, idx) => (
+                  <tr key={revenue.id} className="border-b border-stone-100 hover:bg-stone-50/50">
+                    <td className={density === 'compact' ? 'px-3 py-1' : 'px-3 py-2'}><input type="checkbox" checked={selectedIds.has(revenue.id)} onChange={() => {
+                      const next = new Set(selectedIds)
+                      if (next.has(revenue.id)) next.delete(revenue.id)
+                      else next.add(revenue.id)
+                      setSelectedIds(next)
+                    }} /></td>
+                    <td className={density === 'compact' ? 'px-3 py-1 text-sm' : 'px-3 py-2 text-sm'}>
+                      <InlineDate value={revenue.date} disabled={!onUpdateRevenue || inlineBusyId === revenue.id} onSave={(v) => patchRevenue(revenue.id, { date: v })} />
+                    </td>
+                    <td className={density === 'compact' ? 'px-3 py-1 text-sm font-medium' : 'px-3 py-2 text-sm font-medium'}>{revenue.contactName || '—'}</td>
+                    <td className={density === 'compact' ? 'px-3 py-1 text-sm max-w-[250px] truncate' : 'px-3 py-2 text-sm max-w-[250px] truncate'}>{revenue.description || revenue.label || '—'}</td>
+                    <td className={density === 'compact' ? 'px-3 py-1 text-sm' : 'px-3 py-2 text-sm'}>
+                      <InlineSelect value={revenue.pole || ''} disabled={!onUpdateRevenue || inlineBusyId === revenue.id} options={poles} render={(v) => POLE_LABELS[v] ?? v} onSave={(v) => patchRevenue(revenue.id, { pole: v || null })} />
+                    </td>
+                    <td className={density === 'compact' ? 'px-3 py-1 text-sm' : 'px-3 py-2 text-sm'}>
+                      <InlineText value={revenue.category || ''} disabled={!onUpdateRevenue || inlineBusyId === revenue.id} onSave={(v) => patchRevenue(revenue.id, { category: v || null })} />
+                    </td>
+                    <td className={density === 'compact' ? 'px-3 py-1 text-sm text-right' : 'px-3 py-2 text-sm text-right'}>
+                      <InlineNumber value={revenue.amountExclVat} disabled={!onUpdateRevenue || inlineBusyId === revenue.id} onSave={(v) => patchRevenue(revenue.id, { amountExclVat: v, amount: v + revenue.vat6 + revenue.vat21 })} formatter={formatCurrency} />
+                    </td>
+                    <td className={density === 'compact' ? 'px-3 py-1' : 'px-3 py-2'}>
+                      <InlineSelect value={revenue.status} disabled={!onUpdateRevenue || inlineBusyId === revenue.id} options={statuses} render={(v) => STATUS_LABELS[v] ?? v} badge={(v) => STATUS_COLORS[v] ?? 'bg-stone-100 text-stone-700'} onSave={(v) => patchRevenue(revenue.id, { status: v })} />
+                    </td>
+                    <td className={density === 'compact' ? 'px-3 py-1' : 'px-3 py-2'}>
+                      <div className="flex items-center gap-1 justify-end">
+                        <button type="button" onClick={() => { const absolute = (safePage - 1) * rowsPerPage + idx; setDrawerIndex(absolute); onViewRevenue(revenue) }} className="p-1.5 rounded hover:bg-stone-100 text-stone-600"><FileText className="w-4 h-4" /></button>
+                        <button type="button" onClick={() => onEditRevenue(revenue)} className="p-1.5 rounded hover:bg-stone-100 text-stone-600"><Edit3 className="w-4 h-4" /></button>
+                        <button type="button" onClick={() => onDeleteRevenue(revenue.id)} className="p-1.5 rounded hover:bg-red-50 text-red-600"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-stone-600">
+            <div>{sorted.length} résultat(s)</div>
+            <div className="flex items-center gap-2">
+              <label>Lignes</label>
+              <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1) }} className="rounded border border-stone-300 px-2 py-1">
+                {[25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="p-1 rounded border border-stone-300 disabled:opacity-40"><ChevronLeft className="w-4 h-4" /></button>
+              <span>Page {safePage}/{pageCount}</span>
+              <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} className="p-1 rounded border border-stone-300 disabled:opacity-40"><ChevronRight className="w-4 h-4" /></button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {drawerIndex !== null && sorted[drawerIndex] && (
+        <RevenueDrawer
+          revenue={sorted[drawerIndex]}
+          index={drawerIndex}
+          total={sorted.length}
+          onClose={() => setDrawerIndex(null)}
+          onPrev={() => setDrawerIndex((i) => (i === null ? i : Math.max(0, i - 1)))}
+          onNext={() => setDrawerIndex((i) => (i === null ? i : Math.min(sorted.length - 1, i + 1)))}
+          onEdit={() => onEditRevenue(sorted[drawerIndex])}
+        />
       )}
     </div>
   )
 }
 
-// --- RevenueRow ---
+function KpiCard({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-xl border border-stone-200 bg-white px-3 py-2"><div className="text-xs text-stone-500">{label}</div><div className="text-lg font-semibold text-stone-900">{value}</div></div>
+}
 
-function RevenueRow({
-  revenue,
-  onView,
-  onEdit,
-  onDelete,
-}: {
-  revenue: RevenueItem
-  onView: () => void
-  onEdit: () => void
-  onDelete: () => void
-}) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLTableCellElement>(null)
-
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
-
-  const totalVat = revenue.vat6 + revenue.vat21
-  const totalTtc = computeTtc(revenue)
-
+function SortableHead({ label, sortKey, sorts, onToggle, align = 'left' }: { label: string; sortKey: SortKey; sorts: Array<{ key: SortKey; dir: 'asc' | 'desc' }>; onToggle: (key: SortKey, multi?: boolean) => void; align?: 'left' | 'right' }) {
+  const current = sorts.find((s) => s.key === sortKey)
   return (
-    <tr className="border-b border-stone-100 hover:bg-stone-50/50 cursor-pointer" onClick={onView}>
-      <td className="px-4 py-3 text-sm text-stone-600">{formatDate(revenue.date)}</td>
-      <td className="px-4 py-3 text-sm font-medium text-stone-900">{revenue.contactName || '—'}</td>
-      <td className="px-4 py-3 text-sm text-stone-700 max-w-[200px] truncate">{revenue.description || revenue.label || '—'}</td>
-      <td className="px-4 py-3">
-        {revenue.pole ? (
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: POLE_COLORS[revenue.pole] || '#a8a29e' }} />
-            <span className="text-sm text-stone-600">{POLE_LABELS[revenue.pole] ?? revenue.pole}</span>
-          </span>
-        ) : (
-          <span className="text-stone-300 text-sm">—</span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-sm text-right text-stone-700 tabular-nums">{formatCurrency(revenue.amountExclVat)}</td>
-      <td className="px-4 py-3 text-sm text-right text-stone-600 tabular-nums">{formatCurrency(totalVat)}</td>
-      <td className="px-4 py-3 text-sm text-right font-medium text-stone-900 tabular-nums">{formatCurrency(totalTtc)}</td>
-      <td className="px-4 py-3">
-        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[revenue.status] ?? 'bg-stone-100 text-stone-700'}`}>
-          {STATUS_LABELS[revenue.status] ?? revenue.status}
-        </span>
-      </td>
-      <td className="px-4 py-3 relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-          aria-label="Actions"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 py-1 w-36 bg-white rounded-lg border border-stone-200 shadow-lg z-20">
-            <button
-              type="button"
-              onClick={() => { setMenuOpen(false); onView() }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
-            >
-              <Eye className="w-4 h-4" />
-              Détail
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMenuOpen(false); onEdit() }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
-            >
-              <Edit className="w-4 h-4" />
-              Modifier
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMenuOpen(false); onDelete() }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              Supprimer
-            </button>
-          </div>
-        )}
-      </td>
-    </tr>
+    <th className={`px-3 py-2 text-xs uppercase text-stone-600 ${align === 'right' ? 'text-right' : ''}`}>
+      <button type="button" onClick={(e) => onToggle(sortKey, e.shiftKey)} className={`inline-flex items-center gap-1 ${align === 'right' ? 'ml-auto' : ''}`} title="Shift+clic pour tri multi-colonnes">
+        {label}
+        {!current && <ChevronsUpDown className="w-3.5 h-3.5" />}
+        {current?.dir === 'asc' && <ArrowUp className="w-3.5 h-3.5" />}
+        {current?.dir === 'desc' && <ArrowDown className="w-3.5 h-3.5" />}
+      </button>
+    </th>
   )
+}
+
+function InlineSelect({ value, options, onSave, render, badge, disabled }: { value: string; options: string[]; onSave: (v: string) => void; render?: (v: string) => string; badge?: (v: string) => string; disabled?: boolean }) {
+  if (disabled) {
+    return <span className={badge ? `inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge(value)}` : ''}>{render ? render(value) : value || '—'}</span>
+  }
+  return (
+    <select value={value} onChange={(e) => onSave(e.target.value)} className={`rounded border border-stone-300 px-2 py-1 text-xs ${badge ? badge(value) : ''}`}>
+      <option value="">—</option>
+      {options.map((o) => <option key={o} value={o}>{render ? render(o) : o}</option>)}
+    </select>
+  )
+}
+
+function InlineText({ value, onSave, disabled }: { value: string; onSave: (v: string) => void; disabled?: boolean }) {
+  if (disabled) return <span>{value || '—'}</span>
+  return <input defaultValue={value} onBlur={(e) => onSave(e.target.value)} className="w-full rounded border border-stone-300 px-2 py-1 text-xs" placeholder="—" />
+}
+
+function InlineNumber({ value, onSave, formatter, disabled }: { value: number; onSave: (v: number) => void; formatter: (n: number) => string; disabled?: boolean }) {
+  if (disabled) return <span>{formatter(value)}</span>
+  return <input type="number" min={0} step="0.01" defaultValue={String(value)} onBlur={(e) => onSave(Number(e.target.value || 0))} className="w-28 rounded border border-stone-300 px-2 py-1 text-xs text-right" />
+}
+
+function InlineDate({ value, onSave, disabled }: { value: string | null; onSave: (v: string | null) => void; disabled?: boolean }) {
+  if (disabled) return <span>{formatDate(value)}</span>
+  return <input type="date" defaultValue={value ? value.slice(0, 10) : ''} onBlur={(e) => onSave(e.target.value || null)} className="rounded border border-stone-300 px-2 py-1 text-xs" />
+}
+
+function BulkQuickEdit({ label, options, onApply, busy }: { label: string; options: Array<{ value: string; label: string }>; onApply: (value: string) => void; busy?: boolean }) {
+  const [value, setValue] = useState('')
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-xs text-stone-600">{label}</span>
+      <select value={value} onChange={(e) => setValue(e.target.value)} className="rounded border border-stone-300 px-2 py-1 text-xs">
+        <option value="">Choisir</option>
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      <button type="button" disabled={!value || busy} onClick={() => onApply(value)} className="rounded bg-[#5B5781] px-2 py-1 text-xs text-white disabled:opacity-40">Appliquer</button>
+    </div>
+  )
+}
+
+function RevenueDrawer({ revenue, index, total, onClose, onPrev, onNext, onEdit }: { revenue: RevenueItem; index: number; total: number; onClose: () => void; onPrev: () => void; onNext: () => void; onEdit: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/35" onClick={onClose}>
+      <div className="h-full w-full max-w-xl bg-white shadow-2xl border-l border-stone-200 flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+          <div>
+            <div className="text-xs text-stone-500">Recette {index + 1}/{total}</div>
+            <div className="font-semibold text-stone-900">{revenue.contactName || revenue.label || 'Recette'}</div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={onPrev} className="p-2 rounded border border-stone-300"><ChevronLeft className="w-4 h-4" /></button>
+            <button type="button" onClick={onNext} className="p-2 rounded border border-stone-300"><ChevronRight className="w-4 h-4" /></button>
+            <button type="button" onClick={onClose} className="p-2 rounded border border-stone-300"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+        <div className="p-4 space-y-3 text-sm overflow-auto">
+          <Field label="Date" value={formatDate(revenue.date)} />
+          <Field label="Client" value={revenue.contactName || '—'} />
+          <Field label="Description" value={revenue.description || revenue.label || '—'} />
+          <Field label="Pôle" value={revenue.pole ? POLE_LABELS[revenue.pole] || revenue.pole : '—'} />
+          <Field label="Catégorie" value={revenue.category || '—'} />
+          <Field label="Statut" value={STATUS_LABELS[revenue.status] || revenue.status} />
+          <Field label="Montant HTVA" value={formatCurrency(revenue.amountExclVat)} />
+          <Field label="TVA" value={formatCurrency(revenue.vat6 + revenue.vat21)} />
+          <Field label="Montant TTC" value={formatCurrency(revenue.amount)} />
+          <Field label="Paiement" value={revenue.paymentMethod || '—'} />
+          <Field label="Notes" value={revenue.notes || '—'} />
+        </div>
+        <div className="p-4 border-t border-stone-200">
+          <button type="button" onClick={onEdit} className="w-full rounded-lg bg-[#5B5781] px-4 py-2 text-sm font-medium text-white">Modifier</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return <div><div className="text-xs text-stone-500">{label}</div><div className="text-stone-900">{value}</div></div>
 }

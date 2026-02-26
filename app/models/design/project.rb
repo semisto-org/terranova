@@ -5,6 +5,15 @@ module Design
 
     PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion termine].freeze
     STATUSES = %w[active pending completed archived].freeze
+    PROJECT_TYPES = %w[prive professionnel collectif public].freeze
+    CLIENT_INTERESTS = %w[
+      design
+      plant_selection
+      personalized_coaching
+      implementation_support
+      five_year_follow_up
+    ].freeze
+    ACQUISITION_CHANNELS = %w[bouche_a_oreille presse autre].freeze
 
     belongs_to :template, class_name: 'Design::ProjectTemplate', optional: true
     has_many :meetings, class_name: 'Design::ProjectMeeting', foreign_key: :project_id, dependent: :destroy
@@ -27,13 +36,40 @@ module Design
     has_many :task_lists, class_name: 'Design::TaskList', foreign_key: :project_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
+    before_validation :normalize_client_interests
+
     validates :name, :client_id, :client_name, :phase, :status, presence: true
     validates :phase, inclusion: { in: PHASES }
     validates :status, inclusion: { in: STATUSES }
+    validate :project_type_is_supported_when_provided
+    validates :acquisition_channel, inclusion: { in: ACQUISITION_CHANNELS }, allow_blank: true
+    validate :client_interests_are_supported
 
     def address_display
       parts = [street, number, postcode, city, country_name].reject(&:blank?)
       parts.join(', ')
+    end
+
+    private
+
+    def normalize_client_interests
+      self.client_interests = Array(client_interests).map(&:to_s).reject(&:blank?).uniq
+    end
+
+    def client_interests_are_supported
+      unsupported = Array(client_interests).map(&:to_s) - CLIENT_INTERESTS
+      return if unsupported.empty?
+
+      errors.add(:client_interests, "contains unsupported values: #{unsupported.join(', ')}")
+    end
+
+    def project_type_is_supported_when_provided
+      value = project_type.to_s
+      return if value.blank?
+      return if PROJECT_TYPES.include?(value)
+      return unless will_save_change_to_project_type?
+
+      errors.add(:project_type, 'is not included in the list')
     end
   end
 end

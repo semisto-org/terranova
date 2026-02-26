@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import { useShellNav } from '../../components/shell/ShellContext'
-import { EventTypesAdmin, TimesheetServiceTypesAdmin } from '../../lab-management/components'
+import { CyclePeriodsAdmin, EventTypesAdmin, TimesheetServiceTypesAdmin } from '../../lab-management/components'
 
 const SECTION_TABS = [
   { id: 'event-types', label: "Types d'événements" },
   { id: 'service-types', label: 'Types de prestation' },
+  { id: 'cycles', label: 'Cycles' },
 ]
 
 export default function AdminParametres() {
@@ -15,6 +16,7 @@ export default function AdminParametres() {
     <div className="px-4 py-4">
       {activeSection === 'event-types' && <EventTypesAdmin />}
       {activeSection === 'service-types' && <TimesheetServiceTypesAdmin />}
+      {activeSection === 'cycles' && <CyclePeriodsAdmin />}
     </div>
   )
 }

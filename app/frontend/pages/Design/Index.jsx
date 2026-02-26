@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
-import { ProjectDashboard, ProjectDetailView } from '../../design-studio/components'
+import { ProjectDashboard, ProjectDetailView, ReportingDashboard } from '../../design-studio/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
@@ -389,14 +389,18 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
 
 const DESIGN_SECTIONS = [
   { id: 'projects', label: 'Projets' },
+  { id: 'locations', label: 'Lieux' },
+  { id: 'reporting', label: 'Reporting' },
 ]
 
 export default function DesignIndex({ initialProjectId }) {
   const [projectDetail, setProjectDetail] = useState(null)
+  const [activeSection, setActiveSection] = useState('projects')
   useShellNav({
     sections: DESIGN_SECTIONS,
-    activeSection: 'projects',
+    activeSection,
     onSectionChange: (id) => {
+      setActiveSection(id)
       if (id === 'projects' && projectDetail) {
         setProjectDetail(null)
         window.history.pushState({}, '', '/design')
@@ -412,8 +416,13 @@ export default function DesignIndex({ initialProjectId }) {
   const [projects, setProjects] = useState([])
   const [stats, setStats] = useState(null)
   const [templates, setTemplates] = useState([])
+  const [reporting, setReporting] = useState(null)
+  const [reportingLoading, setReportingLoading] = useState(false)
+  const [reportingError, setReportingError] = useState(null)
+  const [reportingFilters, setReportingFilters] = useState({ period: '12m', projectId: '', client: '', memberId: '', groupBy: 'month' })
 
   const [searchResults, setSearchResults] = useState([])
+  const [academyTrainingOptions, setAcademyTrainingOptions] = useState([])
 
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [projectForm, setProjectForm] = useState(defaultProjectForm)
@@ -444,6 +453,35 @@ export default function DesignIndex({ initialProjectId }) {
     setSearchResults([])
   }, [])
 
+  const loadAcademyTrainingOptions = useCallback(async () => {
+    try {
+      const payload = await apiRequest('/api/v1/academy')
+      const options = (payload?.trainings || []).map((t) => ({ value: t.id, label: t.title }))
+      setAcademyTrainingOptions(options)
+    } catch {
+      setAcademyTrainingOptions([])
+    }
+  }, [])
+
+  const loadReporting = useCallback(async (filters = reportingFilters) => {
+    setReportingLoading(true)
+    setReportingError(null)
+    try {
+      const params = new URLSearchParams()
+      if (filters.period) params.set('period', filters.period)
+      if (filters.projectId) params.set('project_id', filters.projectId)
+      if (filters.client) params.set('client', filters.client)
+      if (filters.memberId) params.set('member_id', filters.memberId)
+      if (filters.groupBy) params.set('group_by', filters.groupBy)
+      const payload = await apiRequest(`/api/v1/design_studio/reporting?${params.toString()}`)
+      setReporting(payload)
+    } catch (err) {
+      setReportingError(err.message)
+    } finally {
+      setReportingLoading(false)
+    }
+  }, [reportingFilters])
+
   useEffect(() => {
     let active = true
 
@@ -451,7 +489,7 @@ export default function DesignIndex({ initialProjectId }) {
       setLoading(true)
       setError(null)
       try {
-        await loadDashboard()
+        await Promise.all([loadDashboard(), loadAcademyTrainingOptions()])
 
         if (initialProjectId) {
           await loadProject(initialProjectId)
@@ -470,7 +508,7 @@ export default function DesignIndex({ initialProjectId }) {
     return () => {
       active = false
     }
-  }, [initialProjectId, loadDashboard, loadProject, paletteIdFromQuery])
+  }, [initialProjectId, loadDashboard, loadAcademyTrainingOptions, loadProject, paletteIdFromQuery])
 
   const runMutation = useCallback(async (mutation, opts = {}) => {
     setBusy(true)
@@ -533,6 +571,7 @@ export default function DesignIndex({ initialProjectId }) {
   const viewProject = useCallback(async (projectId) => {
     const success = await runMutation(async () => {
       await loadProject(projectId)
+      setActiveSection('projects')
       window.history.pushState({}, '', `/design/${projectId}`)
     }, { refreshDashboard: false })
 
@@ -786,10 +825,10 @@ export default function DesignIndex({ initialProjectId }) {
           action: () => runMutation(() => apiRequest(`/api/v1/design/expenses/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
         })
       },
-      saveSiteAnalysis: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/site-analysis`, { method: 'PATCH', body: JSON.stringify({
-        climate: { hardinessZone: values.hardinessZone, notes: values.notes },
-        soil: { type: values.soilType },
-      }) }), { refreshProjectId: currentProjectId }),
+      saveSiteAnalysis: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/site-analysis`, {
+        method: 'PATCH',
+        body: JSON.stringify(values),
+      }), { refreshProjectId: currentProjectId }),
       addPaletteItem: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette-items`, { method: 'POST', body: JSON.stringify({
         species_id: values.species_id,
         species_name: values.species_name,
@@ -932,6 +971,11 @@ export default function DesignIndex({ initialProjectId }) {
     detailActions.importPlantPalette(paletteIdFromQuery)
   }, [currentProjectId, detailActions, paletteIdFromQuery])
 
+  useEffect(() => {
+    if (activeSection !== 'reporting') return
+    loadReporting(reportingFilters)
+  }, [activeSection, loadReporting, reportingFilters])
+
   const projectDetailActions = useMemo(() => {
     if (!detailActions) return null
     const noop = () => {}
@@ -1012,6 +1056,87 @@ export default function DesignIndex({ initialProjectId }) {
             searchResults={searchResults}
           />
         )
+      ) : activeSection === 'locations' ? (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-stone-900 tracking-tight">Lieux</h2>
+            <p className="text-sm text-stone-500 mt-1">Configure les lieux des projets Design Studio.</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
+            <div className="grid grid-cols-12 gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-stone-500 border-b border-stone-200 bg-stone-50">
+              <div className="col-span-4">Projet</div>
+              <div className="col-span-4">Lieu</div>
+              <div className="col-span-2">Coordonnées</div>
+              <div className="col-span-2 text-right">Action</div>
+            </div>
+            {projects.map((p) => (
+              <div key={p.id} className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-stone-100 last:border-b-0 items-center">
+                <div className="col-span-4">
+                  <p className="font-medium text-stone-900">{p.name}</p>
+                  <p className="text-xs text-stone-500">{p.clientName || '—'}</p>
+                </div>
+                <div className="col-span-4 text-sm text-stone-700">
+                  {p.locationAddress || 'Lieu non défini'}
+                </div>
+                <div className="col-span-2 text-xs text-stone-500">
+                  {p.coordinates ? `${p.coordinates.lat}, ${p.coordinates.lng}` : '—'}
+                </div>
+                <div className="col-span-2 text-right">
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-lg border border-stone-200 text-sm text-stone-700 hover:bg-stone-100"
+                    onClick={() => {
+                      setEditProjectForm({
+                        name: p.name || '',
+                        client_name: p.clientName || '',
+                        client_email: p.clientEmail || '',
+                        client_phone: p.clientPhone || '',
+                        street: p.street || '',
+                        number: p.number || '',
+                        city: p.city || '',
+                        postcode: p.postcode || '',
+                        country_name: p.countryName || '',
+                        latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
+                        longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
+                        area: p.area || 500,
+                      })
+                      setProjectEditModal({ project: p })
+                    }}
+                  >
+                    Configurer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : activeSection === 'reporting' ? (
+        reportingLoading ? (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement du reporting…</p></div>
+        ) : reportingError ? (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-red-600">{reportingError}</p></div>
+        ) : reporting ? (
+          <ReportingDashboard
+            data={reporting}
+            filters={reportingFilters}
+            onFilterChange={(key, value) => setReportingFilters((prev) => ({ ...prev, [key]: value }))}
+            onExportCsv={() => {
+              if (!reporting?.projectProfitability?.length) return
+              const header = ['Projet', 'Client', 'CA', 'Coûts', 'Marge', 'Marge %', 'Heures', 'Revenu/h', 'Coût/h', 'Tendance']
+              const rows = reporting.projectProfitability.map((r) => [r.projectName, r.clientName, r.revenue, r.costs, r.margin, r.marginPct, r.hours, r.revenuePerHour, r.costPerHour, r.trend])
+              const csv = [header, ...rows].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `design-reporting-${new Date().toISOString().slice(0, 10)}.csv`
+              a.click()
+              URL.revokeObjectURL(url)
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Aucune donnée disponible.</p></div>
+        )
       ) : (
         <ProjectDashboard {...dashboardProps} />
       )}
@@ -1028,8 +1153,8 @@ export default function DesignIndex({ initialProjectId }) {
             })
             return { id: contact.id, name: contact.name, contactType: contact.contactType }
           }}
-          trainingOptions={[]}
-          designProjectOptions={[]}
+          trainingOptions={academyTrainingOptions}
+          designProjectOptions={projects.map((p) => ({ value: p.id, label: p.name }))}
           showTrainingLink={true}
           showDesignProjectLink={true}
           accentColor="#AFBD00"

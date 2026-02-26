@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
+import { getCableConsumer } from '@/lib/cable'
+import { applyAcademyRealtimeUpdate } from './realtime'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
 import LocationsMap from '../../components/academy/LocationsMap'
@@ -23,7 +25,7 @@ import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Formations' },
+  { id: 'kanban', label: 'Opérations formations' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'types', label: 'Types de formations' },
   { id: 'locations', label: 'Lieux' },
@@ -63,10 +65,12 @@ export default function AcademyIndex({ initialTrainingId }) {
   const [reporting, setReporting] = useState(null)
   const [calendarView, setCalendarView] = useState('month')
   const [calendarDate, setCalendarDate] = useState(() => new Date())
+  const [calendarLinks, setCalendarLinks] = useState(null)
   const [search, setSearch] = useState('')
   const [activeModal, setActiveModal] = useState(null)
   const [modalData, setModalData] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [designProjectOptions, setDesignProjectOptions] = useState([])
   const loadAcademy = useCallback(async () => {
     const payload = await apiRequest('/api/v1/academy')
     setData(payload)
@@ -77,7 +81,15 @@ export default function AcademyIndex({ initialTrainingId }) {
     async function boot() {
       setLoading(true)
       try {
-        await loadAcademy()
+        await Promise.all([
+          loadAcademy(),
+          apiRequest('/api/v1/design').then((payload) => {
+            if (!mounted) return
+            setDesignProjectOptions((payload?.projects || []).map((p) => ({ value: p.id, label: p.name })))
+          }).catch(() => {
+            if (mounted) setDesignProjectOptions([])
+          }),
+        ])
       } catch (err) {
         if (mounted) setError(err.message)
       } finally {
@@ -89,6 +101,20 @@ export default function AcademyIndex({ initialTrainingId }) {
       mounted = false
     }
   }, [loadAcademy])
+
+  useEffect(() => {
+    const consumer = getCableConsumer()
+    const subscription = consumer.subscriptions.create(
+      { channel: 'Academy::TrainingsChannel' },
+      {
+        received: (payload) => {
+          setData((prev) => applyAcademyRealtimeUpdate(prev, payload))
+        },
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const runMutation = useCallback(async (handler, options = { refresh: true }) => {
     setBusy(true)
@@ -104,6 +130,25 @@ export default function AcademyIndex({ initialTrainingId }) {
       setBusy(false)
     }
   }, [loadAcademy])
+
+  const fetchCalendarLinks = useCallback(async () => {
+    try {
+      const payload = await apiRequest('/api/v1/academy/calendar-links')
+      setCalendarLinks(payload)
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [])
+
+  const copyText = useCallback(async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setNotice('Lien copié ✅')
+      setTimeout(() => setNotice(null), 2500)
+    } catch {
+      setError('Impossible de copier automatiquement le lien')
+    }
+  }, [])
 
   // Modal submission handlers
   const handleTrainingSubmit = useCallback(async (values) => {
@@ -318,7 +363,19 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ isEdit: true, training: current })
       setActiveModal('training')
     },
-    updateTrainingStatus: (id, status) => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })),
+    updateTrainingStatus: (id, status) => runMutation(async () => {
+      const updated = await apiRequest(`/api/v1/academy/trainings/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+
+      setData((prev) => ({
+        ...prev,
+        trainings: prev.trainings.map((item) =>
+          item.id === id ? { ...item, ...updated } : item
+        ),
+      }))
+    }, { refresh: true }),
     addSession: (trainingId) => {
       setModalData({ isEdit: false, trainingId })
       setActiveModal('session')
@@ -453,6 +510,11 @@ export default function AcademyIndex({ initialTrainingId }) {
   }), [data, runMutation, setDeleteConfirm])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
+  useEffect(() => {
+    if (!selectedTrainingId || loading) return
+    if (!selectedTraining) setSelectedTrainingId(null)
+  }, [loading, selectedTraining, selectedTrainingId])
+
   const filteredTrainings = useMemo(() => data.trainings.filter((item) => {
     if (search.trim() !== '') {
       const query = search.trim().toLowerCase()
@@ -462,6 +524,37 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
     return true
   }), [data.trainingTypes, data.trainings, search])
+  const drawerTrainings = filteredTrainings.length > 0 ? filteredTrainings : data.trainings
+  const selectedTrainingIndex = selectedTraining ? drawerTrainings.findIndex((item) => item.id === selectedTraining.id) : -1
+  const hasPreviousTraining = selectedTrainingIndex > 0
+  const hasNextTraining = selectedTrainingIndex >= 0 && selectedTrainingIndex < drawerTrainings.length - 1
+
+  const openTrainingDrawer = useCallback((id) => {
+    setSelectedTrainingId(id)
+  }, [])
+
+  const closeTrainingDrawer = useCallback(() => {
+    setSelectedTrainingId(null)
+  }, [])
+
+  useEffect(() => {
+    if (!selectedTrainingId) return
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') closeTrainingDrawer()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [closeTrainingDrawer, selectedTrainingId])
+
+  const openPreviousTraining = useCallback(() => {
+    if (!hasPreviousTraining) return
+    setSelectedTrainingId(drawerTrainings[selectedTrainingIndex - 1].id)
+  }, [drawerTrainings, hasPreviousTraining, selectedTrainingIndex])
+
+  const openNextTraining = useCallback(() => {
+    if (!hasNextTraining) return
+    setSelectedTrainingId(drawerTrainings[selectedTrainingIndex + 1].id)
+  }, [drawerTrainings, hasNextTraining, selectedTrainingIndex])
   if (loading) return <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement Academy...</p></div>
 
   const renderModals = () => (
@@ -554,7 +647,7 @@ export default function AcademyIndex({ initialTrainingId }) {
             return { id: contact.id, name: contact.name, contactType: contact.contactType }
           }}
           trainingOptions={data.trainings.map((t) => ({ value: t.id, label: t.title }))}
-          designProjectOptions={[]}
+          designProjectOptions={designProjectOptions}
           showTrainingLink={true}
           showDesignProjectLink={true}
           accentColor="#B01A19"
@@ -582,35 +675,6 @@ export default function AcademyIndex({ initialTrainingId }) {
     </>
   )
 
-  if (selectedTraining) {
-    return (
-      <>
-        <TrainingDetail
-          training={selectedTraining}
-          data={data}
-          busy={busy}
-          onBack={() => {
-            setSelectedTrainingId(null)
-            window.history.pushState({}, '', '/academy')
-          }}
-          onRefresh={loadAcademy}
-          actions={actions}
-        />
-        {renderModals()}
-        {deleteConfirm && (
-          <ConfirmDeleteModal
-            title={deleteConfirm.title}
-            message={deleteConfirm.message}
-            onConfirm={() => {
-              deleteConfirm.action()
-              setDeleteConfirm(null)
-            }}
-            onCancel={() => setDeleteConfirm(null)}
-          />
-        )}
-      </>
-    )
-  }
 
   return (
     <>
@@ -647,14 +711,12 @@ export default function AcademyIndex({ initialTrainingId }) {
             search={search}
             onSearchChange={setSearch}
             onCreateTraining={actions.createTraining}
-            onViewTraining={(id) => {
-              setSelectedTrainingId(id)
-              window.history.pushState({}, '', `/academy/${id}`)
-            }}
+            onViewTraining={openTrainingDrawer}
             onEditTraining={actions.editTraining}
             onDeleteTraining={actions.deleteTraining}
             onViewCalendar={() => setView('calendar')}
             onViewReporting={actions.viewReporting}
+            onToggleChecklistItem={actions.toggleChecklistItem}
           />
         )}
 
@@ -735,6 +797,38 @@ export default function AcademyIndex({ initialTrainingId }) {
                 </button>
               </div>
             </div>
+
+            <div className="rounded-xl border border-stone-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-stone-900">Ajouter à Google Agenda</p>
+                  <p className="text-xs text-stone-500">Export iCal en lecture seule (Semisto + Formations)</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100"
+                  onClick={fetchCalendarLinks}
+                >
+                  Générer les liens iCal
+                </button>
+              </div>
+
+              {calendarLinks && (
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-stone-700">Semisto:</span>
+                    <button type="button" className="text-[#B01A19] underline" onClick={() => copyText(calendarLinks.semisto.url)}>Copier le lien</button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-stone-700">Formations:</span>
+                    <button type="button" className="text-[#B01A19] underline" onClick={() => copyText(calendarLinks.trainings.url)}>Copier le lien</button>
+                  </div>
+                  <ol className="mt-2 list-decimal pl-5 text-xs text-stone-600">
+                    {(calendarLinks.instructions || []).map((step) => <li key={step}>{step}</li>)}
+                  </ol>
+                </div>
+              )}
+            </div>
             {calendarView === 'month' ? (
               <CalendarMonthView
                 currentDate={calendarDate}
@@ -742,20 +836,16 @@ export default function AcademyIndex({ initialTrainingId }) {
                 trainingSessions={data.trainingSessions}
                 trainingLocations={data.trainingLocations}
                 trainingRegistrations={data.trainingRegistrations}
-                onViewTraining={(id) => {
-                  setSelectedTrainingId(id)
-                  window.history.pushState({}, '', `/academy/${id}`)
-                }}
+                schoolHolidays={data.schoolHolidays || []}
+                onViewTraining={openTrainingDrawer}
               />
             ) : (
               <CalendarYearView
                 currentDate={calendarDate}
                 trainings={data.trainings}
                 trainingSessions={data.trainingSessions}
-                onViewTraining={(id) => {
-                  setSelectedTrainingId(id)
-                  window.history.pushState({}, '', `/academy/${id}`)
-                }}
+                schoolHolidays={data.schoolHolidays || []}
+                onViewTraining={openTrainingDrawer}
               />
             )}
           </section>
@@ -898,6 +988,31 @@ export default function AcademyIndex({ initialTrainingId }) {
         )}
       </div>
     </div>
+
+    {selectedTraining && (
+      <>
+        <div
+          className="fixed inset-0 z-40 bg-stone-900/25 backdrop-blur-[1px] transition-opacity"
+          onClick={closeTrainingDrawer}
+          aria-hidden="true"
+        />
+        <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-4xl border-l border-stone-200 bg-white shadow-2xl transition-transform duration-300">
+          <TrainingDetail
+            training={selectedTraining}
+            data={data}
+            busy={busy}
+            onRefresh={loadAcademy}
+            actions={actions}
+            layout="drawer"
+            onClose={closeTrainingDrawer}
+            onPrevious={openPreviousTraining}
+            onNext={openNextTraining}
+            hasPrevious={hasPreviousTraining}
+            hasNext={hasNextTraining}
+          />
+        </aside>
+      </>
+    )}
 
     {renderModals()}
     {deleteConfirm && (

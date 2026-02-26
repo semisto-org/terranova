@@ -318,7 +318,9 @@ module Api
       def calendar
         render json: {
           cycles: serialize_cycles,
-          events: serialize_events
+          events: serialize_events,
+          cyclePeriods: serialize_cycle_periods,
+          cycleEvents: serialize_cycle_period_events
         }
       end
 
@@ -518,7 +520,7 @@ module Api
       end
 
       def create_timesheet
-        timesheet = Timesheet.new(timesheet_params)
+        timesheet = Timesheet.new(normalized_timesheet_params)
 
         if timesheet.save
           render json: serialize_timesheet(timesheet), status: :created
@@ -528,7 +530,7 @@ module Api
       end
 
       def update_timesheet
-        if @timesheet.update(timesheet_params)
+        if @timesheet.update(normalized_timesheet_params)
           render json: serialize_timesheet(@timesheet)
         else
           render json: { error: @timesheet.errors.full_messages.to_sentence }, status: :unprocessable_entity
@@ -731,6 +733,10 @@ module Api
         }
       end
 
+      def reporting
+        render json: LabReportingService.new(reporting_filters).call
+      end
+
       def list_albums
         scope = Album.includes(:albumable).order(updated_at: :desc)
         scope = scope.where(albumable_type: params[:albumable_type]) if params[:albumable_type].present?
@@ -831,6 +837,27 @@ module Api
 
       def timesheet_params
         params.permit(:member_id, :member_name, :date, :hours, :description, :phase, :mode, :billed, :travel_km, :design_project_id, :training_id, :pole_project_id, :event_id)
+      end
+
+      def normalized_timesheet_params
+        attrs = timesheet_params.to_h.symbolize_keys
+
+        attrs[:travel_km] = params[:kilometers] if attrs[:travel_km].blank? && params[:kilometers].present?
+        if attrs[:mode].blank? && params[:payment_type].present?
+          attrs[:mode] = case params[:payment_type].to_s
+                         when 'invoice' then 'billed'
+                         when 'semos' then 'semos'
+                         else params[:payment_type]
+                         end
+        end
+        attrs[:phase] = params[:category] if attrs[:phase].blank? && params[:category].present?
+
+        if attrs[:member_name].blank? && attrs[:member_id].present?
+          member = Member.find_by(id: attrs[:member_id])
+          attrs[:member_name] = [member&.first_name, member&.last_name].compact.join(' ').strip.presence || member&.email
+        end
+
+        attrs
       end
 
       def contact_params
@@ -935,6 +962,10 @@ module Api
 
       def album_params
         params.permit(:title, :description, :status, :albumable_type, :albumable_id)
+      end
+
+      def reporting_filters
+        params.permit(:from, :to, :pole, :category, :supplier, :spike_threshold)
       end
 
       def revenue_params
@@ -1125,6 +1156,51 @@ module Api
             status: cycle.status,
             betIds: cycle.bets.map { |bet| bet.id.to_s }
           }
+        end
+      end
+
+      def serialize_cycle_periods
+        CyclePeriod.ordered.map do |cycle|
+          {
+            id: cycle.id.to_s,
+            name: cycle.name,
+            startsOn: cycle.starts_on.iso8601,
+            endsOn: cycle.ends_on.iso8601,
+            cooldownStartsOn: cycle.cooldown_starts_on.iso8601,
+            cooldownEndsOn: cycle.cooldown_ends_on.iso8601,
+            color: cycle.color,
+            notes: cycle.notes,
+            active: cycle.active
+          }
+        end
+      end
+
+      def serialize_cycle_period_events
+        CyclePeriod.active.ordered.flat_map do |cycle|
+          [
+            {
+              id: "cycle-period-#{cycle.id}-work",
+              title: "#{cycle.name} · Cycle",
+              type: "cycle_work",
+              color: cycle.color,
+              startDate: cycle.starts_on.iso8601,
+              endDate: cycle.ends_on.iso8601,
+              allDay: true,
+              source: "cycle_period",
+              cyclePeriodId: cycle.id.to_s
+            },
+            {
+              id: "cycle-period-#{cycle.id}-cooldown",
+              title: "#{cycle.name} · Cooldown",
+              type: "cycle_cooldown",
+              color: cycle.color,
+              startDate: cycle.cooldown_starts_on.iso8601,
+              endDate: cycle.cooldown_ends_on.iso8601,
+              allDay: true,
+              source: "cycle_period",
+              cyclePeriodId: cycle.id.to_s
+            }
+          ]
         end
       end
 
@@ -1335,7 +1411,9 @@ module Api
           phase: timesheet.phase,
           mode: timesheet.mode,
           billed: timesheet.billed,
+          invoiced: timesheet.billed,
           travelKm: timesheet.travel_km,
+          kilometers: timesheet.travel_km,
           designProjectId: timesheet.design_project_id,
           trainingId: timesheet.training_id,
           poleProjectId: timesheet.pole_project_id,
