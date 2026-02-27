@@ -317,7 +317,7 @@ function TopicDetail({ topicId, onBack, onEdit }) {
 
         {/* Content */}
         <div
-          className="prose prose-sm max-w-none text-sm text-stone-700 leading-relaxed"
+          className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed"
           dangerouslySetInnerHTML={{ __html: `<p class="text-sm text-stone-700 leading-relaxed mb-3">${renderContent(topic.content)}</p>` }}
         />
 

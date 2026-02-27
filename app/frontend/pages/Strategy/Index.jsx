@@ -260,7 +260,7 @@ function ResourceDetail({ resourceId, onBack, onEdit }) {
 
         {resource.content && (
           <div
-            className="prose prose-sm max-w-none text-sm text-stone-700 leading-relaxed"
+            className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: resource.content }}
           />
         )}
@@ -583,7 +583,7 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
         </div>
 
         {delib.context && (
-          <div className="prose prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: delib.context }} />
+          <div className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: delib.context }} />
         )}
       </div>
 
@@ -990,7 +990,7 @@ function FrameworkDetail({ frameworkId, onBack, onEdit }) {
           )}
         </div>
 
-        <div className="prose prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: framework.content }} />
+        <div className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: framework.content }} />
 
         {framework.attachments?.length > 0 && (
           <div className="mt-6 pt-4 border-t border-stone-100">
