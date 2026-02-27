@@ -212,6 +212,7 @@ Rails.application.routes.draw do
       delete "design/palette-items/:item_id", to: "design_studio#destroy_palette_item"
       post "design/:project_id/palette/import/:plant_palette_id", to: "design_studio#import_palette_from_plants"
       patch "design/:project_id/planting-plan", to: "design_studio#upsert_planting_plan"
+      post "design/:project_id/planting-plan/upload", to: "design_studio#upload_plan_image"
       post "design/:project_id/planting-plan/export", to: "design_studio#export_planting_plan"
       post "design/:project_id/planting-plan/markers", to: "design_studio#create_plant_marker"
       patch "design/planting-plan/markers/:marker_id", to: "design_studio#update_plant_marker"

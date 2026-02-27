@@ -207,6 +207,8 @@ export interface PaletteItem {
   notes: string
   harvestMonths: number[]
   harvestProducts: HarvestProduct[]
+  /** True when speciesId matches a Plant::Species in the plant database */
+  linkedToSpecies?: boolean
 }
 
 export interface LayerTotals {
@@ -234,12 +236,19 @@ export interface PlantPalette {
 
 export interface PlantMarker {
   id: string
-  paletteItemId: string
+  paletteItemId: string | null
   number: number
   x: number
   y: number
   speciesName: string
   varietyName: string | null
+  diameterCm: number | null
+}
+
+export interface ScaleData {
+  point1: { x: number; y: number }
+  point2: { x: number; y: number }
+  realWorldCm: number
 }
 
 export interface PlantingPlan {
@@ -249,9 +258,30 @@ export interface PlantingPlan {
   imageWidth: number
   imageHeight: number
   scale: number
+  scaleData: ScaleData | null
   updatedAt: string
   markers: PlantMarker[]
   layout?: string
+}
+
+export const LAYER_COLORS: Record<PlantLayer, string> = {
+  'canopy': '#2D6A4F',
+  'sub-canopy': '#40916C',
+  'shrub': '#E76F51',
+  'herbaceous': '#F4A261',
+  'ground-cover': '#E9C46A',
+  'vine': '#264653',
+  'root': '#6D4C41',
+}
+
+export const LAYER_LABELS: Record<PlantLayer, string> = {
+  'canopy': 'Canopée',
+  'sub-canopy': 'Sous-canopée',
+  'shrub': 'Arbustes',
+  'herbaceous': 'Herbacées',
+  'ground-cover': 'Couvre-sol',
+  'vine': 'Lianes',
+  'root': 'Racines',
 }
 
 // =============================================================================
@@ -595,8 +625,10 @@ export interface PlantingPlanEditorProps {
   plan: PlantingPlan | null
   palette: PlantPalette | null
   onUploadImage?: (file: File) => void
+  onSaveScaleData?: (scaleData: ScaleData) => void
   onPlaceMarker?: (x: number, y: number, paletteItemId: string) => void
   onMoveMarker?: (markerId: string, x: number, y: number) => void
+  onUpdateMarker?: (markerId: string, values: { diameter_cm?: number | null }) => void
   onRemoveMarker?: (markerId: string) => void
   onExport?: (format: 'pdf' | 'image') => void
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_27_181333) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -461,6 +461,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_120001) do
   create_table "design_plant_markers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.integer "diameter_cm"
     t.integer "number", null: false
     t.bigint "palette_item_id"
     t.bigint "planting_plan_id", null: false
@@ -493,6 +494,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_120001) do
     t.string "image_url", default: "", null: false
     t.string "layout", default: "split-3-4-1-4", null: false
     t.bigint "project_id", null: false
+    t.jsonb "scale_data"
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_design_planting_plans_on_project_id", unique: true
   end

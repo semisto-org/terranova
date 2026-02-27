@@ -853,6 +853,13 @@ export default function DesignIndex({ initialProjectId }) {
         return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette/import/${paletteId}`, { method: 'POST' }), { refreshProjectId: currentProjectId })
       },
       savePlantingPlan: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      uploadPlanImage: (file) => {
+        const form = new FormData()
+        form.append('image', file)
+        return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan/upload`, { method: 'POST', body: form }), { refreshProjectId: currentProjectId })
+      },
+      savePlanScaleData: (scaleData) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan`, { method: 'PATCH', body: JSON.stringify({ scale_data: scaleData }) }), { refreshProjectId: currentProjectId }),
+      updatePlantMarker: (markerId, values) => runMutation(() => apiRequest(`/api/v1/design/planting-plan/markers/${markerId}`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       exportPlan: (format) => runMutation(async () => {
         const payload = await apiRequest(`/api/v1/design/${currentProjectId}/planting-plan/export`, { method: 'POST', body: JSON.stringify({ format }) })
         if (payload?.exportUrl) window.open(payload.exportUrl, '_blank', 'noopener,noreferrer')
@@ -1007,8 +1014,11 @@ export default function DesignIndex({ initialProjectId }) {
       onImportPlantPalette: detailActions.importPlantPalette || noop,
       onSavePlantingPlan: detailActions.savePlantingPlan || noop,
       onExportPlan: detailActions.exportPlan || noop,
+      onUploadPlanImage: detailActions.uploadPlanImage || noop,
+      onSavePlanScaleData: detailActions.savePlanScaleData || noop,
       onAddPlantMarker: detailActions.addPlantMarker || noop,
       onMovePlantMarker: detailActions.movePlantMarker || noop,
+      onUpdatePlantMarker: detailActions.updatePlantMarker || noop,
       onDeletePlantMarker: detailActions.deletePlantMarker || noop,
       onCreateQuote: detailActions.createQuote || noop,
       onSendQuote: detailActions.sendQuote || noop,

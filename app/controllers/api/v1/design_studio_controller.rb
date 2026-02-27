@@ -272,9 +272,18 @@ module Api
       def upsert_planting_plan
         project = find_project
         plan = ensure_planting_plan(project)
-        plan.update!(planting_plan_params)
+        update_attrs = planting_plan_params
+        update_attrs[:scale_data] = params[:scale_data].as_json if params[:scale_data].present?
+        plan.update!(update_attrs)
 
         render json: serialize_planting_plan(plan)
+      end
+
+      def upload_plan_image
+        project = find_project
+        plan = ensure_planting_plan(project)
+        plan.background_image.attach(params.require(:image))
+        render json: serialize_planting_plan(plan.reload)
       end
 
       def export_planting_plan
@@ -848,7 +857,7 @@ module Api
       end
 
       def plant_marker_update_params
-        params.permit(:x, :y, :species_name, :palette_item_id)
+        params.permit(:x, :y, :species_name, :palette_item_id, :diameter_cm)
       end
 
       def plant_record_params
@@ -1348,8 +1357,16 @@ module Api
           unitPrice: item.unit_price.to_f,
           notes: item.notes,
           harvestMonths: item.harvest_months,
-          harvestProducts: item.harvest_products
+          harvestProducts: item.harvest_products,
+          linkedToSpecies: species_linked_to_db?(item.species_id)
         }
+      end
+
+      def species_linked_to_db?(species_id)
+        return false if species_id.blank?
+        Plant::Species.exists?(id: species_id)
+      rescue ArgumentError, ActiveRecord::StatementInvalid
+        false
       end
 
       def serialize_quote(quote)
@@ -1481,15 +1498,22 @@ module Api
       end
 
       def serialize_planting_plan(item)
+        bg_url = if item.background_image.attached?
+          Rails.application.routes.url_helpers.rails_blob_url(item.background_image, only_path: true)
+        else
+          item.image_url.presence
+        end
+
         {
           id: item.id.to_s,
           projectId: item.project_id.to_s,
-          imageUrl: item.image_url,
+          imageUrl: bg_url,
           imageWidth: 1920,
           imageHeight: 1080,
           scale: 1,
+          scaleData: item.scale_data,
           layout: item.layout,
-          markers: item.markers.order(:number).map { |marker| serialize_plant_marker(marker) },
+          markers: item.markers.includes(:palette_item).where(deleted_at: nil).order(:number).map { |marker| serialize_plant_marker(marker) },
           updatedAt: item.updated_at.iso8601
         }
       end
@@ -1502,7 +1526,9 @@ module Api
           number: item.number,
           x: item.x.to_f,
           y: item.y.to_f,
-          speciesName: item.species_name
+          speciesName: item.species_name,
+          varietyName: item.palette_item&.variety_name,
+          diameterCm: item.diameter_cm
         }
       end
 

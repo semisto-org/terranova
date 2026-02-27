@@ -204,8 +204,11 @@ export interface ProjectDetailActions {
   onImportPlantPalette: (paletteId: string) => void
   onSavePlantingPlan: (v: { image_url: string; layout: string }) => void
   onExportPlan: (format: 'pdf' | 'image') => void
+  onUploadPlanImage: (file: File) => void
+  onSavePlanScaleData: (scaleData: import('../types').ScaleData) => void
   onAddPlantMarker: (v: { species_name: string; x: number; y: number; palette_item_id?: string }) => void
   onMovePlantMarker: (markerId: string, v: { x: number; y: number }) => void
+  onUpdatePlantMarker: (markerId: string, v: { diameter_cm?: number | null }) => void
   onDeletePlantMarker: (markerId: string) => void
   onCreateQuote: () => void
   onSendQuote: (quoteId: string) => void
@@ -425,10 +428,15 @@ export function ProjectDetailView({
             {activeTab === 'planting-plan' && (
               <PlantingPlanTab
                 plantingPlan={detail.plantingPlan as import('../types').PlantingPlan | null}
+                palette={detail.plantPalette as import('../types').PlantPalette | null}
+                projectId={project.id}
+                onUploadPlanImage={a.onUploadPlanImage}
+                onSavePlanScaleData={a.onSavePlanScaleData}
                 onSavePlan={a.onSavePlantingPlan}
                 onExportPlan={a.onExportPlan}
                 onAddMarker={a.onAddPlantMarker}
                 onMoveMarker={a.onMovePlantMarker}
+                onUpdateMarker={a.onUpdatePlantMarker}
                 onDeleteMarker={a.onDeletePlantMarker}
               />
             )}
