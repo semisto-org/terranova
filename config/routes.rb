@@ -31,6 +31,7 @@ Rails.application.routes.draw do
   get "plants/*path", to: "app#plants"
   get "profile", to: "app#profile"
   get "knowledge", to: "app#knowledge"
+  get "strategy", to: "app#strategy"
   get "admin", to: "app#admin"
   get "admin/settings", to: "app#admin"
   get "parametres", to: "app#parametres"
@@ -354,6 +355,43 @@ Rails.application.routes.draw do
 
       get "knowledge/bookmarks", to: "knowledge/bookmarks#index"
       get "knowledge/search", to: "knowledge/search#index"
+
+      # Strategy — Stratego
+      get "strategy/resources", to: "strategy/resources#index"
+      get "strategy/resources/:id", to: "strategy/resources#show"
+      post "strategy/resources", to: "strategy/resources#create"
+      patch "strategy/resources/:id", to: "strategy/resources#update"
+      delete "strategy/resources/:id", to: "strategy/resources#destroy"
+      patch "strategy/resources/:id/pin", to: "strategy/resources#pin"
+
+      get "strategy/deliberations", to: "strategy/deliberations#index"
+      get "strategy/deliberations/:id", to: "strategy/deliberations#show"
+      post "strategy/deliberations", to: "strategy/deliberations#create"
+      patch "strategy/deliberations/:id", to: "strategy/deliberations#update"
+      delete "strategy/deliberations/:id", to: "strategy/deliberations#destroy"
+      patch "strategy/deliberations/:id/decide", to: "strategy/deliberations#decide"
+      post "strategy/deliberations/:id/proposals", to: "strategy/deliberations#create_proposal"
+      patch "strategy/proposals/:id", to: "strategy/deliberations#update_proposal"
+      delete "strategy/proposals/:id", to: "strategy/deliberations#destroy_proposal"
+      post "strategy/proposals/:id/reactions", to: "strategy/deliberations#create_reaction"
+      get "strategy/deliberations/:id/comments", to: "strategy/deliberations#comments"
+      post "strategy/deliberations/:id/comments", to: "strategy/deliberations#create_comment"
+      delete "strategy/deliberation-comments/:id", to: "strategy/deliberations#destroy_comment"
+
+      get "strategy/frameworks", to: "strategy/frameworks#index"
+      get "strategy/frameworks/:id", to: "strategy/frameworks#show"
+      post "strategy/frameworks", to: "strategy/frameworks#create"
+      patch "strategy/frameworks/:id", to: "strategy/frameworks#update"
+      delete "strategy/frameworks/:id", to: "strategy/frameworks#destroy"
+
+      get "strategy/axes", to: "strategy/axes#index"
+      get "strategy/axes/:id", to: "strategy/axes#show"
+      post "strategy/axes", to: "strategy/axes#create"
+      patch "strategy/axes/:id", to: "strategy/axes#update"
+      delete "strategy/axes/:id", to: "strategy/axes#destroy"
+      post "strategy/axes/:id/key-results", to: "strategy/axes#create_key_result"
+      patch "strategy/key-results/:id", to: "strategy/axes#update_key_result"
+      delete "strategy/key-results/:id", to: "strategy/axes#destroy_key_result"
 
       # Notion Records
       get "notion_records/search", to: "notion_records#search"

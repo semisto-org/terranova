@@ -100,6 +100,12 @@ class AppController < ApplicationController
     }
   end
 
+  def strategy
+    render inertia: "Strategy/Index", props: {
+      milestone: "Strategy"
+    }
+  end
+
   def admin
     return redirect_to root_path, alert: "Accès non autorisé" unless current_member.is_admin
     render inertia: "Admin/Settings", props: {
@@ -159,6 +165,8 @@ class AppController < ApplicationController
       plants
     when /\Aknowledge(\/|\z)/
       knowledge
+    when /\Astrategy(\/|\z)/
+      strategy
     when /\Aprofile(\/|\z)/
       profile
     else

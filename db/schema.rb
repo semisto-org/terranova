@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_27_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1708,6 +1708,114 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
     t.index ["to_wallet_id"], name: "index_semos_transactions_on_to_wallet_id"
   end
 
+  create_table "strategy_axes", force: :cascade do |t|
+    t.string "color"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "description"
+    t.integer "position", default: 0
+    t.integer "progress", default: 0
+    t.string "status", default: "active"
+    t.integer "target_year"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_strategy_axes_on_created_by_id"
+    t.index ["position"], name: "index_strategy_axes_on_position"
+    t.index ["status"], name: "index_strategy_axes_on_status"
+  end
+
+  create_table "strategy_deliberation_comments", force: :cascade do |t|
+    t.bigint "author_id"
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.bigint "deliberation_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_strategy_deliberation_comments_on_author_id"
+    t.index ["deliberation_id"], name: "index_strategy_deliberation_comments_on_deliberation_id"
+  end
+
+  create_table "strategy_deliberations", force: :cascade do |t|
+    t.text "context"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.datetime "decided_at"
+    t.string "decision_mode", default: "consent"
+    t.text "outcome"
+    t.string "status", default: "open", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_strategy_deliberations_on_created_by_id"
+    t.index ["status"], name: "index_strategy_deliberations_on_status"
+  end
+
+  create_table "strategy_frameworks", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.bigint "deliberation_id"
+    t.string "framework_type", default: "charter", null: false
+    t.string "status", default: "draft"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "version", default: 1
+    t.index ["created_by_id"], name: "index_strategy_frameworks_on_created_by_id"
+    t.index ["deliberation_id"], name: "index_strategy_frameworks_on_deliberation_id"
+    t.index ["framework_type"], name: "index_strategy_frameworks_on_framework_type"
+    t.index ["status"], name: "index_strategy_frameworks_on_status"
+  end
+
+  create_table "strategy_key_results", force: :cascade do |t|
+    t.bigint "axis_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "current_value", default: "0.0"
+    t.string "metric_type", default: "percentage"
+    t.integer "position", default: 0
+    t.string "status", default: "on_track"
+    t.decimal "target_value"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["axis_id"], name: "index_strategy_key_results_on_axis_id"
+  end
+
+  create_table "strategy_proposals", force: :cascade do |t|
+    t.bigint "author_id"
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.bigint "deliberation_id", null: false
+    t.string "status", default: "pending"
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_strategy_proposals_on_author_id"
+    t.index ["deliberation_id"], name: "index_strategy_proposals_on_deliberation_id"
+  end
+
+  create_table "strategy_reactions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "member_id"
+    t.string "position", null: false
+    t.bigint "proposal_id", null: false
+    t.text "rationale"
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_strategy_reactions_on_member_id"
+    t.index ["proposal_id", "member_id"], name: "index_strategy_reactions_on_proposal_id_and_member_id", unique: true
+    t.index ["proposal_id"], name: "index_strategy_reactions_on_proposal_id"
+  end
+
+  create_table "strategy_resources", force: :cascade do |t|
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.boolean "pinned", default: false
+    t.string "resource_type", default: "article", null: false
+    t.string "source_url"
+    t.text "summary"
+    t.jsonb "tags", default: []
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_strategy_resources_on_created_by_id"
+    t.index ["pinned"], name: "index_strategy_resources_on_pinned"
+    t.index ["resource_type"], name: "index_strategy_resources_on_resource_type"
+  end
+
   create_table "task_lists", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -1893,6 +2001,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_101030) do
   add_foreign_key "semos_emissions", "wallets"
   add_foreign_key "semos_transactions", "wallets", column: "from_wallet_id"
   add_foreign_key "semos_transactions", "wallets", column: "to_wallet_id"
+  add_foreign_key "strategy_axes", "members", column: "created_by_id"
+  add_foreign_key "strategy_deliberation_comments", "members", column: "author_id"
+  add_foreign_key "strategy_deliberation_comments", "strategy_deliberations", column: "deliberation_id"
+  add_foreign_key "strategy_deliberations", "members", column: "created_by_id"
+  add_foreign_key "strategy_frameworks", "members", column: "created_by_id"
+  add_foreign_key "strategy_frameworks", "strategy_deliberations", column: "deliberation_id"
+  add_foreign_key "strategy_key_results", "strategy_axes", column: "axis_id"
+  add_foreign_key "strategy_proposals", "members", column: "author_id"
+  add_foreign_key "strategy_proposals", "strategy_deliberations", column: "deliberation_id"
+  add_foreign_key "strategy_reactions", "members"
+  add_foreign_key "strategy_reactions", "strategy_proposals", column: "proposal_id"
+  add_foreign_key "strategy_resources", "members", column: "created_by_id"
   add_foreign_key "task_lists", "academy_trainings", column: "training_id"
   add_foreign_key "task_lists", "pole_projects"
   add_foreign_key "timesheets", "academy_trainings", column: "training_id"
