@@ -1,9 +1,21 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { Event, Cycle, Member, EventType } from '../types'
 
+interface CyclePeriod {
+  id: string
+  name: string
+  startsOn: string
+  endsOn: string
+  cooldownStartsOn: string
+  cooldownEndsOn: string
+  color: string
+  active: boolean
+}
+
 export interface CalendarViewProps {
   events: Event[]
   cycles: Cycle[]
+  cyclePeriods?: CyclePeriod[]
   members: Member[]
   currentMemberId: string
   firstName?: string
@@ -34,7 +46,7 @@ function getEventConfig(type: string) {
   return eventTypeConfig[type] || { ...defaultEventConfig, label: type || 'Événement' }
 }
 
-const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const DAYS_FR = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.']
 const DAYS_FR_FULL = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 const MONTHS_FR = [
   'Janvier',
@@ -104,6 +116,7 @@ interface SpanningEvent {
 export function CalendarView({
   events,
   cycles,
+  cyclePeriods = [],
   members,
   currentMemberId,
   firstName,
@@ -153,22 +166,22 @@ export function CalendarView({
     return days
   }, [currentDate])
 
-  // Get cycle phase for a specific date
+  // Get cycle phase for a specific date (checks both Shape Up cycles and cycle periods)
   const getCyclePhase = (date: Date): 'work' | 'cooldown' | null => {
+    const checkDate = new Date(date)
+    checkDate.setHours(12, 0, 0, 0)
+
+    // Check Shape Up cycles
     for (const cycle of cycles) {
       const startDate = new Date(cycle.startDate)
       const endDate = new Date(cycle.endDate)
       const cooldownStart = new Date(cycle.cooldownStart)
       const cooldownEnd = new Date(cycle.cooldownEnd)
 
-      // Set times to midnight for comparison
       startDate.setHours(0, 0, 0, 0)
       endDate.setHours(23, 59, 59, 999)
       cooldownStart.setHours(0, 0, 0, 0)
       cooldownEnd.setHours(23, 59, 59, 999)
-
-      const checkDate = new Date(date)
-      checkDate.setHours(12, 0, 0, 0)
 
       if (checkDate >= startDate && checkDate <= endDate) {
         return 'work'
@@ -177,6 +190,29 @@ export function CalendarView({
         return 'cooldown'
       }
     }
+
+    // Check cycle periods (from Paramètres > Cycles)
+    for (const cp of cyclePeriods) {
+      if (!cp.active) continue
+
+      const startDate = new Date(cp.startsOn)
+      const endDate = new Date(cp.endsOn)
+      const cooldownStart = new Date(cp.cooldownStartsOn)
+      const cooldownEnd = new Date(cp.cooldownEndsOn)
+
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(23, 59, 59, 999)
+      cooldownStart.setHours(0, 0, 0, 0)
+      cooldownEnd.setHours(23, 59, 59, 999)
+
+      if (checkDate >= startDate && checkDate <= endDate) {
+        return 'work'
+      }
+      if (checkDate >= cooldownStart && checkDate <= cooldownEnd) {
+        return 'cooldown'
+      }
+    }
+
     return null
   }
 
@@ -539,6 +575,8 @@ export function CalendarView({
                 getCyclePhase={getCyclePhase}
                 isToday={isToday}
                 onSelectEvent={setSelectedEventId}
+                members={members}
+                onCreateEvent={onCreateEvent}
               />
             ) : (
               <WeekView
@@ -586,6 +624,8 @@ interface MonthViewProps {
   getCyclePhase: (date: Date) => 'work' | 'cooldown' | null
   isToday: (date: Date) => boolean
   onSelectEvent: (eventId: string) => void
+  members: Member[]
+  onCreateEvent?: () => void
 }
 
 function MonthView({
@@ -595,7 +635,26 @@ function MonthView({
   getCyclePhase,
   isToday,
   onSelectEvent,
+  members,
+  onCreateEvent,
 }: MonthViewProps) {
+  // Format time in French style (9h, 9h30, 17h)
+  const formatTimeFr = (dateString: string): string => {
+    const d = new Date(dateString)
+    const h = d.getHours()
+    const m = d.getMinutes()
+    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+  }
+
+  // Format time range (9h30-17h) or null for all-day events
+  const formatTimeRange = (event: Event): string | null => {
+    if (event.allDay) return null
+    const start = formatTimeFr(event.startDate)
+    const end = formatTimeFr(event.endDate)
+    if (start === end) return start
+    return `${start}-${end}`
+  }
+
   // Determine background color based on cycle phase
   const getBgClass = (date: Date, isCurrentMonth: boolean) => {
     const cyclePhase = getCyclePhase(date)
@@ -663,10 +722,10 @@ function MonthView({
                       ${!spanEvent.continuesToNextWeek ? 'rounded-r' : 'rounded-r-none'}
                     `}
                     style={{
-                      top: `${DAY_NUMBER_HEIGHT + eventIndex * 20}px`,
-                      left: `calc(${leftPercent}% + 6px)`,
-                      width: `calc(${widthPercent}% - 12px)`,
-                      height: '18px',
+                      top: `${DAY_NUMBER_HEIGHT + eventIndex * 24}px`,
+                      left: `calc(${leftPercent}% + 4px)`,
+                      width: `calc(${widthPercent}% - 8px)`,
+                      height: '22px',
                     }}
                     title={spanEvent.event.title}
                   >
@@ -689,7 +748,7 @@ function MonthView({
                 return (
                   <div
                     key={dayIndex}
-                    className={`min-h-[100px] p-1.5 transition-colors ${getBgClass(dayInfo.date, dayInfo.isCurrentMonth)}`}
+                    className={`group relative min-h-[140px] p-1.5 transition-colors ${getBgClass(dayInfo.date, dayInfo.isCurrentMonth)}`}
                   >
                     {/* Day number */}
                     <div className="flex items-center justify-between mb-1">
@@ -703,36 +762,80 @@ function MonthView({
                       >
                         {dayInfo.date.getDate()}
                       </span>
+                      {onCreateEvent && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onCreateEvent()
+                          }}
+                          className="w-5 h-5 rounded-full bg-stone-200 hover:bg-[#5B5781] hover:text-white text-stone-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs leading-none"
+                          title="Nouvel événement"
+                        >
+                          +
+                        </button>
+                      )}
                     </div>
 
                     {/* Spacer for spanning events */}
                     {spanningCount > 0 && (
-                      <div style={{ height: `${spanningCount * 20}px` }} />
+                      <div style={{ height: `${spanningCount * 24}px` }} />
                     )}
 
                     {/* Single-day events */}
-                    <div className="space-y-0.5">
-                      {singleDayEvents.slice(0, 3).map((singleEvent) => {
+                    <div className="space-y-1">
+                      {singleDayEvents.slice(0, 2).map((singleEvent) => {
                         const config = getEventConfig(singleEvent.event.type)
+                        const timeRange = formatTimeRange(singleEvent.event)
+                        const firstAttendee = singleEvent.event.attendeeIds.length > 0
+                          ? members.find((m) => m.id === singleEvent.event.attendeeIds[0])
+                          : null
+
                         return (
                           <button
                             key={singleEvent.event.id}
                             onClick={() => onSelectEvent(singleEvent.event.id)}
                             className={`
-                              w-full text-left px-1.5 py-0.5 text-[10px] font-medium truncate
-                              transition-opacity hover:opacity-80 rounded
-                              ${config.bgColor} ${config.color}
+                              w-full text-left px-1.5 py-1 rounded transition-opacity hover:opacity-80
+                              ${config.bgColor}
                             `}
                             title={singleEvent.event.title}
                           >
-                            <span className="mr-0.5">{config.icon}</span>
-                            <span className="hidden lg:inline">{singleEvent.event.title}</span>
+                            {/* Title */}
+                            <p className={`text-[11px] font-semibold truncate ${config.color}`}>
+                              {singleEvent.event.title}
+                            </p>
+
+                            {/* Type badge + Time (lg+) */}
+                            <div className="hidden lg:flex items-center gap-1 mt-0.5">
+                              <span className={`inline-block px-1 py-px text-[9px] font-medium rounded ${config.color} bg-white/50 truncate max-w-[70px]`}>
+                                {config.label}
+                              </span>
+                              {timeRange && (
+                                <span className="text-[9px] text-stone-500 whitespace-nowrap">
+                                  {timeRange}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Attendee (xl+) */}
+                            {firstAttendee && (
+                              <div className="hidden xl:flex items-center gap-1 mt-0.5">
+                                <img
+                                  src={firstAttendee.avatar}
+                                  alt={firstAttendee.firstName}
+                                  className="w-3.5 h-3.5 rounded-full"
+                                />
+                                <span className="text-[9px] text-stone-500 truncate">
+                                  {firstAttendee.firstName}
+                                </span>
+                              </div>
+                            )}
                           </button>
                         )
                       })}
-                      {singleDayEvents.length > 3 && (
+                      {singleDayEvents.length > 2 && (
                         <p className="text-[10px] text-stone-400 px-1">
-                          +{singleDayEvents.length - 3} autres
+                          +{singleDayEvents.length - 2} autres
                         </p>
                       )}
                     </div>

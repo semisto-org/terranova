@@ -106,6 +106,12 @@ class AppController < ApplicationController
     }
   end
 
+  def marketplace
+    render inertia: "Marketplace/Index", props: {
+      milestone: "Marketplace Semos"
+    }
+  end
+
   def admin
     return redirect_to root_path, alert: "Accès non autorisé" unless current_member.is_admin
     render inertia: "Admin/Settings", props: {
@@ -161,6 +167,8 @@ class AppController < ApplicationController
       academy
     when /\Anursery(\/|\z)/
       nursery
+    when /\Amarketplace(\/|\z)/
+      marketplace
     when /\Aplants(\/|\z)/
       plants
     when /\Aknowledge(\/|\z)/
@@ -183,12 +191,8 @@ class AppController < ApplicationController
       return
     end
 
-    begin
-      data = Rails.application.message_verifier(:client_portal).verify(token, purpose: :client_portal_access)
-      unless data[:project_id].to_s == params[:project_id].to_s
-        render plain: "Lien invalide.", status: :unauthorized
-      end
-    rescue ActiveSupport::MessageVerifier::InvalidSignature
+    project = Design::Project.find_by(id: params[:project_id], client_portal_token: token)
+    unless project
       render plain: "Lien invalide.", status: :unauthorized
     end
   end

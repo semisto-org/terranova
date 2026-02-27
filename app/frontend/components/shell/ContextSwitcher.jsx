@@ -10,6 +10,7 @@ const POLES = [
   { id: 'plants', label: 'Bases de données végétales', path: '/plants', accent: '#5B5781', bg: '#c8bfd2' },
   { id: 'knowledge', label: 'Base de connaissances', path: '/knowledge', accent: '#0D9488', bg: '#ccfbf1' },
   { id: 'strategy', label: 'Stratego', path: '/strategy', accent: '#2563EB', bg: '#dbeafe' },
+  { id: 'marketplace', label: 'Marketplace', path: '/marketplace', accent: '#D946EF', bg: '#fae8ff' },
   { id: 'admin', label: 'Administration', path: '/admin', accent: '#64748B', bg: '#e2e8f0' },
   { id: 'parametres', label: 'Paramètres', path: '/parametres', accent: '#64748B', bg: '#e2e8f0' },
 ]
@@ -118,7 +119,7 @@ export default function ContextSwitcher() {
 
           {!isAdherent && (<div className="py-1.5 border-t border-stone-100">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Lab Wallonie</p>
-            {POLES.filter((p) => !['home', 'plants', 'knowledge', 'strategy', 'parametres', 'admin'].includes(p.id)).map((pole) => (
+            {POLES.filter((p) => !['home', 'plants', 'knowledge', 'strategy', 'marketplace', 'parametres', 'admin'].includes(p.id)).map((pole) => (
               <Link
                 key={pole.id}
                 href={pole.path}
@@ -181,6 +182,18 @@ export default function ContextSwitcher() {
             >
               <span className="w-5 h-5 rounded flex items-center justify-center bg-blue-600 text-white text-[10px] font-bold shrink-0">S</span>
               Stratego
+            </Link>
+            <Link
+              href="/marketplace"
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
+                currentPole.id === 'marketplace'
+                  ? 'bg-stone-50 text-stone-900 font-medium'
+                  : 'text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              <span className="w-5 h-5 rounded flex items-center justify-center bg-fuchsia-500 text-white text-[10px] font-bold shrink-0">M</span>
+              Marketplace
             </Link>
           </div>
 

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Palette, Plus, Trash2, Download } from 'lucide-react'
+import { ExternalLink, Palette, Plus, Trash2 } from 'lucide-react'
 import type { PlantPalette, PaletteItem, PlantLayer } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
+import { SpeciesDrawer } from '../SpeciesDrawer'
 
 const LAYERS: PlantLayer[] = [
   'canopy',
@@ -46,6 +47,7 @@ export function PaletteTab({
   onDeletePaletteItem,
   onImportPlantPalette,
 }: PaletteTabProps) {
+  const [speciesDrawerId, setSpeciesDrawerId] = useState<string | null>(null)
   const [form, setForm] = useState({
     species_id: '',
     species_name: '',
@@ -222,12 +224,25 @@ export function PaletteTab({
                     key={item.id}
                     className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50/50"
                   >
-                    <div>
-                      <p className="font-medium text-stone-900">
-                        {item.speciesName}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      {item.linkedToSpecies ? (
+                        <button
+                          type="button"
+                          onClick={() => setSpeciesDrawerId(item.speciesId)}
+                          className="group inline-flex items-center gap-1.5 font-medium text-stone-900 hover:text-[#AFBD00] transition-colors text-left"
+                        >
+                          <span className="underline decoration-[#AFBD00]/40 decoration-dotted underline-offset-2 group-hover:decoration-[#AFBD00]">
+                            {item.speciesName}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#AFBD00] flex-shrink-0" />
+                        </button>
+                      ) : (
+                        <p className="font-medium text-stone-900">
+                          {item.speciesName}
+                        </p>
+                      )}
                       {item.commonName && (
-                        <p className="text-xs text-stone-500">
+                        <p className="text-xs text-stone-500 mt-0.5">
                           {item.commonName}
                         </p>
                       )}
@@ -252,6 +267,12 @@ export function PaletteTab({
           ))}
         </div>
       )}
+
+      <SpeciesDrawer
+        speciesId={speciesDrawerId}
+        onClose={() => setSpeciesDrawerId(null)}
+        onSpeciesSelect={(id) => setSpeciesDrawerId(id)}
+      />
     </div>
   )
 }

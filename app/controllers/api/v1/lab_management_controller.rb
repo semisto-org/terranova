@@ -24,6 +24,7 @@ module Api
         render json: {
           members: serialize_members,
           cycles: serialize_cycles,
+          cyclePeriods: serialize_cycle_periods,
           guilds: serialize_guilds,
           pitches: serialize_pitches,
           bets: serialize_bets,

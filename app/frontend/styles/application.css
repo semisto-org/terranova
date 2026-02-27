@@ -189,3 +189,71 @@
   top: 40%; left: -5%;
   animation: auth-blob-5 24s ease-in-out infinite;
 }
+
+/* ─── Marketplace Semos ─── */
+
+@keyframes mkt-rise {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mkt-slide-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes mkt-price-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@keyframes mkt-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes mkt-grain-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-2px, 1px); }
+}
+
+.mkt-card-enter {
+  animation: mkt-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mkt-detail-enter {
+  animation: mkt-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mkt-price-hover:hover .mkt-price-value {
+  animation: mkt-price-pop 0.35s ease-out;
+}
+
+.mkt-skeleton {
+  background: linear-gradient(90deg, #f5f5f4 25%, #e7e5e4 50%, #f5f5f4 75%);
+  background-size: 200% 100%;
+  animation: mkt-shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.mkt-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  animation: mkt-grain-drift 8s ease-in-out infinite;
+}
+
+.mkt-card-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(28,25,23,0.5) 0%, transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mkt-card-image:hover::after {
+  opacity: 1;
+}

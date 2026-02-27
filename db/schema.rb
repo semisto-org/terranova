@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_181333) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -606,6 +606,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_181333) do
     t.jsonb "client_interests", default: [], null: false
     t.string "client_name", null: false
     t.string "client_phone", default: "", null: false
+    t.string "client_portal_token", limit: 16
     t.string "country_name", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -635,6 +636,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_181333) do
     t.bigint "template_id"
     t.datetime "updated_at", null: false
     t.string "website_url", default: "", null: false
+    t.index ["client_portal_token"], name: "index_design_projects_on_client_portal_token", unique: true
     t.index ["deleted_at"], name: "index_design_projects_on_deleted_at"
     t.index ["name"], name: "idx_design_projects_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["notion_id"], name: "index_design_projects_on_notion_id", unique: true
@@ -1019,6 +1021,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_181333) do
     t.datetime "updated_at", null: false
     t.string "website_url"
     t.index ["notion_id"], name: "index_locations_on_notion_id", unique: true
+  end
+
+  create_table "marketplace_listings", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.text "description", default: "", null: false
+    t.bigint "member_id", null: false
+    t.integer "price_semos", null: false
+    t.string "status", default: "active", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_marketplace_listings_on_category"
+    t.index ["member_id"], name: "index_marketplace_listings_on_member_id"
+    t.index ["status", "deleted_at"], name: "index_marketplace_listings_on_status_and_deleted_at"
   end
 
   create_table "member_roles", force: :cascade do |t|
@@ -1964,6 +1981,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_181333) do
   add_foreign_key "knowledge_topics", "knowledge_sections", column: "section_id"
   add_foreign_key "knowledge_topics", "members", column: "created_by_id"
   add_foreign_key "location_zones", "locations"
+  add_foreign_key "marketplace_listings", "members"
   add_foreign_key "member_roles", "members"
   add_foreign_key "notes", "pole_projects"
   add_foreign_key "notion_assets", "notion_records"

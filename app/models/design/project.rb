@@ -50,6 +50,17 @@ module Design
       parts.join(', ')
     end
 
+    def ensure_client_portal_token!
+      return client_portal_token if client_portal_token.present?
+
+      loop do
+        self.client_portal_token = SecureRandom.urlsafe_base64(12)[0, 16]
+        break unless Design::Project.exists?(client_portal_token: client_portal_token)
+      end
+      save!
+      client_portal_token
+    end
+
     private
 
     def normalize_client_interests

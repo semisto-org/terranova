@@ -32,6 +32,7 @@ Rails.application.routes.draw do
   get "profile", to: "app#profile"
   get "knowledge", to: "app#knowledge"
   get "strategy", to: "app#strategy"
+  get "marketplace", to: "app#marketplace"
   get "admin", to: "app#admin"
   get "admin/settings", to: "app#admin"
   get "parametres", to: "app#parametres"
@@ -52,6 +53,7 @@ Rails.application.routes.draw do
       get "foundation/routes", to: "foundation#routes"
       get "foundation/shell", to: "foundation#shell"
       get "foundation/milestone", to: "foundation#milestone"
+      get "foundation/impact", to: "foundation#impact"
 
       get "geocoding", to: "geocoding#show"
 
@@ -328,6 +330,15 @@ Rails.application.routes.draw do
       post "nursery/nurseries", to: "nursery#create_nursery"
       patch "nursery/nurseries/:nursery_id", to: "nursery#update_nursery"
       delete "nursery/nurseries/:nursery_id", to: "nursery#destroy_nursery"
+
+      # Marketplace Semos
+      get "marketplace", to: "marketplace#index"
+      get "marketplace/mine", to: "marketplace#mine"
+      get "marketplace/:id", to: "marketplace#show"
+      post "marketplace", to: "marketplace#create"
+      patch "marketplace/:id", to: "marketplace#update"
+      delete "marketplace/:id", to: "marketplace#destroy"
+      delete "marketplace/:id/images/:image_id", to: "marketplace#destroy_image"
 
       # Knowledge Base
       get "knowledge/sections", to: "knowledge/sections#index"

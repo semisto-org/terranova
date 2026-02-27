@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, AlertTriangle, Loader2, Map, Navigation } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, HelpCircle, Loader2, Map, Navigation } from 'lucide-react'
 import type { SiteAnalysis } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
 
@@ -15,6 +15,7 @@ type FieldConfig = {
   key: string
   label: string
   placeholder?: string
+  tooltip?: string
 }
 
 type SectionConfig = {
@@ -30,8 +31,8 @@ const SECTION_CONFIG: SectionConfig[] = [
     label: 'Climat',
     sourceKeys: ['climate'],
     fields: [
-      { key: 'temperature', label: 'Température', placeholder: 'Amplitude, périodes extrêmes' },
-      { key: 'rain', label: 'Pluie', placeholder: 'Pluviométrie, saisonnalité' },
+      { key: 'temperature', label: 'Température', placeholder: 'Amplitude, périodes extrêmes', tooltip: 'Nous considérons les maximas et minimas annuels. Mais il faut aussi se pencher sur les t° moyenne au long de l\'année, et surtout la période de gel tardif. Tout cela se trouve sur le site national en charge de la météo et du climat pour votre pays/région.' },
+      { key: 'rain', label: 'Pluie', placeholder: 'Pluviométrie, saisonnalité', tooltip: 'Exemple : Min : 53,0 (avril) | Max : 83,3 (décembre). Restez attentif à la quantité de précipitations de 1 mm en rapport avec 10 mm (voir la vidéo didactique de Fabian Féraux à ce sujet)' },
       { key: 'wind', label: 'Vent', placeholder: 'Dominants, rafales, zones exposées' },
       { key: 'sun', label: 'Ensoleillement', placeholder: 'Orientation, ombres portées' },
       { key: 'exposure_constraints', label: 'Contraintes d’exposition', placeholder: 'Éléments bloquants relevés' },
@@ -361,7 +362,18 @@ export function SiteAnalysisTab({ siteAnalysis, onSave, busy = false }: SiteAnal
                 return (
                   <div key={field.key} className="rounded-xl border border-stone-100 bg-stone-50/50 p-3">
                     <label className="grid gap-1">
-                      <span className="text-xs font-medium text-stone-700">{field.label}</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-700">
+                        {field.label}
+                        {field.tooltip && (
+                          <span className="relative inline-flex group/help">
+                            <HelpCircle className="h-3.5 w-3.5 shrink-0 text-stone-400 cursor-help" aria-hidden />
+                            <span className="absolute bottom-full left-0 mb-2 px-3 py-2 w-72 max-w-[calc(100vw-2rem)] text-left text-xs font-normal text-white rounded-lg opacity-0 invisible group-hover/help:opacity-100 group-hover/help:visible transition-all duration-200 z-50 shadow-xl pointer-events-none bg-stone-900/95 whitespace-normal">
+                              {field.tooltip}
+                              <span className="absolute top-full left-4 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-stone-900/95" />
+                            </span>
+                          </span>
+                        )}
+                      </span>
                       <input
                         type="text"
                         value={fieldValue.value}

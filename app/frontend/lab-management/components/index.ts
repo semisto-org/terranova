@@ -48,3 +48,4 @@ export { MemberPicker, MultiMemberPicker, MemberDisplay, MemberAvatarStack } fro
 export type { MemberOption } from './MemberPicker'
 export { MyTasksDashboard } from './MyTasksDashboard'
 export { ReportingDashboard } from './ReportingDashboard'
+export { ImpactDashboard } from './ImpactDashboard'

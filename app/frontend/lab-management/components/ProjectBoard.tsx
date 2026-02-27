@@ -32,6 +32,8 @@ const FILTER_TABS = [
   { id: 'Standby', label: 'Standby' },
 ]
 
+const STATUS_GROUP_ORDER = ['En cours', 'En attente', 'Idée', 'Standby', 'Terminé', 'Annulé', 'No go']
+
 export function ProjectBoard() {
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,6 +78,17 @@ export function ProjectBoard() {
     const active = projects.filter(p => ['En cours', 'En attente', 'Idée'].includes(p.status)).length
     return { active, total: projects.length }
   }, [projects])
+
+  const groupedByStatus = useMemo(() => {
+    const groups: Record<string, ProjectSummary[]> = {}
+    for (const p of filtered) {
+      if (!groups[p.status]) groups[p.status] = []
+      groups[p.status].push(p)
+    }
+    const ordered = STATUS_GROUP_ORDER.filter(status => (groups[status]?.length ?? 0) > 0)
+    const rest = Object.keys(groups).filter(s => !STATUS_GROUP_ORDER.includes(s))
+    return [...ordered, ...rest].map(status => ({ status, items: groups[status] ?? [] }))
+  }, [filtered])
 
   if (selectedProjectId) {
     return (
@@ -146,74 +159,88 @@ export function ProjectBoard() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map(project => {
-            const sc = STATUS_CONFIG[project.status] || STATUS_CONFIG['Standby']
-            const progress = project.totalActions > 0
-              ? Math.round((project.completedActions / project.totalActions) * 100)
-              : null
-
+        <div className="space-y-6">
+          {groupedByStatus.map(({ status, items }) => {
+            const sc = STATUS_CONFIG[status] || STATUS_CONFIG['Standby']
             return (
-              <button
-                key={project.id}
-                onClick={() => setSelectedProjectId(project.id)}
-                className="w-full text-left bg-white rounded-xl border border-stone-200 px-5 py-4 hover:border-stone-300 hover:shadow-md transition-all duration-300 ease-out group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${sc.dot} opacity-70 group-hover:opacity-100 transition-opacity`} />
+              <section key={status}>
+                <h2 className="flex items-center gap-2 mb-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                  <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
+                  {status}
+                  <span className="font-normal normal-case tracking-normal text-stone-400">({items.length})</span>
+                </h2>
+                <div className="space-y-2">
+                  {items.map(project => {
+                    const psc = STATUS_CONFIG[project.status] || STATUS_CONFIG['Standby']
+                    const progress = project.totalActions > 0
+                      ? Math.round((project.completedActions / project.totalActions) * 100)
+                      : null
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5 mb-1.5">
-                      <h3 className="text-[15px] font-semibold text-stone-900 truncate group-hover:text-[#5B5781] transition-colors">
-                        {project.name}
-                      </h3>
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                        {project.status}
-                      </span>
-                    </div>
+                    return (
+                      <button
+                        key={project.id}
+                        onClick={() => setSelectedProjectId(project.id)}
+                        className="w-full text-left bg-white rounded-xl border border-stone-200 px-5 py-4 hover:border-stone-300 hover:shadow-md transition-all duration-300 ease-out group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${psc.dot} opacity-70 group-hover:opacity-100 transition-opacity`} />
 
-                    <div className="flex items-center gap-4 text-xs text-stone-500">
-                      {project.leadName && (
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {project.leadName}
-                        </span>
-                      )}
-                      {project.teamNames?.length > 0 && (
-                        <span className="truncate max-w-[200px]">{project.teamNames.join(', ')}</span>
-                      )}
-                    </div>
-                  </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2.5 mb-1.5">
+                              <h3 className="text-[15px] font-semibold text-stone-900 truncate group-hover:text-[#5B5781] transition-colors">
+                                {project.name}
+                              </h3>
+                              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${psc.bg} ${psc.text}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${psc.dot}`} />
+                                {project.status}
+                              </span>
+                            </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {project.totalActions > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-xs text-stone-500">
-                          {progress === 100 ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          ) : (
-                            <Circle className="w-3.5 h-3.5" />
-                          )}
-                          <span className="tabular-nums">
-                            {project.completedActions}/{project.totalActions}
-                          </span>
+                            <div className="flex items-center gap-4 text-xs text-stone-500">
+                              {project.leadName && (
+                                <span className="flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  {project.leadName}
+                                </span>
+                              )}
+                              {project.teamNames?.length > 0 && (
+                                <span className="truncate max-w-[200px]">{project.teamNames.join(', ')}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {project.totalActions > 0 && (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 text-xs text-stone-500">
+                                  {progress === 100 ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                  ) : (
+                                    <Circle className="w-3.5 h-3.5" />
+                                  )}
+                                  <span className="tabular-nums">
+                                    {project.completedActions}/{project.totalActions}
+                                  </span>
+                                </div>
+                                <div className="w-16 h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-500 ease-out"
+                                    style={{
+                                      width: `${progress}%`,
+                                      backgroundColor: progress === 100 ? '#10b981' : '#5B5781',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-[#5B5781] group-hover:translate-x-0.5 transition-all" />
+                          </div>
                         </div>
-                        <div className="w-16 h-1.5 rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500 ease-out"
-                            style={{
-                              width: `${progress}%`,
-                              backgroundColor: progress === 100 ? '#10b981' : '#5B5781',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-[#5B5781] group-hover:translate-x-0.5 transition-all" />
-                  </div>
+                      </button>
+                    )
+                  })}
                 </div>
-              </button>
+              </section>
             )
           })}
         </div>

@@ -680,10 +680,7 @@ module Api
 
       def generate_client_portal_link
         project = find_project
-        token = Rails.application.message_verifier(:client_portal).generate(
-          { project_id: project.id.to_s },
-          purpose: :client_portal_access
-        )
+        token = project.ensure_client_portal_token!
 
         render json: {
           url: "#{request.base_url}/client/design/#{project.id}?token=#{token}",
@@ -702,15 +699,9 @@ module Api
           return
         end
 
-        begin
-          data = Rails.application.message_verifier(:client_portal).verify(token, purpose: :client_portal_access)
-          data = data.with_indifferent_access if data.respond_to?(:with_indifferent_access)
-          expected_project_id = project_id_for_client_portal_check
-          token_project_id = (data["project_id"] || data[:project_id])&.to_s
-          if expected_project_id.present? && token_project_id != expected_project_id
-            render json: { error: "Token invalide pour ce projet" }, status: :unauthorized
-          end
-        rescue ActiveSupport::MessageVerifier::InvalidSignature
+        expected_project_id = project_id_for_client_portal_check
+        project = Design::Project.find_by(id: expected_project_id, client_portal_token: token)
+        unless project
           render json: { error: "Lien invalide" }, status: :unauthorized
         end
       end

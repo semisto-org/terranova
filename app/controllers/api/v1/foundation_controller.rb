@@ -65,6 +65,11 @@ module Api
           next_milestone: "Lab Management"
         }
       end
+
+      def impact
+        data = ImpactDashboardService.new.call
+        render json: data
+      end
     end
   end
 end

@@ -16,7 +16,11 @@ import {
   Pencil,
   Trash2,
   ListTodo,
+  ExternalLink,
+  Copy,
+  Check,
 } from 'lucide-react'
+import { apiRequest } from '../../lib/api'
 import { TabLayout, TabItem } from './shared/TabLayout'
 import { PhaseIndicator } from './shared/PhaseIndicator'
 import { StatusIndicator } from './shared/StatusIndicator'
@@ -271,7 +275,29 @@ export function ProjectDetailView({
 }: ProjectDetailViewProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [searchQuery, setSearchQuery] = useState('')
+  const [clientPortalUrl, setClientPortalUrl] = useState<string | null>(null)
+  const [portalLinkLoading, setPortalLinkLoading] = useState(false)
+  const [portalLinkCopied, setPortalLinkCopied] = useState(false)
   const project = detail.project
+
+  const handleGeneratePortalLink = async () => {
+    if (clientPortalUrl) {
+      await navigator.clipboard.writeText(clientPortalUrl)
+      setPortalLinkCopied(true)
+      setTimeout(() => setPortalLinkCopied(false), 2000)
+      return
+    }
+    setPortalLinkLoading(true)
+    try {
+      const data = await apiRequest(`/api/v1/design/${project.id}/client-portal-link`, { method: 'POST' })
+      setClientPortalUrl(data.url)
+      await navigator.clipboard.writeText(data.url)
+      setPortalLinkCopied(true)
+      setTimeout(() => setPortalLinkCopied(false), 2000)
+    } finally {
+      setPortalLinkLoading(false)
+    }
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -312,6 +338,33 @@ export function ProjectDetailView({
                     <Trash2 className="w-3.5 h-3.5" />
                     Supprimer
                   </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleGeneratePortalLink}
+                  disabled={portalLinkLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#6B7A00] bg-[#AFBD00]/10 hover:bg-[#AFBD00]/20 rounded-lg transition-colors"
+                  title={clientPortalUrl ? 'Copier le lien du portail client' : 'Générer le lien du portail client'}
+                >
+                  {portalLinkCopied ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : clientPortalUrl ? (
+                    <Copy className="w-3.5 h-3.5" />
+                  ) : (
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  )}
+                  {portalLinkCopied ? 'Copié !' : portalLinkLoading ? 'Génération…' : 'Portail client'}
+                </button>
+                {clientPortalUrl && (
+                  <a
+                    href={clientPortalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#6B7A00] hover:text-[#5a6800] underline underline-offset-2"
+                  >
+                    Ouvrir le portail
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 )}
               </div>
               <h1 className="text-2xl font-serif font-semibold text-stone-900 tracking-tight">

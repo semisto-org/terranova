@@ -10,6 +10,7 @@ import {
   SemosDashboard,
   MyTasksDashboard,
   ProjectBoard,
+  ImpactDashboard,
 } from '../../lab-management/components'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
@@ -18,6 +19,7 @@ const SECTION_TABS = [
   { id: 'projects', label: 'Projets' },
   { id: 'shapeup', label: 'Shape Up' },
   { id: 'semos', label: 'Semos' },
+  { id: 'impact', label: 'Impact' },
 ]
 
 const APPETITES = ['2-weeks', '3-weeks', '6-weeks']
@@ -187,6 +189,7 @@ export default function HomeIndex() {
 
   const members = overviewData?.members ?? []
   const cycles = overviewData?.cycles ?? []
+  const cyclePeriods = overviewData?.cyclePeriods ?? []
   const pitches = overviewData?.pitches ?? []
   const scopes = overviewData?.scopes ?? []
 
@@ -513,6 +516,7 @@ export default function HomeIndex() {
           <CalendarView
             events={events}
             cycles={cycles}
+            cyclePeriods={cyclePeriods}
             members={members}
             currentMemberId={currentMemberId}
             firstName={firstName}
@@ -580,6 +584,10 @@ export default function HomeIndex() {
           rates={overviewData?.semosRates ?? []}
           currentMemberId={currentMemberId}
         />
+      )}
+
+      {tab === 'impact' && (
+        <ImpactDashboard />
       )}
 
       {formModal && (
