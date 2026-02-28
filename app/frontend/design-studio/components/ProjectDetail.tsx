@@ -70,6 +70,7 @@ export interface ProjectDetailPayload {
     }
     startDate: string | null
     plantingDate: string | null
+    googlePhotosUrl?: string | null
     updatedAt: string
   }
   teamMembers: Array<{
@@ -206,6 +207,7 @@ export interface ProjectDetailActions {
   onAddPaletteItem: (v: Record<string, unknown>) => void
   onDeletePaletteItem: (id: string) => void
   onImportPlantPalette: (paletteId: string) => void
+  onExportToPlantDB?: () => void
   onSavePlantingPlan: (v: { image_url: string; layout: string }) => void
   onExportPlan: (format: 'pdf' | 'image') => void
   onUploadPlanImage: (file: File) => void
@@ -473,9 +475,9 @@ export function ProjectDetailView({
             {activeTab === 'palette' && (
               <PaletteTab
                 plantPalette={detail.plantPalette as import('../types').PlantPalette | null}
-                onAddPaletteItem={a.onAddPaletteItem}
                 onDeletePaletteItem={a.onDeletePaletteItem}
                 onImportPlantPalette={a.onImportPlantPalette}
+                onExportToPlantDB={a.onExportToPlantDB}
               />
             )}
             {activeTab === 'planting-plan' && (
@@ -534,7 +536,9 @@ export function ProjectDetailView({
                   postcode: project.postcode,
                   countryName: project.countryName,
                   coordinates: project.coordinates,
+                  googlePhotosUrl: project.googlePhotosUrl,
                 }}
+                projectId={project.id}
                 teamMembers={detail.teamMembers as any}
                 projectPhase={project.phase}
                 onUpdateAddress={a.onUpdateAddress ?? (async () => {})}

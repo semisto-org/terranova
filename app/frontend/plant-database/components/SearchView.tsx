@@ -8,6 +8,7 @@ export function SearchView({
   results,
   filters,
   paletteItemIds = [],
+  isItemInPalette,
   onSearchChange,
   onFiltersChange,
   onResultSelect,
@@ -233,7 +234,11 @@ export function SearchView({
                   <SearchResultItem
                     result={result}
                     isFocused={index === focusedIndex}
-                    isInPalette={paletteItemIds.includes(result.id)}
+                    isInPalette={
+                      isItemInPalette && result.type !== 'genus'
+                        ? isItemInPalette(result.id, result.type)
+                        : paletteItemIds.includes(result.id)
+                    }
                     onSelect={() => onResultSelect?.(result.id, result.type)}
                     onAddToPalette={
                       result.type !== 'genus'

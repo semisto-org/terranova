@@ -33,7 +33,16 @@ export function VarietyDetail({
   varieties = [],
   onVarietySelect,
   onEdit,
-}: VarietyDetailProps & { filterOptions: FilterOptions; varieties?: any[]; onVarietySelect?: (varietyId: string) => void; onEdit?: () => void }) {
+  isInPalette = false,
+  onRemoveFromPalette,
+}: VarietyDetailProps & {
+  filterOptions: FilterOptions
+  varieties?: any[]
+  onVarietySelect?: (varietyId: string) => void
+  onEdit?: () => void
+  isInPalette?: boolean
+  onRemoveFromPalette?: () => void
+}) {
   const primaryCommonName = commonNames.find((cn) => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter((cn) => cn.language !== 'fr')
 
@@ -101,7 +110,11 @@ export function VarietyDetail({
           {/* Add to palette */}
           {onAddToPalette && (
             <div className="mt-4">
-              <AddToPaletteButton onAddToPalette={onAddToPalette} />
+              <AddToPaletteButton
+                onAddToPalette={onAddToPalette}
+                onRemoveFromPalette={onRemoveFromPalette}
+                isInPalette={isInPalette}
+              />
             </div>
           )}
         </div>

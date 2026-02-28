@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import * as Sentry from '@sentry/react'
+import { usePage } from '@inertiajs/react'
+import { apiRequest } from '../../lib/api'
 import NovaChatButton from './NovaChatButton'
 import NovaChatPanel from './NovaChatPanel'
 
 const STORAGE_KEY = 'nova-chat-messages'
+const DEBUG = true // Nova chat debug logging
 
 function loadMessages() {
   try {
@@ -20,6 +24,7 @@ function saveMessages(messages) {
 }
 
 export default function NovaChat() {
+  const { component: currentPage, url: currentUrl } = usePage()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState(loadMessages)
   const [isTyping, setIsTyping] = useState(false)
@@ -57,18 +62,25 @@ export default function NovaChat() {
     setIsTyping(true)
 
     // Cancel any previous in-flight request
-    if (abortRef.current) abortRef.current.abort()
+    if (abortRef.current) {
+      if (DEBUG) console.log('[Nova] Aborting previous in-flight request')
+      abortRef.current.abort()
+    }
     const controller = new AbortController()
     abortRef.current = controller
 
+    if (DEBUG) console.log('[Nova] Sending message:', text.substring(0, 80))
+
     try {
-      const response = await fetch('/api/v1/nova/chat', {
+      const data = await apiRequest('/api/v1/nova/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, page: currentPage, url: currentUrl }),
         signal: controller.signal,
       })
-      const data = await response.json()
+      if (DEBUG) console.log('[Nova] Response received:', JSON.stringify(data).substring(0, 200))
+      if (data.error) {
+        Sentry.captureMessage(`Nova chat error response: ${data.error}`, { level: 'warning', extra: { userMessage: text.substring(0, 100) } })
+      }
       const novaMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -78,7 +90,12 @@ export default function NovaChat() {
       setMessages((prev) => [...prev, novaMessage])
       if (!isOpen) setUnreadCount((c) => c + 1)
     } catch (err) {
-      if (err.name === 'AbortError') return
+      if (err.name === 'AbortError') {
+        if (DEBUG) console.log('[Nova] Request aborted')
+        return
+      }
+      console.error('[Nova] Request failed:', err.message, err)
+      Sentry.captureException(err, { tags: { feature: 'nova-chat' }, extra: { userMessage: text.substring(0, 100) } })
       const errorMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

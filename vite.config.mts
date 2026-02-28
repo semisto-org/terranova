@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,7 +9,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const frontendRoot = path.resolve(__dirname, 'app/frontend')
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(mode === 'production' && process.env.SENTRY_AUTH_TOKEN
+      ? [sentryVitePlugin({
+          org: process.env.SENTRY_ORG,
+          project: process.env.SENTRY_PROJECT,
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        })]
+      : []),
+  ],
   root: 'app/frontend',
   base: mode === 'development' ? '/vite-dev/' : '/vite/',
   server: {
@@ -18,6 +29,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     manifest: true,
+    sourcemap: true,
     outDir: '../../public/vite',
     rollupOptions: {
       input: path.resolve(frontendRoot, 'entrypoints/application.jsx'),

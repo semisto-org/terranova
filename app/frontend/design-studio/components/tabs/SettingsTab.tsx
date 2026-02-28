@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Users, Trash2, MapPin, Loader2 } from 'lucide-react'
+import { Users, Trash2, MapPin, Loader2, Camera } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import type { TeamMember, TeamRole } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
@@ -11,6 +11,7 @@ interface ProjectAddress {
   postcode?: string
   countryName?: string
   coordinates?: { lat: number; lng: number }
+  googlePhotosUrl?: string | null
 }
 
 const roleLabels: Record<TeamRole, string> = {
@@ -36,6 +37,7 @@ interface SettingsTabProps {
   project: ProjectAddress
   teamMembers: TeamMember[]
   projectPhase: string
+  projectId: string
   onUpdateAddress: (values: {
     street: string
     number: string
@@ -57,6 +59,7 @@ export function SettingsTab({
   project,
   teamMembers,
   projectPhase,
+  projectId,
   onUpdateAddress,
   onAddTeamMember,
   onRemoveTeamMember,
@@ -74,6 +77,9 @@ export function SettingsTab({
   const [geocoding, setGeocoding] = useState(false)
   const [geocodeError, setGeocodeError] = useState<string | null>(null)
   const [addressSaving, setAddressSaving] = useState(false)
+  const [googlePhotosUrl, setGooglePhotosUrl] = useState(project.googlePhotosUrl || '')
+  const [photosSaving, setPhotosSaving] = useState(false)
+  const [photosNotice, setPhotosNotice] = useState<string | null>(null)
   const [form, setForm] = useState({
     member_id: '',
     role: 'designer' as TeamRole,
@@ -85,6 +91,28 @@ export function SettingsTab({
       .then((data: { items?: SemistoMember[] }) => setMembers(data?.items ?? []))
       .catch(() => setMembers([]))
   }, [])
+
+  useEffect(() => {
+    setGooglePhotosUrl(project.googlePhotosUrl || '')
+  }, [project.googlePhotosUrl])
+
+  const handleSaveGooglePhotos = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPhotosSaving(true)
+    setPhotosNotice(null)
+    try {
+      await apiRequest(`/api/v1/design/${projectId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ google_photos_url: googlePhotosUrl }),
+      })
+      setPhotosNotice('Lien album sauvegardé.')
+      setTimeout(() => setPhotosNotice(null), 3000)
+    } catch {
+      setPhotosNotice('Erreur lors de la sauvegarde.')
+    } finally {
+      setPhotosSaving(false)
+    }
+  }
 
   useEffect(() => {
     setAddressForm({
@@ -330,6 +358,48 @@ export function SettingsTab({
               <p className="text-xs text-red-600 flex items-center gap-1.5">
                 {geocodeError}
               </p>
+            )}
+          </form>
+        </div>
+      </section>
+
+      {/* Section: Album photo */}
+      <section className="relative">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#EF9B0D]/10 text-[#EF9B0D]">
+            <Camera className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-stone-900 tracking-tight">
+              Album photo
+            </h2>
+            <p className="text-sm text-stone-500">
+              Lien Google Photos visible dans le portail client
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-stone-200 bg-gradient-to-br from-white via-stone-50/20 to-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <form onSubmit={handleSaveGooglePhotos} className="p-5 flex flex-wrap items-end gap-3">
+            <label className="grid gap-1.5 flex-1 min-w-[200px]">
+              <span className={labelClass}>URL Google Photos</span>
+              <input
+                type="url"
+                className={inputClass}
+                value={googlePhotosUrl}
+                onChange={(e) => setGooglePhotosUrl(e.target.value)}
+                placeholder="https://photos.app.goo.gl/..."
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={photosSaving}
+              className="rounded-xl bg-[#AFBD00] px-5 py-2.5 text-sm font-medium text-stone-900 hover:bg-[#9BAA00] disabled:opacity-60 transition-colors shadow-sm"
+            >
+              {photosSaving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+            {photosNotice && (
+              <span className="text-xs text-emerald-600 font-medium">{photosNotice}</span>
             )}
           </form>
         </div>

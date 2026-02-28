@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Users, Plus, Edit, Trash2, Mail, Euro, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Mail, Euro, CheckCircle2, Clock, AlertCircle, ExternalLink } from 'lucide-react'
 
 function formatDate(dateStr) {
   const date = new Date(dateStr)
@@ -18,6 +18,7 @@ const PAYMENT_CONFIG = {
 
 export default function TrainingRegistrationsTab({
   registrations = [],
+  trainingId,
   trainingPrice = 0,
   onAddRegistration,
   onEditRegistration,
@@ -37,14 +38,27 @@ export default function TrainingRegistrationsTab({
             {registrations.length} participant{registrations.length !== 1 ? 's' : ''} inscrit{registrations.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => onAddRegistration?.()}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#B01A19] px-4 py-2 text-sm font-medium text-white hover:bg-[#8f1514]"
-        >
-          <Plus className="w-4 h-4" />
-          Nouvelle inscription
-        </button>
+        <div className="flex items-center gap-2">
+          {trainingId && (
+            <a
+              href={`/academy/${trainingId}/register`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Page d'inscription
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={() => onAddRegistration?.()}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#B01A19] px-4 py-2 text-sm font-medium text-white hover:bg-[#8f1514]"
+          >
+            <Plus className="w-4 h-4" />
+            Nouvelle inscription
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

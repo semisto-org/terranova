@@ -12,6 +12,7 @@ if (import.meta.env.PROD) {
       dsn,
       environment: 'production',
       tracesSampleRate: 0.1,
+      integrations: [Sentry.browserTracingIntegration()],
     })
   }
 }
@@ -28,6 +29,27 @@ createInertiaApp({
     return page
   },
   setup({ el, App, props }) {
-    createRoot(el).render(React.createElement(App, props))
+    // Set Sentry user from Inertia shared props
+    const member = props?.initialPage?.props?.auth?.member
+    if (member) {
+      Sentry.setUser({ id: member.id, email: member.email, username: `${member.firstName} ${member.lastName}` })
+    }
+
+    const app = React.createElement(App, props)
+    createRoot(el).render(
+      React.createElement(Sentry.ErrorBoundary, {
+        fallback: ({ error }) => (
+          React.createElement('div', { style: { padding: '2rem', textAlign: 'center' } },
+            React.createElement('h1', null, 'Une erreur est survenue'),
+            React.createElement('p', { style: { color: '#666' } }, 'Rechargez la page pour continuer.'),
+            React.createElement('button', {
+              onClick: () => window.location.reload(),
+              style: { marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }
+            }, 'Recharger')
+          )
+        ),
+        showDialog: false,
+      }, app)
+    )
   },
 })

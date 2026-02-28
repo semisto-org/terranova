@@ -293,6 +293,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #B01A19 !important; box-shadow: 0 0 0 3px rgba(176, 26, 25, 0.1); }
+        [data-radio-card]:focus, [data-radio-card]:focus-within { outline: none !important; box-shadow: none !important; }
       `}</style>
 
       {/* Header */}
@@ -467,7 +468,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
                 <h3 style={styles.sectionTitle}>Lieu de départ</h3>
                 <div style={styles.fieldGrid}>
                   <div style={styles.field}>
-                    <label style={styles.label}>Ville *</label>
+                    <label style={styles.label}>Localité *</label>
                     <input
                       type="text"
                       value={formData.departure_city}
@@ -522,9 +523,10 @@ export default function Registration({ trainingId, stripePublicKey }) {
                   ].map(opt => (
                     <label
                       key={opt.value}
+                      data-radio-card
                       style={{
                         ...styles.radioCard,
-                        ...(formData.carpooling === opt.value ? styles.radioCardActive : {}),
+                        ...(formData.carpooling === opt.value ? styles.radioCardActive : styles.radioCardInactive),
                       }}
                     >
                       <input
@@ -550,9 +552,10 @@ export default function Registration({ trainingId, stripePublicKey }) {
                 {canPayDeposit ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label
+                      data-radio-card
                       style={{
                         ...styles.radioCard,
-                        ...(formData.payment_type === 'full' ? styles.radioCardActive : {}),
+                        ...(formData.payment_type === 'full' ? styles.radioCardActive : styles.radioCardInactive),
                       }}
                     >
                       <input
@@ -572,9 +575,10 @@ export default function Registration({ trainingId, stripePublicKey }) {
                       </div>
                     </label>
                     <label
+                      data-radio-card
                       style={{
                         ...styles.radioCard,
-                        ...(formData.payment_type === 'deposit' ? styles.radioCardActive : {}),
+                        ...(formData.payment_type === 'deposit' ? styles.radioCardActive : styles.radioCardInactive),
                       }}
                     >
                       <input
@@ -726,7 +730,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
         fontSize: '13px',
         fontFamily: 'var(--font-body)',
       }}>
-        <p>Semisto — Transformer les zones anthropisées en forêts nourricières</p>
+        <p>En route vers l'ère des forêts comestibles</p>
         <p style={{ marginTop: '4px' }}>Paiement sécurisé par Stripe</p>
       </div>
     </div>
@@ -852,10 +856,15 @@ const styles = {
     cursor: 'pointer',
     transition: 'border-color 0.15s, background-color 0.15s',
     backgroundColor: 'white',
+    outline: 'none',
   },
   radioCardActive: {
     borderColor: '#B01A19',
     backgroundColor: '#fef2f2',
+  },
+  radioCardInactive: {
+    borderColor: '#e5e7eb',
+    backgroundColor: 'white',
   },
   loadingWrapper: {
     display: 'flex',

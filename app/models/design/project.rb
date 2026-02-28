@@ -44,6 +44,7 @@ module Design
     validate :project_type_is_supported_when_provided
     validates :acquisition_channel, inclusion: { in: ACQUISITION_CHANNELS }, allow_blank: true
     validate :client_interests_are_supported
+    validates :google_photos_url, format: { with: /\Ahttps?:\/\//i }, allow_blank: true
 
     def address_display
       parts = [street, number, postcode, city, country_name].reject(&:blank?)

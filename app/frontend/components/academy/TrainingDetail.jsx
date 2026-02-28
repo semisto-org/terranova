@@ -362,6 +362,7 @@ export default function TrainingDetail({
             {tab === 'registrations' && (
               <TrainingRegistrationsTab
                 registrations={registrations}
+                trainingId={training.id}
                 trainingPrice={Number(training.price || 0)}
                 onAddRegistration={() => actions.addRegistration(training.id)}
                 onEditRegistration={(id) => actions.editRegistration(id)}

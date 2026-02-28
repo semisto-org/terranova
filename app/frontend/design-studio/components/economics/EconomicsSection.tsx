@@ -53,19 +53,27 @@ export function EconomicsSection({
   })
 
   const handleSaveInput = async (values: Record<string, unknown>) => {
+    const payload = { ...values }
+    if (!inputModal.editing && filters.design_project_id) {
+      payload.design_project_id = filters.design_project_id
+    }
     if (inputModal.editing) {
-      await actions.onUpdateInput(inputModal.editing.id, values)
+      await actions.onUpdateInput(inputModal.editing.id, payload)
     } else {
-      await actions.onCreateInput(values)
+      await actions.onCreateInput(payload)
     }
     setInputModal({ open: false, editing: null, presetLabor: false })
   }
 
   const handleSaveOutput = async (values: Record<string, unknown>) => {
+    const payload = { ...values }
+    if (!outputModal.editing && filters.design_project_id) {
+      payload.design_project_id = filters.design_project_id
+    }
     if (outputModal.editing) {
-      await actions.onUpdateOutput(outputModal.editing.id, values)
+      await actions.onUpdateOutput(outputModal.editing.id, payload)
     } else {
-      await actions.onCreateOutput(values)
+      await actions.onCreateOutput(payload)
     }
     setOutputModal({ open: false, editing: null })
   }

@@ -27,6 +27,9 @@ module Api
         'autre' => 'Autre'
       }.freeze
 
+      MONTH_ABBR_TO_NUM = { 'jan' => 1, 'feb' => 2, 'mar' => 3, 'apr' => 4, 'may' => 5, 'jun' => 6,
+                            'jul' => 7, 'aug' => 8, 'sep' => 9, 'oct' => 10, 'nov' => 11, 'dec' => 12 }.freeze
+
       ZONING_CATEGORY_LABELS = {
         'zone_agricole' => 'Zone agricole',
         'zone_habitat' => "Zone d'habitat",
@@ -267,6 +270,40 @@ module Api
         end
 
         render json: serialize_project_palette(palette)
+      end
+
+      def export_palette_to_plants
+        project = find_project
+        palette = ensure_palette(project)
+
+        plant_palette = Plant::Palette.create!(
+          name: "Export – #{project.name}",
+          description: "Exporté depuis le projet Design Studio « #{project.name} »",
+          created_by: current_member.id.to_s
+        )
+
+        palette.items.find_each do |item|
+          next if item.species_id.blank?
+
+          strate_key = map_layer_to_strate(item.layer)
+
+          if item.variety_id.present?
+            item_type = 'variety'
+            item_id = item.variety_id
+          else
+            item_type = 'species'
+            item_id = item.species_id
+          end
+
+          plant_palette.items.create!(
+            item_type: item_type,
+            item_id: item_id,
+            strate_key: strate_key,
+            position: 0
+          )
+        end
+
+        render json: { paletteId: plant_palette.id.to_s, itemCount: plant_palette.items.count }
       end
 
       def upsert_planting_plan
@@ -595,18 +632,22 @@ module Api
 
       def client_portal
         project = find_project
+        palette = ensure_palette(project)
 
         render json: {
           project: serialize_project(project),
+          teamMembers: project.team_members.order(:assigned_at).map { |tm| serialize_team_member(tm) },
           documents: project.documents.order(uploaded_at: :desc).map { |item| serialize_document(item) },
-          plantPalette: serialize_project_palette(ensure_palette(project)),
+          plantPalette: serialize_project_palette(palette),
           plantingPlan: serialize_planting_plan(ensure_planting_plan(project)),
-          quotes: project.quotes.order(version: :desc).map { |item| serialize_quote(item) },
+          quotes: project.quotes.includes(:lines).order(version: :desc).map { |item| serialize_quote(item) },
           annotations: project.annotations.order(created_at: :desc).map { |item| serialize_annotation(item) },
           plantFollowUp: serialize_plant_follow_up(project),
           clientContributions: serialize_client_contribution(ensure_client_contribution(project)),
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
-          maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project))
+          maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project)),
+          autoHarvestCalendar: build_auto_harvest_calendar(palette),
+          clientExpenses: serialize_client_expenses(project)
         }
       end
 
@@ -703,6 +744,7 @@ module Api
         project = Design::Project.find_by(id: expected_project_id, client_portal_token: token)
         unless project
           render json: { error: "Lien invalide" }, status: :unauthorized
+          return
         end
       end
 
@@ -756,7 +798,7 @@ module Api
       def project_update_params
         params.permit(
           :name, :client_name, :client_email, :client_phone, :phase, :status, :street, :number, :city, :postcode,
-          :country_name, :latitude, :longitude, :area, :project_type, :acquisition_channel, client_interests: []
+          :country_name, :latitude, :longitude, :area, :project_type, :acquisition_channel, :google_photos_url, client_interests: []
         )
       end
 
@@ -983,6 +1025,40 @@ module Api
         ]
       end
 
+      def build_auto_harvest_calendar(palette)
+        items = palette.items.where.not(species_id: [nil, ''])
+        species_ids = items.pluck(:species_id).uniq
+        species_map = Plant::Species.where(id: species_ids).index_by { |s| s.id.to_s }
+
+        items.filter_map do |item|
+          species = species_map[item.species_id.to_s]
+          next unless species
+
+          months = Array(species.harvest_months).filter_map { |m| MONTH_ABBR_TO_NUM[m.to_s.downcase] }.sort
+          next if months.empty?
+
+          {
+            paletteItemId: item.id.to_s,
+            speciesName: item.species_name,
+            commonName: item.common_name,
+            varietyName: item.variety_name,
+            layer: item.layer,
+            harvestMonths: months,
+            edibleParts: Array(species.edible_parts),
+            fruitingMonths: Array(species.fruiting_months).filter_map { |m| MONTH_ABBR_TO_NUM[m.to_s.downcase] }.sort,
+            floweringMonths: Array(species.flowering_months).filter_map { |m| MONTH_ABBR_TO_NUM[m.to_s.downcase] }.sort
+          }
+        end
+      end
+
+      def serialize_client_expenses(project)
+        billable = project.expenses.where(billable_to_client: true)
+        grouped = billable.group_by(&:category).map do |category, items|
+          { category: category.presence || 'Autres', subtotal: items.sum { |e| e.total_incl_vat.to_f }.round(2), count: items.size }
+        end.sort_by { |g| -g[:subtotal] }
+        { categories: grouped, total: billable.sum(:total_incl_vat).to_f.round(2) }
+      end
+
       def recalculate_quote_totals!(quote)
         subtotal = quote.lines.sum('total')
         vat_amount = subtotal.to_f * (quote.vat_rate.to_f / 100.0)
@@ -1151,6 +1227,7 @@ module Api
             expensesActual: project.expenses_actual.to_f
           },
           templateId: project.template_id&.to_s,
+          googlePhotosUrl: project.google_photos_url.presence,
           createdAt: project.created_at.iso8601,
           updatedAt: project.updated_at.iso8601
         }
@@ -1575,6 +1652,18 @@ module Api
           'shrubs' => 'shrub',
           'trees' => 'canopy'
         }.fetch(strate.to_s, 'shrub')
+      end
+
+      def map_layer_to_strate(layer)
+        {
+          'canopy' => 'trees',
+          'sub-canopy' => 'trees',
+          'shrub' => 'shrubs',
+          'herbaceous' => 'herbaceous',
+          'ground-cover' => 'groundCover',
+          'vine' => 'climbers',
+          'root' => 'herbaceous'
+        }.fetch(layer.to_s, 'shrubs')
       end
 
       def target_latin_name(target_type, target_id)

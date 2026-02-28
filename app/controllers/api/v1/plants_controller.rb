@@ -170,6 +170,28 @@ module Api
         }
       end
 
+      def list_palettes
+        palettes = Plant::Palette
+          .left_joins(:items)
+          .select('plant_palettes.*, COUNT(plant_palette_items.id) AS items_count')
+          .where(plant_palette_items: { deleted_at: nil })
+          .or(Plant::Palette.left_joins(:items).where(plant_palette_items: { id: nil }))
+          .group('plant_palettes.id')
+          .order(updated_at: :desc)
+
+        render json: palettes.map { |p|
+          {
+            id: p.id.to_s,
+            name: p.name,
+            description: p.description,
+            createdBy: p.created_by,
+            createdAt: p.created_at.iso8601,
+            updatedAt: p.updated_at.iso8601,
+            itemsCount: p.items_count.to_i
+          }
+        }
+      end
+
       def create_palette
         palette = Plant::Palette.create!(palette_params)
         render json: serialize_palette(palette), status: :created
@@ -186,6 +208,11 @@ module Api
         render json: serialize_palette(palette)
       end
 
+      def destroy_palette
+        Plant::Palette.find(params.require(:id)).destroy!
+        head :no_content
+      end
+
       def export_palette_pdf
         palette = Plant::Palette.includes(:items).find(params.require(:id))
         pdf_data = render_palette_pdf(palette)
@@ -196,18 +223,6 @@ module Api
           type: 'application/pdf',
           disposition: 'attachment'
         )
-      end
-
-      def send_to_design_studio
-        palette = Plant::Palette.find(params.require(:id))
-        destination = "/app/design?palette_id=#{palette.id}"
-
-        render json: {
-          status: 'sent',
-          paletteId: palette.id.to_s,
-          designStudioUrl: destination,
-          message: 'Palette envoyee au Design Studio.'
-        }
       end
 
       def add_palette_item

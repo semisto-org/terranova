@@ -3,6 +3,8 @@ import type { StrateKey } from '../types'
 
 interface AddToPaletteButtonProps {
   onAddToPalette?: (strate: StrateKey) => void
+  onRemoveFromPalette?: () => void
+  isInPalette?: boolean
 }
 
 const strates: Array<{ id: StrateKey; label: string; icon: string }> = [
@@ -14,12 +16,41 @@ const strates: Array<{ id: StrateKey; label: string; icon: string }> = [
   { id: 'trees', label: 'Arbres', icon: '🌲' }
 ]
 
-export function AddToPaletteButton({ onAddToPalette }: AddToPaletteButtonProps) {
+export function AddToPaletteButton({ onAddToPalette, onRemoveFromPalette, isInPalette = false }: AddToPaletteButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const handleSelect = (strate: StrateKey) => {
     onAddToPalette?.(strate)
     setIsOpen(false)
+  }
+
+  if (isInPalette) {
+    return (
+      <div className="flex items-center gap-2">
+        <div
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#AFBD00]/15 text-[#AFBD00] font-medium rounded-xl border border-[#AFBD00]/40"
+          aria-label="Déjà dans la palette"
+        >
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Ajouté à la palette
+        </div>
+        {onRemoveFromPalette && (
+          <button
+            type="button"
+            onClick={onRemoveFromPalette}
+            className="flex items-center gap-2 px-4 py-2.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 font-medium rounded-xl border border-stone-200 transition-colors"
+            aria-label="Retirer de la palette"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Retirer
+          </button>
+        )}
+      </div>
+    )
   }
 
   return (

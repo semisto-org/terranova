@@ -123,15 +123,26 @@ class PlantsStep1Test < ActionDispatch::IntegrationTest
     assert_includes response.body, '%PDF-1.4'
   end
 
-  test 'send to design studio endpoint returns destination url' do
-    palette = Plant::Palette.create!(name: 'Palette Send', description: 'desc', created_by: 'tester')
+  test 'list palettes returns all palettes with item counts' do
+    palette = Plant::Palette.create!(name: 'Palette List', description: 'desc', created_by: 'tester')
+    palette.items.create!(item_type: 'species', item_id: @species.id, strate_key: 'trees', position: 0)
 
-    post "/api/v1/plants/palettes/#{palette.id}/send-to-design-studio", as: :json
+    get '/api/v1/plants/palettes', as: :json
     assert_response :success
 
     body = JSON.parse(response.body)
-    assert_equal 'sent', body['status']
-    assert_includes body['designStudioUrl'], "/app/design?palette_id=#{palette.id}"
+    assert body.is_a?(Array)
+    entry = body.find { |p| p['id'] == palette.id.to_s }
+    assert entry
+    assert_equal 1, entry['itemsCount']
+  end
+
+  test 'delete palette removes it' do
+    palette = Plant::Palette.create!(name: 'Palette Delete', description: 'desc', created_by: 'tester')
+
+    delete "/api/v1/plants/palettes/#{palette.id}", as: :json
+    assert_response :no_content
+    assert_nil Plant::Palette.find_by(id: palette.id)
   end
 
   test 'create contribution endpoints update feed and contributor stats' do

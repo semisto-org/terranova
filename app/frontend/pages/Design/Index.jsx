@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { MapPin, MapPinned, Settings2 } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { ProjectDashboard, ProjectDetailView, ReportingDashboard } from '../../design-studio/components'
@@ -409,7 +410,6 @@ export default function DesignIndex({ initialProjectId }) {
       }
     },
   })
-  const paletteIdFromQuery = new URLSearchParams(window.location.search).get('palette_id')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -525,8 +525,6 @@ export default function DesignIndex({ initialProjectId }) {
         if (initialProjectId) {
           await loadProject(initialProjectId)
           window.history.replaceState({}, '', `/design/${initialProjectId}`)
-        } else if (paletteIdFromQuery && active) {
-          setNotice(`Palette ${paletteIdFromQuery} reçue depuis Plant Database.`)
         }
       } catch (err) {
         if (active) setError(err.message)
@@ -539,7 +537,7 @@ export default function DesignIndex({ initialProjectId }) {
     return () => {
       active = false
     }
-  }, [initialProjectId, loadDashboard, loadAcademyTrainingOptions, loadProject, paletteIdFromQuery])
+  }, [initialProjectId, loadDashboard, loadAcademyTrainingOptions, loadProject])
 
   const runMutation = useCallback(async (mutation, opts = {}) => {
     setBusy(true)
@@ -946,6 +944,16 @@ export default function DesignIndex({ initialProjectId }) {
         if (!paletteId) return
         return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/palette/import/${paletteId}`, { method: 'POST' }), { refreshProjectId: currentProjectId })
       },
+      exportPaletteToPlants: async () => {
+        try {
+          const payload = await apiRequest(`/api/v1/design/${currentProjectId}/palette/export-to-plants`, { method: 'POST' })
+          if (payload?.paletteId) {
+            window.location.href = `/plants?palette_id=${payload.paletteId}`
+          }
+        } catch (err) {
+          setError(err.message)
+        }
+      },
       savePlantingPlan: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/planting-plan`, { method: 'PATCH', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
       uploadPlanImage: (file) => {
         const form = new FormData()
@@ -1068,11 +1076,6 @@ export default function DesignIndex({ initialProjectId }) {
   }, [currentProjectId, editProject, projectDetail, runMutation, loadProject])
 
   useEffect(() => {
-    if (!paletteIdFromQuery || !currentProjectId || !detailActions) return
-    detailActions.importPlantPalette(paletteIdFromQuery)
-  }, [currentProjectId, detailActions, paletteIdFromQuery])
-
-  useEffect(() => {
     if (activeSection !== 'reporting') return
     loadReporting(reportingFilters)
   }, [activeSection, loadReporting, reportingFilters])
@@ -1111,6 +1114,7 @@ export default function DesignIndex({ initialProjectId }) {
       onAddPaletteItem: detailActions.addPaletteItem || noop,
       onDeletePaletteItem: detailActions.deletePaletteItem || noop,
       onImportPlantPalette: detailActions.importPlantPalette || noop,
+      onExportToPlantDB: detailActions.exportPaletteToPlants || noop,
       onSavePlantingPlan: detailActions.savePlantingPlan || noop,
       onExportPlan: detailActions.exportPlan || noop,
       onUploadPlanImage: detailActions.uploadPlanImage || noop,
@@ -1166,57 +1170,110 @@ export default function DesignIndex({ initialProjectId }) {
           />
         )
       ) : activeSection === 'locations' ? (
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-stone-900 tracking-tight">Lieux</h2>
-            <p className="text-sm text-stone-500 mt-1">Configure les lieux des projets Design Studio.</p>
-          </div>
-          <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
-            <div className="grid grid-cols-12 gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-stone-500 border-b border-stone-200 bg-stone-50">
-              <div className="col-span-4">Projet</div>
-              <div className="col-span-4">Lieu</div>
-              <div className="col-span-2">Coordonnées</div>
-              <div className="col-span-2 text-right">Action</div>
+        <section className="min-h-screen bg-stone-50">
+          {/* Header */}
+          <header className="relative overflow-hidden border-b border-stone-200 bg-white">
+            <div className="absolute inset-0 opacity-[0.03]">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#AFBD00] via-transparent to-[#5B5781]" />
             </div>
-            {projects.map((p) => (
-              <div key={p.id} className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-stone-100 last:border-b-0 items-center">
-                <div className="col-span-4">
-                  <p className="font-medium text-stone-900">{p.name}</p>
-                  <p className="text-xs text-stone-500">{p.clientName || '—'}</p>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-[#AFBD00]/15 flex items-center justify-center">
+                  <MapPinned className="w-5 h-5 text-[#AFBD00]" strokeWidth={2} />
                 </div>
-                <div className="col-span-4 text-sm text-stone-700">
-                  {p.locationAddress || 'Lieu non défini'}
-                </div>
-                <div className="col-span-2 text-xs text-stone-500">
-                  {p.coordinates ? `${p.coordinates.lat}, ${p.coordinates.lng}` : '—'}
-                </div>
-                <div className="col-span-2 text-right">
-                  <button
-                    type="button"
-                    className="px-3 py-1.5 rounded-lg border border-stone-200 text-sm text-stone-700 hover:bg-stone-100"
-                    onClick={() => {
-                      setEditProjectForm({
-                        name: p.name || '',
-                        client_name: p.clientName || '',
-                        client_email: p.clientEmail || '',
-                        client_phone: p.clientPhone || '',
-                        street: p.street || '',
-                        number: p.number || '',
-                        city: p.city || '',
-                        postcode: p.postcode || '',
-                        country_name: p.countryName || '',
-                        latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
-                        longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
-                        area: p.area || 500,
-                      })
-                      setProjectEditModal({ project: p })
-                    }}
-                  >
-                    Configurer
-                  </button>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-serif font-medium text-stone-900 tracking-tight">
+                    Lieux
+                  </h1>
+                  <p className="text-sm text-stone-500 mt-0.5">
+                    Configure les lieux et coordonnées GPS des projets Design Studio
+                  </p>
                 </div>
               </div>
-            ))}
+            </div>
+          </header>
+
+          {/* Content */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {projects.length === 0 ? (
+              <div className="rounded-2xl border border-stone-200 bg-white p-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-[#e1e6d8] flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-8 h-8 text-[#AFBD00]/60" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-lg font-medium text-stone-900">Aucun projet</h3>
+                <p className="text-sm text-stone-500 mt-1 max-w-sm mx-auto">
+                  Créez un projet dans l’onglet Projets pour configurer son lieu et ses coordonnées.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:gap-6">
+                {projects.map((p, i) => {
+                  const hasCoords = p.coordinates && (Number(p.coordinates.lat) !== 0 || Number(p.coordinates.lng) !== 0)
+                  const hasLocation = Boolean(p.address?.trim()) || hasCoords
+                  return (
+                    <article
+                      key={p.id}
+                      className="group rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2"
+                      style={{ animationDelay: `${Math.min(i * 50, 300)}ms`, animationFillMode: 'both' }}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 sm:p-6">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-3">
+                            <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                              hasLocation ? 'bg-[#AFBD00]/15' : 'bg-stone-100'
+                            }`}>
+                              <MapPin className={`w-5 h-5 ${hasLocation ? 'text-[#AFBD00]' : 'text-stone-400'}`} strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-semibold text-stone-900 truncate">{p.name}</h3>
+                              <p className="text-sm text-stone-500 truncate">{p.clientName || '—'}</p>
+                              <div className="mt-3 flex flex-col gap-1">
+                                <p className="text-sm text-stone-700">
+                                  {p.address?.trim() || (
+                                    <span className="italic text-stone-400">Lieu non défini</span>
+                                  )}
+                                </p>
+                                {hasCoords && (
+                                  <p className="text-xs text-stone-500 font-mono">
+                                    {Number(p.coordinates.lat).toFixed(6)}, {Number(p.coordinates.lng).toFixed(6)}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditProjectForm({
+                                name: p.name || '',
+                                client_name: p.clientName || '',
+                                client_email: p.clientEmail || '',
+                                client_phone: p.clientPhone || '',
+                                street: p.street || '',
+                                number: p.number || '',
+                                city: p.city || '',
+                                postcode: p.postcode || '',
+                                country_name: p.countryName || '',
+                                latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
+                                longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
+                                area: p.area || 500,
+                              })
+                              setProjectEditModal({ project: p })
+                            }}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-stone-200 text-sm font-medium text-stone-700 bg-white hover:bg-[#AFBD00]/10 hover:border-[#AFBD00]/40 hover:text-[#6B7A00] transition-colors"
+                          >
+                            <Settings2 className="w-4 h-4" strokeWidth={2} />
+                            Configurer
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </section>
       ) : activeSection === 'economics' ? (

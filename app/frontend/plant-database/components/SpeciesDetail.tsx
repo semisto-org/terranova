@@ -45,6 +45,10 @@ import {
 interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
   filterOptions: FilterOptions
   siblingSpecies?: Species[]
+  /** Whether this species is already in the current palette */
+  isInPalette?: boolean
+  /** Called when user wants to remove this species from the palette */
+  onRemoveFromPalette?: () => void
   /** Called when user wants to add a variety to this species */
   onAddVariety?: () => void
   /** Called when user wants to edit this species */
@@ -69,6 +73,8 @@ export function SpeciesDetail({
   onAddPhoto,
   onAddNote,
   onAddToPalette,
+  isInPalette = false,
+  onRemoveFromPalette,
   onVarietySelect,
   onGenusSelect,
   onContributorSelect,
@@ -267,7 +273,11 @@ export function SpeciesDetail({
 
               {/* Action buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
-                <AddToPaletteButton onAddToPalette={onAddToPalette} />
+                <AddToPaletteButton
+                  onAddToPalette={onAddToPalette}
+                  onRemoveFromPalette={onRemoveFromPalette}
+                  isInPalette={isInPalette}
+                />
               </div>
             </div>
           </div>

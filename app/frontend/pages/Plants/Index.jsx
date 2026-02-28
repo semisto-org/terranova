@@ -13,6 +13,8 @@ import {
   SpeciesFormModal,
   VarietyDetail,
   VarietyFormModal,
+  SendToDesignStudioModal,
+  PaletteSelector,
 } from '../../plant-database/components'
 
 const EMPTY_FILTERS = {
@@ -492,6 +494,15 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     return Object.values(palette.strates).flat().map((item) => item.id)
   }, [palette])
 
+  const paletteItemKeySet = useMemo(() => {
+    if (!palette?.strates) return new Set()
+    const keys = new Set()
+    Object.values(palette.strates)
+      .flat()
+      .forEach((item) => keys.add(`${item.type}:${item.id}`))
+    return keys
+  }, [palette])
+
   const syncContributors = useCallback((items = []) => {
     setContributors((previous) => {
       const map = new Map(previous.map((item) => [item.id, item]))
@@ -857,6 +868,31 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     })
   }, [mutateAndRefresh, palette])
 
+  const removePaletteItemById = useCallback(
+    (targetId) => {
+      if (!palette?.strates) return
+      for (const items of Object.values(palette.strates)) {
+        const item = items.find(
+          (entry) => String(entry.id) === String(targetId) || entry.paletteItemId === targetId
+        )
+        if (item) {
+          setDeleteConfirm({
+            title: 'Retirer cette plante ?',
+            message: `« ${item.latinName || ''} » sera retirée de la palette.`,
+            action: () =>
+              mutateAndRefresh(async () => {
+                await apiRequest(`/api/v1/plants/palette-items/${item.paletteItemId || item.id}`, {
+                  method: 'DELETE',
+                })
+              }),
+          })
+          return
+        }
+      }
+    },
+    [mutateAndRefresh, palette]
+  )
+
   const movePaletteItem = useCallback((itemId, fromStrate, toStrate) => {
     if (fromStrate === toStrate || !palette?.strates?.[fromStrate]) return
 
@@ -1029,26 +1065,21 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     window.open(`/api/v1/plants/palettes/${palette.id}/export`, '_blank', 'noopener,noreferrer')
   }, [palette?.id])
 
-  const sendPaletteToDesignStudio = useCallback(async () => {
+  const [showDesignStudioModal, setShowDesignStudioModal] = useState(false)
+
+  const sendPaletteToDesignStudio = useCallback(() => {
     if (!palette?.id) {
       setNotice('Sauvegardez la palette avant envoi au Design Studio.')
       return
     }
-
-    setBusy(true)
-    setError(null)
-    try {
-      const payload = await apiRequest(`/api/v1/plants/palettes/${palette.id}/send-to-design-studio`, {
-        method: 'POST',
-      })
-      setNotice(payload.message || 'Palette envoyée.')
-      window.location.href = payload.designStudioUrl
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+    setShowDesignStudioModal(true)
   }, [palette?.id])
+
+  const handleDesignStudioImportSuccess = useCallback((projectId, projectName) => {
+    setShowDesignStudioModal(false)
+    setNotice(`Palette importée dans le projet « ${projectName} ».`)
+    window.location.href = `/design/${projectId}`
+  }, [])
 
   if (loading || !filterOptions) {
     return (
@@ -1078,6 +1109,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
             filters={filters}
             results={results}
             paletteItemIds={paletteItemIds}
+            isItemInPalette={(id, type) => paletteItemKeySet.has(`${type}:${id}`)}
             onSearchChange={(query) => setFilters((previous) => ({ ...previous, query }))}
             onFiltersChange={setFilters}
             onResultSelect={(id, type) => navigateTo(type === 'genus' ? 'genus' : type, id)}
@@ -1132,6 +1164,8 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           aiSummary={speciesPayload.aiSummary}
           filterOptions={filterOptions}
           siblingSpecies={speciesPayload.siblingSpecies || []}
+          isInPalette={paletteItemKeySet.has(`species:${speciesPayload.species.id}`)}
+          onRemoveFromPalette={() => removePaletteItemById(speciesPayload.species.id)}
           onVarietySelect={(id) => navigateTo('variety', id)}
           onGenusSelect={(id) => navigateTo('genus', id)}
           onContributorSelect={(id) => navigateTo('contributor', id)}
@@ -1160,6 +1194,8 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           aiSummary={varietyPayload.aiSummary}
           filterOptions={filterOptions}
           varieties={varietyPayload.siblingVarieties || []}
+          isInPalette={paletteItemKeySet.has(`variety:${varietyPayload.variety.id}`)}
+          onRemoveFromPalette={() => removePaletteItemById(varietyPayload.variety.id)}
           onVarietySelect={(id) => navigateTo('variety', id)}
           onSpeciesSelect={(id) => navigateTo('species', id)}
           onContributorSelect={(id) => navigateTo('contributor', id)}
@@ -1173,7 +1209,14 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
       )}
 
       {route.view === 'palette' && (
-        <div className="max-w-5xl mx-auto px-4 py-4">
+        <div className="max-w-5xl mx-auto px-4 py-4 space-y-3">
+          <PaletteSelector
+            activePaletteId={palette?.id}
+            onSelectPalette={loadPalette}
+            onNewPalette={() => {
+              setPalette(null)
+            }}
+          />
           <div className="rounded-2xl border border-stone-200 overflow-hidden bg-white">
             <PlantPalette
               palette={palette}
@@ -1273,6 +1316,14 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           onSubmit={submitVarietyForm}
           onCancel={() => setVarietyFormModal(null)}
           busy={busy}
+        />
+      )}
+
+      {showDesignStudioModal && palette?.id && (
+        <SendToDesignStudioModal
+          paletteId={palette.id}
+          onClose={() => setShowDesignStudioModal(false)}
+          onSuccess={handleDesignStudioImportSuccess}
         />
       )}
     </div>

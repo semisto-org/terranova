@@ -327,8 +327,10 @@ export interface SearchViewProps {
   results: SearchResult[]
   /** Current active filters */
   filters: SearchFilters
-  /** IDs of items already in the palette */
+  /** IDs of items already in the palette (legacy, use isItemInPalette when type matters) */
   paletteItemIds?: string[]
+  /** Check if item is in palette by (id, type) */
+  isItemInPalette?: (id: string, type: 'species' | 'variety') => boolean
   /** Called when user changes search query */
   onSearchChange?: (query: string) => void
   /** Called when user changes filters */
