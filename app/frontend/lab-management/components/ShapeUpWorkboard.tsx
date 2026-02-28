@@ -60,19 +60,22 @@ const tabConfig: { id: ShapeUpTab; label: string; emoji: string; description: st
     id: 'shaping',
     label: 'Shaping',
     emoji: '🎨',
-    description: 'Définir et affiner les pitches',
+    description:
+      'Transformer les idées brutes en propositions structurées (pitches) avec un problème, une solution et un appétit.',
   },
   {
     id: 'betting',
     label: 'Betting',
     emoji: '🎲',
-    description: 'Parier sur les projets du cycle',
+    description:
+      'Pendant le cooldown, l\u2019équipe choisit quels pitches seront construits au prochain cycle et forme les équipes.',
   },
   {
     id: 'building',
     label: 'Building',
     emoji: '🏗️',
-    description: 'Suivre la construction des projets',
+    description:
+      'Les équipes construisent les projets retenus. Les scopes découpent le travail, le Hill Chart montre la progression.',
   },
 ]
 
@@ -140,7 +143,10 @@ export function ShapeUpWorkboard({
               <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
                 Shape Up
               </h1>
-              <p className="text-stone-500 mt-1">
+              <p className="text-sm text-stone-500 mt-1">
+                Méthode de développement en cycles de 6 semaines. Les idées passent par 3 phases : Shaping → Betting → Building.
+              </p>
+              <p className="text-stone-500 mt-2">
                 {activeCycle ? (
                   <>
                     <span className="font-medium">{activeCycle.name}</span>
@@ -172,6 +178,32 @@ export function ShapeUpWorkboard({
               </div>
             )}
           </div>
+        </div>
+
+        {/* Flow indicator */}
+        <div className="mb-6 flex items-center gap-2 text-xs">
+          {[
+            { label: 'Shaping', active: !isCooldown && !!activeCycle },
+            { label: 'Betting', active: isCooldown },
+            { label: 'Building', active: !isCooldown && !!activeCycle },
+          ].map((step, i) => (
+            <div key={step.label} className="flex items-center gap-2">
+              {i > 0 && (
+                <svg className="w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+              <span
+                className={`px-2.5 py-1 rounded-full font-medium ${
+                  step.active
+                    ? 'bg-[#5B5781] text-white'
+                    : 'bg-stone-100 text-stone-400'
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Tab Navigation */}
@@ -357,8 +389,8 @@ function ShapingTrack({
 
               {rawPitches.length === 0 ? (
                 <div className="bg-white rounded-xl border border-dashed border-stone-300 p-8 text-center">
-                  <p className="text-stone-400 text-sm">
-                    Aucun brouillon en cours
+                  <p className="text-stone-500 text-sm">
+                    Les pitches commencent ici comme brouillons. Un pitch décrit un problème à résoudre, une solution esquissée, et un appétit (2, 3 ou 6 semaines).
                   </p>
                   <button
                     onClick={onCreatePitch}
@@ -397,8 +429,8 @@ function ShapingTrack({
 
               {shapedPitches.length === 0 ? (
                 <div className="bg-white rounded-xl border border-dashed border-stone-300 p-8 text-center">
-                  <p className="text-stone-400 text-sm">
-                    Aucun pitch prêt
+                  <p className="text-stone-500 text-sm">
+                    Les pitches affinés apparaîtront ici, prêts à être soumis au betting lors du prochain cooldown.
                   </p>
                 </div>
               ) : (
@@ -423,12 +455,12 @@ function ShapingTrack({
       {/* Non-shapers see read-only view */}
       {!isShaper && (
         <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
-          <div className="text-4xl mb-3">🔒</div>
+          <div className="text-4xl mb-3">🎨</div>
           <h3 className="font-semibold text-stone-800 mb-2">
-            Espace réservé aux Shapers
+            Shaping
           </h3>
-          <p className="text-stone-500 text-sm max-w-md mx-auto">
-            Le Shaping est géré par les membres avec le rôle Shaper. Consultez les listes d'idées ci-dessous pour proposer des améliorations.
+          <p className="text-stone-500 text-sm max-w-lg mx-auto">
+            Le Shaping est mené par les Shapers de l'équipe. Ils transforment les idées brutes en propositions structurées prêtes pour le betting. Vous pouvez contribuer en ajoutant vos idées dans les listes ci-dessous.
           </p>
         </div>
       )}

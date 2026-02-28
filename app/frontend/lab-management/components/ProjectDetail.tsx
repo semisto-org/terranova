@@ -144,6 +144,11 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
     setActionModal(null)
   }, [runAndRefresh])
 
+  const handleDeleteAction = useCallback((actionId: string) => {
+    if (!confirm('Supprimer cette tâche ?')) return
+    runAndRefresh(() => apiRequest(`/api/v1/lab/actions/${actionId}`, { method: 'DELETE' }))
+  }, [runAndRefresh])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -273,6 +278,7 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
               actions={tl.actions}
               onToggleAction={handleToggleAction}
               onEditAction={action => setActionModal({ taskListId: tl.id, action })}
+              onDeleteAction={handleDeleteAction}
               onAddAction={taskListId => setActionModal({ taskListId })}
               onEditList={(id, name) => setTaskListModal({ id, name })}
               onDeleteList={handleDeleteTaskList}
@@ -288,6 +294,7 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
               actions={project.unlistedActions}
               onToggleAction={handleToggleAction}
               onEditAction={a => setActionModal({ taskListId: '', action: a })}
+              onDeleteAction={handleDeleteAction}
               busy={busy}
               accentColor="#a8a29e"
               members={members}

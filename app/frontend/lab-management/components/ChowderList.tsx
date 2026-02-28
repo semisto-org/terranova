@@ -25,7 +25,7 @@ export function ChowderList({ items, members, onMoveToScope, onDelete, onAdd }: 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">🍲</span>
-            <h3 className="font-semibold text-amber-800">Chowder</h3>
+            <h3 className="font-semibold text-amber-800">Chowder (vrac)</h3>
             <span className="text-xs text-amber-600 bg-amber-200/50 px-1.5 py-0.5 rounded-full">
               {items.length}
             </span>
@@ -40,7 +40,7 @@ export function ChowderList({ items, members, onMoveToScope, onDelete, onAdd }: 
           )}
         </div>
         <p className="text-xs text-amber-600 mt-1">
-          Tâches découvertes en cours de route, pas encore assignées à un scope
+          Tâches découvertes en cours de route, pas encore rattachées à un scope.
         </p>
       </div>
 

@@ -103,7 +103,7 @@ export function BuildingView({
             Aucun projet en construction
           </h2>
           <p className="text-stone-500">
-            Les projets apparaîtront ici une fois qu'ils auront été sélectionnés lors d'une Betting Table.
+            Quand un pitch est retenu au betting, il entre en phase de construction. L'équipe découpe le travail en scopes et suit sa progression sur le Hill Chart.
           </p>
         </div>
       </div>
@@ -223,7 +223,7 @@ export function BuildingView({
             <div className="space-y-6">
               {/* Hill Chart */}
               <div className="bg-white rounded-xl border border-stone-200 p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-stone-800">
                     Hill Chart
                   </h3>
@@ -231,6 +231,9 @@ export function BuildingView({
                     Cliquez sur un point pour voir le scope
                   </p>
                 </div>
+                <p className="text-xs text-stone-400 mb-4">
+                  ← Exploration (on cherche) · Exécution (on sait) →
+                </p>
                 <HillChart
                   scopes={pitchScopes}
                   pitchTitle={selectedPitch.title}

@@ -98,7 +98,7 @@ export function BettingTable({
           Betting non disponible
         </h3>
         <p className="text-stone-500 text-sm max-w-md mx-auto">
-          Le betting s'ouvre pendant la période de cooldown, entre deux cycles de construction.
+          Le betting est la session où l'équipe décide collectivement quels pitches méritent du temps au prochain cycle. Il a lieu pendant le cooldown (2 semaines entre chaque cycle de construction).
           {activeCycle && (
             <span className="block mt-2">
               Prochain cooldown:{' '}
@@ -120,9 +120,14 @@ export function BettingTable({
       {/* Capacity indicator */}
       <div className="bg-white rounded-xl border border-stone-200 p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium text-stone-800">
-            Capacité du cycle
-          </h3>
+          <div>
+            <h3 className="font-medium text-stone-800">
+              Capacité du cycle
+            </h3>
+            <p className="text-xs text-stone-400 mt-0.5">
+              Total du temps engagé par les paris. Maximum : 6 semaines par cycle.
+            </p>
+          </div>
           <span className="text-sm text-stone-500">
             {totalWeeksUsed} / 6 semaines utilisées
           </span>
@@ -311,8 +316,8 @@ export function BettingTable({
           {cycleBets.length === 0 ? (
             <div className="bg-white rounded-xl border border-dashed border-stone-300 p-8 text-center">
               <div className="text-4xl mb-3">🎲</div>
-              <p className="text-stone-400 text-sm">
-                Aucun pari placé pour ce cycle
+              <p className="text-stone-500 text-sm">
+                Sélectionnez un pitch dans la colonne de gauche et composez l'équipe qui le construira. Chaque cycle a une capacité de 6 semaines.
               </p>
             </div>
           ) : (

@@ -673,6 +673,19 @@ export default function DesignIndex({ initialProjectId }) {
   const deleteProject = useCallback((projectId) => {
     const project = projects.find((p) => p.id === projectId) || projectDetail?.project
     const projectName = project?.name || 'ce projet'
+    const taskCount = project?.taskCount || 0
+
+    if (taskCount > 0) {
+      setDeleteConfirm({
+        title: 'Suppression impossible',
+        message: `Le projet « ${projectName} » contient encore ${taskCount} tâche${taskCount > 1 ? 's' : ''}. Supprimez d'abord toutes les tâches du projet avant de pouvoir le supprimer.`,
+        confirmLabel: 'Compris',
+        accentColor: '#78716c',
+        action: () => {},
+      })
+      return
+    }
+
     setDeleteConfirm({
       title: 'Supprimer ce projet ?',
       message: `Le projet « ${projectName} » sera supprimé définitivement.`,
@@ -1385,6 +1398,8 @@ export default function DesignIndex({ initialProjectId }) {
         <ConfirmDeleteModal
           title={deleteConfirm.title}
           message={deleteConfirm.message}
+          confirmLabel={deleteConfirm.confirmLabel}
+          accentColor={deleteConfirm.accentColor}
           onConfirm={() => {
             deleteConfirm.action()
             setDeleteConfirm(null)

@@ -9,6 +9,7 @@ interface TaskListBlockProps {
   actions: ActionItem[]
   onToggleAction: (actionId: string) => void
   onEditAction?: (action: ActionItem) => void
+  onDeleteAction?: (actionId: string) => void
   onAddAction?: (taskListId: string) => void
   onEditList?: (id: string, name: string) => void
   onDeleteList?: (id: string) => void
@@ -23,6 +24,7 @@ export function TaskListBlock({
   actions,
   onToggleAction,
   onEditAction,
+  onDeleteAction,
   onAddAction,
   onEditList,
   onDeleteList,
@@ -105,6 +107,7 @@ export function TaskListBlock({
             action={action}
             onToggle={onToggleAction}
             onEdit={onEditAction}
+            onDelete={onDeleteAction}
             busy={busy}
             accentColor={accentColor}
             members={members}
@@ -128,6 +131,7 @@ export function TaskListBlock({
                     action={action}
                     onToggle={onToggleAction}
                     onEdit={onEditAction}
+                    onDelete={onDeleteAction}
                     busy={busy}
                     accentColor={accentColor}
                     members={members}

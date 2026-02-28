@@ -117,7 +117,7 @@ export function PitchCard({
             </h3>
           </button>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${appetiteConfig.color}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${appetiteConfig.color}`} title="Appétit : temps maximum alloué">
               {appetiteConfig.label}
             </span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusConfig.color}`}>
@@ -169,7 +169,7 @@ export function PitchCard({
         <div className="grid grid-cols-5 gap-2 mb-4">
           {[
             { key: 'problem', label: 'Problem', filled: !!pitch.problem },
-            { key: 'appetite', label: 'Appetite', filled: !!pitch.appetite },
+            { key: 'appetite', label: 'Appétit', filled: !!pitch.appetite },
             { key: 'solution', label: 'Solution', filled: !!pitch.solution },
             { key: 'rabbitHoles', label: 'Rabbit Holes', filled: pitch.rabbitHoles.length > 0 },
             { key: 'noGos', label: 'No-Gos', filled: pitch.noGos.length > 0 },

@@ -1,0 +1,174 @@
+import React, { useState, useEffect, useCallback } from 'react'
+import { X, Sparkles } from 'lucide-react'
+import { apiRequest } from '@/lib/api'
+import { MemberPicker, MultiMemberPicker, type MemberOption } from './MemberPicker'
+
+interface ProjectCreateModalProps {
+  onCreated: () => void
+  onClose: () => void
+}
+
+const STATUS_OPTIONS = [
+  { value: 'Idée', label: 'Idée', dot: 'bg-sky-400' },
+  { value: 'En attente', label: 'En attente', dot: 'bg-amber-400' },
+  { value: 'En cours', label: 'En cours', dot: 'bg-emerald-500' },
+  { value: 'Standby', label: 'Standby', dot: 'bg-stone-400' },
+]
+
+const inputClass = 'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781] focus:bg-white'
+const labelClass = 'text-xs font-medium text-stone-500 uppercase tracking-wider'
+
+export function ProjectCreateModal({ onCreated, onClose }: ProjectCreateModalProps) {
+  const [name, setName] = useState('')
+  const [status, setStatus] = useState('Idée')
+  const [leadName, setLeadName] = useState('')
+  const [teamNames, setTeamNames] = useState<string[]>([])
+  const [members, setMembers] = useState<MemberOption[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    apiRequest('/api/v1/lab/members').then(res => {
+      setMembers(res.items.map((m: any) => ({
+        id: m.id,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        avatar: m.avatar,
+      })))
+    }).catch(() => {})
+  }, [])
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      await apiRequest('/api/v1/lab/projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          status,
+          lead_name: leadName,
+          team_names: teamNames,
+        }),
+      })
+      onCreated()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }, [name, status, leadName, teamNames, onCreated])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.42)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/10 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        onClick={e => e.stopPropagation()}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+          <div className="shrink-0 px-6 py-5 border-b border-stone-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#5B5781]/10 flex items-center justify-center">
+                <Sparkles className="w-4.5 h-4.5 text-[#5B5781]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-stone-900 tracking-tight">
+                  Nouveau projet
+                </h2>
+                <p className="text-xs text-stone-400 mt-0.5">Créer un projet Semisto</p>
+              </div>
+            </div>
+            <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-4">
+            {error && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <label className="block space-y-1.5">
+              <span className={labelClass}>Nom du projet</span>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className={inputClass}
+                placeholder="Ex. Jardin-forêt communautaire de Namur"
+                required
+                autoFocus
+              />
+            </label>
+
+            <div className="space-y-1.5">
+              <span className={labelClass}>Statut initial</span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {STATUS_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStatus(opt.value)}
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                      status === opt.value
+                        ? 'bg-[#5B5781]/10 text-[#5B5781] ring-1 ring-[#5B5781]/20'
+                        : 'bg-stone-50 text-stone-600 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${opt.dot}`} />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <span className={labelClass}>Responsable</span>
+              <MemberPicker
+                members={members}
+                value={leadName}
+                onChange={setLeadName}
+                placeholder="Qui dirige ce projet ?"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <span className={labelClass}>Équipe</span>
+              <MultiMemberPicker
+                members={members}
+                value={teamNames}
+                onChange={setTeamNames}
+                placeholder="Ajouter des membres à l'équipe..."
+              />
+            </div>
+          </div>
+
+          <div className="shrink-0 px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-lg border border-stone-300 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={busy || !name.trim()}
+              className="px-5 py-2.5 rounded-lg bg-[#5B5781] text-white text-sm font-semibold hover:bg-[#4a4670] disabled:opacity-50 transition-colors"
+            >
+              {busy ? 'Création...' : 'Créer le projet'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}

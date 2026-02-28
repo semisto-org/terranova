@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import { apiRequest } from '@/lib/api'
-import { Search, FolderKanban, ChevronRight, Users, CheckCircle2, Circle } from 'lucide-react'
+import { Search, FolderKanban, ChevronRight, Users, CheckCircle2, Circle, Plus } from 'lucide-react'
 import { ProjectDetail } from './ProjectDetail'
+import { ProjectCreateModal } from './ProjectCreateModal'
 
 interface ProjectSummary {
   id: string
@@ -41,6 +42,7 @@ export function ProjectBoard() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -138,6 +140,13 @@ export function ProjectBoard() {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#5B5781] text-white text-sm font-semibold hover:bg-[#4a4670] active:scale-[0.97] transition-all duration-200 shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Nouveau projet
+        </button>
       </div>
 
       {error && (
@@ -244,6 +253,13 @@ export function ProjectBoard() {
             )
           })}
         </div>
+      )}
+
+      {createModalOpen && (
+        <ProjectCreateModal
+          onCreated={() => { setCreateModalOpen(false); load() }}
+          onClose={() => setCreateModalOpen(false)}
+        />
       )}
     </div>
   )

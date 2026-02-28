@@ -147,8 +147,8 @@ export function HillChart({
       {/* Labels */}
       {!compact && (
         <div className="flex justify-between text-[10px] text-stone-400 mt-1 px-1">
-          <span>Figuring it out</span>
-          <span>Making it happen</span>
+          <span>← Exploration</span>
+          <span>Exécution →</span>
         </div>
       )}
 

@@ -45,9 +45,10 @@ module Api
       def index
         projects = Design::Project.includes(:team_members).order(updated_at: :desc)
         templates = Design::ProjectTemplate.order(:name)
+        task_counts = Design::Task.joins(:task_list).where(design_task_lists: { project_id: projects.select(:id) }).group("design_task_lists.project_id").count
 
         render json: {
-          projects: projects.map { |project| serialize_project(project).merge(teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) }) },
+          projects: projects.map { |project| serialize_project(project, task_count: task_counts[project.id] || 0).merge(teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) }) },
           stats: build_stats(projects),
           templates: templates.map { |template| serialize_template(template) }
         }
@@ -91,7 +92,15 @@ module Api
       end
 
       def destroy
-        find_project.soft_delete!
+        project = find_project
+        task_count = Design::Task.joins(:task_list).where(design_task_lists: { project_id: project.id }).count
+
+        if task_count > 0
+          render json: { error: "Impossible de supprimer ce projet : il reste #{task_count} tâche#{'s' if task_count > 1}. Supprimez d'abord toutes les tâches." }, status: :unprocessable_entity
+          return
+        end
+
+        project.soft_delete!
         head :no_content
       end
 
@@ -1190,7 +1199,7 @@ module Api
         }
       end
 
-      def serialize_project(project)
+      def serialize_project(project, task_count: nil)
         {
           id: project.id.to_s,
           name: project.name,
@@ -1228,6 +1237,7 @@ module Api
           },
           templateId: project.template_id&.to_s,
           googlePhotosUrl: project.google_photos_url.presence,
+          taskCount: task_count || Design::Task.joins(:task_list).where(design_task_lists: { project_id: project.id }).count,
           createdAt: project.created_at.iso8601,
           updatedAt: project.updated_at.iso8601
         }

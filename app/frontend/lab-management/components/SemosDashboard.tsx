@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Info } from 'lucide-react'
 import type {
   Member,
   Wallet,
@@ -288,6 +289,13 @@ export function SemosDashboard({
               Gérez vos Semos et consultez votre historique
             </p>
           </div>
+        </div>
+
+        <div className="flex items-start gap-3 mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200/80">
+          <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            Les Semos ne sont pas encore actifs. Les données affichées sont fictives et servent uniquement à prévisualiser l’interface.
+          </p>
         </div>
       </div>
 

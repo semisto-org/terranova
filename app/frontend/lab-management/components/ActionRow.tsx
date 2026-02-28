@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Calendar, Clock, Star } from 'lucide-react'
+import { Calendar, Clock, Star, Trash2 } from 'lucide-react'
 import type { MemberOption } from './MemberPicker'
 
 export interface ActionItem {
@@ -20,12 +20,13 @@ interface ActionRowProps {
   action: ActionItem
   onToggle: (id: string) => void
   onEdit?: (action: ActionItem) => void
+  onDelete?: (id: string) => void
   busy?: boolean
   accentColor?: string
   members?: MemberOption[]
 }
 
-export function ActionRow({ action, onToggle, onEdit, busy, accentColor = '#5B5781', members = [] }: ActionRowProps) {
+export function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColor = '#5B5781', members = [] }: ActionRowProps) {
   const isOverdue = action.dueDate && !action.completed && new Date(action.dueDate) < new Date()
   const priorityStars = action.priority === 'ⓄⓄⓄ' ? 3 : action.priority === 'ⓄⓄ' ? 2 : action.priority === 'Ⓞ' ? 1 : 0
 
@@ -114,6 +115,19 @@ export function ActionRow({ action, onToggle, onEdit, busy, accentColor = '#5B57
           ))}
         </div>
       </div>
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(action.id)
+          }}
+          disabled={busy}
+          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-stone-400 hover:text-red-500 transition-all flex-shrink-0"
+          title="Supprimer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   )
 }

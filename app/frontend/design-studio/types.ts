@@ -63,6 +63,7 @@ export interface Project {
   projectManagerId: string
   budget: ProjectBudget
   templateId: string | null
+  taskCount: number
   createdAt: string
   updatedAt: string
   teamMembers?: Array<{ id?: string; memberAvatar?: string; memberName?: string }>

@@ -48,7 +48,7 @@ Rails.application.routes.draw do
 
       post "nova/chat", to: "nova#chat"
 
-      get "search", to: "search#index"
+      get "search/global", to: "search#global"
 
       get "foundation/routes", to: "foundation#routes"
       get "foundation/shell", to: "foundation#shell"

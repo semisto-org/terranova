@@ -335,6 +335,7 @@ export function ProjectDashboard({
                               <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[28%]">Projet</th>
                               <th className="text-center text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[10%]">Équipe</th>
                               <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[8%]">Surface</th>
+                              <th className="text-center text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[8%]">Tâches</th>
                               <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[18%]">Budget heures</th>
                               <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[6%]"></th>
                             </tr>
@@ -403,6 +404,13 @@ export function ProjectDashboard({
                                   <td className="px-3 py-3 text-right">
                                     <span className="text-sm text-stone-600 tabular-nums">
                                       {project.area > 0 ? `${project.area} m²` : '—'}
+                                    </span>
+                                  </td>
+
+                                  {/* Task count */}
+                                  <td className="px-3 py-3 text-center">
+                                    <span className={`text-sm tabular-nums ${project.taskCount > 0 ? 'text-stone-600' : 'text-stone-300'}`}>
+                                      {project.taskCount}
                                     </span>
                                   </td>
 
