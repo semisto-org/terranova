@@ -3,6 +3,10 @@ module Api
     class EconomicsController < BaseController
       before_action :require_effective_member
 
+      rescue_from ActiveRecord::RecordInvalid do |error|
+        render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
       def inputs
         render json: { inputs: filter_scope(EconomicInput.all).order(date: :desc, id: :desc).map { |item| serialize_input(item) } }
       end
@@ -24,7 +28,7 @@ module Api
       end
 
       def outputs
-        render json: { outputs: filter_scope(EconomicOutput.all).order(date: :desc, id: :desc).map { |item| serialize_output(item) } }
+        render json: { outputs: filter_scope(EconomicOutput.includes(:species).all).order(date: :desc, id: :desc).map { |item| serialize_output(item) } }
       end
 
       def create_output
@@ -51,11 +55,11 @@ module Api
       private
 
       def economic_input_params
-        params.require(:economic_input).permit(:date, :category, :amount_cents, :quantity, :unit, :notes, :location_id, :zone_id, :design_project_id)
+        params.require(:economic_input).permit(:date, :category, :amount_cents, :quantity, :unit, :notes, :labor_type, :location_id, :zone_id, :design_project_id)
       end
 
       def economic_output_params
-        params.require(:economic_output).permit(:date, :category, :amount_cents, :quantity, :unit, :species_name, :notes, :location_id, :zone_id, :design_project_id)
+        params.require(:economic_output).permit(:date, :category, :amount_cents, :quantity, :unit, :species_name, :species_id, :notes, :location_id, :zone_id, :design_project_id)
       end
 
       def filter_params
@@ -80,6 +84,7 @@ module Api
           amount_cents: item.amount_cents,
           quantity: item.quantity.to_f,
           unit: item.unit,
+          labor_type: item.labor_type,
           notes: item.notes,
           location_id: item.location_id,
           zone_id: item.zone_id,
@@ -96,6 +101,8 @@ module Api
           quantity: item.quantity.to_f,
           unit: item.unit,
           species_name: item.species_name,
+          species_id: item.species_id&.to_s,
+          species_latin_name: item.species&.latin_name,
           notes: item.notes,
           location_id: item.location_id,
           zone_id: item.zone_id,

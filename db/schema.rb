@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_28_130001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -758,6 +758,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
     t.datetime "created_at", null: false
     t.date "date", null: false
     t.bigint "design_project_id"
+    t.string "labor_type"
     t.bigint "location_id"
     t.text "notes"
     t.decimal "quantity", precision: 10, scale: 2, default: "0.0", null: false
@@ -767,6 +768,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
     t.index ["category"], name: "index_economic_inputs_on_category"
     t.index ["date"], name: "index_economic_inputs_on_date"
     t.index ["design_project_id"], name: "index_economic_inputs_on_design_project_id"
+    t.index ["labor_type"], name: "index_economic_inputs_on_labor_type"
     t.index ["location_id"], name: "index_economic_inputs_on_location_id"
     t.index ["zone_id"], name: "index_economic_inputs_on_zone_id"
   end
@@ -780,6 +782,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
     t.bigint "location_id"
     t.text "notes"
     t.decimal "quantity", precision: 10, scale: 2, default: "0.0", null: false
+    t.bigint "species_id"
     t.string "species_name"
     t.string "unit", null: false
     t.datetime "updated_at", null: false
@@ -788,6 +791,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
     t.index ["date"], name: "index_economic_outputs_on_date"
     t.index ["design_project_id"], name: "index_economic_outputs_on_design_project_id"
     t.index ["location_id"], name: "index_economic_outputs_on_location_id"
+    t.index ["species_id"], name: "index_economic_outputs_on_species_id"
     t.index ["zone_id"], name: "index_economic_outputs_on_zone_id"
   end
 
@@ -1460,7 +1464,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
     t.string "strate_key", null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_plant_palette_items_on_deleted_at"
-    t.index ["palette_id", "item_type", "item_id"], name: "idx_on_palette_id_item_type_item_id_9890869de5", unique: true
+    t.index ["palette_id", "item_type", "item_id"], name: "index_plant_palette_items_on_palette_item_type_id_unique", unique: true, where: "(deleted_at IS NULL)"
     t.index ["palette_id"], name: "index_plant_palette_items_on_palette_id"
   end
 
@@ -1956,6 +1960,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_212555) do
   add_foreign_key "economic_outputs", "design_projects"
   add_foreign_key "economic_outputs", "location_zones", column: "zone_id"
   add_foreign_key "economic_outputs", "locations"
+  add_foreign_key "economic_outputs", "plant_species", column: "species_id"
   add_foreign_key "event_attendees", "events"
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"

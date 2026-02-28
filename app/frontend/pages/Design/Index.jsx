@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { ProjectDashboard, ProjectDetailView, ReportingDashboard } from '../../design-studio/components'
+import { EconomicsSection } from '../../design-studio/components/economics'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
@@ -390,6 +391,7 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
 const DESIGN_SECTIONS = [
   { id: 'projects', label: 'Projets' },
   { id: 'locations', label: 'Lieux' },
+  { id: 'economics', label: 'Données économiques' },
   { id: 'reporting', label: 'Reporting' },
 ]
 
@@ -420,6 +422,10 @@ export default function DesignIndex({ initialProjectId }) {
   const [reportingLoading, setReportingLoading] = useState(false)
   const [reportingError, setReportingError] = useState(null)
   const [reportingFilters, setReportingFilters] = useState({ period: '12m', projectId: '', client: '', memberId: '', groupBy: 'month' })
+
+  const [economics, setEconomics] = useState({ dashboard: null, inputs: [], outputs: [] })
+  const [economicsLoading, setEconomicsLoading] = useState(false)
+  const [economicsFilters, setEconomicsFilters] = useState({ from: '', to: '', design_project_id: '' })
 
   const [searchResults, setSearchResults] = useState([])
   const [academyTrainingOptions, setAcademyTrainingOptions] = useState([])
@@ -482,6 +488,31 @@ export default function DesignIndex({ initialProjectId }) {
     }
   }, [reportingFilters])
 
+  const economicsFiltersRef = React.useRef(economicsFilters)
+  useEffect(() => { economicsFiltersRef.current = economicsFilters }, [economicsFilters])
+
+  const loadEconomics = useCallback(async (filters) => {
+    const f = filters ?? economicsFiltersRef.current
+    setEconomicsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (f.from) params.set('from', f.from)
+      if (f.to) params.set('to', f.to)
+      if (f.design_project_id) params.set('design_project_id', f.design_project_id)
+      const qs = params.toString()
+      const [dashboardData, inputsData, outputsData] = await Promise.all([
+        apiRequest(`/api/v1/economics/dashboard${qs ? '?' + qs : ''}`),
+        apiRequest(`/api/v1/economics/inputs${qs ? '?' + qs : ''}`),
+        apiRequest(`/api/v1/economics/outputs${qs ? '?' + qs : ''}`),
+      ])
+      setEconomics({ dashboard: dashboardData, inputs: inputsData.inputs || [], outputs: outputsData.outputs || [] })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setEconomicsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     let active = true
 
@@ -525,6 +556,69 @@ export default function DesignIndex({ initialProjectId }) {
       setBusy(false)
     }
   }, [loadDashboard, loadProject])
+
+  const economicsActions = useMemo(() => ({
+    onFilterChange: (key, value) => setEconomicsFilters((prev) => ({ ...prev, [key]: value })),
+    onCreateInput: async (values) => {
+      await runMutation(
+        () => apiRequest('/api/v1/economics/inputs', { method: 'POST', body: JSON.stringify({ economic_input: values }) }),
+        { refreshDashboard: false }
+      )
+      await loadEconomics()
+    },
+    onUpdateInput: async (id, values) => {
+      await runMutation(
+        () => apiRequest(`/api/v1/economics/inputs/${id}`, { method: 'PATCH', body: JSON.stringify({ economic_input: values }) }),
+        { refreshDashboard: false }
+      )
+      await loadEconomics()
+    },
+    onDeleteInput: (id) => {
+      setDeleteConfirm({
+        title: 'Supprimer ce coût ?',
+        message: 'Ce coût sera supprimé définitivement.',
+        action: async () => {
+          await runMutation(
+            () => apiRequest(`/api/v1/economics/inputs/${id}`, { method: 'DELETE' }),
+            { refreshDashboard: false }
+          )
+          await loadEconomics()
+        },
+      })
+    },
+    onCreateOutput: async (values) => {
+      await runMutation(
+        () => apiRequest('/api/v1/economics/outputs', { method: 'POST', body: JSON.stringify({ economic_output: values }) }),
+        { refreshDashboard: false }
+      )
+      await loadEconomics()
+    },
+    onUpdateOutput: async (id, values) => {
+      await runMutation(
+        () => apiRequest(`/api/v1/economics/outputs/${id}`, { method: 'PATCH', body: JSON.stringify({ economic_output: values }) }),
+        { refreshDashboard: false }
+      )
+      await loadEconomics()
+    },
+    onDeleteOutput: (id) => {
+      setDeleteConfirm({
+        title: 'Supprimer ce revenu ?',
+        message: 'Ce revenu sera supprimé définitivement.',
+        action: async () => {
+          await runMutation(
+            () => apiRequest(`/api/v1/economics/outputs/${id}`, { method: 'DELETE' }),
+            { refreshDashboard: false }
+          )
+          await loadEconomics()
+        },
+      })
+    },
+    onSearchSpecies: async (query) => {
+      if (!query?.trim()) return []
+      const data = await apiRequest(`/api/v1/plants/search?query=${encodeURIComponent(query)}`)
+      return data?.items || []
+    },
+  }), [runMutation, loadEconomics])
 
   const openCreateModal = useCallback((templateId) => {
     setSelectedTemplateId(templateId || null)
@@ -983,6 +1077,11 @@ export default function DesignIndex({ initialProjectId }) {
     loadReporting(reportingFilters)
   }, [activeSection, loadReporting, reportingFilters])
 
+  useEffect(() => {
+    if (activeSection !== 'economics') return
+    loadEconomics(economicsFilters)
+  }, [activeSection, economicsFilters, loadEconomics])
+
   const projectDetailActions = useMemo(() => {
     if (!detailActions) return null
     const noop = () => {}
@@ -1120,6 +1219,20 @@ export default function DesignIndex({ initialProjectId }) {
             ))}
           </div>
         </section>
+      ) : activeSection === 'economics' ? (
+        economicsLoading && !economics.dashboard ? (
+          <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement des données économiques…</p></div>
+        ) : (
+          <EconomicsSection
+            dashboard={economics.dashboard}
+            inputs={economics.inputs}
+            outputs={economics.outputs}
+            filters={economicsFilters}
+            projects={projects.map((p) => ({ id: String(p.id), name: p.name }))}
+            busy={busy}
+            actions={economicsActions}
+          />
+        )
       ) : activeSection === 'reporting' ? (
         reportingLoading ? (
           <div className="flex items-center justify-center h-full p-8"><p className="text-stone-500">Chargement du reporting…</p></div>

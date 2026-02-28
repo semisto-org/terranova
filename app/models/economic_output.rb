@@ -4,6 +4,7 @@ class EconomicOutput < ApplicationRecord
   belongs_to :location, optional: true
   belongs_to :zone, class_name: "Location::Zone", optional: true
   belongs_to :design_project, class_name: "Design::Project", optional: true
+  belongs_to :species, class_name: "Plant::Species", optional: true
 
   validates :date, :unit, presence: true
   validates :category, inclusion: { in: CATEGORIES }

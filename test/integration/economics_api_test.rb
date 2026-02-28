@@ -44,6 +44,37 @@ class EconomicsApiTest < ActionDispatch::IntegrationTest
     assert_response :no_content
   end
 
+  test "input with labor_type" do
+    post "/api/v1/economics/inputs", params: {
+      economic_input: {
+        date: "2026-02-15",
+        category: "labor",
+        amount_cents: 500,
+        quantity: 2,
+        unit: "h",
+        labor_type: "plantation"
+      }
+    }
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal "plantation", body["labor_type"]
+    assert_equal "labor", body["category"]
+  end
+
+  test "labor_type rejected for non-labor category" do
+    post "/api/v1/economics/inputs", params: {
+      economic_input: {
+        date: "2026-02-15",
+        category: "plants",
+        amount_cents: 500,
+        quantity: 2,
+        unit: "kg",
+        labor_type: "plantation"
+      }
+    }
+    assert_response :unprocessable_entity
+  end
+
   test "outputs CRUD and dashboard" do
     project = Design::Project.create!(name: "P2", client_name: "Client", client_id: "c2", area: 1000)
 
@@ -75,5 +106,27 @@ class EconomicsApiTest < ActionDispatch::IntegrationTest
 
     delete "/api/v1/economics/outputs/#{output_id}"
     assert_response :no_content
+  end
+
+  test "output with species_id" do
+    genus = Plant::Genus.create!(latin_name: "Malus")
+    species = Plant::Species.create!(latin_name: "Malus domestica", genus: genus, plant_type: "tree")
+
+    post "/api/v1/economics/outputs", params: {
+      economic_output: {
+        date: "2026-02-15",
+        category: "harvest",
+        amount_cents: 2000,
+        quantity: 10,
+        unit: "kg",
+        species_id: species.id,
+        species_name: "Malus domestica"
+      }
+    }
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal species.id.to_s, body["species_id"]
+    assert_equal "Malus domestica", body["species_latin_name"]
+    assert_equal "Malus domestica", body["species_name"]
   end
 end
