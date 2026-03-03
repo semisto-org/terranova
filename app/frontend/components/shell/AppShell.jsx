@@ -29,7 +29,7 @@ function ShellLayout({ children }) {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-stone-50" style={{ fontFamily: 'var(--font-body)' }}>
+    <div className="flex min-h-screen bg-stone-50" style={{ fontFamily: 'var(--font-body)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -40,7 +40,7 @@ function ShellLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-56 bg-white border-r border-stone-200 flex flex-col transition-transform lg:translate-x-0 lg:static lg:z-auto ${
+        className={`fixed inset-y-0 left-0 z-40 w-56 bg-white border-r border-stone-200 flex flex-col transition-transform lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -53,9 +53,9 @@ function ShellLayout({ children }) {
       </aside>
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-56">
         {/* Header */}
-        <header className="h-13 border-b border-stone-200 bg-white flex items-center px-4 gap-3 shrink-0">
+        <header className="h-13 border-b border-stone-200 bg-white flex items-center px-4 gap-3 shrink-0 sticky top-0 z-10">
           {/* Mobile hamburger */}
           <button
             className="lg:hidden p-1.5 rounded-lg hover:bg-stone-100 text-stone-600"
@@ -105,7 +105,7 @@ function ShellLayout({ children }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1">
           {children}
         </main>
       </div>

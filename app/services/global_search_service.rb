@@ -118,15 +118,24 @@ class GlobalSearchService
     scope = apply_date_filter(scope)
     vector_sql = "setweight(to_tsvector('simple', #{cfg[:title_sql]}), 'A') || setweight(to_tsvector('simple', #{cfg[:content_sql]}), 'B')"
     sanitized_ts = ActiveRecord::Base.sanitize_sql_array(["to_tsquery('simple', ?)", ts_query])
-    scored = scope.select("#{cfg[:table]}.*, ts_rank_cd((#{vector_sql}), #{sanitized_ts}) AS rank_score")
-                  .where("(#{vector_sql}) @@ #{sanitized_ts} OR #{cfg[:title_sql]} ILIKE :like_query OR #{cfg[:content_sql]} ILIKE :like_query", like_query: "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%")
-    scored = if trigram_enabled?
+    rank_select = "ts_rank_cd((#{vector_sql}), #{sanitized_ts}) AS rank_score"
+    trigram_select = if trigram_enabled?
       sim = ActiveRecord::Base.connection.quote(query_tokens.join(' '))
-      scored.select("GREATEST(similarity(#{cfg[:title_sql]}, #{sim}), similarity(#{cfg[:content_sql]}, #{sim})) AS trigram_score")
-            .order(Arel.sql("(rank_score * 1.4 + trigram_score) DESC, #{cfg[:table]}.updated_at DESC"))
+      "GREATEST(similarity(#{cfg[:title_sql]}, #{sim}), similarity(#{cfg[:content_sql]}, #{sim})) AS trigram_score"
     else
-      scored.select("0.0 AS trigram_score").order(Arel.sql("rank_score DESC, #{cfg[:table]}.updated_at DESC"))
+      "0.0 AS trigram_score"
     end
+    rank_expr = "ts_rank_cd((#{vector_sql}), #{sanitized_ts})"
+    trigram_expr = if trigram_enabled?
+      sim = ActiveRecord::Base.connection.quote(query_tokens.join(' '))
+      "GREATEST(similarity(#{cfg[:title_sql]}, #{sim}), similarity(#{cfg[:content_sql]}, #{sim}))"
+    else
+      "0.0"
+    end
+    order_sql = trigram_enabled? ? "(#{rank_expr} * 1.4 + #{trigram_expr}) DESC, #{cfg[:table]}.updated_at DESC" : "#{rank_expr} DESC, #{cfg[:table]}.updated_at DESC"
+    scored = scope.select("#{cfg[:table]}.*, #{rank_select}, #{trigram_select}")
+                  .where("(#{vector_sql}) @@ #{sanitized_ts} OR #{cfg[:title_sql]} ILIKE :like_query OR #{cfg[:content_sql]} ILIKE :like_query", like_query: "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%")
+                  .order(Arel.sql(order_sql))
 
     scored.limit(per_type_limit).map { |record| build_item(type, record, cfg) }
   end
