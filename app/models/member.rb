@@ -22,7 +22,6 @@ class Member < ApplicationRecord
 
   validates :first_name, :last_name, :email, :status, :joined_at, presence: true
   validates :email, uniqueness: { case_sensitive: false }
-  validates :slack_user_id, uniqueness: true, allow_blank: true
   validates :member_kind, inclusion: { in: MEMBER_KINDS }
   validates :membership_type, inclusion: { in: MEMBERSHIP_TYPES }
 

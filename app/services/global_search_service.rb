@@ -117,8 +117,9 @@ class GlobalSearchService
     scope = cfg[:filters].call(scope, @filters)
     scope = apply_date_filter(scope)
     vector_sql = "setweight(to_tsvector('simple', #{cfg[:title_sql]}), 'A') || setweight(to_tsvector('simple', #{cfg[:content_sql]}), 'B')"
-    scored = scope.select("#{cfg[:table]}.*, ts_rank_cd((#{vector_sql}), to_tsquery('simple', :ts_query)) AS rank_score")
-                  .where("(#{vector_sql}) @@ to_tsquery('simple', :ts_query) OR #{cfg[:title_sql]} ILIKE :like_query OR #{cfg[:content_sql]} ILIKE :like_query", ts_query: ts_query, like_query: "%#{@query}%")
+    sanitized_ts = ActiveRecord::Base.sanitize_sql_array(["to_tsquery('simple', ?)", ts_query])
+    scored = scope.select("#{cfg[:table]}.*, ts_rank_cd((#{vector_sql}), #{sanitized_ts}) AS rank_score")
+                  .where("(#{vector_sql}) @@ #{sanitized_ts} OR #{cfg[:title_sql]} ILIKE :like_query OR #{cfg[:content_sql]} ILIKE :like_query", like_query: "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%")
     scored = if trigram_enabled?
       sim = ActiveRecord::Base.connection.quote(query_tokens.join(' '))
       scored.select("GREATEST(similarity(#{cfg[:title_sql]}, #{sim}), similarity(#{cfg[:content_sql]}, #{sim})) AS trigram_score")
