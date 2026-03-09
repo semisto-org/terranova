@@ -66,11 +66,12 @@ module Api
       end
 
       def create_contact
-        contact = Contact.new(contact_params)
+        tag_names = Array(contact_params[:tag_names])
+        contact = Contact.new(contact_params.except(:tag_names))
 
         ActiveRecord::Base.transaction do
           contact.save!
-          Array(contact_params[:tag_names]).each do |tag_name|
+          tag_names.each do |tag_name|
             contact.contact_tags.find_or_create_by!(name: tag_name.strip) if tag_name.present?
           end
         end
