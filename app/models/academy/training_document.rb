@@ -4,6 +4,7 @@ module Academy
     self.table_name = 'academy_training_documents'
 
     belongs_to :training, class_name: 'Academy::Training'
+    belongs_to :session, class_name: 'Academy::TrainingSession', optional: true
     has_one_attached :file
 
     validates :name, :uploaded_at, presence: true

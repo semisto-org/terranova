@@ -385,6 +385,7 @@ export default function TrainingDetail({
             {tab === 'documents' && (
               <TrainingDocumentsTab
                 documents={documents}
+                sessions={sessions}
                 onUploadDocument={() => actions.addDocument(training.id)}
                 onDeleteDocument={(id) => actions.deleteDocument(id)}
               />

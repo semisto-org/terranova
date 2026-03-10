@@ -13,7 +13,9 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
       Academy::Training,
       Academy::TrainingLocation,
       Academy::TrainingType,
-      Academy::IdeaNote
+      Academy::IdeaNote,
+      ContactTag,
+      Contact
     ].each(&:delete_all)
   end
 
@@ -1111,6 +1113,130 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
 
     assert_equal 0, registrations.size
     assert_equal 0, attendances.size
+  end
+
+  # =============================
+  # Contact Linking
+  # =============================
+
+  test 'registration auto-links to existing contact by email' do
+    contact = Contact.create!(contact_type: 'person', name: 'Alice Existing', email: 'alice@existing.com', phone: '+32 123')
+
+    post '/api/v1/academy/training-types', params: { name: 'Type Link' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation Link Test' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/academy/trainings/#{training_id}/registrations", params: {
+      contact_name: 'Alice Existing',
+      contact_email: 'alice@existing.com',
+      amount_paid: 0,
+      payment_status: 'pending'
+    }, as: :json
+    assert_response :created
+
+    reg = JSON.parse(response.body)
+    assert_equal contact.id, reg['contactId']
+    assert_equal 'Alice Existing', reg['contactName']
+  end
+
+  test 'registration auto-creates contact when no match found' do
+    post '/api/v1/academy/training-types', params: { name: 'Type Create' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation Create Test' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    assert_difference 'Contact.count', 1 do
+      post "/api/v1/academy/trainings/#{training_id}/registrations", params: {
+        contact_name: 'Nouveau Participant',
+        contact_email: 'nouveau@example.com',
+        phone: '+32 456',
+        amount_paid: 0,
+        payment_status: 'pending'
+      }, as: :json
+    end
+    assert_response :created
+
+    reg = JSON.parse(response.body)
+    assert_not_nil reg['contactId']
+
+    created_contact = Contact.find(reg['contactId'])
+    assert_equal 'person', created_contact.contact_type
+    assert_equal 'Nouveau Participant', created_contact.name
+    assert_equal 'nouveau@example.com', created_contact.email
+    assert_equal '+32 456', created_contact.phone
+  end
+
+  test 'registration with explicit contact_id preserves it' do
+    contact = Contact.create!(contact_type: 'person', name: 'Explicit Contact', email: 'explicit@test.com')
+
+    post '/api/v1/academy/training-types', params: { name: 'Type Explicit' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation Explicit Test' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/academy/trainings/#{training_id}/registrations", params: {
+      contact_id: contact.id,
+      contact_name: 'Different Name',
+      contact_email: 'different@email.com',
+      amount_paid: 0,
+      payment_status: 'pending'
+    }, as: :json
+    assert_response :created
+
+    reg = JSON.parse(response.body)
+    assert_equal contact.id, reg['contactId']
+  end
+
+  test 'registration without email has no contact link' do
+    post '/api/v1/academy/training-types', params: { name: 'Type NoEmail' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation NoEmail Test' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    assert_no_difference 'Contact.count' do
+      post "/api/v1/academy/trainings/#{training_id}/registrations", params: {
+        contact_name: 'Sans Email',
+        amount_paid: 0,
+        payment_status: 'pending'
+      }, as: :json
+    end
+    assert_response :created
+
+    reg = JSON.parse(response.body)
+    assert_nil reg['contactId']
+  end
+
+  test 'update registration re-links contact when email changes' do
+    Contact.create!(contact_type: 'person', name: 'Bob Original', email: 'bob@original.com')
+    new_contact = Contact.create!(contact_type: 'person', name: 'Bob New', email: 'bob@new.com')
+
+    post '/api/v1/academy/training-types', params: { name: 'Type Update' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation Update Test' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/academy/trainings/#{training_id}/registrations", params: {
+      contact_name: 'Bob',
+      contact_email: 'bob@original.com',
+      amount_paid: 0,
+      payment_status: 'pending'
+    }, as: :json
+    registration_id = JSON.parse(response.body)['id']
+
+    patch "/api/v1/academy/registrations/#{registration_id}", params: {
+      contact_name: 'Bob New',
+      contact_email: 'bob@new.com'
+    }, as: :json
+    assert_response :success
+
+    reg = JSON.parse(response.body)
+    assert_equal new_contact.id, reg['contactId']
   end
 
   test 'checklist with 20+ items' do

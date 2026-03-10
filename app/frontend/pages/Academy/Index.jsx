@@ -226,6 +226,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     formData.append('name', values.name)
     formData.append('document_type', values.document_type)
     formData.append('file', values.file)
+    if (values.sessionId) formData.append('session_id', values.sessionId)
     if (values.uploaded_by) formData.append('uploaded_by', values.uploaded_by)
     const success = await runMutation(() =>
       apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/documents`, {
@@ -624,6 +625,9 @@ export default function AcademyIndex({ initialTrainingId }) {
             setModalData(null)
           }}
           busy={busy}
+          sessions={(data.trainingSessions || [])
+            .filter((s) => s.trainingId === modalData?.trainingId)
+            .sort((a, b) => a.startDate.localeCompare(b.startDate))}
         />
       )}
 

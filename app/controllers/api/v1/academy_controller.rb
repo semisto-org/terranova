@@ -105,13 +105,20 @@ module Api
 
       def create_registration
         training = Academy::Training.find(params.require(:training_id))
-        item = training.registrations.create!(registration_params.merge(registered_at: Time.current))
+        resolved_id = resolve_contact_for_registration(registration_params)
+        item = training.registrations.create!(
+          registration_params.merge(registered_at: Time.current, contact_id: resolved_id)
+        )
         render json: serialize_registration(item), status: :created
       end
 
       def update_registration
         item = Academy::TrainingRegistration.find(params.require(:registration_id))
-        item.update!(registration_update_params)
+        attrs = registration_update_params
+        if attrs[:contact_email].present?
+          attrs = attrs.merge(contact_id: resolve_contact_for_registration(attrs))
+        end
+        item.update!(attrs)
         render json: serialize_registration(item)
       end
 
@@ -389,11 +396,28 @@ module Api
       end
 
       def registration_update_params
-        params.permit(:contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note)
+      end
+
+      def resolve_contact_for_registration(reg_params)
+        return reg_params[:contact_id] if reg_params[:contact_id].present?
+
+        email = reg_params[:contact_email].to_s.strip
+        return nil if email.blank?
+
+        contact = Contact.find_by("LOWER(email) = ?", email.downcase)
+        return contact.id if contact
+
+        Contact.create!(
+          contact_type: "person",
+          name: reg_params[:contact_name].to_s.strip,
+          email: email,
+          phone: reg_params[:phone].to_s.strip.presence
+        ).id
       end
 
       def document_params
-        params.permit(:name, :url, :uploaded_by, :file)
+        params.permit(:name, :url, :uploaded_by, :file, :session_id)
       end
 
       def expense_params
@@ -527,7 +551,8 @@ module Api
           url: download_url,
           filename: item.file.attached? ? item.file.filename.to_s : nil,
           uploadedAt: item.uploaded_at.iso8601,
-          uploadedBy: item.uploaded_by
+          uploadedBy: item.uploaded_by,
+          sessionId: item.session_id&.to_s
         }
       end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_03_045656) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_123019) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -46,12 +46,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_045656) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "name", null: false
+    t.bigint "session_id"
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false
     t.datetime "uploaded_at", null: false
     t.string "uploaded_by", default: "team", null: false
     t.string "url"
     t.index ["deleted_at"], name: "index_academy_training_documents_on_deleted_at"
+    t.index ["session_id"], name: "index_academy_training_documents_on_session_id"
     t.index ["training_id"], name: "index_academy_training_documents_on_training_id"
   end
 
@@ -1903,6 +1905,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_045656) do
 
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
+  add_foreign_key "academy_training_documents", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_registrations", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_registrations", "contacts"

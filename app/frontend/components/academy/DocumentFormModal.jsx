@@ -1,15 +1,23 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Upload } from 'lucide-react'
+
+function formatSessionLabel(session) {
+  const start = new Date(session.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  const end = new Date(session.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  const dateRange = session.startDate === session.endDate ? start : `${start} – ${end}`
+  return session.topic ? `${dateRange} · ${session.topic}` : dateRange
+}
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
-export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
+export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions = [] }) {
   const nameRef = useRef(null)
   const fileInputRef = useRef(null)
 
   const [name, setName] = useState('')
   const [file, setFile] = useState(null)
+  const [sessionId, setSessionId] = useState('')
   const [error, setError] = useState(null)
 
   // Focus first input when modal opens
@@ -51,6 +59,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
       await onSubmit({
         name: name.trim(),
         file,
+        sessionId: sessionId || null,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -173,6 +182,34 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false }) {
                     </div>
                   </div>
                 </div>
+
+                {/* Session (optional) */}
+                {sessions.length > 0 && (
+                  <div>
+                    <label
+                      htmlFor="document-session"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
+                    >
+                      Session associée
+                    </label>
+                    <select
+                      id="document-session"
+                      value={sessionId}
+                      onChange={(e) => setSessionId(e.target.value)}
+                      className={inputBase}
+                    >
+                      <option value="">Aucune — document général</option>
+                      {sessions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {formatSessionLabel(s)}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-stone-500 mt-1">
+                      Optionnel. Lie ce document à une session spécifique.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

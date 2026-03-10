@@ -4,6 +4,7 @@ import {
   Plus,
   Trash2,
   ExternalLink,
+  Calendar,
 } from 'lucide-react'
 
 function formatDate(dateStr) {
@@ -15,8 +16,16 @@ function formatDate(dateStr) {
   })
 }
 
+function sessionLabel(session) {
+  const start = new Date(session.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  const end = new Date(session.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  const dateRange = session.startDate === session.endDate ? start : `${start} – ${end}`
+  return session.topic ? `${dateRange} · ${session.topic}` : dateRange
+}
+
 export default function TrainingDocumentsTab({
   documents = [],
+  sessions = [],
   onUploadDocument,
   onDeleteDocument,
 }) {
@@ -58,6 +67,7 @@ export default function TrainingDocumentsTab({
               <DocumentCard
                 key={document.id}
                 document={document}
+                session={document.sessionId ? sessions.find((s) => s.id === document.sessionId) : null}
                 formatDate={formatDate}
                 onDelete={() => onDeleteDocument?.(document.id)}
               />
@@ -68,7 +78,7 @@ export default function TrainingDocumentsTab({
   )
 }
 
-function DocumentCard({ document: doc, formatDate, onDelete }) {
+function DocumentCard({ document: doc, session, formatDate, onDelete }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -93,6 +103,12 @@ function DocumentCard({ document: doc, formatDate, onDelete }) {
             <span className="text-xs text-stone-500">
               Ajouté le {doc.uploadedAt ? formatDate(doc.uploadedAt) : '—'}
             </span>
+            {session && (
+              <span className="inline-flex items-center gap-1 mt-1 text-xs text-[#B01A19] bg-red-50 rounded-full px-2 py-0.5">
+                <Calendar className="w-3 h-3" />
+                {sessionLabel(session)}
+              </span>
+            )}
             {doc.url && (
               <a
                 href={doc.url}

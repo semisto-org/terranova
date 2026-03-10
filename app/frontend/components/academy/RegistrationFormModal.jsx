@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link2, X, Loader2 } from 'lucide-react'
+import { apiRequest } from '../../lib/api'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
@@ -9,10 +11,20 @@ const PAYMENT_STATUSES = [
   { value: 'paid', label: 'Payé' },
 ]
 
+function debounce(fn, ms) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }
+}
+
 export function RegistrationFormModal({ registration, trainingPrice, onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(registration)
   const nameRef = useRef(null)
+  const suggestionsRef = useRef(null)
 
+  const [contactId, setContactId] = useState(registration?.contactId ?? null)
   const [contactName, setContactName] = useState(registration?.contactName ?? '')
   const [contactEmail, setContactEmail] = useState(registration?.contactEmail ?? '')
   const [phone, setPhone] = useState(registration?.phone ?? '')
@@ -22,6 +34,10 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
   const [paymentStatus, setPaymentStatus] = useState(registration?.paymentStatus ?? 'pending')
   const [internalNote, setInternalNote] = useState(registration?.internalNote ?? '')
   const [error, setError] = useState(null)
+
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
 
   // Focus first input when modal opens
   useEffect(() => {
@@ -43,6 +59,59 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onCancel])
+
+  // Close suggestions on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const searchContacts = useCallback(
+    debounce(async (query) => {
+      if (!query || query.length < 2) {
+        setSuggestions([])
+        setShowSuggestions(false)
+        return
+      }
+      setSearchLoading(true)
+      try {
+        const res = await apiRequest(`/api/v1/lab/contacts?q=${encodeURIComponent(query)}&contact_type=person`)
+        const items = res.items || []
+        setSuggestions(items)
+        setShowSuggestions(items.length > 0)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setSearchLoading(false)
+      }
+    }, 300),
+    []
+  )
+
+  const handleNameChange = (value) => {
+    setContactName(value)
+    if (contactId) setContactId(null)
+    searchContacts(value)
+  }
+
+  const handleSelectContact = (contact) => {
+    setContactId(contact.id)
+    setContactName(contact.name || '')
+    setContactEmail(contact.email || '')
+    setPhone(contact.phone || '')
+    setSuggestions([])
+    setShowSuggestions(false)
+  }
+
+  const handleUnlinkContact = () => {
+    setContactId(null)
+  }
 
   const validateEmail = (email) => {
     if (!email) return true // Email is optional
@@ -72,6 +141,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
 
     try {
       await onSubmit({
+        contact_id: contactId || undefined,
         contact_name: contactName.trim(),
         contact_email: contactEmail.trim(),
         phone: phone.trim(),
@@ -136,24 +206,68 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
               )}
 
               <div className="space-y-6">
-                {/* Contact Name */}
-                <div>
+                {/* Contact Name with autocomplete */}
+                <div ref={suggestionsRef} className="relative">
                   <label
                     htmlFor="contact-name"
                     className="block text-sm font-semibold text-stone-700 mb-2"
                   >
                     Nom du participant <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    ref={nameRef}
-                    id="contact-name"
-                    type="text"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    required
-                    className={inputBase}
-                    placeholder="ex: Marie Dupont"
-                  />
+                  <div className="relative">
+                    <input
+                      ref={nameRef}
+                      id="contact-name"
+                      type="text"
+                      value={contactName}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true) }}
+                      required
+                      autoComplete="off"
+                      className={inputBase}
+                      placeholder="ex: Marie Dupont"
+                    />
+                    {searchLoading && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 text-stone-400 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contact link indicator */}
+                  {contactId && (
+                    <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 w-fit">
+                      <Link2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-xs font-medium text-emerald-700">Lié à un contact existant</span>
+                      <button
+                        type="button"
+                        onClick={handleUnlinkContact}
+                        className="ml-1 p-0.5 rounded text-emerald-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors"
+                        title="Délier le contact"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Suggestions dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {suggestions.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => handleSelectContact(c)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-stone-50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                        >
+                          <span className="text-sm font-medium text-stone-900">{c.name}</span>
+                          {c.email && (
+                            <span className="text-xs text-stone-500 ml-2">{c.email}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Contact Email */}
