@@ -77,6 +77,10 @@ export function MemberCard({ member, guilds, wallet, onView, onEdit }: MemberCar
                 <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#0D9488] text-white">
                   Adhérent
                 </span>
+              ) : member.membershipType === 'non_member' ? (
+                <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-500 text-white">
+                  Non-membre
+                </span>
               ) : (
                 <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#5B5781] text-white">
                   Effectif

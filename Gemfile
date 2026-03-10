@@ -10,6 +10,7 @@ gem "vite_rails"
 gem "bcrypt", "~> 3.1"
 gem "aws-sdk-rails", "~> 5"
 gem "aws-actionmailer-ses", "~> 1"
+gem "redis", ">= 4", "< 6"
 
 group :development, :test do
   gem "debug", platforms: %i[mri mingw x64_mingw]

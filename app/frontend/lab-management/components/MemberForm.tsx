@@ -421,6 +421,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
                     >
                       <option value="effective">Membre effectif</option>
                       <option value="adherent">Membre adhérent</option>
+                      <option value="non_member">Non-membre</option>
                     </select>
                   </div>
                   <div>

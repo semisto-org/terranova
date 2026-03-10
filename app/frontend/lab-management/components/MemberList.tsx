@@ -228,6 +228,7 @@ export function MemberList({
 
   const effectiveMembers = filteredMembers.filter((m) => m.membershipType === 'effective')
   const adherentMembers = filteredMembers.filter((m) => m.membershipType === 'adherent')
+  const nonMembers = filteredMembers.filter((m) => m.membershipType === 'non_member')
 
   const activeCount = members.filter((m) => m.status === 'active').length
   const inactiveCount = members.filter((m) => m.status === 'inactive').length
@@ -347,6 +348,7 @@ export function MemberList({
                 <option value="all">Tous les types</option>
                 <option value="effective">Effectifs</option>
                 <option value="adherent">Adhérents</option>
+                <option value="non_member">Non-membres</option>
               </select>
             </div>
 
@@ -401,7 +403,7 @@ export function MemberList({
                   onClick={() => setTypeFilter('all')}
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5B5781]/10 text-[#5B5781] text-xs font-medium hover:bg-[#5B5781]/20 transition-colors"
                 >
-                  {typeFilter === 'effective' ? 'Effectifs' : 'Adhérents'}
+                  {typeFilter === 'effective' ? 'Effectifs' : typeFilter === 'adherent' ? 'Adhérents' : 'Non-membres'}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               )}
@@ -452,6 +454,18 @@ export function MemberList({
                   </h2>
                 </div>
                 <MemberTable members={adherentMembers} onEditMember={onEditMember} isAdmin={isAdmin} />
+              </div>
+            )}
+
+            {/* Non-members */}
+            {nonMembers.length > 0 && (
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-stone-200 bg-stone-50/50">
+                  <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wider">
+                    Non-membres ({nonMembers.length})
+                  </h2>
+                </div>
+                <MemberTable members={nonMembers} onEditMember={onEditMember} isAdmin={isAdmin} />
               </div>
             )}
           </div>

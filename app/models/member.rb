@@ -18,7 +18,7 @@ class Member < ApplicationRecord
   has_many :placed_bets, class_name: "Bet", foreign_key: :placed_by_id, dependent: :nullify
 
   MEMBER_KINDS = %w[human ai].freeze
-  MEMBERSHIP_TYPES = %w[effective adherent].freeze
+  MEMBERSHIP_TYPES = %w[effective adherent non_member].freeze
 
   validates :first_name, :last_name, :email, :status, :joined_at, presence: true
   validates :email, uniqueness: { case_sensitive: false }
@@ -37,6 +37,10 @@ class Member < ApplicationRecord
 
   def adherent?
     membership_type == "adherent"
+  end
+
+  def non_member?
+    membership_type == "non_member"
   end
 
   # Returns the avatar URL: ActiveStorage attachment first, then fallback to the legacy string column
