@@ -14,10 +14,10 @@ const STATUS_CARD_COLORS = {
 }
 
 function getSessionsForDate(date, trainingSessions) {
-  const dateStr = date.toISOString().split('T')[0]
+  const dateStr = toLocalDateStr(date)
   return trainingSessions.filter((session) => {
-    const start = new Date(session.startDate).toISOString().split('T')[0]
-    const end = new Date(session.endDate).toISOString().split('T')[0]
+    const start = session.startDate
+    const end = session.endDate
     return dateStr >= start && dateStr <= end
   })
 }
@@ -30,10 +30,10 @@ function toLocalDateStr(date) {
 }
 
 function getSchoolHolidaysForDate(date, schoolHolidays) {
-  const dateStr = date.toISOString().split('T')[0]
+  const dateStr = toLocalDateStr(date)
   return (schoolHolidays || []).filter((holiday) => {
-    const start = new Date(holiday.startDate).toISOString().split('T')[0]
-    const end = new Date(holiday.endDate).toISOString().split('T')[0]
+    const start = holiday.startDate
+    const end = holiday.endDate
     return dateStr >= start && dateStr <= end
   })
 }

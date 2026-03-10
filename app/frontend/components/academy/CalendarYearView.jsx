@@ -52,10 +52,10 @@ function getAllWeeksOfYear(year) {
 }
 
 function getTrainingsForDate(date, trainingSessions, getTraining) {
-  const dateStr = date.toISOString().split('T')[0]
+  const dateStr = toLocalDateStr(date)
   const sessions = trainingSessions.filter((session) => {
-    const start = new Date(session.startDate).toISOString().split('T')[0]
-    const end = new Date(session.endDate).toISOString().split('T')[0]
+    const start = session.startDate
+    const end = session.endDate
     return dateStr >= start && dateStr <= end
   })
   const ids = new Set(sessions.map((s) => s.trainingId))
@@ -81,10 +81,10 @@ function isToday(date) {
 }
 
 function getSchoolHolidaysForDate(date, schoolHolidays) {
-  const dateStr = date.toISOString().split('T')[0]
+  const dateStr = toLocalDateStr(date)
   return (schoolHolidays || []).filter((holiday) => {
-    const start = new Date(holiday.startDate).toISOString().split('T')[0]
-    const end = new Date(holiday.endDate).toISOString().split('T')[0]
+    const start = holiday.startDate
+    const end = holiday.endDate
     return dateStr >= start && dateStr <= end
   })
 }
