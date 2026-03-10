@@ -225,6 +225,19 @@ module Api
         head :no_content
       end
 
+      def toggle_holiday
+        date = Date.parse(params.require(:date))
+        existing = Academy::Holiday.find_by(date: date)
+
+        if existing
+          existing.destroy!
+          head :no_content
+        else
+          Academy::Holiday.create!(date: date)
+          render json: { date: date.iso8601 }, status: :created
+        end
+      end
+
       def calendar
         trainings = Academy::Training.includes(:sessions).order(updated_at: :desc)
         render json: trainings.map { |item| serialize_calendar_entry(item) }
@@ -313,15 +326,15 @@ module Api
         expenses = Expense.where.not(training_id: nil).order(invoice_date: :desc)
         idea_notes = Academy::IdeaNote.order(created_at: :desc)
         members = Member.order(:first_name, :last_name)
-        school_holidays = Academy::SchoolHolidaysFetcher.new.fetch
+        holidays = Academy::Holiday.order(:date).pluck(:date).map(&:iso8601)
         serialized_sessions = sessions.map { |item| serialize_session(item) }
 
         {
           trainingTypes: training_types.map { |item| serialize_training_type(item) },
           trainings: trainings.map { |item| serialize_training(item) },
           trainingSessions: serialized_sessions,
-          schoolHolidays: school_holidays[:events],
-          calendarEvents: serialized_sessions.map { |session| session.slice(:id, :startDate, :endDate).merge(type: 'training_session', readOnly: false, trainingId: session[:trainingId]) } + school_holidays[:events],
+          holidays: holidays,
+          calendarEvents: serialized_sessions.map { |session| session.slice(:id, :startDate, :endDate).merge(type: 'training_session', readOnly: false, trainingId: session[:trainingId]) },
           trainingLocations: locations.map { |item| serialize_location(item) },
           trainingRegistrations: registrations.map { |item| serialize_registration(item) },
           trainingAttendances: attendances.map { |item| serialize_attendance(item) },
@@ -329,12 +342,7 @@ module Api
           trainingExpenses: expenses.map { |item| serialize_expense(item) },
           ideaNotes: idea_notes.map { |item| serialize_idea_note(item) },
           members: members.map { |item| serialize_member(item) },
-          stats: build_stats(trainings),
-          meta: {
-            schoolHolidaysSource: school_holidays[:source],
-            schoolHolidaysRegion: school_holidays[:region],
-            schoolHolidaysSyncedAt: school_holidays[:syncedAt]
-          }
+          stats: build_stats(trainings)
         }
       end
 

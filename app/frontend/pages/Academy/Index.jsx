@@ -131,6 +131,13 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
   }, [loadAcademy])
 
+  const handleToggleHoliday = (dateStr) => runMutation(() =>
+    apiRequest('/api/v1/academy/holidays/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr }),
+    })
+  )
+
   const fetchCalendarLinks = useCallback(async () => {
     try {
       const payload = await apiRequest('/api/v1/academy/calendar-links')
@@ -845,7 +852,7 @@ export default function AcademyIndex({ initialTrainingId }) {
                 trainingSessions={data.trainingSessions}
                 trainingLocations={data.trainingLocations}
                 trainingRegistrations={data.trainingRegistrations}
-                schoolHolidays={data.schoolHolidays || []}
+                holidays={data.holidays || []}
                 onViewTraining={openTrainingDrawer}
               />
             ) : (
@@ -853,8 +860,9 @@ export default function AcademyIndex({ initialTrainingId }) {
                 currentDate={calendarDate}
                 trainings={data.trainings}
                 trainingSessions={data.trainingSessions}
-                schoolHolidays={data.schoolHolidays || []}
+                holidays={data.holidays || []}
                 onViewTraining={openTrainingDrawer}
+                onToggleHoliday={handleToggleHoliday}
               />
             )}
           </section>

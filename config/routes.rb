@@ -298,6 +298,7 @@ Rails.application.routes.draw do
       post "academy/idea-notes", to: "academy#create_idea_note"
       patch "academy/idea-notes/:note_id", to: "academy#update_idea_note"
       delete "academy/idea-notes/:note_id", to: "academy#destroy_idea_note"
+      post "academy/holidays/toggle", to: "academy#toggle_holiday"
 
       get "nursery", to: "nursery#index"
       get "nursery/dashboard", to: "nursery#dashboard"

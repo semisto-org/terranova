@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
 import { MapPin, Users, ArrowRight } from 'lucide-react'
-import { getSchoolHoliday } from '../../lib/schoolHolidays'
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -29,15 +28,6 @@ function toLocalDateStr(date) {
   return `${y}-${m}-${d}`
 }
 
-function getSchoolHolidaysForDate(date, schoolHolidays) {
-  const dateStr = toLocalDateStr(date)
-  return (schoolHolidays || []).filter((holiday) => {
-    const start = holiday.startDate
-    const end = holiday.endDate
-    return dateStr >= start && dateStr <= end
-  })
-}
-
 function isToday(date) {
   const today = new Date()
   return (
@@ -63,11 +53,12 @@ export default function CalendarMonthView({
   trainingSessions = [],
   trainingLocations = [],
   trainingRegistrations = [],
-  schoolHolidays = [],
+  holidays = [],
   onViewTraining,
 }) {
   const [selectedTrainingId, setSelectedTrainingId] = useState(null)
   const modalRef = useRef(null)
+  const holidaySet = useMemo(() => new Set(holidays), [holidays])
 
   const getTraining = (id) => trainings.find((t) => t.id === id)
   const getLocationNames = (locationIds) =>
@@ -143,10 +134,9 @@ export default function CalendarMonthView({
       <div className="grid grid-cols-7 divide-x divide-y divide-stone-200">
         {calendarDays.map((day, index) => {
           const sessions = getSessionsForDate(day.date, trainingSessions)
-          const holidaysForDate = getSchoolHolidaysForDate(day.date, schoolHolidays)
           const today = isToday(day.date)
           const dateStr = toLocalDateStr(day.date)
-          const holiday = getSchoolHoliday(dateStr)
+          const isHoliday = holidaySet.has(dateStr)
           const uniqueTrainingIds = new Set(
             sessions
               .filter((s) => {
@@ -168,7 +158,7 @@ export default function CalendarMonthView({
             <div
               key={index}
               className={`min-h-[100px] sm:min-h-[120px] p-2 sm:p-3 relative transition-all duration-200 ${
-                !day.isCurrentMonth ? 'opacity-40 bg-stone-50' : 'bg-white'
+                !day.isCurrentMonth ? 'opacity-40 bg-stone-50' : isHoliday ? 'bg-violet-50' : 'bg-white'
               } ${today ? 'ring-2 ring-[#B01A19] ring-inset' : ''}`}
             >
               <div
@@ -176,17 +166,19 @@ export default function CalendarMonthView({
                   today ? 'text-[#B01A19] font-bold' : day.isCurrentMonth ? 'text-stone-900' : 'text-stone-400'
                 }`}
               >
-                <span className="text-sm">{day.date.getDate()}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">{day.date.getDate()}</span>
+                  {isHoliday && (
+                    <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700 leading-none">
+                      Congé
+                    </span>
+                  )}
+                </div>
                 {today && (
                   <div className="w-1.5 h-1.5 rounded-full bg-[#B01A19] animate-pulse" />
                 )}
               </div>
               <div className="space-y-1.5">
-                {holidaysForDate.length > 0 && (
-                  <div className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
-                    Congé scolaire
-                  </div>
-                )}
                 {trainingsToShow.map(({ training: t, sessions: sess }) => {
                   const colors = STATUS_CARD_COLORS[t.status] || STATUS_CARD_COLORS.draft
                   const firstSess = sess[0]
@@ -228,17 +220,6 @@ export default function CalendarMonthView({
                 {uniqueTrainingIds.size > 3 && (
                   <div className="text-[10px] text-stone-500 font-medium px-1">
                     +{uniqueTrainingIds.size - 3} autre{(uniqueTrainingIds.size - 3) > 1 ? 's' : ''}
-                  </div>
-                )}
-                {holiday && (
-                  <div className="relative group/holiday">
-                    <div className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-700 text-center truncate cursor-default">
-                      Congé scolaire
-                    </div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-stone-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/holiday:opacity-100 transition-opacity z-20">
-                      {holiday.label}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-1.5 h-1.5 bg-stone-900 rotate-45" />
-                    </div>
                   </div>
                 )}
               </div>

@@ -11,13 +11,6 @@ interface CyclePeriod {
   cooldownEndsOn: string
 }
 
-interface SchoolHoliday {
-  id: string
-  title: string
-  startDate: string
-  endDate: string
-}
-
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
 
@@ -38,7 +31,6 @@ export function CyclePeriodsAdmin() {
   const [editing, setEditing] = useState<CyclePeriod | null>(null)
   const [formValues, setFormValues] = useState(emptyForm)
   const [deleteConfirm, setDeleteConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null)
-  const [schoolHolidays, setSchoolHolidays] = useState<SchoolHoliday[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   const loadCycles = async () => {
@@ -54,26 +46,8 @@ export function CyclePeriodsAdmin() {
     }
   }
 
-  const loadSchoolHolidays = async () => {
-    try {
-      const response = await apiRequest('/api/v1/academy')
-      const events = (response?.schoolHolidays || []) as any[]
-      setSchoolHolidays(
-        events.map((event) => ({
-          id: String(event.id),
-          title: event.title || 'Période scolaire',
-          startDate: event.startDate,
-          endDate: event.endDate,
-        })),
-      )
-    } catch {
-      setSchoolHolidays([])
-    }
-  }
-
   useEffect(() => {
     loadCycles()
-    loadSchoolHolidays()
   }, [])
 
   useEffect(() => {
@@ -225,37 +199,6 @@ export function CyclePeriodsAdmin() {
                     <p className="text-xs text-stone-500">Le cycle est toujours actif. La couleur et les notes ont été retirées pour simplifier.</p>
                   </div>
 
-                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-stone-500">Périodes scolaires Wallonie (référence)</p>
-                    {schoolHolidays.length === 0 ? (
-                      <p className="text-sm text-stone-500">Aucune période scolaire disponible pour le moment.</p>
-                    ) : (
-                      <div className="space-y-2 max-h-44 overflow-auto pr-1">
-                        {schoolHolidays.map((holiday) => (
-                          <div key={holiday.id} className="rounded-lg border border-stone-200 bg-white p-2">
-                            <div className="text-sm font-medium text-stone-900">{holiday.title}</div>
-                            <div className="text-xs text-stone-500 mb-2">{holiday.startDate?.slice(0, 10)} → {holiday.endDate?.slice(0, 10)}</div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                className="px-2.5 py-1 rounded-lg text-xs border border-stone-200 hover:bg-stone-100"
-                                onClick={() => setFormValues((prev) => ({ ...prev, starts_on: holiday.startDate?.slice(0, 10), ends_on: holiday.endDate?.slice(0, 10) }))}
-                              >
-                                Utiliser pour cycle
-                              </button>
-                              <button
-                                type="button"
-                                className="px-2.5 py-1 rounded-lg text-xs border border-stone-200 hover:bg-stone-100"
-                                onClick={() => setFormValues((prev) => ({ ...prev, cooldown_starts_on: holiday.startDate?.slice(0, 10), cooldown_ends_on: holiday.endDate?.slice(0, 10) }))}
-                              >
-                                Utiliser pour cooldown
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
                 <div className="px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
                   <button type="button" onClick={closeModal} className="px-4 py-2 rounded-xl font-medium text-stone-700 border border-stone-200 hover:bg-stone-100">Annuler</button>

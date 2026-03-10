@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { getSchoolHoliday } from '../../lib/schoolHolidays'
 
 const MONTH_NAMES = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -80,21 +79,13 @@ function isToday(date) {
   )
 }
 
-function getSchoolHolidaysForDate(date, schoolHolidays) {
-  const dateStr = toLocalDateStr(date)
-  return (schoolHolidays || []).filter((holiday) => {
-    const start = holiday.startDate
-    const end = holiday.endDate
-    return dateStr >= start && dateStr <= end
-  })
-}
-
 export default function CalendarYearView({
   currentDate,
   trainings = [],
   trainingSessions = [],
-  schoolHolidays = [],
+  holidays = [],
   onViewTraining,
+  onToggleHoliday,
 }) {
   const year = currentDate.getFullYear()
   const [selectedDate, setSelectedDate] = useState(null)
@@ -102,6 +93,7 @@ export default function CalendarYearView({
 
   const getTraining = (id) => trainings.find((t) => t.id === id)
   const allWeeks = useMemo(() => getAllWeeksOfYear(year), [year])
+  const holidaySet = useMemo(() => new Set(holidays), [holidays])
 
   useEffect(() => {
     if (!selectedDate) return
@@ -140,7 +132,7 @@ export default function CalendarYearView({
           ))}
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-violet-200 border border-violet-300" />
-            <span className="text-sm text-stone-600">Congé scolaire</span>
+            <span className="text-sm text-stone-600">Congé</span>
           </div>
         </div>
       </div>
@@ -179,27 +171,26 @@ export default function CalendarYearView({
                       trainingSessions,
                       getTraining
                     )
-                    const holidaysForDate = getSchoolHolidaysForDate(day.date, schoolHolidays)
                     const today = isToday(day.date)
                     const dateStr = toLocalDateStr(day.date)
                     const isSelected = selectedDate === dateStr
                     const isFirstDay = isFirstDayOfMonth(day.date)
-                    const holiday = getSchoolHoliday(dateStr)
+                    const isHoliday = holidaySet.has(dateStr)
 
                     return (
                       <div
                         key={dayIndex}
-                        className={`group/holiday relative p-3 sm:p-4 min-h-[80px] sm:min-h-[100px] transition-all duration-200 ${
+                        className={`relative p-3 sm:p-4 min-h-[80px] sm:min-h-[100px] transition-all duration-200 ${
                           !day.isCurrentYear
                             ? 'opacity-30 bg-stone-50'
                             : today
                               ? 'bg-[#B01A19]/10 ring-2 ring-[#B01A19] ring-inset'
                               : isSelected && trainingsForDate.length > 0
                                 ? 'bg-stone-100'
-                                : holiday
+                                : isHoliday
                                   ? 'bg-violet-50 hover:bg-violet-100/50'
                                   : 'hover:bg-stone-50/50 bg-white'
-                        } ${trainingsForDate.length > 0 ? 'cursor-pointer' : ''} ${
+                        } ${trainingsForDate.length > 0 || day.isCurrentYear ? 'cursor-pointer' : ''} ${
                           isFirstDay && day.isCurrentYear
                             ? 'border-l-2 border-stone-300'
                             : ''
@@ -209,9 +200,14 @@ export default function CalendarYearView({
                             setSelectedDate(isSelected ? null : dateStr)
                           }
                         }}
+                        onDoubleClick={() => {
+                          if (day.isCurrentYear) {
+                            onToggleHoliday?.(dateStr)
+                          }
+                        }}
                       >
                         <div
-                          className={`text-xs sm:text-sm font-medium mb-2 ${
+                          className={`flex items-center gap-1.5 mb-2 ${
                             today
                               ? 'text-[#B01A19] font-bold'
                               : day.isCurrentYear
@@ -219,13 +215,13 @@ export default function CalendarYearView({
                                 : 'text-stone-400'
                           }`}
                         >
-                          {day.date.getDate()}
+                          <span className="text-xs sm:text-sm font-medium">{day.date.getDate()}</span>
+                          {isHoliday && (
+                            <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 leading-none">
+                              Congé
+                            </span>
+                          )}
                         </div>
-                        {holidaysForDate.length > 0 && (
-                          <div className="mb-1 inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
-                            Congé
-                          </div>
-                        )}
                         {trainingsForDate.length > 0 && (
                           <div className="flex items-center justify-center gap-0.5 flex-wrap">
                             {Array.from(
@@ -248,12 +244,6 @@ export default function CalendarYearView({
                             {trainingsForDate.length > 3 && (
                               <div className="w-1.5 h-1.5 rounded-full bg-stone-400" />
                             )}
-                          </div>
-                        )}
-                        {holiday && !isSelected && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-stone-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/holiday:opacity-100 transition-opacity z-20">
-                            {holiday.label}
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-1.5 h-1.5 bg-stone-900 rotate-45" />
                           </div>
                         )}
                         {isSelected && trainingsForDate.length > 0 && (
