@@ -4,7 +4,7 @@ import SimpleEditor from '@/components/SimpleEditor'
 import { useShellNav } from '@/components/shell/ShellContext'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Opérations formations' },
+  { id: 'kanban', label: 'Formations' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'types', label: 'Types de formations' },
   { id: 'locations', label: 'Lieux' },

@@ -5,7 +5,7 @@ import { useShellNav } from '@/components/shell/ShellContext'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Opérations formations' },
+  { id: 'kanban', label: 'Formations' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'types', label: 'Types de formations' },
   { id: 'locations', label: 'Lieux' },
@@ -108,7 +108,7 @@ export default function LocationForm({ locationId }) {
           name: name.trim(),
           address: address.trim(),
           description: description || '',
-          capacity: Number(capacity) || 20,
+          capacity: Number(capacity) === 0 ? 0 : (Number(capacity) || 20),
           has_accommodation: hasAccommodation,
           latitude: parseFloat(latitude) || 0,
           longitude: parseFloat(longitude) || 0,
@@ -230,7 +230,7 @@ export default function LocationForm({ locationId }) {
                   <label className="mb-2 block text-sm font-medium text-stone-700">Capacité</label>
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     className="w-full rounded-lg border border-stone-300 bg-white px-4 py-3 text-base text-stone-900 transition-all focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
                     value={capacity}
                     onChange={(e) => setCapacity(Number(e.target.value) || 0)}

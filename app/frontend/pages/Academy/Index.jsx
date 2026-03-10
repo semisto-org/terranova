@@ -25,7 +25,7 @@ import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Opérations formations' },
+  { id: 'kanban', label: 'Formations' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'types', label: 'Types de formations' },
   { id: 'locations', label: 'Lieux' },
@@ -120,9 +120,9 @@ export default function AcademyIndex({ initialTrainingId }) {
     setBusy(true)
     setError(null)
     try {
-      await handler()
+      const result = await handler()
       if (options.refresh) await loadAcademy()
-      return true
+      return result !== undefined ? result : true
     } catch (err) {
       setError(err.message)
       return false
@@ -168,7 +168,7 @@ export default function AcademyIndex({ initialTrainingId }) {
   }, [modalData, runMutation])
 
   const handleSessionSubmit = useCallback(async (values) => {
-    const success = await runMutation(() =>
+    const session = await runMutation(() =>
       apiRequest(
         modalData.isEdit ? `/api/v1/academy/sessions/${modalData.session.id}` : `/api/v1/academy/trainings/${modalData.trainingId}/sessions`,
         {
@@ -177,7 +177,16 @@ export default function AcademyIndex({ initialTrainingId }) {
         }
       )
     )
-    if (success) {
+    if (session) {
+      setData((prev) => {
+        const exists = prev.trainingSessions.some((s) => s.id === session.id)
+        return {
+          ...prev,
+          trainingSessions: exists
+            ? prev.trainingSessions.map((s) => (s.id === session.id ? { ...s, ...session } : s))
+            : [...prev.trainingSessions, session],
+        }
+      })
       setActiveModal(null)
       setModalData(null)
     }
@@ -502,11 +511,6 @@ export default function AcademyIndex({ initialTrainingId }) {
         action: () => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
       })
     },
-    viewReporting: async () => {
-      const payload = await apiRequest('/api/v1/academy/reporting')
-      setReporting(payload)
-      setView('reporting')
-    },
   }), [data, runMutation, setDeleteConfirm])
 
   const selectedTraining = data.trainings.find((item) => item.id === selectedTrainingId)
@@ -701,7 +705,7 @@ export default function AcademyIndex({ initialTrainingId }) {
         }
       `}</style>
       <div className="px-4 py-4">
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div className={`${view === 'kanban' ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto space-y-4`}>
         {view === 'kanban' && (
           <TrainingKanban
             trainings={filteredTrainings}
@@ -714,8 +718,9 @@ export default function AcademyIndex({ initialTrainingId }) {
             onViewTraining={openTrainingDrawer}
             onEditTraining={actions.editTraining}
             onDeleteTraining={actions.deleteTraining}
+            onUpdateTrainingStatus={actions.updateTrainingStatus}
             onViewCalendar={() => setView('calendar')}
-            onViewReporting={actions.viewReporting}
+            onViewReporting={() => handleViewChange('reporting')}
             onToggleChecklistItem={actions.toggleChecklistItem}
           />
         )}
