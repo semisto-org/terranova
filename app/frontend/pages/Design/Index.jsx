@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { MapPin, MapPinned, Settings2 } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import { ProjectDashboard, ProjectDetailView, ReportingDashboard } from '../../design-studio/components'
 import { EconomicsSection } from '../../design-studio/components/economics'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
@@ -398,7 +399,7 @@ const DESIGN_SECTIONS = [
 
 export default function DesignIndex({ initialProjectId }) {
   const [projectDetail, setProjectDetail] = useState(null)
-  const [activeSection, setActiveSection] = useState('projects')
+  const [activeSection, setActiveSection] = useUrlState('tab', 'projects')
   useShellNav({
     sections: DESIGN_SECTIONS,
     activeSection,

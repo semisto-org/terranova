@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   BookOpen, Plus, Search, Pin, Edit3, Trash2, ChevronLeft, X,
@@ -1416,7 +1417,7 @@ function AxisForm({ axis, onSave, onCancel }) {
 
 // ─── Main Page ───
 export default function StrategyIndex() {
-  const [activeSection, setActiveSection] = useState('ressources')
+  const [activeSection, setActiveSection] = useUrlState('tab', 'ressources')
   const [view, setView] = useState('list') // list, detail, form
   const [selectedId, setSelectedId] = useState(null)
   const [editingItem, setEditingItem] = useState(null)

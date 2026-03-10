@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { usePage } from '@inertiajs/react'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   Store, Plus, Search, Edit3, Trash2, ChevronLeft, X,
@@ -747,7 +748,7 @@ function Explorer({ onSelect }) {
 // ─── Main Page ───
 export default function MarketplaceIndex() {
   const { auth } = usePage().props
-  const [activeSection, setActiveSection] = useState('explorer')
+  const [activeSection, setActiveSection] = useUrlState('tab', 'explorer')
   const [selectedListingId, setSelectedListingId] = useState(null)
   const [editingListing, setEditingListing] = useState(null)
   const [showForm, setShowForm] = useState(false)

@@ -96,30 +96,11 @@ export default function ContextSwitcher() {
           }}
         >
           <div className="py-1.5">
-            {(() => {
-              const homePole = POLES.find((p) => p.id === 'home')
-              return (
-                <Link
-                  href={homePole.path}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
-                    currentPole.id === homePole.id
-                      ? 'bg-stone-50 text-stone-900 font-medium'
-                      : 'text-stone-700 hover:bg-stone-50'
-                  }`}
-                >
-                  <svg className="w-5 h-5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z" />
-                  </svg>
-                  {homePole.label}
-                </Link>
-              )
-            })()}
-          </div>
-
-          {!isAdherent && (<div className="py-1.5 border-t border-stone-100">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Lab Wallonie</p>
-            {POLES.filter((p) => !['home', 'plants', 'knowledge', 'strategy', 'marketplace', 'parametres', 'admin'].includes(p.id)).map((pole) => (
+            {POLES.filter((p) =>
+              !['plants', 'knowledge', 'strategy', 'marketplace', 'parametres', 'admin'].includes(p.id) &&
+              (p.id === 'home' || !isAdherent)
+            ).map((pole) => (
               <Link
                 key={pole.id}
                 href={pole.path}
@@ -143,7 +124,7 @@ export default function ContextSwitcher() {
                 {pole.label}
               </Link>
             ))}
-          </div>)}
+          </div>
 
           <div className="py-1.5 border-t border-stone-100">
             <p className="px-4 py-1.5 text-xs font-medium text-stone-400 uppercase tracking-wider">Outils mutualisés</p>

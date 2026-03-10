@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import { CyclePeriodsAdmin, EventTypesAdmin, TimesheetServiceTypesAdmin } from '../../lab-management/components'
 
 const SECTION_TABS = [
@@ -9,7 +10,7 @@ const SECTION_TABS = [
 ]
 
 export default function AdminParametres() {
-  const [activeSection, setActiveSection] = useState('event-types')
+  const [activeSection, setActiveSection] = useUrlState('tab', 'event-types')
   useShellNav({ sections: SECTION_TABS, activeSection, onSectionChange: setActiveSection })
 
   return (

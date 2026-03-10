@@ -88,6 +88,8 @@ function ShellLayout({ children }) {
             data-tally-emoji-text="👋"
             data-tally-emoji-animation="wave"
             data-tally-auto-close="5000"
+            data-email={auth?.member?.email ?? ''}
+            data-ref={typeof window !== 'undefined' ? window.location.href : ''}
             className="p-1.5 rounded-lg hover:bg-[#5B5781]/10 text-stone-500 hover:text-[#5B5781] transition-colors"
             aria-label="Donner un feedback"
           >

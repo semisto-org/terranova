@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { usePage } from '@inertiajs/react'
 import { useShellNav } from '../../components/shell/ShellContext'
+import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   BookOpen, Plus, Search, Pin, Archive, Edit3, Trash2, ChevronLeft, X,
@@ -646,7 +647,7 @@ function ArchivesList({ onSelect }) {
 
 // ─── Main Page ───
 export default function KnowledgeIndex() {
-  const [activeSection, setActiveSection] = useState('sujets')
+  const [activeSection, setActiveSection] = useUrlState('tab', 'sujets')
   const [selectedTopicId, setSelectedTopicId] = useState(null)
   const [editingTopic, setEditingTopic] = useState(null)
   const [showForm, setShowForm] = useState(false)
