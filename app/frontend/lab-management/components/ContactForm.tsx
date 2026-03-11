@@ -85,7 +85,7 @@ export function ContactForm({
         className="w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-2xl border border-stone-200 shadow-2xl shadow-stone-900/20"
         onClick={(e) => e.stopPropagation()}
       >
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full" data-1p-ignore>
           {/* Header */}
           <div className="shrink-0 px-6 pt-6 pb-4 border-b border-stone-100">
             <h2

@@ -68,6 +68,7 @@ export function ActionForm({ action, onSubmit, onClose, busy, members: propMembe
                 placeholder="Qu'est-ce qu'il faut faire ?"
                 required
                 autoFocus
+                data-1p-ignore
               />
             </label>
             <div className="space-y-1.5">

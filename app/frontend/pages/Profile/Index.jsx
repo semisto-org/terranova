@@ -352,6 +352,7 @@ export default function ProfileIndex() {
                 type="password"
                 value={fields.password}
                 onChange={(e) => handleChange('password', e.target.value)}
+                autoComplete="new-password"
                 className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
                 placeholder="Laissez vide pour ne pas modifier"
               />
@@ -365,6 +366,7 @@ export default function ProfileIndex() {
                 type="password"
                 value={fields.passwordConfirmation}
                 onChange={(e) => handleChange('passwordConfirmation', e.target.value)}
+                autoComplete="new-password"
                 className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent"
                 placeholder="Confirmez le nouveau mot de passe"
               />

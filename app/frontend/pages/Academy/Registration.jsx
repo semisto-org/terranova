@@ -413,7 +413,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
           <div style={{ padding: '24px' }}>
             <h2 style={{ ...styles.heading, marginBottom: '24px' }}>Inscription</h2>
 
-            <form onSubmit={handleSubmitForm}>
+            <form onSubmit={handleSubmitForm} data-1p-ignore>
               {/* Personal Info */}
               <div style={styles.section}>
                 <h3 style={styles.sectionTitle}>Informations personnelles</h3>

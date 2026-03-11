@@ -181,7 +181,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
           </div>
 
           {/* Form Content */}
-          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 h-full" data-1p-ignore>
             <div className="flex-1 overflow-y-auto min-h-0 p-6">
               {error && (
                 <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-in slide-in-from-top-2 duration-200">
