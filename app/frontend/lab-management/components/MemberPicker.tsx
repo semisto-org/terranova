@@ -342,7 +342,7 @@ export function MemberAvatarStack({ names, members, size = 28, max = 4 }: Member
     <div className="flex items-center">
       <div className="flex -space-x-1.5">
         {visible.map(({ name, member }, i) => (
-          <div key={i} className="ring-2 ring-white rounded-full" title={name}>
+          <div key={i} className="relative ring-2 ring-white rounded-full" style={{ zIndex: visible.length - i }} title={name}>
             {member ? (
               <MemberAvatar member={member} size={size} />
             ) : (

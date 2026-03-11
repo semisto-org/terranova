@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import { apiRequest } from '@/lib/api'
-import { Search, FolderKanban, ChevronRight, Users, CheckCircle2, Circle, Plus } from 'lucide-react'
+import { FolderKanban, ChevronRight, Plus } from 'lucide-react'
 import { ProjectDetail } from './ProjectDetail'
 import { ProjectCreateModal } from './ProjectCreateModal'
+import { MemberAvatarStack, type MemberOption } from './MemberPicker'
 
 interface ProjectSummary {
   id: string
@@ -48,10 +49,21 @@ export function ProjectBoard() {
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [members, setMembers] = useState<MemberOption[]>([])
+
+  useEffect(() => {
+    apiRequest('/api/v1/lab/members').then(res => {
+      setMembers(res.items.map((m: any) => ({
+        id: m.id,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        avatar: m.avatar,
+      })))
+    }).catch(() => {})
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -75,20 +87,8 @@ export function ProjectBoard() {
     } else if (statusFilter !== 'all') {
       items = items.filter(p => p.status === statusFilter)
     }
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      items = items.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.leadName?.toLowerCase().includes(q)
-      )
-    }
     return items
-  }, [projects, statusFilter, search])
-
-  const stats = useMemo(() => {
-    const active = projects.filter(p => ['En cours', 'En attente', 'Idée'].includes(p.status)).length
-    return { active, total: projects.length }
-  }, [projects])
+  }, [projects, statusFilter])
 
   const groupedByStatus = useMemo(() => {
     const groups: Record<string, ProjectSummary[]> = {}
@@ -117,24 +117,11 @@ export function ProjectBoard() {
         <h1 className="text-2xl font-semibold text-stone-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
           Projets
         </h1>
-        <p className="text-sm text-stone-500 mt-1">
-          {stats.active} projet{stats.active !== 1 ? 's' : ''} actif{stats.active !== 1 ? 's' : ''} sur {stats.total}
-        </p>
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3 mb-5">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-stone-200 bg-white text-stone-900 placeholder-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]"
-          />
-        </div>
-        <div className="flex items-center rounded-lg border border-stone-200 bg-white p-0.5">
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <div className="flex items-center rounded-lg border border-stone-200 bg-white p-0.5 shrink-0">
           {FILTER_TABS.map(tab => (
             <button
               key={tab.id}
@@ -151,7 +138,7 @@ export function ProjectBoard() {
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}
-          className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#5B5781] text-white text-sm font-semibold hover:bg-[#4a4670] active:scale-[0.97] transition-all duration-200 shadow-sm"
+          className="ml-auto w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#5B5781] text-white text-sm font-semibold hover:bg-[#4a4670] active:scale-[0.97] transition-all duration-200 shadow-sm shrink-0"
         >
           <Plus className="w-4 h-4" />
           Nouveau projet
@@ -172,9 +159,7 @@ export function ProjectBoard() {
         <div className="flex flex-col items-center justify-center py-20 text-stone-400">
           <FolderKanban className="w-12 h-12 mb-3 opacity-30" />
           <p className="text-sm font-medium text-stone-500">Aucun projet trouvé</p>
-          <p className="text-xs text-stone-400 mt-1">
-            {search ? 'Essayez un autre terme de recherche' : 'Les projets apparaîtront ici'}
-          </p>
+          <p className="text-xs text-stone-400 mt-1">Les projets apparaîtront ici</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -190,9 +175,6 @@ export function ProjectBoard() {
                 <div className="space-y-2">
                   {items.map(project => {
                     const psc = STATUS_CONFIG[project.status] || STATUS_CONFIG['Standby']
-                    const progress = project.totalActions > 0
-                      ? Math.round((project.completedActions / project.totalActions) * 100)
-                      : null
 
                     return (
                       <button
@@ -208,10 +190,6 @@ export function ProjectBoard() {
                               <h3 className="text-[15px] font-semibold text-stone-900 truncate group-hover:text-[#5B5781] transition-colors">
                                 {project.name}
                               </h3>
-                              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${psc.bg} ${psc.text}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${psc.dot}`} />
-                                {project.status}
-                              </span>
                               {project.pole && POLE_CONFIG[project.pole] && (
                                 <span
                                   className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
@@ -223,43 +201,19 @@ export function ProjectBoard() {
                               )}
                             </div>
 
-                            <div className="flex items-center gap-4 text-xs text-stone-500">
-                              {project.leadName && (
-                                <span className="flex items-center gap-1">
-                                  <Users className="w-3 h-3" />
-                                  {project.leadName}
-                                </span>
-                              )}
-                              {project.teamNames?.length > 0 && (
-                                <span className="truncate max-w-[200px]">{project.teamNames.join(', ')}</span>
-                              )}
-                            </div>
+                            {(() => {
+                              const allNames: string[] = []
+                              if (project.leadName) allNames.push(project.leadName)
+                              for (const name of (project.teamNames || [])) {
+                                if (name !== project.leadName) allNames.push(name)
+                              }
+                              return allNames.length > 0 ? (
+                                <MemberAvatarStack names={allNames} members={members} size={26} max={5} />
+                              ) : null
+                            })()}
                           </div>
 
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            {project.totalActions > 0 && (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1 text-xs text-stone-500">
-                                  {progress === 100 ? (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                  ) : (
-                                    <Circle className="w-3.5 h-3.5" />
-                                  )}
-                                  <span className="tabular-nums">
-                                    {project.completedActions}/{project.totalActions}
-                                  </span>
-                                </div>
-                                <div className="w-16 h-1.5 rounded-full bg-stone-100 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all duration-500 ease-out"
-                                    style={{
-                                      width: `${progress}%`,
-                                      backgroundColor: progress === 100 ? '#10b981' : '#5B5781',
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
+                          <div className="flex items-center flex-shrink-0">
                             <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-[#5B5781] group-hover:translate-x-0.5 transition-all" />
                           </div>
                         </div>
