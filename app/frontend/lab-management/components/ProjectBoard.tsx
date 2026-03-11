@@ -15,6 +15,7 @@ interface ProjectSummary {
   needsReclassification: boolean
   totalActions: number
   completedActions: number
+  inProgressActions: number
   createdAt: string
 }
 

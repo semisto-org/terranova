@@ -64,6 +64,7 @@ interface ProjectData {
   needsReclassification: boolean
   totalActions: number
   completedActions: number
+  inProgressActions: number
   notes: string | null
   documents: DocumentData[]
   taskLists: TaskListData[]
@@ -172,14 +173,16 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
       method: 'PATCH',
       body: JSON.stringify({ ordered_ids: orderedIds }),
     })
-  }, [projectId])
+    await load(true)
+  }, [projectId, load])
 
   const handleReorderActions = useCallback(async (taskListId: string, orderedIds: string[]) => {
     await apiRequest(`/api/v1/lab/task-lists/${taskListId}/actions/reorder`, {
       method: 'PATCH',
       body: JSON.stringify({ ordered_ids: orderedIds }),
     })
-  }, [])
+    await load(true)
+  }, [load])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -252,7 +255,9 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
   const poleConfig = project.pole ? POLE_CONFIG[project.pole] : null
   const totalTasks = project.totalActions
   const completedTasks = project.completedActions
+  const inProgressTasks = project.inProgressActions || 0
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  const inProgressProgress = totalTasks > 0 ? Math.round((inProgressTasks / totalTasks) * 100) : 0
   const hasUnlisted = project.unlistedActions.length > 0
 
   const currentMember = auth?.member ? {
@@ -332,6 +337,19 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
               <div className="relative w-14 h-14">
                 <svg className="w-14 h-14 -rotate-90" viewBox="0 0 44 44">
                   <circle cx="22" cy="22" r="18" fill="none" stroke="#f5f5f4" strokeWidth="3" />
+                  {/* In progress arc (behind completed) */}
+                  {inProgressProgress > 0 && (
+                    <circle
+                      cx="22" cy="22" r="18" fill="none"
+                      stroke="#5B578130"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 18}`}
+                      strokeDashoffset={`${2 * Math.PI * 18 * (1 - (progress + inProgressProgress) / 100)}`}
+                      className="transition-all duration-700 ease-out"
+                    />
+                  )}
+                  {/* Completed arc */}
                   <circle
                     cx="22" cy="22" r="18" fill="none"
                     stroke={progress === 100 ? '#10b981' : '#5B5781'}

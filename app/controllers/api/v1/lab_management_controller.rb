@@ -747,7 +747,8 @@ module Api
       end
 
       def toggle_project_action
-        new_status = @project_action.status == "Terminé" ? "En attente" : "Terminé"
+        cycle = { "En attente" => "En cours", "En cours" => "Terminé", "Terminé" => "En attente" }
+        new_status = cycle[@project_action.status] || "En cours"
         @project_action.update!(status: new_status)
         render json: serialize_project_action(@project_action)
       end
@@ -1483,6 +1484,7 @@ module Api
           needsReclassification: p.needs_reclassification,
           totalActions: actions.size,
           completedActions: actions.count { |a| a.status == "Terminé" },
+          inProgressActions: actions.count { |a| a.status == "En cours" },
           createdAt: p.created_at.iso8601
         }
       end

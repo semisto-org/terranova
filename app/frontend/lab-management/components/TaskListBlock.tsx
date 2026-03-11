@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
+import { Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -57,35 +57,35 @@ export const TaskListBlock = forwardRef<HTMLDivElement, TaskListBlockProps>(func
   isDragging = false,
   style,
 }, ref) {
-  const [showCompleted, setShowCompleted] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [localActions, setLocalActions] = useState<ActionItem[] | null>(null)
 
+  // Clear optimistic state when parent props update (after API refresh)
+  React.useEffect(() => {
+    setLocalActions(null)
+  }, [actions])
+
   const effectiveActions = localActions ?? actions
-  const pending = effectiveActions.filter(a => !a.completed)
-  const completed = effectiveActions.filter(a => a.completed)
 
   const actionSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const pendingIds = useMemo(() => pending.map(a => a.id), [pending])
+  const actionIds = useMemo(() => effectiveActions.map(a => a.id), [effectiveActions])
 
   function handleActionDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const oldIndex = pending.findIndex(a => a.id === String(active.id))
-    const newIndex = pending.findIndex(a => a.id === String(over.id))
+    const oldIndex = effectiveActions.findIndex(a => a.id === String(active.id))
+    const newIndex = effectiveActions.findIndex(a => a.id === String(over.id))
     if (oldIndex === -1 || newIndex === -1) return
-    const reordered = arrayMove(pending, oldIndex, newIndex)
-    const newActions = [...reordered, ...completed]
-    setLocalActions(newActions)
+    const reordered = arrayMove(effectiveActions, oldIndex, newIndex)
+    setLocalActions(reordered)
     onReorderActions?.(id, reordered.map(a => a.id))
-    requestAnimationFrame(() => setLocalActions(null))
   }
-  const completedCount = completed.length
-  const totalCount = actions.length
+  const completedCount = effectiveActions.filter(a => a.completed).length
+  const totalCount = effectiveActions.length
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   return (
@@ -162,18 +162,18 @@ export const TaskListBlock = forwardRef<HTMLDivElement, TaskListBlockProps>(func
 
       {/* Body */}
       <div className="px-4 py-1.5">
-        {pending.length === 0 && completedCount === 0 && (
+        {totalCount === 0 && (
           <p className="text-xs text-stone-400 py-4 text-center">Aucune tâche</p>
         )}
 
-        {onReorderActions && pending.length > 1 ? (
+        {onReorderActions && totalCount > 1 ? (
           <DndContext
             sensors={actionSensors}
             collisionDetection={closestCenter}
             onDragEnd={handleActionDragEnd}
           >
-            <SortableContext items={pendingIds} strategy={verticalListSortingStrategy}>
-              {pending.map(action => (
+            <SortableContext items={actionIds} strategy={verticalListSortingStrategy}>
+              {effectiveActions.map(action => (
                 <SortableActionRow
                   key={action.id}
                   action={action}
@@ -188,7 +188,7 @@ export const TaskListBlock = forwardRef<HTMLDivElement, TaskListBlockProps>(func
             </SortableContext>
           </DndContext>
         ) : (
-          pending.map(action => (
+          effectiveActions.map(action => (
             <ActionRow
               key={action.id}
               action={action}
@@ -201,45 +201,18 @@ export const TaskListBlock = forwardRef<HTMLDivElement, TaskListBlockProps>(func
             />
           ))
         )}
-
-        {completedCount > 0 && (
-          <div className="mt-1 mb-1">
-            <button
-              onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 py-1.5 transition-colors"
-            >
-              {showCompleted ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <span>{completedCount} terminée{completedCount > 1 ? 's' : ''}</span>
-            </button>
-            {showCompleted && (
-              <div className="animate-[fadeIn_200ms_ease-out]">
-                {completed.map(action => (
-                  <ActionRow
-                    key={action.id}
-                    action={action}
-                    onToggle={onToggleAction}
-                    onEdit={onEditAction}
-                    onDelete={onDeleteAction}
-                    busy={busy}
-                    accentColor={accentColor}
-                    members={members}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Quick add footer */}
-      {onAddAction && pending.length > 0 && (
-        <button
-          onClick={() => onAddAction(id)}
-          className="w-full px-5 py-2.5 text-xs text-stone-400 hover:text-stone-600 hover:bg-stone-50 border-t border-stone-100 flex items-center gap-1.5 transition-colors"
-        >
-          <Plus className="w-3 h-3" />
-          Ajouter une tâche
-        </button>
+      {onAddAction && (
+        <div className="px-4 py-2.5 border-t border-stone-100">
+          <button
+            onClick={() => onAddAction(id)}
+            className="px-4 py-1.5 text-xs text-stone-400 hover:text-stone-600 hover:border-stone-400 border border-stone-200 rounded-full transition-colors"
+          >
+            Ajouter une tâche
+          </button>
+        </div>
       )}
 
       {showDeleteConfirm && onDeleteList && (

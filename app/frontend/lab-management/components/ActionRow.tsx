@@ -30,10 +30,86 @@ interface ActionRowProps {
   style?: React.CSSProperties
 }
 
+const STATUS_CYCLE_STYLES = `
+@keyframes inProgressSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes inProgressPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+`
+
+function StatusCheckbox({ status, accentColor, onClick, disabled }: {
+  status: string
+  accentColor: string
+  onClick: () => void
+  disabled?: boolean
+}) {
+  const isInProgress = status === 'En cours'
+  const isCompleted = status === 'Terminé'
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="mt-0.5 w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all duration-200 relative"
+      style={{
+        backgroundColor: isCompleted ? accentColor : 'transparent',
+        borderWidth: isInProgress ? 0 : isCompleted ? 0 : 2,
+        borderStyle: 'solid',
+        borderColor: isCompleted ? accentColor : '#d6d3d1',
+        color: isCompleted ? 'white' : 'transparent',
+      }}
+      onMouseEnter={e => {
+        if (!isCompleted && !isInProgress) (e.currentTarget as HTMLElement).style.borderColor = accentColor
+      }}
+      onMouseLeave={e => {
+        if (!isCompleted && !isInProgress) (e.currentTarget as HTMLElement).style.borderColor = '#d6d3d1'
+      }}
+    >
+      {/* Completed: checkmark */}
+      {isCompleted && (
+        <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+
+      {/* In progress: animated arc */}
+      {isInProgress && (
+        <>
+          <style>{STATUS_CYCLE_STYLES}</style>
+          <svg
+            className="absolute inset-0 w-5 h-5"
+            viewBox="0 0 20 20"
+            fill="none"
+            style={{ animation: 'inProgressSpin 2s linear infinite' }}
+          >
+            <circle
+              cx="10" cy="10" r="7.5"
+              stroke={accentColor}
+              strokeWidth="2"
+              strokeDasharray="12 35"
+              strokeLinecap="round"
+              style={{ animation: 'inProgressPulse 2s ease-in-out infinite' }}
+            />
+          </svg>
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: accentColor }}
+          />
+        </>
+      )}
+    </button>
+  )
+}
+
 export const ActionRow = forwardRef<HTMLDivElement, ActionRowProps>(function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColor = '#5B5781', members = [], dragHandleProps, isDragging = false, style }, ref) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const isOverdue = action.dueDate && !action.completed && new Date(action.dueDate) < new Date()
   const priorityStars = action.priority === 'ⓄⓄⓄ' ? 3 : action.priority === 'ⓄⓄ' ? 2 : action.priority === 'Ⓞ' ? 1 : 0
+  const isInProgress = action.status === 'En cours'
 
   const assigneeMember = useMemo(
     () => action.assigneeName ? members.find(m => `${m.firstName} ${m.lastName}` === action.assigneeName || m.firstName === action.assigneeName) : null,
@@ -60,35 +136,26 @@ export const ActionRow = forwardRef<HTMLDivElement, ActionRowProps>(function Act
           <GripVertical className="w-3.5 h-3.5" />
         </button>
       )}
-      <button
+
+      <StatusCheckbox
+        status={action.status}
+        accentColor={accentColor}
         onClick={() => onToggle(action.id)}
         disabled={busy}
-        className="mt-0.5 w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200"
-        style={{
-          backgroundColor: action.completed ? accentColor : 'transparent',
-          borderColor: action.completed ? accentColor : '#d6d3d1',
-          color: action.completed ? 'white' : 'transparent',
-        }}
-        onMouseEnter={e => {
-          if (!action.completed) (e.currentTarget as HTMLElement).style.borderColor = accentColor
-        }}
-        onMouseLeave={e => {
-          if (!action.completed) (e.currentTarget as HTMLElement).style.borderColor = '#d6d3d1'
-        }}
-      >
-        {action.completed && (
-          <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
-            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </button>
+      />
 
       <div className="flex-1 min-w-0">
         <button
           onClick={() => onEdit?.(action)}
           className="text-left w-full"
         >
-          <span className={`text-sm leading-snug ${action.completed ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+          <span className={`text-sm leading-snug ${
+            action.completed
+              ? 'line-through text-stone-400'
+              : isInProgress
+                ? 'text-stone-900 font-medium'
+                : 'text-stone-900'
+          }`}>
             {action.name}
           </span>
         </button>
