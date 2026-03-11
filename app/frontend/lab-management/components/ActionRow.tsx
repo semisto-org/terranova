@@ -95,10 +95,6 @@ function StatusCheckbox({ status, accentColor, onClick, disabled }: {
               style={{ animation: 'inProgressPulse 2s ease-in-out infinite' }}
             />
           </svg>
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: accentColor }}
-          />
         </>
       )}
     </button>
