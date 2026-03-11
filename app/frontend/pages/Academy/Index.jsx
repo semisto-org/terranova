@@ -730,8 +730,6 @@ export default function AcademyIndex({ initialTrainingId }) {
             onEditTraining={actions.editTraining}
             onDeleteTraining={actions.deleteTraining}
             onUpdateTrainingStatus={actions.updateTrainingStatus}
-            onViewCalendar={() => setView('calendar')}
-            onViewReporting={() => handleViewChange('reporting')}
             onToggleChecklistItem={actions.toggleChecklistItem}
           />
         )}

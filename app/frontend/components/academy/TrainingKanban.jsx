@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import {
   Plus,
-  Calendar,
-  BarChart3,
   Eye,
   Pencil,
   CheckCircle2,
@@ -128,8 +126,6 @@ export default function TrainingKanban({
   onEditTraining,
   onDeleteTraining,
   onUpdateTrainingStatus,
-  onViewCalendar,
-  onViewReporting,
   onToggleChecklistItem,
 }) {
   const [statusFilters, setStatusFilters] = useState([])
@@ -248,33 +244,16 @@ export default function TrainingKanban({
       {/* Header — matches design reference with red accent bar */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-1 bg-gradient-to-b from-[#B01A19] to-[#eac7b8] rounded-full shrink-0" />
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight" style={{ fontFamily: 'var(--font-heading, "Sole Serif", serif)' }}>
-              Formations
+              Semisto Academy
             </h1>
             <p className="text-sm text-stone-500 mt-1 font-medium">
-              Gerez vos formations et suivez leur progression
+              Inspirer, initier et former autour du concept du jardin-forêt
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => onViewCalendar?.('month')}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 bg-white border border-stone-200 rounded-xl hover:border-[#B01A19] hover:text-[#B01A19] hover:shadow-sm transition-all duration-200"
-          >
-            <Calendar className="w-4 h-4" />
-            <span className="hidden sm:inline">Calendrier</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewReporting?.()}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 bg-white border border-stone-200 rounded-xl hover:border-[#B01A19] hover:text-[#B01A19] hover:shadow-sm transition-all duration-200"
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Reporting</span>
-          </button>
           <button
             type="button"
             onClick={() => onCreateTraining?.()}

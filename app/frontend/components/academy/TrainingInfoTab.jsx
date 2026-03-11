@@ -16,7 +16,6 @@ export default function TrainingInfoTab({
   sessions = [],
   locations = [],
   members = [],
-  onUpdateStatus,
 }) {
   const usedLocationIds = new Set(sessions.flatMap((s) => s.locationIds || []))
   const usedLocations = locations.filter((loc) => usedLocationIds.has(loc.id))
@@ -33,45 +32,6 @@ export default function TrainingInfoTab({
     .sort()
   const firstDate = sessionDates[0]
   const lastDate = sessionDates[sessionDates.length - 1]
-
-  const STATUS_LABELS = {
-    draft: 'Brouillon',
-    planned: 'Planifiée',
-    registrations_open: 'Inscriptions ouvertes',
-    in_progress: 'En cours',
-    completed: 'Terminée',
-    cancelled: 'Annulée',
-  }
-  const STATUSES = Object.keys(STATUS_LABELS)
-
-  // Color and style per status; accent used for selected state
-  const STATUS_STYLES = {
-    draft: {
-      base: 'border-stone-300 text-stone-600 bg-stone-50 hover:bg-stone-100 hover:border-stone-400',
-      selected: 'bg-stone-600 text-white border-stone-600 ring-2 ring-stone-300 ring-offset-2',
-    },
-    planned: {
-      base: 'border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100 hover:border-sky-400',
-      selected: 'bg-sky-600 text-white border-sky-600 ring-2 ring-sky-300 ring-offset-2',
-    },
-    registrations_open: {
-      base: 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400',
-      selected: 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-300 ring-offset-2',
-    },
-    in_progress: {
-      base: 'border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 hover:border-amber-400',
-      selected: 'bg-amber-500 text-white border-amber-500 ring-2 ring-amber-300 ring-offset-2',
-    },
-    completed: {
-      base: 'border-teal-300 text-teal-700 bg-teal-50 hover:bg-teal-100 hover:border-teal-400',
-      selected: 'bg-teal-600 text-white border-teal-600 ring-2 ring-teal-300 ring-offset-2',
-    },
-    cancelled: {
-      base: 'border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-400',
-      selected: 'bg-rose-600 text-white border-rose-600 ring-2 ring-rose-300 ring-offset-2',
-    },
-  }
-  const currentStatus = training.status || 'draft'
 
   return (
     <div className="space-y-6">
@@ -276,30 +236,6 @@ export default function TrainingInfoTab({
               className="text-stone-700 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1"
               dangerouslySetInnerHTML={{ __html: training.coordinatorNote }}
             />
-          </div>
-        </div>
-      )}
-
-      {onUpdateStatus && (
-        <div className="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-stone-900 mb-3">Changer le statut</h3>
-          <div className="flex flex-wrap gap-2">
-            {STATUSES.map((status) => {
-              const isSelected = status === currentStatus
-              const style = STATUS_STYLES[status] || STATUS_STYLES.draft
-              return (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => onUpdateStatus(status)}
-                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-200 ${isSelected ? style.selected : style.base}`}
-                  aria-pressed={isSelected}
-                  aria-label={`Statut : ${STATUS_LABELS[status]}${isSelected ? ' (actuel)' : ''}`}
-                >
-                  {STATUS_LABELS[status]}
-                </button>
-              )
-            })}
           </div>
         </div>
       )}

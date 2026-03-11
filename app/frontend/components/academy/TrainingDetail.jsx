@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   ArrowLeft,
   X,
@@ -15,6 +15,8 @@ import {
   FileText,
   CheckSquare,
   Camera,
+  ChevronDown,
+  Check,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -41,6 +43,99 @@ const STATUS_COLORS = {
   in_progress: 'bg-[#B01A19]',
   completed: 'bg-emerald-500',
   cancelled: 'bg-red-500',
+}
+
+const STATUS_DOT_COLORS = {
+  draft: 'bg-stone-400',
+  planned: 'bg-blue-400',
+  registrations_open: 'bg-green-400',
+  in_progress: 'bg-[#B01A19]',
+  completed: 'bg-emerald-400',
+  cancelled: 'bg-red-400',
+}
+
+const STATUS_HOVER = {
+  draft: 'hover:bg-stone-50',
+  planned: 'hover:bg-blue-50',
+  registrations_open: 'hover:bg-emerald-50',
+  in_progress: 'hover:bg-red-50',
+  completed: 'hover:bg-emerald-50',
+  cancelled: 'hover:bg-rose-50',
+}
+
+const STATUS_ORDER = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
+
+function StatusDropdown({ currentStatus, onChangeStatus }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-2 rounded-full pl-3 pr-2.5 py-1.5 text-sm font-medium text-white shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${STATUS_COLORS[currentStatus] || STATUS_COLORS.draft}`}
+      >
+        {STATUS_LABELS[currentStatus] || currentStatus}
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full mt-2 z-50 w-56 rounded-xl border border-stone-200 bg-white shadow-xl overflow-hidden"
+          style={{ animation: 'statusDropdownReveal 0.18s ease-out' }}
+        >
+          <div className="py-1.5">
+            {STATUS_ORDER.map((status) => {
+              const isActive = status === currentStatus
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => {
+                    if (!isActive) onChangeStatus(status)
+                    setOpen(false)
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left text-sm transition-colors duration-150 ${
+                    isActive
+                      ? 'bg-stone-50 font-semibold text-stone-900'
+                      : `text-stone-700 font-medium ${STATUS_HOVER[status]}`
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT_COLORS[status]} ${isActive ? 'ring-2 ring-offset-1 ring-stone-300' : ''}`} />
+                  <span className="flex-1">{STATUS_LABELS[status]}</span>
+                  {isActive && <Check className="w-4 h-4 text-stone-400 shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes statusDropdownReveal {
+          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  )
 }
 
 const TABS = [
@@ -170,11 +265,10 @@ export default function TrainingDetail({
                 </div>
               </div>
               <div className="ml-5">
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-white shadow-sm ${STATUS_COLORS[training.status] || STATUS_COLORS.draft}`}
-                >
-                  {STATUS_LABELS[training.status] || training.status}
-                </span>
+                <StatusDropdown
+                  currentStatus={training.status || 'draft'}
+                  onChangeStatus={(status) => actions.updateTrainingStatus(training.id, status)}
+                />
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -346,7 +440,6 @@ export default function TrainingDetail({
                 sessions={sessions}
                 locations={locations}
                 members={members}
-                onUpdateStatus={(status) => actions.updateTrainingStatus(training.id, status)}
               />
             )}
             {tab === 'sessions' && (
