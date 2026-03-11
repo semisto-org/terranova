@@ -32,19 +32,19 @@ export function ShellProvider({ children }) {
 
 export function useShellNav({ sections, activeSection, onSectionChange }) {
   const ctx = useContext(ShellContext)
-  if (!ctx) return
-
   const onChangeRef = useRef(onSectionChange)
   onChangeRef.current = onSectionChange
 
   useEffect(() => {
+    if (!ctx) return
     ctx.registerNav(sections, activeSection, (id) => onChangeRef.current?.(id))
     return () => ctx.registerNav([], null, null)
-  }, [])
+  }, [ctx, sections, activeSection])
 
   useEffect(() => {
+    if (!ctx) return
     ctx.syncActive(activeSection)
-  }, [activeSection])
+  }, [ctx, activeSection])
 }
 
 export function useShellContext() {
