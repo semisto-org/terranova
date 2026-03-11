@@ -107,7 +107,10 @@ module Api
         training = Academy::Training.find(params.require(:training_id))
         resolved_id = resolve_contact_for_registration(registration_params)
         item = training.registrations.create!(
-          registration_params.merge(registered_at: Time.current, contact_id: resolved_id)
+          registration_params.except(:registered_at).merge(
+            registered_at: registration_params[:registered_at] || Time.current,
+            contact_id: resolved_id
+          )
         )
         render json: serialize_registration(item), status: :created
       end
@@ -400,7 +403,7 @@ module Api
       end
 
       def registration_params
-        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note, :registered_at)
       end
 
       def registration_update_params

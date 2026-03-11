@@ -163,6 +163,7 @@ bin/dev    # Rails (port 3000) + Vite (port 3036)
 - **Maps**: Leaflet + react-leaflet
 - **Inertia page render**: `render inertia: "PageName", props: { ... }` in controllers
 - **Token verification**: `Rails.application.message_verifier(:purpose)` for client portal & password reset
+- **API skill sync**: When adding/modifying API endpoints in `app/controllers/api/v1/`, update the corresponding reference file in `~/.claude/skills/terranova-api/api-reference/`
 
 ## Milestones
 
