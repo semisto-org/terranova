@@ -78,7 +78,7 @@ export function NurseryForm({ nursery, onSave, onCancel }) {
           <h2 className="text-xl font-bold text-stone-900">{editing ? 'Modifier la pépinière' : 'Nouvelle pépinière'}</h2>
           <button onClick={onCancel} className="p-1 rounded-lg hover:bg-stone-100"><X className="w-5 h-5 text-stone-500" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" data-1p-ignore>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2"><label className={labelCls}>Nom *</label><input required className={inputCls} value={form.name} onChange={set('name')} /></div>
             <div>
