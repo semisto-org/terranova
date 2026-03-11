@@ -37,44 +37,32 @@ export function ProjectCard({
     ? Math.round((project.budget.hoursWorked / project.budget.hoursPlanned) * 100)
     : 0
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return null
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: 'numeric',
-      month: 'short'
-    })
-  }
-
   const colors = phaseColors[project.phase]
+
+  // Get unique team members (avoid duplicates)
+  const uniqueTeamMembers = project.teamMembers 
+    ? Array.from(new Map(project.teamMembers.map(m => [m.memberName, m])).values()).slice(0, 2)
+    : []
 
   return (
     <div
       onClick={onView}
-      className="group bg-white rounded-2xl border border-stone-200 overflow-hidden cursor-pointer hover:border-[#AFBD00] hover:shadow-lg transition-all duration-200"
+      className="group bg-white rounded-2xl border border-stone-200 overflow-hidden cursor-pointer hover:border-[#AFBD00] hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
     >
       {/* Phase color bar */}
-      <div className={`h-1.5 ${colors.dot}`} />
+      <div className={`h-2 md:h-1.5 ${colors.dot}`} />
 
-      <div className="p-5">
-        {/* Header with phase and status badges */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Phase badge */}
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-              {phaseLabels[project.phase]}
-            </span>
+      <div className="p-4 md:p-5">
+        {/* Header with phase badge only */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          {/* Phase badge */}
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+            {phaseLabels[project.phase]}
+          </span>
 
-            {/* Status indicator */}
-            {project.status === 'pending' && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
-                En attente
-              </span>
-            )}
-          </div>
-
-          {/* Actions menu */}
-          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Actions menu - desktop only */}
+          <div className="hidden md:block relative opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -89,56 +77,34 @@ export function ProjectCard({
           </div>
         </div>
 
-        {/* Project name */}
-        <h3 className="text-lg font-medium text-stone-900 mb-1 group-hover:text-[#AFBD00] transition-colors line-clamp-2">
+        {/* Project name - full display on mobile, no truncation */}
+        <h3 className="text-base md:text-lg font-semibold text-stone-900 mb-3 leading-snug group-hover:text-[#AFBD00] transition-colors">
           {project.name}
         </h3>
 
-        {/* Client */}
-        <p className="text-sm text-stone-500 mb-4 flex items-center gap-1.5">
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-          </svg>
-          <span className="truncate">{project.clientName}</span>
-        </p>
-
-        {/* Quick stats */}
-        <div className="flex items-center gap-4 text-sm text-stone-600 mb-4">
-          <div className="flex items-center gap-1">
-            <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+        {/* Team members - simplified, unique names only */}
+        {uniqueTeamMembers.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <svg className="w-4 h-4 flex-shrink-0 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
             </svg>
-            <span>{project.area} m²</span>
-          </div>
-
-          {project.plantingDate && (
-            <div className="flex items-center gap-1 text-emerald-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-              </svg>
-              <span>{formatDate(project.plantingDate)}</span>
-            </div>
-          )}
-
-          {project.startDate && !project.plantingDate && (
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-              <span>{formatDate(project.startDate)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Budget progress */}
-        <div className="bg-stone-50 rounded-xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-stone-500">Budget heures</span>
-            <span className="text-xs font-medium text-stone-700">
-              {project.budget.hoursWorked}h / {project.budget.hoursPlanned}h
+            <span className="text-sm text-stone-600 truncate">
+              {uniqueTeamMembers.map(m => m.memberName).join(', ')}
             </span>
           </div>
-          <div className="h-1.5 bg-stone-200 rounded-full overflow-hidden">
+        )}
+
+        {/* Budget progress - simplified */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-stone-500">Progression</span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full border-2 border-stone-200 text-xs font-medium text-stone-700">
+                {project.budget.hoursWorked}/{project.budget.hoursPlanned}
+              </span>
+            </div>
+          </div>
+          <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 budgetProgress > 90 ? 'bg-red-500' :
@@ -148,14 +114,10 @@ export function ProjectCard({
               style={{ width: `${Math.min(budgetProgress, 100)}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-1.5 text-[10px] text-stone-500">
-            <span>{project.budget.hoursBilled}h facturées</span>
-            <span>{project.budget.hoursSemos}h Semos</span>
-          </div>
         </div>
 
-        {/* Hover actions */}
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-stone-100 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Hover actions - desktop only */}
+        <div className="hidden md:flex items-center gap-2 mt-4 pt-3 border-t border-stone-100 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); onEdit?.() }}
             className="flex-1 text-xs font-medium text-stone-600 hover:text-[#AFBD00] py-2 rounded-lg hover:bg-stone-50 transition-colors"
