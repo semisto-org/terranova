@@ -7,6 +7,8 @@ interface ProjectEditModalProps {
   project: {
     id: string
     name: string
+    description: string | null
+    pole: string | null
     status: string
     leadName: string
     teamNames: string[]
@@ -16,6 +18,13 @@ interface ProjectEditModalProps {
   onDelete?: () => void
   onClose: () => void
 }
+
+const POLE_OPTIONS = [
+  { value: '', label: 'Aucun', accent: '#a8a29e', bg: '#f5f5f4' },
+  { value: 'academy', label: 'Academy', accent: '#B01A19', bg: '#eac7b8' },
+  { value: 'design', label: 'Design Studio', accent: '#AFBD00', bg: '#e1e6d8' },
+  { value: 'nursery', label: 'Nursery', accent: '#EF9B0D', bg: '#fbe6c3' },
+]
 
 const STATUS_OPTIONS = [
   { value: 'Idée', label: 'Idée', dot: 'bg-sky-400' },
@@ -32,6 +41,8 @@ const labelClass = 'text-xs font-medium text-stone-500 uppercase tracking-wider'
 
 export function ProjectEditModal({ project, onSave, onDelete, onClose }: ProjectEditModalProps) {
   const [name, setName] = useState(project.name)
+  const [description, setDescription] = useState(project.description || '')
+  const [pole, setPole] = useState(project.pole || '')
   const [status, setStatus] = useState(project.status)
   const [leadName, setLeadName] = useState(project.leadName || '')
   const [teamNames, setTeamNames] = useState<string[]>(project.teamNames || [])
@@ -61,6 +72,8 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
         method: 'PATCH',
         body: JSON.stringify({
           name: name.trim(),
+          description: description.trim() || null,
+          pole: pole || null,
           status,
           lead_name: leadName,
           team_names: teamNames,
@@ -72,7 +85,7 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
     } finally {
       setBusy(false)
     }
-  }, [name, status, leadName, teamNames, project.id, onSave])
+  }, [name, description, pole, status, leadName, teamNames, project.id, onSave])
 
   const handleDelete = useCallback(async () => {
     setBusy(true)
@@ -124,6 +137,42 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
                 autoFocus
               />
             </label>
+
+            <label className="block space-y-1.5">
+              <span className={labelClass}>Description</span>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className={`${inputClass} resize-none`}
+                placeholder="Objectif ou résumé du projet..."
+                rows={2}
+              />
+            </label>
+
+            <div className="space-y-1.5">
+              <span className={labelClass}>Pôle</span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {POLE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setPole(opt.value)}
+                    className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      backgroundColor: pole === opt.value ? `${opt.accent}18` : undefined,
+                      color: pole === opt.value ? opt.accent : undefined,
+                      boxShadow: pole === opt.value ? `inset 0 0 0 1px ${opt.accent}33` : undefined,
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: opt.accent }}
+                    />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <label className="block space-y-1.5">
               <span className={labelClass}>Statut</span>

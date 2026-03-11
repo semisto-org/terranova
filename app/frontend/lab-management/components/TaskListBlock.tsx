@@ -1,7 +1,24 @@
-import React, { useState } from 'react'
-import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from 'lucide-react'
+import React, { forwardRef, useState, useMemo } from 'react'
+import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { ActionRow, type ActionItem } from './ActionRow'
+import { SortableActionRow } from './SortableActionRow'
 import type { MemberOption } from './MemberPicker'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 interface TaskListBlockProps {
   id: string
@@ -13,12 +30,16 @@ interface TaskListBlockProps {
   onAddAction?: (taskListId: string) => void
   onEditList?: (id: string, name: string) => void
   onDeleteList?: (id: string) => void
+  onReorderActions?: (taskListId: string, orderedIds: string[]) => void
   busy?: boolean
   accentColor?: string
   members?: MemberOption[]
+  dragHandleProps?: Record<string, any>
+  isDragging?: boolean
+  style?: React.CSSProperties
 }
 
-export function TaskListBlock({
+export const TaskListBlock = forwardRef<HTMLDivElement, TaskListBlockProps>(function TaskListBlock({
   id,
   name,
   actions,
@@ -28,25 +49,69 @@ export function TaskListBlock({
   onAddAction,
   onEditList,
   onDeleteList,
+  onReorderActions,
   busy,
   accentColor = '#5B5781',
   members = [],
-}: TaskListBlockProps) {
+  dragHandleProps,
+  isDragging = false,
+  style,
+}, ref) {
   const [showCompleted, setShowCompleted] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [localActions, setLocalActions] = useState<ActionItem[] | null>(null)
 
-  const pending = actions.filter(a => !a.completed)
-  const completed = actions.filter(a => a.completed)
+  const effectiveActions = localActions ?? actions
+  const pending = effectiveActions.filter(a => !a.completed)
+  const completed = effectiveActions.filter(a => a.completed)
+
+  const actionSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const pendingIds = useMemo(() => pending.map(a => a.id), [pending])
+
+  function handleActionDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = pending.findIndex(a => a.id === String(active.id))
+    const newIndex = pending.findIndex(a => a.id === String(over.id))
+    if (oldIndex === -1 || newIndex === -1) return
+    const reordered = arrayMove(pending, oldIndex, newIndex)
+    const newActions = [...reordered, ...completed]
+    setLocalActions(newActions)
+    onReorderActions?.(id, reordered.map(a => a.id))
+    requestAnimationFrame(() => setLocalActions(null))
+  }
   const completedCount = completed.length
   const totalCount = actions.length
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   return (
-    <div className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+    <div
+      ref={ref}
+      style={style}
+      className={`bg-white border rounded-xl overflow-hidden transition-all duration-200 ${
+        isDragging
+          ? 'shadow-xl border-stone-300 ring-2 ring-stone-200/60 scale-[1.01] z-50 opacity-95'
+          : 'border-stone-200 shadow-sm hover:shadow-md'
+      }`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-100 group">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-1 h-6 rounded-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
-          <h3 className="text-sm font-semibold text-stone-900 truncate">{name}</h3>
+          {dragHandleProps ? (
+            <button
+              type="button"
+              {...dragHandleProps}
+              className="flex items-center justify-center w-5 h-8 -ml-1 rounded cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500 transition-colors flex-shrink-0 touch-none"
+              aria-label="Réorganiser la liste"
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+          ) : null}
+          <h3 className="text-lg font-semibold text-stone-900 truncate">{name}</h3>
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs text-stone-400 tabular-nums">
               {completedCount}/{totalCount}
@@ -85,7 +150,7 @@ export function TaskListBlock({
           )}
           {onDeleteList && (
             <button
-              onClick={() => onDeleteList(id)}
+              onClick={() => setShowDeleteConfirm(true)}
               className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors"
               title="Supprimer la liste"
             >
@@ -101,18 +166,41 @@ export function TaskListBlock({
           <p className="text-xs text-stone-400 py-4 text-center">Aucune tâche</p>
         )}
 
-        {pending.map(action => (
-          <ActionRow
-            key={action.id}
-            action={action}
-            onToggle={onToggleAction}
-            onEdit={onEditAction}
-            onDelete={onDeleteAction}
-            busy={busy}
-            accentColor={accentColor}
-            members={members}
-          />
-        ))}
+        {onReorderActions && pending.length > 1 ? (
+          <DndContext
+            sensors={actionSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleActionDragEnd}
+          >
+            <SortableContext items={pendingIds} strategy={verticalListSortingStrategy}>
+              {pending.map(action => (
+                <SortableActionRow
+                  key={action.id}
+                  action={action}
+                  onToggle={onToggleAction}
+                  onEdit={onEditAction}
+                  onDelete={onDeleteAction}
+                  busy={busy}
+                  accentColor={accentColor}
+                  members={members}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          pending.map(action => (
+            <ActionRow
+              key={action.id}
+              action={action}
+              onToggle={onToggleAction}
+              onEdit={onEditAction}
+              onDelete={onDeleteAction}
+              busy={busy}
+              accentColor={accentColor}
+              members={members}
+            />
+          ))
+        )}
 
         {completedCount > 0 && (
           <div className="mt-1 mb-1">
@@ -153,6 +241,18 @@ export function TaskListBlock({
           Ajouter une tâche
         </button>
       )}
+
+      {showDeleteConfirm && onDeleteList && (
+        <ConfirmDeleteModal
+          title="Supprimer cette liste ?"
+          message={`« ${name} » et toutes ses tâches seront définitivement supprimées.`}
+          onConfirm={() => {
+            onDeleteList(id)
+            setShowDeleteConfirm(false)
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   )
-}
+})

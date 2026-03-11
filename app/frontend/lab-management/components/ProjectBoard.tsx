@@ -7,6 +7,8 @@ import { ProjectCreateModal } from './ProjectCreateModal'
 interface ProjectSummary {
   id: string
   name: string
+  description: string | null
+  pole: string | null
   status: string
   leadName: string
   teamNames: string[]
@@ -14,6 +16,12 @@ interface ProjectSummary {
   totalActions: number
   completedActions: number
   createdAt: string
+}
+
+const POLE_CONFIG: Record<string, { label: string; accent: string }> = {
+  academy: { label: 'Academy', accent: '#B01A19' },
+  design: { label: 'Design', accent: '#AFBD00' },
+  nursery: { label: 'Nursery', accent: '#EF9B0D' },
 }
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string }> = {
@@ -203,6 +211,15 @@ export function ProjectBoard() {
                                 <span className={`w-1.5 h-1.5 rounded-full ${psc.dot}`} />
                                 {project.status}
                               </span>
+                              {project.pole && POLE_CONFIG[project.pole] && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
+                                  style={{ backgroundColor: `${POLE_CONFIG[project.pole].accent}18`, color: POLE_CONFIG[project.pole].accent }}
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: POLE_CONFIG[project.pole].accent }} />
+                                  {POLE_CONFIG[project.pole].label}
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-4 text-xs text-stone-500">

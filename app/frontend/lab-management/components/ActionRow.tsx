@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react'
-import { Calendar, Clock, Star, Trash2 } from 'lucide-react'
+import React, { forwardRef, useMemo, useState } from 'react'
+import { Calendar, Clock, GripVertical, Star, Trash2 } from 'lucide-react'
 import type { MemberOption } from './MemberPicker'
+import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 export interface ActionItem {
   id: string
@@ -24,9 +25,13 @@ interface ActionRowProps {
   busy?: boolean
   accentColor?: string
   members?: MemberOption[]
+  dragHandleProps?: Record<string, any>
+  isDragging?: boolean
+  style?: React.CSSProperties
 }
 
-export function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColor = '#5B5781', members = [] }: ActionRowProps) {
+export const ActionRow = forwardRef<HTMLDivElement, ActionRowProps>(function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColor = '#5B5781', members = [], dragHandleProps, isDragging = false, style }, ref) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const isOverdue = action.dueDate && !action.completed && new Date(action.dueDate) < new Date()
   const priorityStars = action.priority === 'ⓄⓄⓄ' ? 3 : action.priority === 'ⓄⓄ' ? 2 : action.priority === 'Ⓞ' ? 1 : 0
 
@@ -37,8 +42,24 @@ export function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColo
 
   return (
     <div
-      className={`group flex items-start gap-3 py-2.5 px-1 rounded-lg hover:bg-stone-50/80 transition-colors ${action.completed ? 'opacity-50' : ''}`}
+      ref={ref}
+      style={style}
+      className={`group flex items-start gap-3 py-2.5 px-1 rounded-lg transition-all ${
+        isDragging
+          ? 'bg-white shadow-lg ring-1 ring-stone-200 scale-[1.01] z-50'
+          : 'hover:bg-stone-50/80'
+      } ${action.completed ? 'opacity-50' : ''}`}
     >
+      {dragHandleProps && (
+        <button
+          type="button"
+          {...dragHandleProps}
+          className="mt-0.5 flex items-center justify-center w-5 h-5 rounded cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500 transition-colors flex-shrink-0 touch-none"
+          aria-label="Réorganiser la tâche"
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </button>
+      )}
       <button
         onClick={() => onToggle(action.id)}
         disabled={busy}
@@ -119,7 +140,7 @@ export function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColo
         <button
           onClick={(e) => {
             e.stopPropagation()
-            onDelete(action.id)
+            setShowDeleteConfirm(true)
           }}
           disabled={busy}
           className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-stone-400 hover:text-red-500 transition-all flex-shrink-0"
@@ -128,6 +149,17 @@ export function ActionRow({ action, onToggle, onEdit, onDelete, busy, accentColo
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       )}
+      {showDeleteConfirm && onDelete && (
+        <ConfirmDeleteModal
+          title="Supprimer cette tâche ?"
+          message={`« ${action.name} » sera définitivement supprimée.`}
+          onConfirm={() => {
+            onDelete(action.id)
+            setShowDeleteConfirm(false)
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   )
-}
+})

@@ -16,8 +16,8 @@ module Api
       before_action :set_expense, only: [:update_expense, :destroy_expense]
       before_action :set_revenue, only: [:update_revenue, :destroy_revenue]
       before_action :set_album, only: [:update_album, :destroy_album, :album_media, :upload_album_media, :delete_album_media]
-      before_action :set_pole_project, only: [:show_project, :update_project, :destroy_project, :create_project_task_list]
-      before_action :set_project_task_list, only: [:update_project_task_list, :destroy_project_task_list, :create_project_action]
+      before_action :set_pole_project, only: [:show_project, :update_project, :destroy_project, :create_project_task_list, :reorder_project_task_lists, :upload_project_document]
+      before_action :set_project_task_list, only: [:update_project_task_list, :destroy_project_task_list, :create_project_action, :reorder_project_actions]
       before_action :set_project_action, only: [:update_project_action, :toggle_project_action, :destroy_project_action]
 
       def overview
@@ -655,7 +655,45 @@ module Api
         head :no_content
       end
 
+      # ── Project Documents ──
+
+      def upload_project_document
+        unless params[:documents].present?
+          return render json: { error: "No documents provided" }, status: :unprocessable_entity
+        end
+
+        @pole_project.documents.attach(params[:documents])
+
+        # Tag newly attached blobs with uploader info
+        uploader_name = "#{current_member.first_name} #{current_member.last_name}"
+        @pole_project.documents.blobs.where(metadata: [nil, ""]).or(
+          @pole_project.documents.blobs.where.not("metadata LIKE ?", "%uploaded_by%")
+        ).each do |blob|
+          meta = blob.metadata || {}
+          meta["uploaded_by"] = uploader_name
+          blob.update_column(:metadata, meta.to_json)
+        end
+
+        render json: {
+          documents: @pole_project.documents.order(created_at: :desc).map { |d| serialize_document(d) }
+        }
+      end
+
+      def delete_project_document
+        attachment = ActiveStorage::Attachment.find(params[:id])
+        attachment.purge
+        head :no_content
+      end
+
       # ── Project Task Lists ──
+
+      def reorder_project_task_lists
+        ids = params.require(:ordered_ids)
+        ids.each_with_index do |id, index|
+          @pole_project.task_lists.where(id: id).update_all(position: index)
+        end
+        head :no_content
+      end
 
       def create_project_task_list
         task_list = @pole_project.task_lists.new(task_list_params)
@@ -681,9 +719,18 @@ module Api
 
       # ── Project Actions (tasks) ──
 
+      def reorder_project_actions
+        ids = params.require(:ordered_ids)
+        ids.each_with_index do |id, index|
+          @project_task_list.actions.where(id: id).update_all(position: index)
+        end
+        head :no_content
+      end
+
       def create_project_action
         action = @project_task_list.actions.new(project_action_params)
         action.pole_project = @project_task_list.pole_project
+        action.position = (@project_task_list.actions.maximum(:position) || -1) + 1
         if action.save
           render json: serialize_project_action(action), status: :created
         else
@@ -943,7 +990,7 @@ module Api
       end
 
       def project_params
-        params.permit(:name, :status, :lead_name, :needs_reclassification, team_names: [])
+        params.permit(:name, :status, :lead_name, :needs_reclassification, :description, :pole, :notes, team_names: [])
       end
 
       def task_list_params
@@ -1428,6 +1475,8 @@ module Api
         {
           id: p.id.to_s,
           name: p.name,
+          description: p.description,
+          pole: p.pole,
           status: p.status,
           leadName: p.lead_name,
           teamNames: p.team_names || [],
@@ -1440,10 +1489,25 @@ module Api
 
       def serialize_project_detail(p)
         serialize_project_summary(p).merge(
+          notes: p.notes,
+          documents: p.documents.order(created_at: :desc).map { |d| serialize_document(d) },
           taskLists: p.task_lists.order(:position).includes(:actions).map { |tl| serialize_project_task_list(tl) },
           unlistedActions: p.actions.where(task_list_id: nil).order(:created_at).map { |a| serialize_project_action(a) },
           events: p.events.includes(:event_type).order(:start_date).map { |e| serialize_event(e) }
         )
+      end
+
+      def serialize_document(attachment)
+        meta = attachment.blob.metadata || {}
+        {
+          id: attachment.id.to_s,
+          filename: attachment.filename.to_s,
+          contentType: attachment.content_type,
+          byteSize: attachment.byte_size,
+          url: Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true),
+          uploadedBy: meta["uploaded_by"],
+          createdAt: attachment.created_at.iso8601
+        }
       end
 
       def serialize_project_task_list(tl)
@@ -1451,7 +1515,7 @@ module Api
           id: tl.id.to_s,
           name: tl.name,
           position: tl.position,
-          actions: tl.actions.order(:created_at).map { |a| serialize_project_action(a) }
+          actions: tl.actions.order(:position, :created_at).map { |a| serialize_project_action(a) }
         }
       end
 

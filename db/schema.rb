@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_11_091239) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -189,6 +189,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_140000) do
     t.datetime "notion_updated_at"
     t.bigint "parent_id"
     t.bigint "pole_project_id"
+    t.integer "position", default: 0
     t.string "priority"
     t.string "status"
     t.jsonb "tags", default: []
@@ -1617,12 +1618,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_140000) do
 
   create_table "pole_projects", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.text "description"
     t.string "lead_name"
     t.string "name", null: false
     t.boolean "needs_reclassification", default: false
+    t.text "notes"
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
+    t.string "pole"
     t.string "status"
     t.jsonb "team_names", default: []
     t.datetime "updated_at", null: false
