@@ -417,12 +417,19 @@ export function ExpenseFormModal({
                           style={selectChevronStyle}
                         >
                           <option value="">—</option>
+                          {onCreateContact && (
+                            <>
+                              <option value="__new__" style={{ fontWeight: '600', color: '#B01A19' }}>
+                                ✨ Créer un nouveau fournisseur
+                              </option>
+                              <option disabled>──────────</option>
+                            </>
+                          )}
                           {contactList.map((c) => (
                             <option key={c.id} value={c.id}>
                               {c.name} ({c.contactType === 'organization' ? 'Organisation' : 'Personne'})
                             </option>
                           ))}
-                          {onCreateContact && <option value="__new__">+ Créer un fournisseur...</option>}
                         </select>
                       </>
                     )}
