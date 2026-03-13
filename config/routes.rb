@@ -1,4 +1,14 @@
 Rails.application.routes.draw do
+  # My Semisto — Contact Portal
+  scope "/my" do
+    get "/", to: "my_semisto#dashboard"
+    get "/login", to: "my_semisto#login"
+    post "/login", to: "my_semisto#request_magic_link"
+    delete "/logout", to: "my_semisto#logout"
+    get "/academy", to: "my_semisto#academy"
+    get "/academy/:training_id", to: "my_semisto#training_detail"
+  end
+
   # Authentication
   get "login", to: "sessions#new", as: :login
   post "login", to: "sessions#create"
@@ -44,6 +54,14 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      # My Semisto (contact portal API)
+      scope :my do
+        post "auth/request-link", to: "my_semisto#request_magic_link"
+        get "auth/verify", to: "my_semisto#verify"
+        get "academy", to: "my_semisto#academy_trainings"
+        get "academy/:training_id", to: "my_semisto#academy_training_detail"
+      end
+
       get "health", to: "health#show"
 
       post "nova/chat", to: "nova#chat"
