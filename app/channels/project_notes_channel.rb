@@ -7,8 +7,11 @@ class ProjectNotesChannel < ApplicationCable::Channel
   end
 
   def receive(data)
+    project = @project || PoleProject.find_by(id: params[:project_id])
+    return unless project
+
     ActionCable.server.broadcast(
-      "project_notes_#{@project.id}",
+      "project_notes_#{project.id}",
       data
     )
   end
