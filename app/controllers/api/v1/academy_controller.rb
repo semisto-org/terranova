@@ -631,7 +631,7 @@ module Api
           trainingId: training.id.to_s,
           title: training.title,
           status: training.status,
-          sessions: training.sessions.order(:start_date).map do |session|
+          sessions: training.sessions.sort_by(&:start_date).map do |session|
             {
               sessionId: session.id.to_s,
               startDate: session.start_date.iso8601,
