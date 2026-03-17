@@ -324,3 +324,15 @@
 [INFO] 2026-03-17T11:19:05.491Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] Checking session file at: /Users/michael/.claude/plugins/cache/a5c-ai/babysitter/4.0.152/skills/babysit/state/d006ec38-70ba-4c09-bd85-fb2de04fc049.md
 [INFO] 2026-03-17T11:19:05.498Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] No run associated with session — allowing exit
 [INFO] 2026-03-17T11:19:05Z CLI exit code=0
+[INFO] 2026-03-17T17:17:59Z Hook script invoked
+[INFO] 2026-03-17T17:17:59Z PLUGIN_ROOT=/Users/michael/.claude/plugins/cache/a5c-ai/babysitter/4.0.152
+[INFO] 2026-03-17T17:17:59Z Hook input received (     446 bytes)
+[INFO] 2026-03-17T17:17:59.658Z handleHookRunStop started
+[INFO] 2026-03-17T17:17:59.667Z Hook input received
+[INFO] 2026-03-17T17:17:59.667Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] Session ID: d006ec38-70ba-4c09-bd85-fb2de04fc049
+[INFO] 2026-03-17T17:17:59.667Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] Resolved pluginRoot: /Users/michael/.claude/plugins/cache/a5c-ai/babysitter/4.0.152
+[INFO] 2026-03-17T17:17:59.667Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] Resolved stateDir: /Users/michael/.claude/plugins/cache/a5c-ai/babysitter/4.0.152/skills/babysit/state
+[INFO] 2026-03-17T17:17:59.668Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] Checking session file at: /Users/michael/.claude/plugins/cache/a5c-ai/babysitter/4.0.152/skills/babysit/state/d006ec38-70ba-4c09-bd85-fb2de04fc049.md
+[INFO] 2026-03-17T17:17:59.669Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] Primary state file not found, trying fallback: /Users/michael/code/terranova/.a5c/state/d006ec38-70ba-4c09-bd85-fb2de04fc049.md
+[INFO] 2026-03-17T17:17:59.669Z [session=d006ec38-70ba-4c09-bd85-fb2de04fc049] No active loop found at primary (/Users/michael/.claude/plugins/cache/a5c-ai/babysitter/4.0.152/skills/babysit/state/d006ec38-70ba-4c09-bd85-fb2de04fc049.md) or fallback (/Users/michael/code/terranova/.a5c/state/d006ec38-70ba-4c09-bd85-fb2de04fc049.md) — allowing exit
+[INFO] 2026-03-17T17:17:59Z CLI exit code=0
