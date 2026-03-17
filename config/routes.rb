@@ -316,6 +316,7 @@ Rails.application.routes.draw do
       post "public/stripe-webhooks", to: "public/stripe_webhooks#create"
 
       get "academy", to: "academy#index"
+      get "academy/dashboard", to: "academy#dashboard"
       get "academy/calendar", to: "academy#calendar"
       get "academy/reporting", to: "academy#reporting"
       get "academy/calendar-links", to: "academy#calendar_links"

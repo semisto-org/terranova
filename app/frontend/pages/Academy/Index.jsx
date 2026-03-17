@@ -7,6 +7,7 @@ import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
 import LocationsMap from '../../components/academy/LocationsMap'
 import {
+  AcademyDashboard,
   TrainingDetail,
   TrainingKanban,
   CalendarMonthView,
@@ -28,6 +29,7 @@ import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
+  { id: 'dashboard', label: 'Tableau de bord' },
   { id: 'kanban', label: 'Activités' },
   { id: 'calendar', label: 'Calendrier' },
   { id: 'team', label: 'Équipe' },
@@ -39,7 +41,7 @@ const ACADEMY_SECTIONS = [
 
 export default function AcademyIndex({ initialTrainingId }) {
   const initialPath = window.location.pathname
-  const calendarDefault = initialPath.includes('/academy/calendar') ? 'calendar' : 'kanban'
+  const calendarDefault = initialPath.includes('/academy/calendar') ? 'calendar' : 'dashboard'
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -805,6 +807,15 @@ export default function AcademyIndex({ initialTrainingId }) {
       `}</style>
       <div className="px-4 py-4">
       <div className={`${view === 'kanban' ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto space-y-4`}>
+        {view === 'dashboard' && (
+          <AcademyDashboard
+            onNavigateToTraining={(trainingId) => {
+              setSelectedTrainingId(trainingId)
+              setView('kanban')
+            }}
+          />
+        )}
+
         {view === 'kanban' && (
           <TrainingKanban
             trainings={filteredTrainings}

@@ -8,6 +8,10 @@ module Api
         render json: academy_payload
       end
 
+      def dashboard
+        render json: Academy::DashboardService.new.call
+      end
+
       def create_training_type
         item = Academy::TrainingType.create!(training_type_params)
         render json: serialize_training_type(item), status: :created

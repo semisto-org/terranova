@@ -1441,4 +1441,92 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_not_nil trainer_entry
     assert_equal 2, trainer_entry['sessionCount']
   end
+
+  test 'dashboard endpoint returns all sections with correct structure' do
+    get '/api/v1/academy/dashboard', as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal %w[upcomingSessions recentRegistrations paymentAlerts trainingReadiness expenseUpdates quickStats].sort,
+                 body.keys.sort
+
+    stats = body['quickStats']
+    assert_includes stats.keys, 'activeTrainingsCount'
+    assert_includes stats.keys, 'upcomingSessionsCount'
+    assert_includes stats.keys, 'totalRegistrationsThisMonth'
+    assert_includes stats.keys, 'pendingPaymentsCount'
+    assert_includes stats.keys, 'pendingPaymentsTotal'
+    assert_includes stats.keys, 'unpaidExpensesCount'
+    assert_includes stats.keys, 'unpaidExpensesTotal'
+    assert_includes stats.keys, 'averageFillRate'
+  end
+
+  test 'dashboard returns upcoming sessions and training readiness with data' do
+    type = Academy::TrainingType.create!(name: 'Stage', description: 'Formation courte')
+    training = Academy::Training.create!(
+      training_type: type,
+      title: 'Forêt résilience',
+      status: 'registrations_open',
+      price: 70,
+      max_participants: 14,
+      checklist_items: %w[Programme Salle Formateur],
+      checked_items: %w[Programme]
+    )
+
+    session = Academy::TrainingSession.create!(
+      training: training,
+      start_date: 5.days.from_now.to_date,
+      end_date: 6.days.from_now.to_date,
+      location_ids: ['999'],
+      trainer_ids: ['888']
+    )
+
+    Academy::TrainingRegistration.create!(
+      training: training,
+      contact_name: 'Jean Test',
+      contact_email: 'jean@test.com',
+      payment_status: 'pending',
+      amount_paid: 0,
+      registered_at: Time.current
+    )
+
+    get '/api/v1/academy/dashboard', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+
+    # Upcoming sessions
+    assert_equal 1, body['upcomingSessions'].size
+    s = body['upcomingSessions'][0]
+    assert_equal 'Forêt résilience', s['trainingTitle']
+    assert_equal 1, s['registrationCount']
+    assert_equal 14, s['maxParticipants']
+    assert_equal 7, s['fillRate']
+    assert_equal true, s['readinessChecks']['hasLocation']
+    assert_equal true, s['readinessChecks']['hasTrainer']
+    assert_equal true, s['readinessChecks']['hasPrice']
+    assert_equal [1, 3], s['readinessChecks']['checklistProgress']
+
+    # Training readiness
+    assert_equal 1, body['trainingReadiness'].size
+    t = body['trainingReadiness'][0]
+    assert_equal 'Forêt résilience', t['title']
+    assert_equal 'registrations_open', t['status']
+    assert_equal true, t['checks']['hasLocation']
+    assert_equal true, t['checks']['hasTrainer']
+    assert_equal true, t['checks']['hasSessions']
+    assert_equal false, t['checks']['checklistComplete']
+
+    # Payment alerts
+    assert_equal 1, body['paymentAlerts'].size
+    a = body['paymentAlerts'][0]
+    assert_equal 'Jean Test', a['contactName']
+    assert_equal 'pending', a['paymentStatus']
+    assert_equal 70.0, a['expectedAmount']
+
+    # Quick stats
+    stats = body['quickStats']
+    assert_equal 1, stats['activeTrainingsCount']
+    assert_equal 1, stats['upcomingSessionsCount']
+    assert_equal 1, stats['pendingPaymentsCount']
+  end
 end

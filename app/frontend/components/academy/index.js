@@ -1,4 +1,5 @@
 // Academy components
+export { default as AcademyDashboard } from './AcademyDashboard'
 export { default as TrainingCard } from './TrainingCard'
 export { default as TrainingKanban } from './TrainingKanban'
 export { default as TrainingDetail } from './TrainingDetail'
