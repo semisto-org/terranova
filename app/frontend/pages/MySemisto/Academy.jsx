@@ -5,6 +5,7 @@ import TrainingCard from '../../my-semisto/components/TrainingCard'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
+
 const SECTION_CONFIG = {
   inProgress: { icon: Zap, color: '#EF9B0D', label: 'En cours' },
   upcoming: { icon: BookOpen, color: '#2D6A4F', label: 'À venir' },
@@ -39,6 +40,7 @@ export default function Academy() {
 
   useEffect(() => {
     myApiRequest(myApiPath('/academy'))
+
       .then((data) => {
         setTrainings(data.trainings || [])
       })
@@ -50,6 +52,7 @@ export default function Academy() {
 
   return (
     <MySemistoShell activeNav={myPath('/academy')}>
+
       {/* Header with Academy accent */}
       <div className="mb-8 my-animate-section">
         <div className="flex items-center gap-3 mb-2">
@@ -97,6 +100,7 @@ export default function Academy() {
           <p className="text-stone-600 text-sm font-medium mb-1">Aucune activité pour le moment</p>
           <p className="text-stone-400 text-xs">
             Vos activités Academy apparaîtront ici.
+
           </p>
         </div>
       )}

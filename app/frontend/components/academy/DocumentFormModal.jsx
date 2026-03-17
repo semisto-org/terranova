@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Upload, CheckCircle2, X, Calendar, User } from 'lucide-react'
 
+
 function formatSessionDateRange(session) {
   const start = new Date(session.startDate)
   const end = new Date(session.endDate)
@@ -63,6 +64,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
   const [uploadSpeed, setUploadSpeed] = useState(0)
   const [uploadEta, setUploadEta] = useState(null)
   const [uploadDone, setUploadDone] = useState(false)
+
 
   useEffect(() => {
     if (nameRef.current) {
@@ -187,6 +189,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
 
   const isUploading = uploading && !uploadDone
 
+
   return (
     <>
       {/* Backdrop */}
@@ -248,6 +251,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
               ) : (
                 <div className="space-y-6">
                   {/* Name */}
+
                   <div>
                     <label
                       htmlFor="document-name"

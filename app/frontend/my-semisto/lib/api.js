@@ -1,5 +1,6 @@
 import { myPath } from './paths'
 
+
 function getCsrfToken() {
   const meta = document.querySelector('meta[name="csrf-token"]')
   return meta ? meta.getAttribute('content') : ''
@@ -23,6 +24,7 @@ export async function myApiRequest(path, options = {}) {
   if (!response.ok) {
     if (response.status === 401) {
       window.location.href = myPath('/login')
+
       throw new Error('Session expiree')
     }
 

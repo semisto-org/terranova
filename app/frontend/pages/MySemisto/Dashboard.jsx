@@ -5,6 +5,7 @@ import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import WalletCard from '../../my-semisto/components/WalletCard'
 import { myPath } from '../../my-semisto/lib/paths'
 
+
 const POLE_COLORS = ['#5B5781', '#AFBD00', '#B01A19', '#EF9B0D', '#234766']
 
 export default function Dashboard() {
@@ -12,6 +13,7 @@ export default function Dashboard() {
 
   return (
     <MySemistoShell activeNav={myPath('/')}>
+
       {/* Welcome banner */}
       <div className="mb-8 my-animate-section relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2D6A4F] to-[#1B4332] px-6 py-6 text-white">
         {/* Decorative circles */}
@@ -45,6 +47,7 @@ export default function Dashboard() {
         <div className="my-animate-section space-y-4" style={{ animationDelay: '100ms' }}>
           <Link
             href={myPath('/academy')}
+
             className="block rounded-2xl bg-white border border-stone-200 p-5 hover:border-[#B01A19]/30 transition-all group my-card-accent my-warm-glow"
           >
             <div className="flex items-center justify-between mb-3">

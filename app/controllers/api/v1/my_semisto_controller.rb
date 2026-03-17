@@ -5,6 +5,7 @@ module Api
     class MySemistoController < ApplicationController
       include MySemistoRouting
 
+
       skip_forgery_protection
       skip_before_action :track_member_activity
 
@@ -30,6 +31,7 @@ module Api
         redirect_to my_semisto_path("/")
       rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
         redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
+
       end
 
       # ── Academy API ──

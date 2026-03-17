@@ -16,6 +16,7 @@ class ContactMailer < ApplicationMailer
       @verify_url = "#{root_url.chomp('/')}/api/v1/my/auth/verify?token=#{CGI.escape(@token)}"
     end
 
+
     mail(
       to: @contact.email,
       subject: "Votre lien de connexion — Mon Espace Semisto"

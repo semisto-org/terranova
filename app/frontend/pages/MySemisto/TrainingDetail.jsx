@@ -6,6 +6,7 @@ import DocumentList, { DocumentItem } from '../../my-semisto/components/Document
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
+
 const SESSION_COLOR_PAST = '#5B5781'
 const SESSION_COLOR_UPCOMING = '#2D6A4F'
 
@@ -40,6 +41,7 @@ export default function TrainingDetail() {
 
   useEffect(() => {
     myApiRequest(`${myApiPath('/academy')}/${trainingId}`)
+
       .then((data) => setTraining(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -51,6 +53,7 @@ export default function TrainingDetail() {
       <div className="mb-6">
         <Link
           href={myPath('/academy')}
+
           className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#B01A19] transition-colors"
         >
           <ArrowLeft size={16} />

@@ -4,25 +4,33 @@ import { Calendar, FileText, Clock, ArrowRight } from 'lucide-react'
 import { myPath } from '../lib/paths'
 
 const STATUS_LABELS = {
-  idea: 'Idée',
-  in_construction: 'En construction',
-  in_preparation: 'En préparation',
+  draft: 'Brouillon',
+  planned: 'Planifiée',
   registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  post_production: 'En post-prod',
-  completed: 'Clôturée',
+  completed: 'Terminée',
   cancelled: 'Annulée',
+  idea: 'Idée',
+  to_organize: 'À organiser',
+  in_preparation: 'En préparation',
+  to_publish: 'À publier',
+  published: 'Publiée',
+  post_training: 'Post-formation',
 }
 
 const STATUS_STYLES = {
-  idea:               { bg: '#d9770618', text: '#b45309', dot: '#d97706' },
-  in_construction:    { bg: '#7c3aed18', text: '#6d28d9', dot: '#7c3aed' },
-  in_preparation:     { bg: '#23476618', text: '#234766', dot: '#234766' },
+  draft:              { bg: '#78716c18', text: '#78716c', dot: '#78716c' },
+  planned:            { bg: '#23476618', text: '#234766', dot: '#234766' },
   registrations_open: { bg: '#2D6A4F18', text: '#2D6A4F', dot: '#2D6A4F' },
-  in_progress:        { bg: '#B01A1918', text: '#B01A19', dot: '#B01A19' },
-  post_production:    { bg: '#0d948818', text: '#0f766e', dot: '#0d9488' },
+  in_progress:        { bg: '#EF9B0D18', text: '#b27308', dot: '#EF9B0D' },
   completed:          { bg: '#2D6A4F18', text: '#2D6A4F', dot: '#2D6A4F' },
   cancelled:          { bg: '#B01A1918', text: '#B01A19', dot: '#B01A19' },
+  idea:               { bg: '#5B578118', text: '#5B5781', dot: '#5B5781' },
+  to_organize:        { bg: '#EF9B0D18', text: '#b27308', dot: '#EF9B0D' },
+  in_preparation:     { bg: '#23476618', text: '#234766', dot: '#234766' },
+  to_publish:         { bg: '#5B578118', text: '#5B5781', dot: '#5B5781' },
+  published:          { bg: '#AFBD0018', text: '#7a8500', dot: '#AFBD00' },
+  post_training:      { bg: '#78716c18', text: '#78716c', dot: '#78716c' },
 }
 
 const DEFAULT_STATUS_STYLE = { bg: '#78716c18', text: '#78716c', dot: '#78716c' }

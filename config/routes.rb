@@ -25,6 +25,7 @@ Rails.application.routes.draw do
   end
 
   # My Semisto — Contact Portal (path-based, always available)
+
   scope "/my", as: :my_semisto do
     get "/", to: "my_semisto#dashboard", as: :dashboard
     get "/login", to: "my_semisto#login", as: :login

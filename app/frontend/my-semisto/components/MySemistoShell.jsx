@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: 'Accueil', href: myPath('/'), icon: Home, color: '#2D6A4F' },
   { label: 'Semisto Academy', href: myPath('/academy'), icon: GraduationCap, color: '#B01A19' },
   { label: 'Mes Semos (bientôt)', href: myPath('/wallet'), icon: Wallet, color: '#EF9B0D', disabled: true, hideBadge: true },
+
 ]
 
 export default function MySemistoShell({ children, activeNav }) {
@@ -18,6 +19,7 @@ export default function MySemistoShell({ children, activeNav }) {
   function handleLogout(e) {
     e.preventDefault()
     router.delete(myPath('/logout'))
+
   }
 
   return (

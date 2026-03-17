@@ -3,6 +3,7 @@ import { useForm, usePage } from '@inertiajs/react'
 import semistoLogo from '../../assets/semisto-square-main.png'
 import { myPath } from '../../my-semisto/lib/paths'
 
+
 function getGreeting() {
   const h = new Date().getHours()
   if (h < 6) return 'Bonne nuit'
@@ -19,6 +20,7 @@ export default function Login() {
   function handleSubmit(e) {
     e.preventDefault()
     post(myPath('/login'))
+
   }
 
   return (
