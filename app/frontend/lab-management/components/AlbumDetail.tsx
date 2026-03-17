@@ -156,7 +156,7 @@ function getEntityPath(
 ): { href: string; label: string } | null {
   switch (albumableType) {
     case 'Academy::Training':
-      return { href: `/academy/${albumableId}`, label: 'Voir la formation' }
+      return { href: `/academy/${albumableId}`, label: 'Voir l\'activité' }
     case 'Design::Project':
       return { href: `/design/${albumableId}`, label: 'Voir le projet' }
     case 'Event':

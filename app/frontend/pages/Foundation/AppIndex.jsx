@@ -41,7 +41,7 @@ export default function AppIndex({ message, milestone }) {
             <span className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: '#B01A19' }}>A</span>
             <span className="font-medium text-stone-900">Academy</span>
           </div>
-          <p className="text-xs text-stone-500 mt-2">Formations, inscriptions, calendrier</p>
+          <p className="text-xs text-stone-500 mt-2">Activités, inscriptions, calendrier</p>
         </Link>
 
         <Link href="/nursery" className="rounded-xl border border-stone-200 bg-white p-4 hover:border-[#EF9B0D] transition-colors block">

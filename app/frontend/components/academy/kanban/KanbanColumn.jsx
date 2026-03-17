@@ -4,23 +4,31 @@ import { Calendar } from 'lucide-react'
 import KanbanTrainingCard from './KanbanTrainingCard'
 
 const COLUMN_STYLES = {
-  conception: {
-    bg: 'bg-stone-50/60',
-    border: 'border-stone-200',
-    headerBg: 'bg-stone-100',
-    headerText: 'text-stone-700',
-    countBg: 'bg-stone-200 text-stone-700',
-    dropBorder: 'border-stone-300',
+  idea: {
+    bg: 'bg-amber-50/30',
+    border: 'border-amber-200/60',
+    headerBg: 'bg-amber-100/70',
+    headerText: 'text-amber-800',
+    countBg: 'bg-amber-200 text-amber-800',
+    dropBorder: 'border-amber-300',
   },
-  publication: {
-    bg: 'bg-indigo-50/30',
-    border: 'border-indigo-200/60',
-    headerBg: 'bg-indigo-100/70',
-    headerText: 'text-indigo-800',
-    countBg: 'bg-indigo-200 text-indigo-800',
-    dropBorder: 'border-indigo-300',
+  in_construction: {
+    bg: 'bg-violet-50/30',
+    border: 'border-violet-200/60',
+    headerBg: 'bg-violet-100/70',
+    headerText: 'text-violet-800',
+    countBg: 'bg-violet-200 text-violet-800',
+    dropBorder: 'border-violet-300',
   },
-  inscriptions: {
+  in_preparation: {
+    bg: 'bg-blue-50/30',
+    border: 'border-blue-200/60',
+    headerBg: 'bg-blue-100/70',
+    headerText: 'text-blue-800',
+    countBg: 'bg-blue-200 text-blue-800',
+    dropBorder: 'border-blue-300',
+  },
+  registrations_open: {
     bg: 'bg-green-50/30',
     border: 'border-green-200/60',
     headerBg: 'bg-green-100/70',
@@ -29,7 +37,7 @@ const COLUMN_STYLES = {
     dropBorder: 'border-green-300',
     pulse: true,
   },
-  en_cours: {
+  in_progress: {
     bg: 'bg-[#B01A19]/[0.03]',
     border: 'border-[#B01A19]/20',
     headerBg: 'bg-[#B01A19]/10',
@@ -37,6 +45,14 @@ const COLUMN_STYLES = {
     countBg: 'bg-[#B01A19] text-white',
     dropBorder: 'border-[#B01A19]/40',
     pulse: true,
+  },
+  post_production: {
+    bg: 'bg-teal-50/30',
+    border: 'border-teal-200/60',
+    headerBg: 'bg-teal-100/70',
+    headerText: 'text-teal-800',
+    countBg: 'bg-teal-200 text-teal-800',
+    dropBorder: 'border-teal-300',
   },
   cloture: {
     bg: 'bg-stone-50/40',
@@ -54,8 +70,6 @@ export default function KanbanColumn({
   cards,
   index,
   onViewTraining,
-  onEditTraining,
-  onDeleteTraining,
   onCreateTraining,
 }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -63,7 +77,7 @@ export default function KanbanColumn({
     data: { phase },
   })
 
-  const styles = COLUMN_STYLES[phase] || COLUMN_STYLES.conception
+  const styles = COLUMN_STYLES[phase] || COLUMN_STYLES.idea
   const count = cards.length
 
   return (
@@ -103,14 +117,14 @@ export default function KanbanColumn({
             <div className="mb-3 rounded-full bg-stone-100 p-3">
               <Calendar className="w-5 h-5 text-stone-300" />
             </div>
-            <p className="text-xs text-stone-400 font-medium">Aucune formation</p>
-            {phase === 'conception' && onCreateTraining && (
+            <p className="text-xs text-stone-400 font-medium">Aucune activité</p>
+            {phase === 'idea' && onCreateTraining && (
               <button
                 type="button"
                 onClick={onCreateTraining}
                 className="mt-3 text-xs text-[#B01A19] font-semibold hover:underline"
               >
-                + Creer une formation
+                + Creer une activité
               </button>
             )}
           </div>
@@ -130,13 +144,10 @@ export default function KanbanColumn({
                 nextSession={row.nextSession}
                 registrationsCount={row.registrationsCount}
                 maxParticipants={Number(row.training.maxParticipants) || 0}
-                doneChecks={row.doneChecks}
-                totalChecks={row.totalChecks}
-                completionRatio={row.completionRatio}
+                readinessChecks={row.readinessChecks}
+                allReady={row.allReady}
                 isUrgent={row.isUrgent}
                 onView={onViewTraining}
-                onEdit={onEditTraining}
-                onDelete={onDeleteTraining}
               />
             </div>
           ))

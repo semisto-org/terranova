@@ -111,7 +111,7 @@ export function ChecklistItemModal({ onSubmit, onCancel, busy = false }) {
                     onChange={(e) => setItem(e.target.value)}
                     required
                     className={inputBase}
-                    placeholder="ex: Réserver la salle de formation"
+                    placeholder="ex: Réserver la salle d'activité"
                   />
                 </div>
 

@@ -2,24 +2,24 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Filter, X } from 'lucide-react'
 
 const STATUS_LABELS = {
-  idea: 'Idee',
-  to_organize: 'A organiser',
-  in_preparation: 'En preparation',
-  to_publish: 'A publier',
-  published: 'Publiee',
+  idea: 'Idée',
+  in_construction: 'En construction',
+  in_preparation: 'En préparation',
   registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  post_training: 'Post-formation',
-  completed: 'Terminee',
-  cancelled: 'Annulee',
+  post_production: 'En post-prod',
+  completed: 'Clôturée',
+  cancelled: 'Annulée',
 }
 
 const STATUS_GROUPS = [
-  { label: 'Conception', statuses: ['idea', 'to_organize', 'in_preparation'] },
-  { label: 'Publication', statuses: ['to_publish', 'published'] },
+  { label: 'Idée', statuses: ['idea'] },
+  { label: 'En construction', statuses: ['in_construction'] },
+  { label: 'En préparation', statuses: ['in_preparation'] },
   { label: 'Inscriptions', statuses: ['registrations_open'] },
-  { label: 'En cours', statuses: ['in_progress', 'post_training'] },
-  { label: 'Cloture', statuses: ['completed', 'cancelled'] },
+  { label: 'En cours', statuses: ['in_progress'] },
+  { label: 'Post-prod', statuses: ['post_production'] },
+  { label: 'Clôture', statuses: ['completed', 'cancelled'] },
 ]
 
 const PERIOD_OPTIONS = [
@@ -292,7 +292,7 @@ export default function KanbanFilters({
               ? 'border-stone-400 bg-stone-100 text-stone-700'
               : 'border-stone-200 bg-white text-stone-400 hover:text-stone-600 hover:border-stone-300'
           }`}
-          title={showClosed ? 'Masquer les formations terminees et annulees' : 'Afficher les formations terminees et annulees'}
+          title={showClosed ? 'Masquer les activités terminees et annulees' : 'Afficher les activités terminees et annulees'}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />

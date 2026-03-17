@@ -4,7 +4,7 @@ import SimpleEditor from '@/components/SimpleEditor'
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
-export function SessionFormModal({ session, locations, members, onSubmit, onCancel, busy = false }) {
+export function SessionFormModal({ session, locations, members, academyContacts = [], onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(session)
   const startDateRef = useRef(null)
 
@@ -116,7 +116,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                 <p className="text-sm text-stone-500 mt-1">
                   {isEdit
                     ? 'Mettez à jour les informations de la session'
-                    : 'Créez une nouvelle session de formation'}
+                    : 'Créez une nouvelle session d\'activité'}
                 </p>
               </div>
               <button
@@ -197,7 +197,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                     placeholder="ex: Les guildes végétales, La taille douce..."
                   />
                   <p className="text-xs text-stone-400 mt-1">
-                    Optionnel — utile pour les formations de plusieurs jours avec des thèmes différents par session
+                    Optionnel — utile pour les activités de plusieurs jours avec des thèmes différents par session
                   </p>
                 </div>
 
@@ -250,20 +250,20 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                   </div>
                 )}
 
-                {/* Trainers */}
-                {members && members.length > 0 && (
+                {/* Trainers — from academy team contacts */}
+                {academyContacts && academyContacts.length > 0 && (
                   <div>
                     <label className="block text-sm font-semibold text-stone-700 mb-3">
                       Formateurs
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {members.map((member) => {
-                        const isSelected = trainerIds.includes(member.id)
+                      {academyContacts.map((contact) => {
+                        const isSelected = trainerIds.includes(contact.id)
                         return (
                           <button
-                            key={member.id}
+                            key={contact.id}
                             type="button"
-                            onClick={() => toggleTrainer(member.id)}
+                            onClick={() => toggleTrainer(contact.id)}
                             className={`
                               p-3 rounded-xl border-2 transition-all duration-200 text-left flex items-center gap-3
                               ${
@@ -290,7 +290,7 @@ export function SessionFormModal({ session, locations, members, onSubmit, onCanc
                               )}
                             </div>
                             <span className="font-medium text-sm text-stone-900">
-                              {member.firstName} {member.lastName}
+                              {contact.name}
                             </span>
                           </button>
                         )

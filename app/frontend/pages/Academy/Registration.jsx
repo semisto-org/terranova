@@ -144,7 +144,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
 
     fetch(`/api/v1/public/academy/trainings/${trainingId}`)
       .then(res => {
-        if (!res.ok) throw new Error('Formation non disponible')
+        if (!res.ok) throw new Error('Activité non disponible')
         return res.json()
       })
       .then(data => {
@@ -242,7 +242,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
         <div style={styles.card}>
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <AlertCircle size={48} style={{ color: '#dc2626', marginBottom: '16px' }} />
-            <h2 style={{ ...styles.heading, color: '#dc2626' }}>Formation non disponible</h2>
+            <h2 style={{ ...styles.heading, color: '#dc2626' }}>Activité non disponible</h2>
             <p style={styles.text}>{error}</p>
           </div>
         </div>
@@ -401,9 +401,9 @@ export default function Registration({ trainingId, stripePublicKey }) {
         <div style={styles.card}>
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <AlertCircle size={48} style={{ color: '#f59e0b', marginBottom: '16px' }} />
-            <h2 style={styles.heading}>Formation complète</h2>
+            <h2 style={styles.heading}>Activité complète</h2>
             <p style={styles.text}>
-              Cette formation n'a plus de places disponibles. Revenez bientôt pour les prochaines sessions.
+              Cette activité n'a plus de places disponibles. Revenez bientôt pour les prochaines sessions.
             </p>
           </div>
         </div>

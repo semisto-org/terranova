@@ -45,7 +45,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
 
     // Validation
     if (!trainingTypeId) {
-      setError('Veuillez sélectionner un type de formation')
+      setError('Veuillez sélectionner un type d\'activité')
       return
     }
 
@@ -104,12 +104,12 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-heading)' }}>
-                  {isEdit ? 'Modifier la formation' : 'Nouvelle formation'}
+                  {isEdit ? 'Modifier l\'activité' : 'Nouvelle activité'}
                 </h3>
                 <p className="text-sm text-stone-500 mt-1">
                   {isEdit
-                    ? 'Mettez à jour les informations de la formation'
-                    : 'Créez une nouvelle formation Academy'}
+                    ? 'Mettez à jour les informations de l\'activité'
+                    : 'Créez une nouvelle activité Academy'}
                 </p>
               </div>
               <button
@@ -141,7 +141,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                     htmlFor="training-type"
                     className="block text-sm font-semibold text-stone-700 mb-2"
                   >
-                    Type de formation <span className="text-rose-500">*</span>
+                    Type d'activité <span className="text-rose-500">*</span>
                   </label>
                   <select
                     id="training-type"
@@ -270,7 +270,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                         Hébergement requis
                       </div>
                       <p className="text-xs text-stone-500 mt-0.5">
-                        La formation nécessite un hébergement sur place
+                        L'activité nécessite un hébergement sur place
                       </p>
                     </div>
                   </label>
@@ -332,7 +332,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                 ) : isEdit ? (
                   'Enregistrer les modifications'
                 ) : (
-                  'Créer la formation'
+                  'Créer l\'activité'
                 )}
               </button>
             </div>

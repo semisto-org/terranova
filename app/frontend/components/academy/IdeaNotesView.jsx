@@ -41,7 +41,7 @@ export default function IdeaNotesView({
               Bloc-notes
             </h1>
             <p className="text-sm text-stone-600 mt-2 font-medium">
-              Notes, idées et pistes pour nos futures formations
+              Notes, idées et pistes pour nos futures activités
             </p>
           </div>
         </div>

@@ -180,7 +180,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                 <p className="text-sm text-stone-500 mt-1">
                   {isEdit
                     ? 'Mettez à jour les informations du participant'
-                    : 'Inscrivez un nouveau participant à la formation'}
+                    : 'Inscrivez un nouveau participant à l\'activité'}
                 </p>
               </div>
               <button
@@ -308,7 +308,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                     placeholder="ex: +32 470 12 34 56"
                   />
                   <p className="text-xs text-stone-500 mt-1.5">
-                    Optionnel - utile pour le contact le jour de la formation
+                    Optionnel - utile pour le contact le jour de l'activité
                   </p>
                 </div>
 
@@ -397,7 +397,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div className="text-sm text-blue-700">
-                        <p className="font-medium">Prix de la formation : {trainingPrice.toFixed(2)} €</p>
+                        <p className="font-medium">Prix de l'activité : {trainingPrice.toFixed(2)} €</p>
                         {amountPaid > 0 && (
                           <p className="mt-1">
                             Restant dû : {Math.max(0, trainingPrice - amountPaid).toFixed(2)} €

@@ -3,6 +3,8 @@
 module Api
   module V1
     class MySemistoController < ApplicationController
+      include MySemistoRouting
+
       skip_forgery_protection
       skip_before_action :track_member_activity
 
@@ -25,9 +27,9 @@ module Api
         data = verify_contact_token(token)
         contact = Contact.find(data[:contact_id] || data["contact_id"])
         session[:contact_id] = contact.id
-        redirect_to "/my"
+        redirect_to my_semisto_path("/")
       rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
-        redirect_to "/my/login", alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
+        redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
       end
 
       # ── Academy API ──

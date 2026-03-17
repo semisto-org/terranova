@@ -17,7 +17,7 @@ export interface AlbumItem {
 }
 
 const ALBUMABLE_TYPE_LABELS: Record<string, string> = {
-  'Academy::Training': 'Formation',
+  'Academy::Training': 'Activité',
   'Design::Project': 'Projet Design',
   Event: 'Événement',
 }
@@ -118,7 +118,7 @@ export function AlbumList({ albums: albumsFromProps, onRefresh }: AlbumListProps
           >
             <option value="all">Tous les albums</option>
             <option value="standalone">Albums seuls</option>
-            <option value="Academy::Training">Formations</option>
+            <option value="Academy::Training">Activités</option>
             <option value="Design::Project">Projets Design</option>
             <option value="Event">Événements</option>
           </select>

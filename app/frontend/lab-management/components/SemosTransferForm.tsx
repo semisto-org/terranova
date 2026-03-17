@@ -171,7 +171,7 @@ export function SemosTransferForm({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ex: Achat plants pépinière, Participation formation..."
+            placeholder="Ex: Achat plants pépinière, Participation activité..."
             rows={2}
             className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 placeholder:text-stone-400 resize-none hover:border-[#5B5781]/50 focus:border-[#5B5781] focus:ring-2 focus:ring-[#5B5781]/20 outline-none transition-all"
           />

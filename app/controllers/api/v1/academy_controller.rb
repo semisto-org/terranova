@@ -44,7 +44,7 @@ module Api
         training_type = Academy::TrainingType.find(params.require(:training_type_id))
         item = Academy::Training.new(training_params)
         item.training_type = training_type
-        item.status = 'draft' if item.status.blank?
+        item.status = 'idea' if item.status.blank?
         item.checklist_items = training_type.checklist_template if item.checklist_items.blank?
         item.save!
 
@@ -141,7 +141,8 @@ module Api
           registration_id: params.require(:registration_id),
           session_id: params.require(:session_id)
         )
-        item.assign_attributes(is_present: params[:is_present], note: params[:note].to_s)
+        status = params[:status] || (params[:is_present] ? 'present' : 'absent')
+        item.assign_attributes(status: status, note: params[:note].to_s)
         item.save!
 
         render json: serialize_attendance(item)
@@ -228,6 +229,92 @@ module Api
         head :no_content
       end
 
+      def list_team
+        contacts = Contact.joins(:contact_tags)
+          .where(contact_tags: { name: "academy" })
+          .where(deleted_at: nil)
+          .distinct
+          .order(:name)
+        render json: contacts.map { |c| serialize_academy_contact(c) }
+      end
+
+      def create_team_member
+        email = params[:email].to_s.strip.downcase
+        existing = Contact.find_by("LOWER(email) = ?", email) if email.present?
+
+        if existing
+          unless existing.contact_tags.exists?(name: "academy")
+            existing.contact_tags.create!(name: "academy")
+          end
+          existing.update!(team_member_params.except(:email))
+          render json: serialize_academy_contact(existing.reload)
+        else
+          contact = Contact.create!(team_member_params.merge(contact_type: "person"))
+          contact.contact_tags.create!(name: "academy")
+          render json: serialize_academy_contact(contact), status: :created
+        end
+      end
+
+      def update_team_member
+        contact = Contact.find(params[:contact_id])
+        contact.update!(team_member_params)
+        render json: serialize_academy_contact(contact)
+      end
+
+      def remove_team_member
+        contact = Contact.find(params[:contact_id])
+        tag = contact.contact_tags.find_by(name: "academy")
+        tag&.destroy!
+        head :no_content
+      end
+
+      def show_team_member
+        contact = Contact.find(params[:contact_id])
+        sessions = Academy::TrainingSession.all.select { |s| (s.trainer_ids || []).include?(contact.id.to_s) }
+        training_ids = sessions.map(&:training_id).uniq
+        trainings = Academy::Training.where(id: training_ids).includes(:training_type)
+
+        upcoming = sessions.select { |s| s.start_date >= Date.current }.min_by(&:start_date)
+
+        render json: {
+          contact: serialize_academy_contact(contact),
+          trainings: trainings.map { |t|
+            t_sessions = sessions.select { |s| s.training_id == t.id }
+            {
+              id: t.id.to_s,
+              title: t.title,
+              status: t.status,
+              typeName: t.training_type&.name,
+              sessionCount: t_sessions.size,
+              firstDate: t_sessions.map(&:start_date).min&.iso8601,
+              lastDate: t_sessions.map(&:end_date).max&.iso8601
+            }
+          },
+          stats: {
+            totalSessions: sessions.size,
+            totalTrainings: trainings.size,
+            nextSession: upcoming ? { date: upcoming.start_date.iso8601, trainingId: upcoming.training_id.to_s } : nil
+          }
+        }
+      end
+
+      def check_team_email
+        email = params[:email].to_s.strip.downcase
+        return render(json: { exists: false }) if email.blank?
+
+        contact = Contact.find_by("LOWER(email) = ?", email)
+        if contact
+          has_tag = contact.contact_tags.exists?(name: "academy")
+          render json: {
+            exists: true,
+            hasAcademyTag: has_tag,
+            contact: { id: contact.id.to_s, name: contact.name, email: contact.email }
+          }
+        else
+          render json: { exists: false }
+        end
+      end
+
       def toggle_holiday
         date = Date.parse(params.require(:date))
         existing = Academy::Holiday.find_by(date: date)
@@ -280,6 +367,12 @@ module Api
           { name: type_name, fillRate: (rates.sum / rates.size).round(1), trainingsCount: type_trainings.size }
         end.sort_by { |entry| -entry[:fillRate] }
 
+        sessions_for_reporting = Academy::TrainingSession.all
+        academy_contacts = Contact.joins(:contact_tags)
+          .where(contact_tags: { name: "academy" })
+          .where(deleted_at: nil)
+          .distinct
+
         render json: {
           trainingsCount: trainings.size,
           completedTrainings: trainings.count { |item| item.status == 'completed' },
@@ -291,7 +384,8 @@ module Api
           expensesByCategory: expenses_by_category,
           totalParticipants: total_participants,
           averageFillRate: average_fill_rate,
-          fillRatesByType: fill_rates_by_type
+          fillRatesByType: fill_rates_by_type,
+          sessionsByTrainer: build_sessions_by_trainer(sessions_for_reporting, academy_contacts)
         }
       end
 
@@ -329,6 +423,11 @@ module Api
         expenses = Expense.where.not(training_id: nil).order(invoice_date: :desc)
         idea_notes = Academy::IdeaNote.order(created_at: :desc)
         members = Member.order(:first_name, :last_name)
+        team = Contact.joins(:contact_tags)
+          .where(contact_tags: { name: "academy" })
+          .where(deleted_at: nil)
+          .distinct
+          .order(:name)
         holidays = Academy::Holiday.order(:date).pluck(:date).map(&:iso8601)
         serialized_sessions = sessions.map { |item| serialize_session(item) }
 
@@ -345,6 +444,7 @@ module Api
           trainingExpenses: expenses.map { |item| serialize_expense(item) },
           ideaNotes: idea_notes.map { |item| serialize_idea_note(item) },
           members: members.map { |item| serialize_member(item) },
+          academyContacts: team.map { |item| serialize_academy_contact(item) },
           stats: build_stats(trainings)
         }
       end
@@ -440,6 +540,10 @@ module Api
           :name, :notes, :training_id, :design_project_id,
           poles: []
         )
+      end
+
+      def team_member_params
+        params.permit(:name, :email, :phone, :address, :notes, :notes_html, expertise: [])
       end
 
       def idea_note_params
@@ -544,7 +648,7 @@ module Api
           id: item.id.to_s,
           registrationId: item.registration_id.to_s,
           sessionId: item.session_id.to_s,
-          isPresent: item.is_present,
+          status: item.status,
           note: item.note
         }
       end
@@ -626,6 +730,20 @@ module Api
         }
       end
 
+      def serialize_academy_contact(contact)
+        {
+          id: contact.id.to_s,
+          name: contact.name,
+          email: contact.email.to_s,
+          phone: contact.phone.to_s,
+          notes: contact.notes.to_s,
+          notesHtml: contact.notes_html.to_s,
+          expertise: contact.expertise || [],
+          tagNames: contact.tag_names,
+          createdAt: contact.created_at.iso8601
+        }
+      end
+
       def serialize_calendar_entry(training)
         {
           trainingId: training.id.to_s,
@@ -639,6 +757,20 @@ module Api
             }
           end
         }
+      end
+
+      def build_sessions_by_trainer(sessions, academy_contacts)
+        counts = Hash.new(0)
+        sessions.each do |s|
+          (s.trainer_ids || []).each { |tid| counts[tid] += 1 }
+        end
+
+        contacts_by_id = academy_contacts.index_by { |c| c.id.to_s }
+        counts.filter_map do |contact_id, count|
+          contact = contacts_by_id[contact_id.to_s]
+          next unless contact
+          { name: contact.name, sessionCount: count }
+        end.sort_by { |entry| -entry[:sessionCount] }
       end
 
       def build_stats(trainings)

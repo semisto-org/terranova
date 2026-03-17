@@ -305,7 +305,7 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-stone-900 tracking-tight">
-              Lieux de formation
+              Lieux d'activité
             </h2>
             <p className="text-sm text-stone-500 mt-1">
               {locations.length} lieu{locations.length !== 1 ? 'x' : ''}
@@ -353,7 +353,7 @@ export default function LocationsMap({ locations, actions, onCreateLocation }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <p className="text-lg font-semibold text-stone-700">Aucun lieu de formation</p>
+              <p className="text-lg font-semibold text-stone-700">Aucun lieu d'activité</p>
               <p className="mt-1 text-sm text-stone-500">Ajoutez votre premier lieu pour le voir sur la carte</p>
               <button
                 onClick={onCreateLocation}

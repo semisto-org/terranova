@@ -3,51 +3,51 @@ import {
   Plus,
   Eye,
   Pencil,
-  CheckCircle2,
-  Circle,
   Users,
   X,
+  Calendar as CalendarIcon,
+  MapPin,
+  GraduationCap,
+  Euro,
 } from 'lucide-react'
 import KanbanBoard, { PHASES } from './kanban/KanbanBoard'
 import KanbanFilters from './kanban/KanbanFilters'
 import KanbanTrainingCard from './kanban/KanbanTrainingCard'
 
 const STATUS_LABELS = {
-  idea: 'Idee',
-  to_organize: 'A organiser',
-  in_preparation: 'En preparation',
-  to_publish: 'A publier',
-  published: 'Publiee',
+  idea: 'Idée',
+  in_construction: 'En construction',
+  in_preparation: 'En préparation',
+  registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  post_training: 'Post-formation',
-  completed: 'Terminee',
-  cancelled: 'Annulee',
+  post_production: 'En post-prod',
+  completed: 'Clôturée',
+  cancelled: 'Annulée',
 }
 
 const STATUS_TONE = {
   idea: 'bg-amber-50 text-amber-700 border-amber-200',
-  to_organize: 'bg-orange-50 text-orange-700 border-orange-200',
+  in_construction: 'bg-violet-50 text-violet-700 border-violet-200',
   in_preparation: 'bg-blue-50 text-blue-700 border-blue-200',
-  to_publish: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  published: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  registrations_open: 'bg-green-50 text-green-700 border-green-200',
   in_progress: 'bg-[#B01A19]/10 text-[#8f1514] border-[#B01A19]/30',
-  post_training: 'bg-teal-50 text-teal-700 border-teal-200',
+  post_production: 'bg-teal-50 text-teal-700 border-teal-200',
   completed: 'bg-stone-200 text-stone-800 border-stone-300',
   cancelled: 'bg-rose-50 text-rose-700 border-rose-200',
 }
 
 const STATUS_LEFT_BORDER = {
   idea: 'border-l-amber-400',
-  to_organize: 'border-l-orange-400',
+  in_construction: 'border-l-violet-400',
   in_preparation: 'border-l-blue-400',
-  to_publish: 'border-l-indigo-400',
-  published: 'border-l-emerald-400',
   registrations_open: 'border-l-green-500',
   in_progress: 'border-l-[#B01A19]',
-  post_training: 'border-l-teal-400',
+  post_production: 'border-l-teal-400',
   completed: 'border-l-stone-400',
   cancelled: 'border-l-rose-400',
 }
+
+const STATUS_ORDER = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
 
 function formatDate(dateString) {
   if (!dateString) return '—'
@@ -56,31 +56,42 @@ function formatDate(dateString) {
   return date.toLocaleDateString('fr-BE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+const READINESS_ICON_MAP = {
+  date: CalendarIcon,
+  location: MapPin,
+  trainer: GraduationCap,
+  price: Euro,
+}
+
+const PREPARATION_STATUSES = ['in_construction', 'in_preparation']
+
+function getReadinessChecks(training, sessions) {
+  return [
+    { id: 'date', label: 'Date(s)', done: sessions.length > 0 },
+    { id: 'location', label: 'Lieu', done: sessions.length > 0 && sessions.every((s) => (s.locationIds || []).length > 0) },
+    { id: 'trainer', label: 'Formateur', done: sessions.length > 0 && sessions.every((s) => (s.trainerIds || []).length > 0) },
+    { id: 'price', label: 'Prix', done: Number(training.price) > 0 },
+  ]
+}
+
 function getTrainingMetrics(training, sessions, registrations) {
   const now = new Date()
   const nextSession = sessions
     .filter((s) => new Date(s.startDate).getTime() >= now.getTime())
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0]
 
-  const checks = [
-    { id: 'date', label: 'Date definie', done: sessions.length > 0 },
-    { id: 'location', label: 'Lieu defini', done: sessions.length > 0 && sessions.every((s) => (s.locationIds || []).length > 0) },
-    { id: 'trainers', label: 'Formateur(s)', done: sessions.length > 0 && sessions.every((s) => (s.trainerIds || []).length > 0) },
-    { id: 'website', label: 'Actif site web', done: ['published', 'in_progress', 'completed'].includes(training.status) },
-    { id: 'capacity', label: 'Capacite definie', done: Number(training.maxParticipants) > 0 },
-    { id: 'checklist', label: 'Checklist interne', done: (training.checklistItems || []).length > 0 && (training.checkedItems || []).length === (training.checklistItems || []).length },
-  ]
-
-  const doneChecks = checks.filter((c) => c.done).length
-  const totalChecks = checks.length
+  const readinessChecks = getReadinessChecks(training, sessions)
+  const allReady = readinessChecks.every((c) => c.done)
+  const doneChecks = readinessChecks.filter((c) => c.done).length
+  const totalChecks = readinessChecks.length
   const completionRatio = totalChecks > 0 ? doneChecks / totalChecks : 0
   const registrationsCount = registrations.length
 
   const priorityScore =
-    (checks[0].done ? 0 : 3) +
-    (checks[1].done ? 0 : 3) +
-    (checks[2].done ? 0 : 3) +
-    (checks[3].done ? 0 : 2) +
+    (readinessChecks[0].done ? 0 : 3) +
+    (readinessChecks[1].done ? 0 : 3) +
+    (readinessChecks[2].done ? 0 : 3) +
+    (readinessChecks[3].done ? 0 : 2) +
     (nextSession ? (new Date(nextSession.startDate).getTime() - now.getTime() < 1000 * 60 * 60 * 24 * 14 ? 2 : 0) : 1) +
     (training.status === 'cancelled' || training.status === 'completed' ? -3 : 0)
 
@@ -89,29 +100,7 @@ function getTrainingMetrics(training, sessions, registrations) {
     new Date(nextSession.startDate).getTime() - now.getTime() < 1000 * 60 * 60 * 24 * 14 &&
     completionRatio < 0.85
 
-  return { nextSession, checks, doneChecks, totalChecks, completionRatio, registrationsCount, priorityScore, isUrgent }
-}
-
-function ProgressRing({ done, total, size = 20, strokeWidth = 2.5 }) {
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const ratio = total > 0 ? done / total : 0
-  const offset = circumference * (1 - ratio)
-  const color = ratio >= 0.85 ? '#22c55e' : ratio >= 0.5 ? '#f59e0b' : '#ef4444'
-
-  return (
-    <svg width={size} height={size} className="shrink-0 -rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e7e5e4" strokeWidth={strokeWidth} />
-      {total > 0 && (
-        <circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke={color} strokeWidth={strokeWidth}
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" className="transition-all duration-500"
-        />
-      )}
-    </svg>
-  )
+  return { nextSession, readinessChecks, allReady, doneChecks, totalChecks, completionRatio, registrationsCount, priorityScore, isUrgent }
 }
 
 export default function TrainingKanban({
@@ -208,6 +197,17 @@ export default function TrainingKanban({
     [trainings, filteredTrainingIds]
   )
 
+  // List view: group filtered rows by status
+  const groupedRows = useMemo(() => {
+    return STATUS_ORDER
+      .map((status) => ({
+        status,
+        label: STATUS_LABELS[status],
+        rows: filteredRows.filter((r) => r.training.status === status),
+      }))
+      .filter((g) => g.rows.length > 0)
+  }, [filteredRows])
+
   // Mobile: group filtered rows by phase
   const mobileColumns = useMemo(() => {
     return PHASES.map((phase) => ({
@@ -215,12 +215,6 @@ export default function TrainingKanban({
       cards: filteredRows.filter((r) => phase.statuses.includes(r.training.status)),
     }))
   }, [filteredRows])
-
-  const completionTone = (ratio) => {
-    if (ratio >= 0.85) return 'text-emerald-700 bg-emerald-50 border-emerald-200'
-    if (ratio >= 0.5) return 'text-amber-700 bg-amber-50 border-amber-200'
-    return 'text-rose-700 bg-rose-50 border-rose-200'
-  }
 
   const hasAnyFilter = statusFilters.length > 0 || periodFilter !== 'all' || completenessFilter !== 'all' || typeFilter !== 'all' || (search?.trim())
 
@@ -260,7 +254,7 @@ export default function TrainingKanban({
             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#B01A19] hover:bg-[#8f1514] rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
           >
             <Plus className="w-4 h-4" />
-            Nouvelle formation
+            Nouvelle activité
           </button>
         </div>
       </div>
@@ -297,8 +291,6 @@ export default function TrainingKanban({
             trainingRegistrations={trainingRegistrations}
             onUpdateTrainingStatus={onUpdateTrainingStatus}
             onViewTraining={onViewTraining}
-            onEditTraining={onEditTraining}
-            onDeleteTraining={onDeleteTraining}
             onCreateTraining={onCreateTraining}
             showClosed={showClosed}
           />
@@ -310,71 +302,91 @@ export default function TrainingKanban({
                 <thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
                   <tr>
                     <th className="w-1" />
-                    <th className="px-4 py-3 text-left">Formation</th>
-                    <th className="px-4 py-3 text-left">Statut</th>
+                    <th className="px-4 py-3 text-left">Activité</th>
                     <th className="px-4 py-3 text-left">Prochaine date</th>
                     <th className="px-4 py-3 text-left">Checks</th>
                     <th className="px-4 py-3 text-left">Participants</th>
                     <th className="px-4 py-3 text-left">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredRows.map((row) => {
-                    const maxP = Number(row.training.maxParticipants) || 0
-                    const fillPct = maxP > 0 ? Math.round((row.registrationsCount / maxP) * 100) : 0
-                    const fillColor = fillPct >= 60 ? 'bg-emerald-500' : fillPct >= 30 ? 'bg-amber-500' : 'bg-rose-500'
-                    return (
-                      <tr key={row.training.id} className="border-t border-stone-100 align-middle hover:bg-stone-50/60 group/row transition-colors">
-                        <td className={`w-1 border-l-[3px] ${STATUS_LEFT_BORDER[row.training.status] || 'border-l-stone-200'}`} />
-                        <td className="px-4 py-3">
-                          <button type="button" onClick={() => onViewTraining?.(row.training.id)} className="font-semibold text-stone-900 text-left hover:text-[#B01A19] underline-offset-2 hover:underline">
-                            {row.training.title}
-                          </button>
-                          <p className="text-xs text-stone-500">{row.trainingType?.name || '—'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_TONE[row.training.status] || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
-                            {STATUS_LABELS[row.training.status] || row.training.status}
+                {groupedRows.map((group) => (
+                  <tbody key={group.status}>
+                    <tr className="bg-stone-50/80">
+                      <td className={`w-1 border-l-[3px] ${STATUS_LEFT_BORDER[group.status] || 'border-l-stone-200'}`} />
+                      <td colSpan={5} className="px-4 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${STATUS_TONE[group.status] || 'bg-stone-100 text-stone-600 border-stone-200'}`}>
+                            {group.label}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-stone-700 text-xs">{formatDate(row.nextSession?.startDate)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <ProgressRing done={row.doneChecks} total={row.totalChecks} />
-                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${completionTone(row.completionRatio)}`}>
-                              {row.doneChecks}/{row.totalChecks}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2 text-xs text-stone-700">
-                            <span className="tabular-nums font-medium">{row.registrationsCount}/{maxP || '—'}</span>
-                            {maxP > 0 && (
-                              <div className="w-16 h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${fillColor}`} style={{ width: `${Math.min(fillPct, 100)}%` }} />
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
-                            <button type="button" onClick={() => onViewTraining?.(row.training.id)} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:border-stone-400">
-                              <Eye className="h-3.5 w-3.5" /> Ouvrir
+                          <span className="text-[11px] text-stone-400 font-medium">{group.rows.length} activité{group.rows.length > 1 ? 's' : ''}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {group.rows.map((row) => {
+                      const maxP = Number(row.training.maxParticipants) || 0
+                      const fillPct = maxP > 0 ? Math.round((row.registrationsCount / maxP) * 100) : 0
+                      const fillColor = fillPct >= 60 ? 'bg-emerald-500' : fillPct >= 30 ? 'bg-amber-500' : 'bg-rose-500'
+                      return (
+                        <tr key={row.training.id} className="border-t border-stone-100 align-middle hover:bg-stone-50/60 group/row transition-colors">
+                          <td className={`w-1 border-l-[3px] ${STATUS_LEFT_BORDER[row.training.status] || 'border-l-stone-200'}`} />
+                          <td className="px-4 py-3">
+                            <button type="button" onClick={() => onViewTraining?.(row.training.id)} className="font-semibold text-stone-900 text-left hover:text-[#B01A19] underline-offset-2 hover:underline">
+                              {row.training.title}
                             </button>
-                            <button type="button" onClick={() => onEditTraining?.(row.training.id)} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:border-stone-400">
-                              <Pencil className="h-3.5 w-3.5" /> Editer
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
+                            <p className="text-xs text-stone-500">{row.trainingType?.name || '—'}</p>
+                          </td>
+                          <td className="px-4 py-3 text-stone-700 text-xs">{formatDate(row.nextSession?.startDate)}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              {row.readinessChecks.map((check) => {
+                                const Icon = READINESS_ICON_MAP[check.id]
+                                if (!Icon) return null
+                                return (
+                                  <div
+                                    key={check.id}
+                                    className={`flex items-center justify-center w-6 h-6 rounded-md ${
+                                      check.done
+                                        ? 'bg-emerald-50 text-emerald-500'
+                                        : 'bg-rose-50 text-rose-400'
+                                    }`}
+                                    title={`${check.label} : ${check.done ? 'OK' : 'Manquant'}`}
+                                  >
+                                    <Icon className="w-3.5 h-3.5" />
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2 text-xs text-stone-700">
+                              <span className="tabular-nums font-medium">{row.registrationsCount}/{maxP || '—'}</span>
+                              {maxP > 0 && (
+                                <div className="w-16 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full ${fillColor}`} style={{ width: `${Math.min(fillPct, 100)}%` }} />
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
+                              <button type="button" onClick={() => onViewTraining?.(row.training.id)} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:border-stone-400">
+                                <Eye className="h-3.5 w-3.5" /> Ouvrir
+                              </button>
+                              <button type="button" onClick={() => onEditTraining?.(row.training.id)} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:border-stone-400">
+                                <Pencil className="h-3.5 w-3.5" /> Editer
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                ))}
               </table>
             </div>
             {filteredRows.length === 0 && (
               <div className="py-12 text-center">
-                <p className="text-sm text-stone-500">Aucune formation ne correspond aux filtres.</p>
+                <p className="text-sm text-stone-500">Aucune activité ne correspond aux filtres.</p>
               </div>
             )}
           </div>
@@ -416,18 +428,15 @@ export default function TrainingKanban({
               nextSession={row.nextSession}
               registrationsCount={row.registrationsCount}
               maxParticipants={Number(row.training.maxParticipants) || 0}
-              doneChecks={row.doneChecks}
-              totalChecks={row.totalChecks}
-              completionRatio={row.completionRatio}
+              readinessChecks={row.readinessChecks}
+              allReady={row.allReady}
               isUrgent={row.isUrgent}
               onView={onViewTraining}
-              onEdit={onEditTraining}
-              onDelete={onDeleteTraining}
             />
           ))}
           {mobileColumns.find((c) => c.id === mobilePhase)?.cards.length === 0 && (
             <div className="rounded-xl border border-dashed border-stone-200 bg-stone-50/50 py-10 text-center">
-              <p className="text-sm text-stone-400">Aucune formation dans cette phase</p>
+              <p className="text-sm text-stone-400">Aucune activité dans cette phase</p>
             </div>
           )}
         </div>
@@ -466,14 +475,14 @@ export default function TrainingKanban({
           <div className="mb-4 rounded-full bg-stone-100 p-4">
             <Calendar className="h-8 w-8 text-stone-400" />
           </div>
-          <p className="text-base font-medium text-stone-700">Aucune formation</p>
-          <p className="mt-1 text-sm text-stone-500">Commencez par creer votre premiere formation</p>
+          <p className="text-base font-medium text-stone-700">Aucune activité</p>
+          <p className="mt-1 text-sm text-stone-500">Commencez par creer votre premiere activité</p>
           <button
             type="button"
             onClick={() => onCreateTraining?.()}
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#B01A19] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#8f1514]"
           >
-            <Plus className="w-4 h-4" /> Nouvelle formation
+            <Plus className="w-4 h-4" /> Nouvelle activité
           </button>
         </div>
       )}

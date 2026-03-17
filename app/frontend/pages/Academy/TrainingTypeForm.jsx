@@ -4,9 +4,9 @@ import SimpleEditor from '@/components/SimpleEditor'
 import { useShellNav } from '@/components/shell/ShellContext'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Formations' },
+  { id: 'kanban', label: 'Activités' },
   { id: 'calendar', label: 'Calendrier' },
-  { id: 'types', label: 'Types de formations' },
+  { id: 'types', label: 'Types d\'activités' },
   { id: 'locations', label: 'Lieux' },
   { id: 'ideas', label: 'Bloc-notes' },
   { id: 'reporting', label: 'Reporting' },
@@ -88,7 +88,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Le nom du type de formation est requis')
+      setError('Le nom du type d\'activité est requis')
       return
     }
 
@@ -191,10 +191,10 @@ export default function TrainingTypeForm({ trainingTypeId }) {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-semibold text-stone-900 tracking-tight">
-              {isEditing ? 'Modifier le type de formation' : 'Nouveau type de formation'}
+              {isEditing ? 'Modifier le type d\'activité' : 'Nouveau type d\'activité'}
             </h1>
             <p className="mt-1 text-sm text-stone-500">
-              {isEditing ? 'Modifiez les informations du type de formation' : 'Créez un nouveau type de formation'}
+              {isEditing ? 'Modifiez les informations du type d\'activité' : 'Créez un nouveau type d\'activité'}
             </p>
           </div>
           <button
@@ -231,7 +231,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
                 <SimpleEditor
                   content={description}
                   onUpdate={setDescription}
-                  placeholder="Description du type de formation, objectifs pédagogiques..."
+                  placeholder="Description du type d'activité, objectifs pédagogiques..."
                 />
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
               <div>
                 <h2 className="text-lg font-semibold text-stone-900">Étapes par défaut</h2>
                 <p className="mt-1 text-sm text-stone-500">
-                  Définissez les étapes par défaut pour ce type de formation
+                  Définissez les étapes par défaut pour ce type d'activité
                 </p>
               </div>
               <button
@@ -342,7 +342,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
               disabled={busy || !name.trim()}
               className="flex-1 rounded-lg bg-[#B01A19] px-6 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#8f1514] hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {busy ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : 'Créer le type de formation'}
+              {busy ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : 'Créer le type d\'activité'}
             </button>
           </div>
         </form>

@@ -230,7 +230,7 @@ export function ContactDetail({
                             className="flex items-center justify-between py-2 px-3 rounded-xl bg-stone-50 border border-stone-100"
                           >
                             <span className="font-medium text-stone-900">
-                              {r.trainingName || `Formation #${r.trainingId}`}
+                              {r.trainingName || `Activité #${r.trainingId}`}
                             </span>
                             <span className="text-xs text-stone-500">{r.paymentStatus}</span>
                           </li>
@@ -262,7 +262,7 @@ export function ContactDetail({
 
             {!hasActivities && (
               <p className="text-sm text-stone-500 italic">
-                Aucune activité liée trouvée (projets Design, formations Academy, commandes Nursery). Les liens sont
+                Aucune activité liée trouvée (projets Design, activités Academy, commandes Nursery). Les liens sont
                 détectés par correspondance nom/email.
               </p>
             )}

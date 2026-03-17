@@ -29,16 +29,16 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_equal 0, body['trainingLocations'].size
   end
 
-  test 'when training status is set to planned an album is auto-created and included in payload' do
+  test 'when training status is set to in_preparation an album is auto-created and included in payload' do
     type = Academy::TrainingType.create!(name: 'Initiation', description: 'Base')
     training = Academy::Training.create!(
       training_type: type,
       title: 'Session planifiée',
-      status: 'draft'
+      status: 'idea'
     )
     assert training.album.blank?
 
-    patch "/api/v1/academy/trainings/#{training.id}/status", params: { status: 'planned' }, as: :json
+    patch "/api/v1/academy/trainings/#{training.id}/status", params: { status: 'in_preparation' }, as: :json
     assert_response :success
 
     training.reload
@@ -124,10 +124,10 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_id,
-      is_present: true
+      status: 'present'
     }, as: :json
     assert_response :success
-    assert_equal true, JSON.parse(response.body)['isPresent']
+    assert_equal 'present', JSON.parse(response.body)['status']
 
     post "/api/v1/academy/trainings/#{training_id}/documents", params: {
       name: 'Syllabus',
@@ -357,7 +357,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
 
     training = JSON.parse(response.body)
     assert_equal 'Design Permaculture - Session 1', training['title']
-    assert_equal 'draft', training['status']
+    assert_equal 'idea', training['status']
     assert_equal 450.0, training['price']
     assert_equal 15, training['maxParticipants']
 
@@ -552,26 +552,36 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_id,
-      is_present: true,
+      status: 'present',
       note: 'Présent toute la journée'
     }, as: :json
     assert_response :success
 
     attendance = JSON.parse(response.body)
-    assert_equal true, attendance['isPresent']
+    assert_equal 'present', attendance['status']
     assert_equal 'Présent toute la journée', attendance['note']
     assert_equal registration_id, attendance['registrationId']
     assert_equal session_id, attendance['sessionId']
+
+    # Toggle to partial
+    post '/api/v1/academy/attendance', params: {
+      registration_id: registration_id,
+      session_id: session_id,
+      status: 'partial',
+      note: 'Jour 1 uniquement'
+    }, as: :json
+    assert_response :success
+    assert_equal 'partial', JSON.parse(response.body)['status']
 
     # Toggle to absent
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_id,
-      is_present: false,
+      status: 'absent',
       note: 'Absent'
     }, as: :json
     assert_response :success
-    assert_equal false, JSON.parse(response.body)['isPresent']
+    assert_equal 'absent', JSON.parse(response.body)['status']
   end
 
   test 'calculate attendance percentage per participant' do
@@ -609,21 +619,21 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_ids[0],
-      is_present: true
+      status: 'present'
     }, as: :json
     assert_response :success
 
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_ids[1],
-      is_present: true
+      status: 'present'
     }, as: :json
     assert_response :success
 
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_ids[2],
-      is_present: false
+      status: 'absent'
     }, as: :json
     assert_response :success
 
@@ -633,7 +643,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     attendances = payload['trainingAttendances'].select { |a| a['registrationId'] == registration_id }
 
     assert_equal 3, attendances.size
-    present_count = attendances.count { |a| a['isPresent'] == true }
+    present_count = attendances.count { |a| a['status'] == 'present' }
     assert_equal 2, present_count
     # Attendance percentage should be 2/3 = 66.67% (calculated in frontend)
   end
@@ -672,21 +682,21 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_ids[0],
       session_id: session_id,
-      is_present: true
+      status: 'present'
     }, as: :json
     assert_response :success
 
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_ids[1],
       session_id: session_id,
-      is_present: true
+      status: 'present'
     }, as: :json
     assert_response :success
 
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_ids[2],
       session_id: session_id,
-      is_present: false
+      status: 'absent'
     }, as: :json
     assert_response :success
 
@@ -696,7 +706,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     attendances = payload['trainingAttendances'].select { |a| a['sessionId'] == session_id }
 
     assert_equal 3, attendances.size
-    present_count = attendances.count { |a| a['isPresent'] == true }
+    present_count = attendances.count { |a| a['status'] == 'present' }
     assert_equal 2, present_count
     # Session attendance percentage should be 2/3 = 66.67% (calculated in frontend)
   end
@@ -744,7 +754,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
       post '/api/v1/academy/attendance', params: {
         registration_id: full_reg_id,
         session_id: session_id,
-        is_present: true
+        status: 'present'
       }, as: :json
     end
 
@@ -752,13 +762,13 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/attendance', params: {
       registration_id: partial_reg_id,
       session_id: session_ids[0],
-      is_present: true
+      status: 'present'
     }, as: :json
 
     post '/api/v1/academy/attendance', params: {
       registration_id: partial_reg_id,
       session_id: session_ids[1],
-      is_present: false
+      status: 'absent'
     }, as: :json
 
     # Verify data for visual indicator logic
@@ -768,8 +778,8 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     full_attendances = payload['trainingAttendances'].select { |a| a['registrationId'] == full_reg_id }
     partial_attendances = payload['trainingAttendances'].select { |a| a['registrationId'] == partial_reg_id }
 
-    assert_equal 2, full_attendances.count { |a| a['isPresent'] == true }
-    assert_equal 1, partial_attendances.count { |a| a['isPresent'] == true }
+    assert_equal 2, full_attendances.count { |a| a['status'] == 'present' }
+    assert_equal 1, partial_attendances.count { |a| a['status'] == 'present' }
     # Frontend should show green indicator for 100%, yellow for partial
   end
 
@@ -819,7 +829,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/training-types', params: { name: 'Type Status' }, as: :json
     training_type_id = JSON.parse(response.body)['id']
 
-    statuses_to_test = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
+    statuses_to_test = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
     training_ids = []
 
     statuses_to_test.each_with_index do |status, i|
@@ -846,7 +856,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     calendar = JSON.parse(response.body)
-    assert_equal 6, calendar.size
+    assert_equal 8, calendar.size
 
     # Verify each training has status field for color-coding
     statuses_to_test.each do |status|
@@ -1096,7 +1106,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/attendance', params: {
       registration_id: registration_id,
       session_id: session_id,
-      is_present: true
+      status: 'present'
     }, as: :json
     assert_response :success
 
@@ -1277,5 +1287,158 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
 
     assert_equal [0, 5, 10, 15, 20], updated_training['checkedItems'].sort
     # Frontend should handle scrolling for long checklists
+  end
+
+  # =============================
+  # Academy Team Management
+  # =============================
+
+  test 'academy payload includes academyContacts' do
+    contact = Contact.create!(contact_type: 'person', name: 'Formateur Test', email: 'formateur@test.com')
+    contact.contact_tags.create!(name: 'academy')
+
+    get '/api/v1/academy', as: :json
+    assert_response :success
+
+    payload = JSON.parse(response.body)
+    assert payload.key?('academyContacts')
+    assert_equal 1, payload['academyContacts'].size
+    assert_equal 'Formateur Test', payload['academyContacts'].first['name']
+    assert_includes payload['academyContacts'].first['tagNames'], 'academy'
+  end
+
+  test 'add team member creates contact with academy tag' do
+    assert_difference 'Contact.count', 1 do
+      post '/api/v1/academy/team', params: {
+        name: 'Nouveau Formateur',
+        email: 'nouveau@formateur.com',
+        phone: '+32 470 00 00 00',
+        expertise: ['permaculture', 'design']
+      }, as: :json
+    end
+    assert_response :created
+
+    member = JSON.parse(response.body)
+    assert_equal 'Nouveau Formateur', member['name']
+    assert_equal ['permaculture', 'design'], member['expertise']
+
+    contact = Contact.find(member['id'])
+    assert contact.contact_tags.exists?(name: 'academy')
+  end
+
+  test 'add team member with existing email adds academy tag instead of creating duplicate' do
+    existing = Contact.create!(contact_type: 'person', name: 'Existing Contact', email: 'existing@example.com')
+
+    assert_no_difference 'Contact.count' do
+      post '/api/v1/academy/team', params: {
+        name: 'Updated Name',
+        email: 'existing@example.com'
+      }, as: :json
+    end
+    assert_response :success
+
+    member = JSON.parse(response.body)
+    assert_equal existing.id.to_s, member['id']
+    assert existing.reload.contact_tags.exists?(name: 'academy')
+  end
+
+  test 'update team member updates contact fields' do
+    contact = Contact.create!(contact_type: 'person', name: 'Original', email: 'original@test.com')
+    contact.contact_tags.create!(name: 'academy')
+
+    patch "/api/v1/academy/team/#{contact.id}", params: {
+      name: 'Updated Name',
+      notes_html: '<p>Expert en taille fruitière</p>',
+      expertise: ['taille fruitière']
+    }, as: :json
+    assert_response :success
+
+    member = JSON.parse(response.body)
+    assert_equal 'Updated Name', member['name']
+    assert_equal '<p>Expert en taille fruitière</p>', member['notesHtml']
+    assert_equal ['taille fruitière'], member['expertise']
+  end
+
+  test 'remove team member only removes academy tag not the contact' do
+    contact = Contact.create!(contact_type: 'person', name: 'To Remove', email: 'remove@test.com')
+    contact.contact_tags.create!(name: 'academy')
+    contact.contact_tags.create!(name: 'other-tag')
+
+    assert_no_difference 'Contact.count' do
+      delete "/api/v1/academy/team/#{contact.id}", as: :json
+    end
+    assert_response :no_content
+
+    contact.reload
+    assert_not contact.contact_tags.exists?(name: 'academy')
+    assert contact.contact_tags.exists?(name: 'other-tag')
+  end
+
+  test 'show team member returns contact with activity history' do
+    contact = Contact.create!(contact_type: 'person', name: 'Active Trainer', email: 'trainer@test.com')
+    contact.contact_tags.create!(name: 'academy')
+
+    post '/api/v1/academy/training-types', params: { name: 'Type Team' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation Team Test' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    post "/api/v1/academy/trainings/#{training_id}/sessions", params: {
+      start_date: (Date.current + 7.days).iso8601,
+      end_date: (Date.current + 7.days).iso8601,
+      trainer_ids: [contact.id.to_s]
+    }, as: :json
+    assert_response :created
+
+    get "/api/v1/academy/team/#{contact.id}", as: :json
+    assert_response :success
+
+    detail = JSON.parse(response.body)
+    assert_equal 'Active Trainer', detail['contact']['name']
+    assert_equal 1, detail['trainings'].size
+    assert_equal 'Formation Team Test', detail['trainings'].first['title']
+    assert_equal 1, detail['stats']['totalSessions']
+    assert_not_nil detail['stats']['nextSession']
+  end
+
+  test 'check team email finds existing contact' do
+    Contact.create!(contact_type: 'person', name: 'Check Test', email: 'check@test.com')
+
+    get '/api/v1/academy/team/check-email', params: { email: 'check@test.com' }, as: :json
+    assert_response :success
+
+    result = JSON.parse(response.body)
+    assert result['exists']
+    assert_not result['hasAcademyTag']
+    assert_equal 'Check Test', result['contact']['name']
+  end
+
+  test 'reporting includes sessions by trainer' do
+    contact = Contact.create!(contact_type: 'person', name: 'Reporting Trainer', email: 'report@test.com')
+    contact.contact_tags.create!(name: 'academy')
+
+    post '/api/v1/academy/training-types', params: { name: 'Type Report' }, as: :json
+    training_type_id = JSON.parse(response.body)['id']
+
+    post '/api/v1/academy/trainings', params: { training_type_id: training_type_id, title: 'Formation Report' }, as: :json
+    training_id = JSON.parse(response.body)['id']
+
+    2.times do |i|
+      post "/api/v1/academy/trainings/#{training_id}/sessions", params: {
+        start_date: (Date.current + i.days).iso8601,
+        end_date: (Date.current + i.days).iso8601,
+        trainer_ids: [contact.id.to_s]
+      }, as: :json
+    end
+
+    get '/api/v1/academy/reporting', as: :json
+    assert_response :success
+
+    report = JSON.parse(response.body)
+    assert report.key?('sessionsByTrainer')
+    trainer_entry = report['sessionsByTrainer'].find { |e| e['name'] == 'Reporting Trainer' }
+    assert_not_nil trainer_entry
+    assert_equal 2, trainer_entry['sessionCount']
   end
 end

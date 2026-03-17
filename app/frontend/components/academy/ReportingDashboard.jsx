@@ -11,28 +11,34 @@ import {
 } from 'lucide-react'
 
 const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
+  idea: 'Idée',
+  in_construction: 'En construction',
+  in_preparation: 'En préparation',
   registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  completed: 'Terminée',
+  post_production: 'En post-prod',
+  completed: 'Clôturée',
   cancelled: 'Annulée',
 }
 
 const STATUS_ORDER = [
-  'draft',
-  'planned',
+  'idea',
+  'in_construction',
+  'in_preparation',
   'registrations_open',
   'in_progress',
+  'post_production',
   'completed',
   'cancelled',
 ]
 
 const STATUS_COLORS = {
-  draft: 'bg-stone-400',
-  planned: 'bg-blue-500',
+  idea: 'bg-amber-400',
+  in_construction: 'bg-violet-500',
+  in_preparation: 'bg-blue-500',
   registrations_open: 'bg-green-500',
   in_progress: 'bg-[#B01A19]',
+  post_production: 'bg-teal-500',
   completed: 'bg-emerald-500',
   cancelled: 'bg-red-500',
 }
@@ -86,6 +92,7 @@ export default function ReportingDashboard({ data }) {
     totalParticipants = 0,
     averageFillRate = 0,
     fillRatesByType = [],
+    sessionsByTrainer = [],
   } = data
 
   const profitabilityPercent =
@@ -103,16 +110,16 @@ export default function ReportingDashboard({ data }) {
                 Reporting
               </h1>
               <p className="text-sm text-stone-600 mt-2 font-medium">
-                Vue d'ensemble des formations et indicateurs
+                Vue d'ensemble des activités et indicateurs
               </p>
             </div>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50/50 py-16 px-6">
           <BarChart3 className="w-12 h-12 text-stone-300 mb-4" />
-          <p className="text-base font-medium text-stone-700">Aucune formation</p>
+          <p className="text-base font-medium text-stone-700">Aucune activité</p>
           <p className="mt-1 text-sm text-stone-500">
-            Les indicateurs apparaîtront lorsque des formations existeront
+            Les indicateurs apparaîtront lorsque des activités existeront
           </p>
         </div>
       </div>
@@ -128,7 +135,7 @@ export default function ReportingDashboard({ data }) {
             Reporting
           </h1>
           <p className="text-sm text-stone-600 mt-2 font-medium">
-            Vue d'ensemble des formations et indicateurs
+            Vue d'ensemble des activités et indicateurs
           </p>
         </div>
       </div>
@@ -140,7 +147,7 @@ export default function ReportingDashboard({ data }) {
               <BookOpen className="w-5 h-5 text-[#B01A19]" />
             </div>
             <span className="text-xs font-medium text-stone-500 uppercase tracking-wide">
-              Formations
+              Activités
             </span>
           </div>
           <div className="text-2xl font-bold text-stone-900">{trainingsCount}</div>
@@ -244,7 +251,7 @@ export default function ReportingDashboard({ data }) {
           {fillRatesByType.length > 0 && (
             <div className="mt-5 pt-5 border-t border-stone-100 space-y-3">
               <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">
-                Par type de formation
+                Par type d'activité
               </h3>
               {fillRatesByType.map((entry) => (
                 <div key={entry.name}>
@@ -351,6 +358,35 @@ export default function ReportingDashboard({ data }) {
                   </span>
                 </div>
               ))}
+          </div>
+        </div>
+      )}
+      {sessionsByTrainer && sessionsByTrainer.length > 0 && (
+        <div className="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">
+            Sessions par formateur
+          </h2>
+          <div className="space-y-3">
+            {sessionsByTrainer.map(({ name, sessionCount }) => {
+              const maxCount = sessionsByTrainer[0]?.sessionCount || 1
+              const pct = (sessionCount / maxCount) * 100
+              return (
+                <div key={name} className="flex items-center gap-3">
+                  <span className="w-40 truncate text-sm font-medium text-stone-700">
+                    {name}
+                  </span>
+                  <div className="flex-1 h-3 bg-stone-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#B01A19] rounded-full transition-all duration-300"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="w-12 text-right text-sm font-medium text-stone-900">
+                    {sessionCount}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

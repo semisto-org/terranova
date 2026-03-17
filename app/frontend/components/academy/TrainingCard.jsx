@@ -2,19 +2,23 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Calendar, Users, Home, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 
 const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
+  idea: 'Idée',
+  in_construction: 'En construction',
+  in_preparation: 'En préparation',
   registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  completed: 'Terminée',
+  post_production: 'En post-prod',
+  completed: 'Clôturée',
   cancelled: 'Annulée',
 }
 
 const STATUS_COLORS = {
-  draft: 'bg-stone-100 text-stone-700',
-  planned: 'bg-blue-100 text-blue-700',
+  idea: 'bg-amber-100 text-amber-700',
+  in_construction: 'bg-violet-100 text-violet-700',
+  in_preparation: 'bg-blue-100 text-blue-700',
   registrations_open: 'bg-green-100 text-green-700',
   in_progress: 'bg-[#B01A19]/10 text-[#B01A19]',
+  post_production: 'bg-teal-100 text-teal-700',
   completed: 'bg-stone-200 text-stone-800',
   cancelled: 'bg-red-100 text-red-700',
 }
@@ -133,7 +137,7 @@ export default function TrainingCard({
 
       <div className="mb-4">
         <span
-          className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm transition-all duration-200 group-hover:scale-105 ${STATUS_COLORS[training.status] || STATUS_COLORS.draft}`}
+          className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm transition-all duration-200 group-hover:scale-105 ${STATUS_COLORS[training.status] || STATUS_COLORS.idea}`}
         >
           {STATUS_LABELS[training.status] || training.status}
         </span>

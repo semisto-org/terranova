@@ -122,7 +122,7 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
               <div className="space-y-6">
                 {/* Training price info */}
                 <div className="p-4 rounded-xl bg-stone-100 border border-stone-200">
-                  <div className="text-sm text-stone-600 mb-1">Prix de la formation</div>
+                  <div className="text-sm text-stone-600 mb-1">Prix de l'activité</div>
                   <div className="text-2xl font-bold text-stone-900">
                     {trainingPrice.toFixed(2)} €
                   </div>

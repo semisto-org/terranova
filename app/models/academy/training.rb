@@ -4,8 +4,8 @@ module Academy
     self.table_name = 'academy_trainings'
 
     STATUSES = %w[
-      draft planned registrations_open in_progress completed cancelled
-      idea to_organize in_preparation to_publish published post_training
+      idea in_construction in_preparation registrations_open
+      in_progress post_production completed cancelled
     ].freeze
     REGISTRATION_MODES = %w[open closed].freeze
 
@@ -18,7 +18,7 @@ module Academy
     has_one :album, as: :albumable, dependent: :destroy
 
     validates :title, :status, presence: true
-    after_update :create_album_when_planned, if: :saved_change_to_status?
+    after_update :create_album_when_in_preparation, if: :saved_change_to_status?
     validates :status, inclusion: { in: STATUSES }
     validates :registration_mode, inclusion: { in: REGISTRATION_MODES }, allow_blank: true
     validates :vat_rate, numericality: { greater_than_or_equal_to: 0, less_than: 100 }
@@ -30,8 +30,8 @@ module Academy
 
     private
 
-    def create_album_when_planned
-      return unless status == "planned"
+    def create_album_when_in_preparation
+      return unless status == "in_preparation"
       return if album.present?
 
       create_album!(title: title, albumable: self)

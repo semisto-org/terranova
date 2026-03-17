@@ -317,7 +317,7 @@ function NurseryCard({ data }: { data: NurseryData }) {
 function AcademyCard({ data }: { data: AcademyData }) {
   return (
     <Card title="Academy">
-      <StatRow icon={GraduationCap} label="Formations complétées" value={data.trainingsCompleted} />
+      <StatRow icon={GraduationCap} label="Activités complétées" value={data.trainingsCompleted} />
       <StatRow icon={Users} label="Personnes formées" value={data.peopleTrained.toLocaleString('fr-BE')} />
     </Card>
   )

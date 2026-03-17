@@ -120,7 +120,14 @@ module Api
           expires_in: 5.minutes
         )
 
-        render json: { url: "/my/auth/verify?token=#{token}&impersonate=1" }
+        my_host = ENV["MY_SEMISTO_HOST"]
+        url = if my_host.present?
+          protocol = Rails.env.production? ? "https" : "http"
+          "#{protocol}://#{my_host}/api/v1/auth/verify?token=#{token}&impersonate=1"
+        else
+          "/my/auth/verify?token=#{token}&impersonate=1"
+        end
+        render json: { url: url }
       end
 
       def list_cycles
@@ -931,7 +938,7 @@ module Api
       end
 
       def contact_params
-        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, tag_names: [])
+        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, tag_names: [], expertise: [])
       end
 
       def set_contact
@@ -1597,6 +1604,7 @@ module Api
           organizationId: contact.organization_id&.to_s,
           organization: contact.organization ? { id: contact.organization.id.to_s, name: contact.organization.name } : nil,
           people: contact.organization? ? contact.people.map { |p| { id: p.id.to_s, name: p.name } } : [],
+          expertise: contact.expertise || [],
           tagNames: contact.tag_names,
           createdAt: contact.created_at.iso8601,
           updatedAt: contact.updated_at.iso8601

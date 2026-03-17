@@ -1,5 +1,5 @@
 import React from 'react'
-import { User, CheckCircle2, XCircle, Calendar } from 'lucide-react'
+import { User, CheckCircle2, XCircle, AlertCircle, Calendar } from 'lucide-react'
 
 function formatDate(dateStr) {
   const date = new Date(dateStr)
@@ -7,6 +7,20 @@ function formatDate(dateStr) {
     day: 'numeric',
     month: 'short',
   })
+}
+
+const NEXT_STATUS = {
+  unknown: 'present',
+  present: 'partial',
+  partial: 'absent',
+  absent: 'present',
+}
+
+const ARIA_LABELS = {
+  present: 'Présent — cliquer pour marquer présence partielle',
+  partial: 'Présence partielle — cliquer pour marquer absent',
+  absent: 'Absent — cliquer pour marquer présent',
+  unknown: 'Non renseigné — cliquer pour marquer présent',
 }
 
 export default function TrainingAttendancesTab({
@@ -27,14 +41,14 @@ export default function TrainingAttendancesTab({
   const getAttendanceStatus = (registrationId, sessionId) => {
     const attendance = getAttendance(registrationId, sessionId)
     if (!attendance) return 'unknown'
-    return attendance.isPresent ? 'present' : 'absent'
+    return attendance.status || 'absent'
   }
 
   if (sessions.length === 0) {
     return (
       <div className="bg-white rounded-lg p-12 border border-stone-200 text-center">
         <Calendar className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-        <p className="text-stone-500">Aucune session planifiée pour cette formation</p>
+        <p className="text-stone-500">Aucune session planifiée pour cette activité</p>
       </div>
     )
   }
@@ -43,7 +57,7 @@ export default function TrainingAttendancesTab({
     return (
       <div className="bg-white rounded-lg p-12 border border-stone-200 text-center">
         <User className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-        <p className="text-stone-500">Aucun participant inscrit pour cette formation</p>
+        <p className="text-stone-500">Aucun participant inscrit pour cette activité</p>
       </div>
     )
   }
@@ -78,12 +92,12 @@ export default function TrainingAttendancesTab({
             </thead>
             <tbody>
               {registrations.map((registration) => {
-                const presentCount = sortedSessions.filter(
-                  (session) => getAttendanceStatus(registration.id, session.id) === 'present'
-                ).length
-                const absentCount = sortedSessions.filter(
-                  (session) => getAttendanceStatus(registration.id, session.id) === 'absent'
-                ).length
+                const statuses = sortedSessions.map(
+                  (session) => getAttendanceStatus(registration.id, session.id)
+                )
+                const presentCount = statuses.filter((s) => s === 'present').length
+                const partialCount = statuses.filter((s) => s === 'partial').length
+                const absentCount = statuses.filter((s) => s === 'absent').length
 
                 return (
                   <tr key={registration.id} className="border-b border-stone-100 hover:bg-stone-50/50">
@@ -93,6 +107,11 @@ export default function TrainingAttendancesTab({
                         <span className="text-xs text-emerald-600">
                           {presentCount} présent{presentCount !== 1 ? 's' : ''}
                         </span>
+                        {partialCount > 0 && (
+                          <span className="text-xs text-amber-600">
+                            {partialCount} partiel{partialCount !== 1 ? 's' : ''}
+                          </span>
+                        )}
                         {absentCount > 0 && (
                           <span className="text-xs text-red-600">
                             {absentCount} absent{absentCount !== 1 ? 's' : ''}
@@ -109,23 +128,16 @@ export default function TrainingAttendancesTab({
                           <button
                             type="button"
                             onClick={() => {
-                              if (status === 'present') {
-                                onMarkAttendance?.(registration.id, session.id, false)
-                              } else {
-                                onMarkAttendance?.(registration.id, session.id, true)
-                              }
+                              onMarkAttendance?.(registration.id, session.id, NEXT_STATUS[status])
                             }}
-                            className="mx-auto flex items-center justify-center p-1 rounded hover:bg-stone-100"
-                            aria-label={
-                              status === 'present'
-                                ? 'Présent - cliquer pour marquer absent'
-                                : status === 'absent'
-                                  ? 'Absent - cliquer pour marquer présent'
-                                  : 'Non renseigné - cliquer pour marquer présent'
-                            }
+                            className="mx-auto flex items-center justify-center p-1 rounded hover:bg-stone-100 transition-colors"
+                            aria-label={ARIA_LABELS[status]}
                           >
                             {status === 'present' && (
                               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                            )}
+                            {status === 'partial' && (
+                              <AlertCircle className="w-5 h-5 text-amber-500" />
                             )}
                             {status === 'absent' && (
                               <XCircle className="w-5 h-5 text-red-600" />

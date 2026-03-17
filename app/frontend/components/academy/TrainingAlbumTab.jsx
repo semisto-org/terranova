@@ -82,9 +82,9 @@ export default function TrainingAlbumTab({ training, onRefresh }) {
         <div className="p-4 rounded-full bg-[#eac7b8]/30 mb-4">
           <Camera className="w-12 h-12 text-[#B01A19]" />
         </div>
-        <h3 className="text-lg font-semibold text-stone-800 mb-2">Aucun album pour cette formation</h3>
+        <h3 className="text-lg font-semibold text-stone-800 mb-2">Aucun album pour cette activité</h3>
         <p className="text-sm text-stone-600 mb-6 max-w-sm">
-          Créez un album pour y ajouter des photos et vidéos (souvenirs de la formation, supports, etc.).
+          Créez un album pour y ajouter des photos et vidéos (souvenirs de l'activité, supports, etc.).
         </p>
         <button
           type="button"

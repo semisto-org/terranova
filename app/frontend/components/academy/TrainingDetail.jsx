@@ -17,6 +17,9 @@ import {
   Camera,
   ChevronDown,
   Check,
+  MapPin,
+  GraduationCap,
+  AlertCircle,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -28,46 +31,58 @@ import TrainingFinancesTab from './TrainingFinancesTab'
 import TrainingAlbumTab from './TrainingAlbumTab'
 
 const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
+  idea: 'Idée',
+  in_construction: 'En construction',
+  in_preparation: 'En préparation',
   registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  completed: 'Terminée',
+  post_production: 'En post-prod',
+  completed: 'Clôturée',
   cancelled: 'Annulée',
 }
 
 const STATUS_COLORS = {
-  draft: 'bg-stone-500',
-  planned: 'bg-blue-500',
+  idea: 'bg-amber-500',
+  in_construction: 'bg-violet-500',
+  in_preparation: 'bg-blue-500',
   registrations_open: 'bg-green-500',
   in_progress: 'bg-[#B01A19]',
+  post_production: 'bg-teal-500',
   completed: 'bg-emerald-500',
   cancelled: 'bg-red-500',
 }
 
 const STATUS_DOT_COLORS = {
-  draft: 'bg-stone-400',
-  planned: 'bg-blue-400',
+  idea: 'bg-amber-400',
+  in_construction: 'bg-violet-400',
+  in_preparation: 'bg-blue-400',
   registrations_open: 'bg-green-400',
   in_progress: 'bg-[#B01A19]',
+  post_production: 'bg-teal-400',
   completed: 'bg-emerald-400',
   cancelled: 'bg-red-400',
 }
 
 const STATUS_HOVER = {
-  draft: 'hover:bg-stone-50',
-  planned: 'hover:bg-blue-50',
+  idea: 'hover:bg-amber-50',
+  in_construction: 'hover:bg-violet-50',
+  in_preparation: 'hover:bg-blue-50',
   registrations_open: 'hover:bg-emerald-50',
   in_progress: 'hover:bg-red-50',
+  post_production: 'hover:bg-teal-50',
   completed: 'hover:bg-emerald-50',
   cancelled: 'hover:bg-rose-50',
 }
 
-const STATUS_ORDER = ['draft', 'planned', 'registrations_open', 'in_progress', 'completed', 'cancelled']
+const STATUS_ORDER = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
 
-function StatusDropdown({ currentStatus, onChangeStatus }) {
+function StatusDropdown({ currentStatus, onChangeStatus, readinessChecks = [] }) {
   const [open, setOpen] = useState(false)
+  const [tooltipStatus, setTooltipStatus] = useState(null)
   const ref = useRef(null)
+
+  const allReady = readinessChecks.length > 0 && readinessChecks.every((c) => c.done)
+  const missingChecks = readinessChecks.filter((c) => !c.done)
 
   useEffect(() => {
     if (!open) return
@@ -90,7 +105,7 @@ function StatusDropdown({ currentStatus, onChangeStatus }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center gap-2 rounded-full pl-3 pr-2.5 py-1.5 text-sm font-medium text-white shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${STATUS_COLORS[currentStatus] || STATUS_COLORS.draft}`}
+        className={`inline-flex items-center gap-2 rounded-full pl-3 pr-2.5 py-1.5 text-sm font-medium text-white shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${STATUS_COLORS[currentStatus] || STATUS_COLORS.idea}`}
       >
         {STATUS_LABELS[currentStatus] || currentStatus}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
@@ -104,24 +119,47 @@ function StatusDropdown({ currentStatus, onChangeStatus }) {
           <div className="py-1.5">
             {STATUS_ORDER.map((status) => {
               const isActive = status === currentStatus
+              const isBlocked = status === 'registrations_open' && !allReady
               return (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => {
-                    if (!isActive) onChangeStatus(status)
-                    setOpen(false)
-                  }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left text-sm transition-colors duration-150 ${
-                    isActive
-                      ? 'bg-stone-50 font-semibold text-stone-900'
-                      : `text-stone-700 font-medium ${STATUS_HOVER[status]}`
-                  }`}
-                >
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT_COLORS[status]} ${isActive ? 'ring-2 ring-offset-1 ring-stone-300' : ''}`} />
-                  <span className="flex-1">{STATUS_LABELS[status]}</span>
-                  {isActive && <Check className="w-4 h-4 text-stone-400 shrink-0" />}
-                </button>
+                <div key={status} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isBlocked) return
+                      if (!isActive) onChangeStatus(status)
+                      setOpen(false)
+                    }}
+                    onMouseEnter={() => isBlocked && setTooltipStatus(status)}
+                    onMouseLeave={() => setTooltipStatus(null)}
+                    disabled={isBlocked}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left text-sm transition-colors duration-150 ${
+                      isBlocked
+                        ? 'text-stone-400 cursor-not-allowed'
+                        : isActive
+                          ? 'bg-stone-50 font-semibold text-stone-900'
+                          : `text-stone-700 font-medium ${STATUS_HOVER[status]}`
+                    }`}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isBlocked ? 'bg-stone-300' : STATUS_DOT_COLORS[status]} ${isActive ? 'ring-2 ring-offset-1 ring-stone-300' : ''}`} />
+                    <span className="flex-1">{STATUS_LABELS[status]}</span>
+                    {isBlocked && <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
+                    {isActive && !isBlocked && <Check className="w-4 h-4 text-stone-400 shrink-0" />}
+                  </button>
+                  {/* Tooltip for blocked status */}
+                  {tooltipStatus === status && isBlocked && (
+                    <div className="absolute left-full top-0 ml-2 z-50 w-52 rounded-lg border border-rose-200 bg-white shadow-lg p-3">
+                      <p className="text-xs font-semibold text-rose-600 mb-1.5">Éléments manquants :</p>
+                      <ul className="space-y-1">
+                        {missingChecks.map((c) => (
+                          <li key={c.id} className="flex items-center gap-1.5 text-xs text-stone-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+                            {c.label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>
@@ -174,6 +212,7 @@ export default function TrainingDetail({
   const attendances = data.trainingAttendances || []
   const locations = data.trainingLocations || []
   const members = data.members || []
+  const academyContacts = data.academyContacts || []
 
   const vatRate = Number(training.vatRate || 0)
   const revenue = registrations.reduce((sum, r) => {
@@ -266,8 +305,14 @@ export default function TrainingDetail({
               </div>
               <div className="ml-5">
                 <StatusDropdown
-                  currentStatus={training.status || 'draft'}
+                  currentStatus={training.status || 'idea'}
                   onChangeStatus={(status) => actions.updateTrainingStatus(training.id, status)}
+                  readinessChecks={[
+                    { id: 'date', label: 'Date(s)', done: sessions.length > 0 },
+                    { id: 'location', label: 'Lieu', done: sessions.length > 0 && sessions.every((s) => (s.locationIds || []).length > 0) },
+                    { id: 'trainer', label: 'Formateur', done: sessions.length > 0 && sessions.every((s) => (s.trainerIds || []).length > 0) },
+                    { id: 'price', label: 'Prix', done: Number(training.price) > 0 },
+                  ]}
                 />
               </div>
             </div>
@@ -440,6 +485,7 @@ export default function TrainingDetail({
                 sessions={sessions}
                 locations={locations}
                 members={members}
+                academyContacts={academyContacts}
               />
             )}
             {tab === 'sessions' && (
@@ -447,6 +493,7 @@ export default function TrainingDetail({
                 sessions={sessions}
                 locations={locations}
                 members={members}
+                academyContacts={academyContacts}
                 onAddSession={() => actions.addSession(training.id)}
                 onEditSession={(id) => actions.editSession(id)}
                 onDeleteSession={(id) => actions.deleteSession(id)}
@@ -470,8 +517,8 @@ export default function TrainingDetail({
                 registrations={registrations}
                 sessions={sessions}
                 attendances={attendances}
-                onMarkAttendance={(regId, sessionId, isPresent) =>
-                  actions.markAttendance(regId, sessionId, isPresent)
+                onMarkAttendance={(regId, sessionId, status) =>
+                  actions.markAttendance(regId, sessionId, status)
                 }
               />
             )}

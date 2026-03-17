@@ -92,7 +92,7 @@ export default function TrainingFinancesTab({
         <div>
           <h3 className="text-lg font-semibold text-stone-900">Finances</h3>
           <p className="text-sm text-stone-500 mt-1">
-            Vue d'ensemble financière de la formation
+            Vue d'ensemble financière de l'activité
           </p>
         </div>
         <button

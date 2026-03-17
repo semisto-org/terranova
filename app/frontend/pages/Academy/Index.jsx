@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
-import { apiRequest } from '@/lib/api'
+import { apiRequest, getCsrfToken } from '@/lib/api'
 import { getCableConsumer } from '@/lib/cable'
 import { applyAcademyRealtimeUpdate } from './realtime'
 import { useShellNav } from '../../components/shell/ShellContext'
@@ -13,6 +13,8 @@ import {
   CalendarYearView,
   IdeaNotesView,
   ReportingDashboard,
+  AcademyTeamView,
+  TeamMemberDetail,
   TrainingFormModal,
   RegistrationFormModal,
   PaymentStatusModal,
@@ -20,14 +22,16 @@ import {
   DocumentFormModal,
   ChecklistItemModal,
   IdeaNoteFormModal,
+  TeamMemberFormModal,
 } from '@/components/academy'
 import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Formations' },
+  { id: 'kanban', label: 'Activités' },
   { id: 'calendar', label: 'Calendrier' },
-  { id: 'types', label: 'Types de formations' },
+  { id: 'team', label: 'Équipe' },
+  { id: 'types', label: 'Types d\'activités' },
   { id: 'locations', label: 'Lieux' },
   { id: 'ideas', label: 'Bloc-notes' },
   { id: 'reporting', label: 'Reporting' },
@@ -59,9 +63,12 @@ export default function AcademyIndex({ initialTrainingId }) {
     trainingExpenses: [],
     ideaNotes: [],
     members: [],
+    academyContacts: [],
     stats: { byStatus: {}, total: 0 },
   })
   const [selectedTrainingId, setSelectedTrainingId] = useState(initialTrainingId || null)
+  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState(null)
+  const [teamDetailRefreshKey, setTeamDetailRefreshKey] = useState(0)
   const [reporting, setReporting] = useState(null)
   const [calendarView, setCalendarView] = useState('month')
   const [calendarDate, setCalendarDate] = useState(() => new Date())
@@ -228,24 +235,52 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
   }, [modalData, runMutation])
 
-  const handleDocumentSubmit = useCallback(async (values) => {
+  const handleDocumentSubmit = useCallback(async (values, { onProgress, getXhrRef } = {}) => {
     const formData = new FormData()
     formData.append('name', values.name)
     formData.append('document_type', values.document_type)
     formData.append('file', values.file)
     if (values.sessionId) formData.append('session_id', values.sessionId)
     if (values.uploaded_by) formData.append('uploaded_by', values.uploaded_by)
-    const success = await runMutation(() =>
-      apiRequest(`/api/v1/academy/trainings/${modalData.trainingId}/documents`, {
-        method: 'POST',
-        body: formData,
+
+    const url = `/api/v1/academy/trainings/${modalData.trainingId}/documents`
+
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      if (getXhrRef) getXhrRef(xhr)
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress({ loaded: e.loaded, total: e.total, percent: (e.loaded / e.total) * 100 })
+        }
       })
-    )
-    if (success) {
-      setActiveModal(null)
-      setModalData(null)
-    }
-  }, [modalData, runMutation])
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve()
+        } else if (xhr.status === 401) {
+          window.location.href = '/login'
+          reject(new Error('Session expirée'))
+        } else {
+          let message = `${xhr.status} ${xhr.statusText}`
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (data?.error) message = data.error
+          } catch (_) {}
+          reject(new Error(message))
+        }
+      })
+
+      xhr.addEventListener('error', () => reject(new Error('Erreur réseau')))
+      xhr.addEventListener('abort', () => reject(new Error('Upload annulé')))
+
+      xhr.open('POST', url)
+      xhr.setRequestHeader('X-CSRF-Token', getCsrfToken())
+      xhr.send(formData)
+    })
+
+    await loadAcademy()
+  }, [modalData, loadAcademy])
 
   const handleChecklistItemSubmit = useCallback(async (item) => {
     const success = await runMutation(() =>
@@ -329,6 +364,27 @@ export default function AcademyIndex({ initialTrainingId }) {
     }
   }, [modalData, runMutation])
 
+  const handleTeamMemberSubmit = useCallback(async (values) => {
+    const url = modalData?.isEdit
+      ? `/api/v1/academy/team/${modalData.member.id}`
+      : '/api/v1/academy/team'
+    const success = await runMutation(() =>
+      apiRequest(url, {
+        method: modalData?.isEdit ? 'PATCH' : 'POST',
+        body: JSON.stringify(values),
+      })
+    )
+    if (success) {
+      setActiveModal(null)
+      setModalData(null)
+      setTeamDetailRefreshKey((k) => k + 1)
+    }
+  }, [modalData, runMutation])
+
+  const handleCheckTeamEmail = useCallback(async (email) => {
+    return apiRequest(`/api/v1/academy/team/check-email?email=${encodeURIComponent(email)}`)
+  }, [])
+
   const actions = useMemo(() => ({
     createTrainingType: () => {
       window.location.href = '/academy/training-types/new'
@@ -336,7 +392,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     deleteTrainingType: (id) => {
       const trainingType = data.trainingTypes.find(t => t.id === id)
       setDeleteConfirm({
-        title: 'Supprimer ce type de formation ?',
+        title: 'Supprimer ce type d\'activité ?',
         message: `Le type « ${trainingType?.name || ''} » sera supprimé définitivement.`,
         action: () => runMutation(() => apiRequest(`/api/v1/academy/training-types/${id}`, { method: 'DELETE' })),
       })
@@ -360,7 +416,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     },
     createTraining: () => {
       if (data.trainingTypes.length === 0) {
-        setError('Créez d\'abord un type de formation.')
+        setError('Créez d\'abord un type d\'activité.')
         return
       }
       setModalData({ isEdit: false })
@@ -369,8 +425,8 @@ export default function AcademyIndex({ initialTrainingId }) {
     deleteTraining: (id) => {
       const training = data.trainings.find(t => t.id === id)
       setDeleteConfirm({
-        title: 'Supprimer cette formation ?',
-        message: `La formation « ${training?.title || ''} » sera supprimée définitivement.`,
+        title: 'Supprimer cette activité ?',
+        message: `L'activité « ${training?.title || ''} » sera supprimée définitivement.`,
         action: () => runMutation(() => apiRequest(`/api/v1/academy/trainings/${id}`, { method: 'DELETE' })),
       })
     },
@@ -448,7 +504,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       setModalData({ registrationId, registration: current, trainingPrice: training?.price || 0 })
       setActiveModal('paymentStatus')
     },
-    markAttendance: (registrationId, sessionId, isPresent) => runMutation(() => apiRequest('/api/v1/academy/attendance', { method: 'POST', body: JSON.stringify({ registration_id: registrationId, session_id: sessionId, is_present: isPresent, note: '' }) })),
+    markAttendance: (registrationId, sessionId, status) => runMutation(() => apiRequest('/api/v1/academy/attendance', { method: 'POST', body: JSON.stringify({ registration_id: registrationId, session_id: sessionId, status, note: '' }) })),
     addDocument: (trainingId) => {
       setModalData({ trainingId })
       setActiveModal('document')
@@ -517,6 +573,22 @@ export default function AcademyIndex({ initialTrainingId }) {
         title: 'Supprimer cette note ?',
         message: `La note « ${note?.title || ''} » sera supprimée définitivement.`,
         action: () => runMutation(() => apiRequest(`/api/v1/academy/idea-notes/${id}`, { method: 'DELETE' })),
+      })
+    },
+    addTeamMember: () => {
+      setModalData({ isEdit: false })
+      setActiveModal('teamMember')
+    },
+    editTeamMember: (member) => {
+      setModalData({ isEdit: true, member })
+      setActiveModal('teamMember')
+    },
+    removeTeamMember: (id) => {
+      const member = data.academyContacts.find(m => m.id === id)
+      setDeleteConfirm({
+        title: 'Retirer de l\'équipe ?',
+        message: `« ${member?.name || ''} » sera retiré de l'équipe de formation. Le contact sera conservé.`,
+        action: () => runMutation(() => apiRequest(`/api/v1/academy/team/${id}`, { method: 'DELETE' })),
       })
     },
   }), [data, runMutation, setDeleteConfirm])
@@ -589,6 +661,7 @@ export default function AcademyIndex({ initialTrainingId }) {
           session={modalData?.isEdit ? modalData.session : null}
           locations={data.trainingLocations}
           members={data.members}
+          academyContacts={data.academyContacts}
           onSubmit={handleSessionSubmit}
           onCancel={() => {
             setActiveModal(null)
@@ -635,6 +708,8 @@ export default function AcademyIndex({ initialTrainingId }) {
           sessions={(data.trainingSessions || [])
             .filter((s) => s.trainingId === modalData?.trainingId)
             .sort((a, b) => a.startDate.localeCompare(b.startDate))}
+          members={data.members || []}
+          academyContacts={data.academyContacts || []}
         />
       )}
 
@@ -680,6 +755,19 @@ export default function AcademyIndex({ initialTrainingId }) {
           note={modalData?.isEdit ? modalData.note : null}
           existingTags={[...new Set(data.ideaNotes.flatMap(n => n.tags || []))].sort()}
           onSubmit={handleIdeaNoteSubmit}
+          onCancel={() => {
+            setActiveModal(null)
+            setModalData(null)
+          }}
+          busy={busy}
+        />
+      )}
+
+      {activeModal === 'teamMember' && (
+        <TeamMemberFormModal
+          member={modalData?.isEdit ? modalData.member : null}
+          onSubmit={handleTeamMemberSubmit}
+          onCheckEmail={handleCheckTeamEmail}
           onCancel={() => {
             setActiveModal(null)
             setModalData(null)
@@ -816,7 +904,7 @@ export default function AcademyIndex({ initialTrainingId }) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-stone-900">Ajouter à Google Agenda</p>
-                  <p className="text-xs text-stone-500">Export iCal en lecture seule (Semisto + Formations)</p>
+                  <p className="text-xs text-stone-500">Export iCal en lecture seule (Semisto + Activités)</p>
                 </div>
                 <button
                   type="button"
@@ -834,7 +922,7 @@ export default function AcademyIndex({ initialTrainingId }) {
                     <button type="button" className="text-[#B01A19] underline" onClick={() => copyText(calendarLinks.semisto.url)}>Copier le lien</button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-stone-700">Formations:</span>
+                    <span className="font-medium text-stone-700">Activités:</span>
                     <button type="button" className="text-[#B01A19] underline" onClick={() => copyText(calendarLinks.trainings.url)}>Copier le lien</button>
                   </div>
                   <ol className="mt-2 list-decimal pl-5 text-xs text-stone-600">
@@ -866,25 +954,48 @@ export default function AcademyIndex({ initialTrainingId }) {
           </section>
         )}
 
+        {view === 'team' && (
+          selectedTeamMemberId ? (
+            <TeamMemberDetail
+              contactId={selectedTeamMemberId}
+              refreshKey={teamDetailRefreshKey}
+              onBack={() => setSelectedTeamMemberId(null)}
+              onEdit={(contact) => {
+                actions.editTeamMember(contact)
+              }}
+            />
+          ) : (
+            <AcademyTeamView
+              team={data.academyContacts}
+              onAddMember={actions.addTeamMember}
+              onEditMember={actions.editTeamMember}
+              onRemoveMember={actions.removeTeamMember}
+              onViewMember={(contact) => setSelectedTeamMemberId(contact.id)}
+            />
+          )
+        )}
+
         {view === 'types' && (
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-stone-900 tracking-tight">Types de formations</h2>
-                <p className="text-sm text-stone-500 mt-1">{data.trainingTypes.length} type{data.trainingTypes.length !== 1 ? 's' : ''} disponible{data.trainingTypes.length !== 1 ? 's' : ''}</p>
+          <section className="max-w-5xl mx-auto space-y-6">
+            <div className="mb-8">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="h-12 w-1 bg-gradient-to-b from-[#B01A19] to-[#eac7b8] rounded-full shrink-0" />
+                <div>
+                  <h1 className="text-3xl font-bold text-stone-900 tracking-tight">Types d'activités</h1>
+                  <p className="text-sm text-stone-600 mt-2 font-medium">{data.trainingTypes.length} type{data.trainingTypes.length !== 1 ? 's' : ''} disponible{data.trainingTypes.length !== 1 ? 's' : ''}</p>
+                </div>
               </div>
-              <button
-                className="group relative overflow-hidden rounded-xl bg-[#B01A19] px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-[#8f1514] hover:shadow-lg hover:shadow-[#B01A19]/20 active:scale-[0.98]"
-                onClick={actions.createTrainingType}
-              >
-                <span className="relative z-10 flex items-center gap-2">
+              <div className="flex justify-end mt-6">
+                <button
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#B01A19] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#8f1514] shadow-md active:scale-[0.98] transition-all"
+                  onClick={actions.createTrainingType}
+                >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Nouveau type
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#B01A19] to-[#8f1514] opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
+                </button>
+              </div>
             </div>
 
             {data.trainingTypes.length === 0 ? (
@@ -894,75 +1005,83 @@ export default function AcademyIndex({ initialTrainingId }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <p className="text-base font-medium text-stone-700">Aucun type de formation</p>
-                <p className="mt-1 text-sm text-stone-500">Commencez par créer votre premier type de formation</p>
+                <p className="text-base font-medium text-stone-700">Aucun type d'activité</p>
+                <p className="mt-1 text-sm text-stone-500">Commencez par créer votre premier type d'activité</p>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {data.trainingTypes.map((item, index) => {
-                  const trainingsCount = data.trainings.filter((t) => t.trainingTypeId === item.id).length
-                  return (
-                    <div
-                      key={item.id}
-                      className="group relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-stone-300 hover:shadow-lg hover:shadow-stone-200/50"
-                      style={{
-                        animationDelay: `${index * 50}ms`,
-                        animation: 'fadeInUp 0.5s ease-out forwards',
-                        opacity: 0,
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-stone-50/0 via-stone-50/0 to-stone-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
-                      
-                      <div className="relative z-10">
-                        <div className="mb-4 flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-stone-900 leading-tight">{item.name}</h3>
-                          </div>
-                          <div className="ml-3 flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            <button
-                              onClick={() => actions.editTrainingType(item.id)}
-                              className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-[#B01A19]"
-                              title="Modifier"
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => actions.deleteTrainingType(item.id)}
-                              className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                              title="Supprimer"
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="flex items-center gap-1.5 rounded-lg bg-stone-100 px-3 py-1.5 text-sm">
-                            <svg className="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            <span className="font-medium text-stone-700">{item.checklistTemplate?.length || 0}</span>
-                            <span className="text-stone-500">étape{item.checklistTemplate?.length !== 1 ? 's' : ''}</span>
-                          </div>
-
-                          {trainingsCount > 0 && (
-                            <div className="flex items-center gap-1.5 rounded-lg bg-[#B01A19]/10 px-3 py-1.5 text-sm">
-                              <svg className="h-4 w-4 text-[#B01A19]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                              </svg>
-                              <span className="font-medium text-[#B01A19]">{trainingsCount}</span>
-                              <span className="text-[#B01A19]/70">formation{trainingsCount !== 1 ? 's' : ''}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-stone-200 bg-stone-50">
+                        <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase tracking-wide min-w-[200px]">
+                          Nom
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase tracking-wide">
+                          Checklist
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase tracking-wide">
+                          Activités
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase tracking-wide w-12" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.trainingTypes.map((item) => {
+                        const trainingsCount = data.trainings.filter((t) => t.trainingTypeId === item.id).length
+                        return (
+                          <tr key={item.id} className="border-b border-stone-100 hover:bg-stone-50/50 group">
+                            <td className="px-4 py-3">
+                              <button
+                                type="button"
+                                onClick={() => actions.editTrainingType(item.id)}
+                                className="text-sm font-medium text-stone-900 hover:text-[#B01A19] transition-colors text-left"
+                              >
+                                {item.name}
+                              </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-sm text-stone-600">
+                                {item.checklistTemplate?.length || 0} étape{(item.checklistTemplate?.length || 0) !== 1 ? 's' : ''}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {trainingsCount > 0 ? (
+                                <span className="inline-flex items-center rounded-full bg-[#B01A19]/10 px-2.5 py-0.5 text-xs font-medium text-[#B01A19]">
+                                  {trainingsCount} activité{trainingsCount !== 1 ? 's' : ''}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-stone-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => actions.editTrainingType(item.id)}
+                                  className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-[#B01A19]"
+                                  title="Modifier"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => actions.deleteTrainingType(item.id)}
+                                  className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                                  title="Supprimer"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </section>

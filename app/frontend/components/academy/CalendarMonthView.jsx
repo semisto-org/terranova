@@ -4,10 +4,12 @@ import { MapPin, Users, ArrowRight } from 'lucide-react'
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
 const STATUS_CARD_COLORS = {
-  draft: { bg: 'bg-stone-100', border: 'border-stone-300', text: 'text-stone-700' },
-  planned: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900' },
+  idea: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900' },
+  in_construction: { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-900' },
+  in_preparation: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900' },
   registrations_open: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900' },
   in_progress: { bg: 'bg-[#eac7b8]/50', border: 'border-[#B01A19]', text: 'text-[#B01A19]' },
+  post_production: { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-900' },
   completed: { bg: 'bg-stone-100', border: 'border-stone-300', text: 'text-stone-700' },
   cancelled: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-900' },
 }
@@ -180,7 +182,7 @@ export default function CalendarMonthView({
               </div>
               <div className="space-y-1.5">
                 {trainingsToShow.map(({ training: t, sessions: sess }) => {
-                  const colors = STATUS_CARD_COLORS[t.status] || STATUS_CARD_COLORS.draft
+                  const colors = STATUS_CARD_COLORS[t.status] || STATUS_CARD_COLORS.idea
                   const firstSess = sess[0]
                   const locationNames = firstSess
                     ? getLocationNames(firstSess.locationIds || [])
@@ -251,17 +253,7 @@ export default function CalendarMonthView({
                         : 'bg-stone-500'
                 }`}
               >
-                {selectedTraining.status === 'in_progress'
-                  ? 'En cours'
-                  : selectedTraining.status === 'registrations_open'
-                    ? 'Inscriptions ouvertes'
-                    : selectedTraining.status === 'completed'
-                      ? 'Terminée'
-                      : selectedTraining.status === 'planned'
-                        ? 'Planifiée'
-                        : selectedTraining.status === 'cancelled'
-                          ? 'Annulée'
-                          : 'Brouillon'}
+                {{ idea: 'Idée', in_construction: 'En construction', in_preparation: 'En préparation', registrations_open: 'Inscriptions ouvertes', in_progress: 'En cours', post_production: 'En post-prod', completed: 'Clôturée', cancelled: 'Annulée' }[selectedTraining.status] || selectedTraining.status}
               </span>
             </div>
             <div className="flex items-start gap-3 p-4 bg-stone-50 rounded-xl border border-stone-200 mb-4">

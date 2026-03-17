@@ -7,4 +7,8 @@ environment ENV.fetch("RAILS_ENV", "development")
 
 pidfile ENV.fetch("PIDFILE", "tmp/pids/server.pid")
 
+# In cluster mode, allow workers to handle long-running uploads (350 Mo+)
+# without being killed by the master process (default: 60s).
+worker_timeout ENV.fetch("PUMA_WORKER_TIMEOUT", 600).to_i
+
 plugin :tmp_restart

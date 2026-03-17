@@ -16,7 +16,7 @@ class GlobalSearchApiTest < ActionDispatch::IntegrationTest
     Contact.create!(name: 'Project Partner', contact_type: 'organization', email: 'partner@example.com')
     Plant::Species.create!(latin_name: 'Malus domestica', plant_type: 'fruit-tree', description: 'Pommier de training')
     training_type = Academy::TrainingType.create!(name: 'Permaculture')
-    Academy::Training.create!(title: 'Training verger', status: 'published', training_type: training_type)
+    Academy::Training.create!(title: 'Training verger', status: 'registrations_open', training_type: training_type)
     Note.create!(title: 'Note projet', body: 'project launch notes')
     Design::ProjectDocument.create!(name: 'Plan projet', category: 'plan', url: '/files/plan.pdf', uploaded_at: Time.current)
     KnowledgeTopic.create!(title: 'Knowledge Project', content: 'Comment gérer un project', status: 'published')

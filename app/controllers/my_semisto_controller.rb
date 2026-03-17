@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class MySemistoController < ApplicationController
+  include MySemistoRouting
+
   skip_before_action :track_member_activity
 
   before_action :require_contact_authentication, except: [:login, :request_magic_link, :verify_magic_link]
@@ -27,7 +29,7 @@ class MySemistoController < ApplicationController
   # ── Auth actions ──
 
   def login
-    redirect_to "/my" and return if current_contact
+    redirect_to my_semisto_path("/") and return if current_contact
     render inertia: "MySemisto/Login"
   end
 
@@ -40,7 +42,7 @@ class MySemistoController < ApplicationController
     end
 
     # Always redirect with same message (anti-enumeration)
-    redirect_to "/my/login", notice: "Si cette adresse est connue, un lien de connexion vient de vous etre envoye par email."
+    redirect_to my_semisto_path("/login"), notice: "Si cette adresse est connue, un lien de connexion vient de vous etre envoye par email."
   end
 
   def verify_magic_link
@@ -48,14 +50,14 @@ class MySemistoController < ApplicationController
     data = verify_contact_token(token)
     contact = Contact.find(data[:contact_id] || data["contact_id"])
     session[:contact_id] = contact.id
-    redirect_to "/my"
+    redirect_to my_semisto_path("/")
   rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
-    redirect_to "/my/login", alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
+    redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
   end
 
   def logout
     session.delete(:contact_id)
-    redirect_to "/my/login"
+    redirect_to my_semisto_path("/login")
   end
 
   # ── Page actions ──
@@ -93,7 +95,7 @@ class MySemistoController < ApplicationController
 
   def require_contact_authentication
     unless current_contact
-      redirect_to "/my/login"
+      redirect_to my_semisto_path("/login")
     end
   end
 

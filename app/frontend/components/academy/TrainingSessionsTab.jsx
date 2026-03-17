@@ -22,12 +22,17 @@ export default function TrainingSessionsTab({
   sessions = [],
   locations = [],
   members = [],
+  academyContacts = [],
   onAddSession,
   onEditSession,
   onDeleteSession,
 }) {
   const getLocationName = (locationId) =>
     locations.find((loc) => loc.id === locationId)?.name || locationId
+  const getTrainerName = (trainerId) => {
+    const contact = academyContacts.find((c) => c.id === trainerId)
+    return contact ? contact.name : trainerId
+  }
   const getMemberName = (memberId) => {
     const member = members.find((m) => m.id === memberId)
     return member ? `${member.firstName} ${member.lastName}` : memberId
@@ -41,7 +46,7 @@ export default function TrainingSessionsTab({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-stone-900">Sessions de formation</h3>
+          <h3 className="text-lg font-semibold text-stone-900">Sessions d'activité</h3>
           <p className="text-sm text-stone-500 mt-1">
             {sessions.length} session{sessions.length !== 1 ? 's' : ''} planifiée{sessions.length !== 1 ? 's' : ''}
           </p>
@@ -84,6 +89,7 @@ export default function TrainingSessionsTab({
                 formatDate={formatDate}
                 formatTime={formatTime}
                 getLocationName={getLocationName}
+                getTrainerName={getTrainerName}
                 getMemberName={getMemberName}
                 onEdit={() => onEditSession?.(session.id)}
                 onDelete={() => onDeleteSession?.(session.id)}
@@ -102,6 +108,7 @@ function SessionCard({
   formatDate,
   formatTime,
   getLocationName,
+  getTrainerName,
   getMemberName,
   onEdit,
   onDelete,
@@ -175,7 +182,7 @@ function SessionCard({
                     key={trainerId}
                     className="rounded border border-stone-300 px-2 py-0.5 text-xs"
                   >
-                    {getMemberName(trainerId)}
+                    {getTrainerName(trainerId)}
                   </span>
                 ))}
               </div>

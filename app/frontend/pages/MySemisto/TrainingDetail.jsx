@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText } 
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
 import { myApiRequest } from '../../my-semisto/lib/api'
+import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
 const SESSION_COLOR_PAST = '#5B5781'
 const SESSION_COLOR_UPCOMING = '#2D6A4F'
@@ -38,18 +39,18 @@ export default function TrainingDetail() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    myApiRequest(`/api/v1/my/academy/${trainingId}`)
+    myApiRequest(`${myApiPath('/academy')}/${trainingId}`)
       .then((data) => setTraining(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [trainingId])
 
   return (
-    <MySemistoShell activeNav="/my/academy">
+    <MySemistoShell activeNav={myPath('/academy')}>
       {/* Back link */}
       <div className="mb-6">
         <Link
-          href="/my/academy"
+          href={myPath('/academy')}
           className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#B01A19] transition-colors"
         >
           <ArrowLeft size={16} />

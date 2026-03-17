@@ -1,7 +1,7 @@
 import React from 'react'
 
 const suggestions = [
-  'Prochaine formation ?',
+  'Prochaine activité ?',
   'Espèces recommandées',
   'Aide Terranova',
 ]

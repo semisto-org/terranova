@@ -40,7 +40,12 @@ Rails.application.configure do
     config.action_cable.allowed_request_origins = if allowed_origins_env.present?
       allowed_origins_env.split(",").map(&:strip).reject(&:blank?)
     else
-      ["https://#{app_host}", "http://#{app_host}"]
+      origins = ["https://#{app_host}", "http://#{app_host}"]
+      my_semisto_host = ENV["MY_SEMISTO_HOST"]
+      if my_semisto_host.present?
+        origins += ["https://#{my_semisto_host}", "http://#{my_semisto_host}"]
+      end
+      origins
     end
   end
 end

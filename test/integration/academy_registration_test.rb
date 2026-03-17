@@ -40,7 +40,7 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
   end
 
   test 'public training info returns gone when training is not open for registration' do
-    @training.update!(status: 'draft')
+    @training.update!(status: 'idea')
 
     get "/api/v1/public/academy/trainings/#{@training.id}", as: :json
     assert_response :gone

@@ -5,9 +5,9 @@ import { useShellNav } from '@/components/shell/ShellContext'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const ACADEMY_SECTIONS = [
-  { id: 'kanban', label: 'Formations' },
+  { id: 'kanban', label: 'Activités' },
   { id: 'calendar', label: 'Calendrier' },
-  { id: 'types', label: 'Types de formations' },
+  { id: 'types', label: 'Types d\'activités' },
   { id: 'locations', label: 'Lieux' },
   { id: 'ideas', label: 'Bloc-notes' },
   { id: 'reporting', label: 'Reporting' },
@@ -173,7 +173,7 @@ export default function LocationForm({ locationId }) {
               {isEditing ? 'Modifier le lieu' : 'Nouveau lieu'}
             </h1>
             <p className="mt-1 text-sm text-stone-500">
-              {isEditing ? 'Modifiez les informations du lieu de formation' : 'Créez un nouveau lieu de formation'}
+              {isEditing ? 'Modifiez les informations du lieu d\'activité' : 'Créez un nouveau lieu d\'activité'}
             </p>
           </div>
           <button

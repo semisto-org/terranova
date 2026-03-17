@@ -56,7 +56,7 @@ export default function GlobalSearchPalette() {
       {open && <div className="fixed inset-0 z-50 bg-black/40 p-4 md:p-12" onClick={() => setOpen(false)}><div className="mx-auto max-w-3xl rounded-xl bg-white shadow-2xl border border-stone-200" onClick={(e) => e.stopPropagation()}><div className="border-b border-stone-200 p-3"><input ref={inputRef} type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(event) => {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setActiveIndex((current) => getNextActiveIndex(current, event.key, items.length)); return }
         if (event.key === 'Enter' && activeIndex >= 0) { event.preventDefault(); openItem(items[activeIndex], event.metaKey || event.ctrlKey) }
-      }} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" placeholder="Rechercher projets, contacts, plantes, formations..." /></div>
+      }} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" placeholder="Rechercher projets, contacts, plantes, activités..." /></div>
       <div className="max-h-[65vh] overflow-y-auto p-2">{!query.trim() && recent.length > 0 && <div className="px-2 py-3 text-sm text-stone-600"><div className="mb-2 font-medium">Recherches récentes</div><div className="flex flex-wrap gap-2">{recent.map((item) => <button key={item} onClick={() => setQuery(item)} className="rounded-full border border-stone-200 px-3 py-1 text-xs">{item}</button>)}</div></div>}
       {loading && <div className="px-3 py-5 text-sm text-stone-500">Recherche instantanée…</div>}
       {!loading && query.trim() && items.length === 0 && <div className="px-3 py-6 text-sm text-stone-500">Aucun résultat pour <strong>{query}</strong>.</div>}

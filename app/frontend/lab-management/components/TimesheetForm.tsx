@@ -6,7 +6,7 @@ const HOURS_PRESETS = [0.5, 1, 2, 4, 6, 8]
 
 const LINK_TYPES = [
   { value: 'design', label: 'Projet de design', color: 'bg-[#AFBD00]/15 text-[#8a9600] border-[#AFBD00]/30' },
-  { value: 'training', label: 'Formation', color: 'bg-[#B01A19]/15 text-[#B01A19] border-[#B01A19]/30' },
+  { value: 'training', label: 'Activité Academy', color: 'bg-[#B01A19]/15 text-[#B01A19] border-[#B01A19]/30' },
   { value: 'project', label: 'Projet', color: 'bg-[#5B5781]/15 text-[#5B5781] border-[#5B5781]/30' },
 ] as const
 
@@ -316,7 +316,7 @@ export function TimesheetForm({
                 {linkType === 'training' && (
                   <div>
                     <label htmlFor="timesheet-training" className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Formation
+                      Activité Academy
                     </label>
                     <select
                       id="timesheet-training"
@@ -324,7 +324,7 @@ export function TimesheetForm({
                       onChange={(e) => setTrainingId(e.target.value)}
                       className={inputBase}
                     >
-                      <option value="">Sélectionner une formation...</option>
+                      <option value="">Sélectionner une activité...</option>
                       {trainings.map((t) => (
                         <option key={t.id} value={t.id}>{t.title}</option>
                       ))}

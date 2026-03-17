@@ -701,7 +701,7 @@ export function ExpenseFormModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {showTrainingLink && (
                       <div>
-                        <label className="block text-sm font-medium text-stone-600 mb-1">Formation concernée</label>
+                        <label className="block text-sm font-medium text-stone-600 mb-1">Activité concernée</label>
                         <select
                           value={trainingId}
                           onChange={(e) => setTrainingId(e.target.value)}

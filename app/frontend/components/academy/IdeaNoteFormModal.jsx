@@ -5,9 +5,9 @@ const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
 
 const IDEA_CATEGORIES = [
-  { value: 'subject', label: 'Sujet', icon: '🎓', description: 'Idée de sujet de formation' },
+  { value: 'subject', label: 'Sujet', icon: '🎓', description: 'Idée de sujet d\'activité' },
   { value: 'trainer', label: 'Formateur', icon: '👤', description: 'Idée de formateur' },
-  { value: 'location', label: 'Lieu', icon: '📍', description: 'Idée de lieu de formation' },
+  { value: 'location', label: 'Lieu', icon: '📍', description: 'Idée de lieu d\'activité' },
   { value: 'other', label: 'Autre', icon: '📝', description: 'Autre type de note' },
 ]
 

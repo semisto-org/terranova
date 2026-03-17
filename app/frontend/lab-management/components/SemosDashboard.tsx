@@ -119,7 +119,7 @@ function getDemoData() {
       fromWalletId: 'demo-wallet-1',
       toWalletId: 'demo-wallet-3',
       amount: 25,
-      description: 'Participation formation taille',
+      description: 'Participation activité taille',
       createdAt: '2026-02-22T10:00:00Z',
       type: 'payment',
     },

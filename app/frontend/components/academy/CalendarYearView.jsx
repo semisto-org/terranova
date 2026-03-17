@@ -8,20 +8,24 @@ const MONTH_NAMES = [
 const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
 const STATUS_COLORS = {
-  draft: 'bg-stone-400',
-  planned: 'bg-blue-500',
+  idea: 'bg-amber-400',
+  in_construction: 'bg-violet-500',
+  in_preparation: 'bg-blue-500',
   registrations_open: 'bg-green-500',
   in_progress: 'bg-[#B01A19]',
+  post_production: 'bg-teal-500',
   completed: 'bg-emerald-500',
   cancelled: 'bg-red-500',
 }
 
 const STATUS_LABELS = {
-  draft: 'Brouillon',
-  planned: 'Planifiée',
+  idea: 'Idée',
+  in_construction: 'En construction',
+  in_preparation: 'En préparation',
   registrations_open: 'Inscriptions ouvertes',
   in_progress: 'En cours',
-  completed: 'Terminée',
+  post_production: 'En post-prod',
+  completed: 'Clôturée',
   cancelled: 'Annulée',
 }
 
@@ -111,9 +115,11 @@ export default function CalendarYearView({
   const STATUS_PRIORITY = [
     'in_progress',
     'registrations_open',
-    'planned',
+    'in_preparation',
+    'in_construction',
+    'post_production',
     'completed',
-    'draft',
+    'idea',
     'cancelled',
   ]
 
@@ -253,7 +259,7 @@ export default function CalendarYearView({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="font-semibold mb-2 text-center border-b border-stone-700 pb-1.5">
-                              {trainingsForDate.length} formation{trainingsForDate.length > 1 ? 's' : ''} le{' '}
+                              {trainingsForDate.length} activité{trainingsForDate.length > 1 ? 's' : ''} le{' '}
                               {day.date.toLocaleDateString('fr-FR', {
                                 day: 'numeric',
                                 month: 'long',

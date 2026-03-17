@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_11_091239) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_17_102010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -39,10 +39,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_091239) do
 
   create_table "academy_training_attendances", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "is_present", default: false, null: false
     t.text "note", default: "", null: false
     t.bigint "registration_id", null: false
     t.bigint "session_id", null: false
+    t.string "status", default: "absent", null: false
     t.datetime "updated_at", null: false
     t.index ["registration_id", "session_id"], name: "idx_academy_attendance_unique_pair", unique: true
     t.index ["registration_id"], name: "index_academy_training_attendances_on_registration_id"
@@ -166,7 +166,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_091239) do
     t.string "punchpass_url", default: "", null: false
     t.string "registration_mode", default: "open", null: false
     t.boolean "requires_accommodation", default: false, null: false
-    t.string "status", default: "draft", null: false
+    t.string "status", default: "idea", null: false
     t.string "title", null: false
     t.bigint "training_type_id", null: false
     t.datetime "updated_at", null: false

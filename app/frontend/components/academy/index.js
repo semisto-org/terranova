@@ -13,6 +13,8 @@ export { default as CalendarMonthView } from './CalendarMonthView'
 export { default as CalendarYearView } from './CalendarYearView'
 export { default as IdeaNotesView } from './IdeaNotesView'
 export { default as ReportingDashboard } from './ReportingDashboard'
+export { default as AcademyTeamView } from './AcademyTeamView'
+export { default as TeamMemberDetail } from './TeamMemberDetail'
 
 // Academy modal components
 export { TrainingFormModal } from './TrainingFormModal'
@@ -22,3 +24,4 @@ export { SessionFormModal } from './SessionFormModal'
 export { DocumentFormModal } from './DocumentFormModal'
 export { ChecklistItemModal } from './ChecklistItemModal'
 export { IdeaNoteFormModal } from './IdeaNoteFormModal'
+export { TeamMemberFormModal } from './TeamMemberFormModal'

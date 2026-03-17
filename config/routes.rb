@@ -1,5 +1,30 @@
 Rails.application.routes.draw do
-  # My Semisto — Contact Portal
+  # My Semisto — Custom domain (my.semisto.org)
+  if ENV["MY_SEMISTO_HOST"].present?
+    constraints(host: ENV["MY_SEMISTO_HOST"]) do
+      get "/", to: "my_semisto#dashboard", as: false
+      get "/login", to: "my_semisto#login", as: false
+      post "/login", to: "my_semisto#request_magic_link", as: false
+      get "/auth/verify", to: "my_semisto#verify_magic_link", as: false
+      delete "/logout", to: "my_semisto#logout", as: false
+      get "/academy", to: "my_semisto#academy", as: false
+      get "/academy/:training_id", to: "my_semisto#training_detail", as: false
+
+      scope :api, as: false do
+        scope :v1, as: false do
+          post "auth/request-link", to: "api/v1/my_semisto#request_magic_link", as: false
+          get "auth/verify", to: "api/v1/my_semisto#verify", as: false
+          get "academy", to: "api/v1/my_semisto#academy_trainings", as: false
+          get "academy/:training_id", to: "api/v1/my_semisto#academy_training_detail", as: false
+        end
+      end
+
+      # Catch-all for my.semisto.org — redirect unknown paths to root
+      get "*path", to: redirect("/"), as: false, constraints: ->(req) { !req.path.start_with?("/api/", "/rails/") }
+    end
+  end
+
+  # My Semisto — Contact Portal (path-based, always available)
   scope "/my", as: :my_semisto do
     get "/", to: "my_semisto#dashboard", as: :dashboard
     get "/login", to: "my_semisto#login", as: :login
@@ -323,6 +348,12 @@ Rails.application.routes.draw do
       patch "academy/idea-notes/:note_id", to: "academy#update_idea_note"
       delete "academy/idea-notes/:note_id", to: "academy#destroy_idea_note"
       post "academy/holidays/toggle", to: "academy#toggle_holiday"
+      get "academy/team", to: "academy#list_team"
+      get "academy/team/check-email", to: "academy#check_team_email"
+      post "academy/team", to: "academy#create_team_member"
+      get "academy/team/:contact_id", to: "academy#show_team_member"
+      patch "academy/team/:contact_id", to: "academy#update_team_member"
+      delete "academy/team/:contact_id", to: "academy#remove_team_member"
 
       get "nursery", to: "nursery#index"
       get "nursery/dashboard", to: "nursery#dashboard"
@@ -492,5 +523,8 @@ Rails.application.routes.draw do
   end
 
   # Catch-all route for client-side routing (must be last)
-  get "*path", to: "app#fallback", constraints: ->(req) { !req.path.start_with?("/api/", "/rails/") }
+  get "*path", to: "app#fallback", constraints: ->(req) {
+    !req.path.start_with?("/api/", "/rails/") &&
+    req.host != ENV["MY_SEMISTO_HOST"]
+  }
 end

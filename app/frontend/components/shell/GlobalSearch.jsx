@@ -23,7 +23,7 @@ const TYPE_LABELS = {
   contact: 'Contacts',
   event: 'Événements',
   design_project: 'Projets Design',
-  training: 'Formations',
+  training: 'Activités',
   knowledge: 'Connaissances',
   plant_genus: 'Genres',
   plant_species: 'Espèces',
@@ -161,7 +161,7 @@ export default function GlobalSearch({ open, onClose }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Rechercher membres, projets, plantes, formations..."
+              placeholder="Rechercher membres, projets, plantes, activités..."
               className="flex-1 text-base text-stone-800 placeholder:text-stone-400 outline-none bg-transparent"
               autoComplete="off"
               spellCheck={false}

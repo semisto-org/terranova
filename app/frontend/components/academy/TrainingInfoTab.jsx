@@ -16,12 +16,13 @@ export default function TrainingInfoTab({
   sessions = [],
   locations = [],
   members = [],
+  academyContacts = [],
 }) {
   const usedLocationIds = new Set(sessions.flatMap((s) => s.locationIds || []))
   const usedLocations = locations.filter((loc) => usedLocationIds.has(loc.id))
 
   const usedTrainerIds = new Set(sessions.flatMap((s) => s.trainerIds || []))
-  const trainers = members.filter((m) => usedTrainerIds.has(m.id))
+  const trainers = academyContacts.filter((c) => usedTrainerIds.has(c.id))
 
   const usedAssistantIds = new Set(sessions.flatMap((s) => s.assistantIds || []))
   const assistants = members.filter((m) => usedAssistantIds.has(m.id))
@@ -130,7 +131,7 @@ export default function TrainingInfoTab({
             <div className="p-2 rounded-lg bg-[#eac7b8]/20">
               <MapPin className="w-5 h-5 text-[#B01A19]" />
             </div>
-            <h3 className="text-lg font-semibold text-stone-900">Lieux de formation</h3>
+            <h3 className="text-lg font-semibold text-stone-900">Lieux d'activité</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {usedLocations.map((location) => (
@@ -170,19 +171,11 @@ export default function TrainingInfoTab({
                 key={trainer.id}
                 className="flex items-center gap-2 p-3 bg-stone-50 rounded-lg border border-stone-200"
               >
-                {trainer.avatar ? (
-                  <img
-                    src={trainer.avatar}
-                    alt={trainer.firstName}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-sm font-medium text-stone-600">
-                    {(trainer.firstName?.[0] || '') + (trainer.lastName?.[0] || '')}
-                  </div>
-                )}
+                <div className="w-8 h-8 rounded-full bg-[#B01A19]/10 flex items-center justify-center text-sm font-bold text-[#B01A19]">
+                  {trainer.name?.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?'}
+                </div>
                 <span className="text-sm font-medium text-stone-900">
-                  {trainer.firstName} {trainer.lastName}
+                  {trainer.name}
                 </span>
               </div>
             ))}
