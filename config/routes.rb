@@ -1,12 +1,13 @@
 Rails.application.routes.draw do
   # My Semisto — Contact Portal
-  scope "/my" do
-    get "/", to: "my_semisto#dashboard"
-    get "/login", to: "my_semisto#login"
-    post "/login", to: "my_semisto#request_magic_link"
-    delete "/logout", to: "my_semisto#logout"
-    get "/academy", to: "my_semisto#academy"
-    get "/academy/:training_id", to: "my_semisto#training_detail"
+  scope "/my", as: :my_semisto do
+    get "/", to: "my_semisto#dashboard", as: :dashboard
+    get "/login", to: "my_semisto#login", as: :login
+    post "/login", to: "my_semisto#request_magic_link", as: :request_link
+    get "/auth/verify", to: "my_semisto#verify_magic_link", as: :verify
+    delete "/logout", to: "my_semisto#logout", as: :logout
+    get "/academy", to: "my_semisto#academy", as: :academy
+    get "/academy/:training_id", to: "my_semisto#training_detail", as: :training
   end
 
   # Authentication
@@ -141,6 +142,7 @@ Rails.application.routes.draw do
       post "lab/contacts", to: "lab_management#create_contact"
       patch "lab/contacts/:id", to: "lab_management#update_contact"
       delete "lab/contacts/:id", to: "lab_management#destroy_contact"
+      post "lab/contacts/:id/impersonate", to: "lab_management#impersonate_contact"
 
       get "lab/timesheets", to: "lab_management#list_timesheets"
       post "lab/timesheets", to: "lab_management#create_timesheet"

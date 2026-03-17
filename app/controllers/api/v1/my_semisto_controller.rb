@@ -22,8 +22,8 @@ module Api
 
       def verify
         token = params[:token].to_s
-        data = Rails.application.message_verifier(:contact_login).verify(token, purpose: :contact_login)
-        contact = Contact.find(data[:contact_id])
+        data = verify_contact_token(token)
+        contact = Contact.find(data[:contact_id] || data["contact_id"])
         session[:contact_id] = contact.id
         redirect_to "/my"
       rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
@@ -44,6 +44,8 @@ module Api
 
       def academy_training_detail
         training = find_contact_training!
+        return unless training
+
         documents = training.documents.order(uploaded_at: :desc)
         sessions = training.sessions.order(start_date: :asc)
 
@@ -51,6 +53,15 @@ module Api
       end
 
       private
+
+      def verify_contact_token(token)
+        verifier = Rails.application.message_verifier(:contact_login)
+        begin
+          verifier.verify(token, purpose: :contact_login)
+        rescue ActiveSupport::MessageVerifier::InvalidSignature
+          verifier.verify(token, purpose: :contact_impersonation)
+        end
+      end
 
       def current_contact
         @current_contact ||= Contact.find_by(id: session[:contact_id]) if session[:contact_id]

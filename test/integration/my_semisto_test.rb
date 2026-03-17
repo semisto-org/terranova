@@ -170,6 +170,56 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert body["trainings"].any? { |t| t["title"] == "Formation email" }
   end
 
+  # ── Admin impersonation ──
+
+  test "POST /api/v1/lab/contacts/:id/impersonate generates impersonation token for admin" do
+    admin = Member.create!(
+      first_name: "Admin", last_name: "Test", email: "admin@test.com",
+      password: "testpassword123", is_admin: true, status: :active,
+      joined_at: 1.year.ago, member_kind: "human", membership_type: "effective"
+    )
+
+    # Login as admin to create session
+    post "/login", params: { email: admin.email, password: "testpassword123" }
+
+    post "/api/v1/lab/contacts/#{@contact.id}/impersonate", as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert body["url"].start_with?("/my/auth/verify?token=")
+  end
+
+  test "impersonation token works to access My Semisto" do
+    token = Rails.application.message_verifier(:contact_login).generate(
+      { contact_id: @contact.id },
+      purpose: :contact_impersonation,
+      expires_in: 5.minutes
+    )
+
+    get "/api/v1/my/auth/verify", params: { token: token }
+    assert_redirected_to "/my"
+
+    # Session should now be set — can access academy
+    get "/api/v1/my/academy", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body["trainings"].length
+  end
+
+  test "POST /api/v1/lab/contacts/:id/impersonate rejects contact without email" do
+    admin = Member.create!(
+      first_name: "Admin", last_name: "Test2", email: "admin2@test.com",
+      password: "testpassword123", is_admin: true, status: :active,
+      joined_at: 1.year.ago, member_kind: "human", membership_type: "effective"
+    )
+    post "/login", params: { email: admin.email, password: "testpassword123" }
+
+    no_email_contact = Contact.create!(contact_type: "person", name: "Sans Email")
+
+    post "/api/v1/lab/contacts/#{no_email_contact.id}/impersonate", as: :json
+    assert_response :unprocessable_entity
+  end
+
   private
 
   def auth_headers

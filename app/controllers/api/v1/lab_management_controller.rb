@@ -103,6 +103,26 @@ module Api
         head :no_content
       end
 
+      def impersonate_contact
+        unless current_member&.is_admin
+          return render json: { error: "Accès réservé aux administrateurs" }, status: :forbidden
+        end
+
+        contact = Contact.find(params[:id])
+
+        unless contact.person? && contact.email.present?
+          return render json: { error: "Ce contact n'a pas d'adresse email" }, status: :unprocessable_entity
+        end
+
+        token = Rails.application.message_verifier(:contact_login).generate(
+          { contact_id: contact.id },
+          purpose: :contact_impersonation,
+          expires_in: 5.minutes
+        )
+
+        render json: { url: "/my/auth/verify?token=#{token}&impersonate=1" }
+      end
+
       def list_cycles
         render json: { items: serialize_cycles }
       end
@@ -1608,7 +1628,7 @@ module Api
               id: r.id.to_s,
               contactName: r.contact_name,
               trainingId: r.training_id.to_s,
-              trainingName: r.training&.name,
+              trainingName: r.training&.title,
               paymentStatus: r.payment_status,
               registeredAt: r.registered_at&.iso8601
             }

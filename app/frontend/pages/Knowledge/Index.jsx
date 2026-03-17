@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { usePage } from '@inertiajs/react'
 import { useShellNav } from '../../components/shell/ShellContext'
-import { useUrlState } from '@/hooks/useUrlState'
+import { useUrlState, useUrlStatePush } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   BookOpen, Plus, Search, Pin, Archive, Edit3, Trash2, ChevronLeft, X,
@@ -145,7 +145,7 @@ function TopicsList({ onSelect, onNew, sectionFilter }) {
 }
 
 // ─── Topic Detail ───
-function TopicDetail({ topicId, onBack, onEdit }) {
+function TopicDetail({ topicId, onBack, onEdit, onSelectRelated }) {
   const [topic, setTopic] = useState(null)
   const [loading, setLoading] = useState(true)
   const [comments, setComments] = useState([])
@@ -346,7 +346,7 @@ function TopicDetail({ topicId, onBack, onEdit }) {
           <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">Sujets connexes</h3>
           <div className="space-y-2">
             {related.map(r => (
-              <button key={r.id} onClick={() => window.location.reload()} className="block w-full text-left p-2 rounded-lg hover:bg-stone-50 transition-colors">
+              <button key={r.id} onClick={() => onSelectRelated(r.id)} className="block w-full text-left p-2 rounded-lg hover:bg-stone-50 transition-colors">
                 <p className="text-sm font-medium text-stone-700">{r.title}</p>
                 <div className="flex gap-1 mt-1">
                   {(r.tags || []).slice(0, 3).map(t => (
@@ -648,7 +648,7 @@ function ArchivesList({ onSelect }) {
 // ─── Main Page ───
 export default function KnowledgeIndex() {
   const [activeSection, setActiveSection] = useUrlState('tab', 'sujets')
-  const [selectedTopicId, setSelectedTopicId] = useState(null)
+  const [selectedTopicId, setSelectedTopicId] = useUrlStatePush('topic', null)
   const [editingTopic, setEditingTopic] = useState(null)
   const [showForm, setShowForm] = useState(false)
 
@@ -669,7 +669,7 @@ export default function KnowledgeIndex() {
   })
 
   const handleSelectTopic = (id) => {
-    setSelectedTopicId(id)
+    setSelectedTopicId(String(id))
     setShowForm(false)
     setEditingTopic(null)
   }
@@ -722,6 +722,7 @@ export default function KnowledgeIndex() {
           topicId={selectedTopicId}
           onBack={handleBack}
           onEdit={handleEdit}
+          onSelectRelated={handleSelectTopic}
         />
       ) : activeSection === 'signets' ? (
         <BookmarksList onSelect={handleSelectTopic} />

@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { ExternalLink } from 'lucide-react'
+import { apiRequest } from '../../lib/api'
 import type { Contact, LinkedActivities } from '../types'
 
 interface ContactDetailProps {
@@ -14,6 +17,22 @@ export function ContactDetail({
   onEdit,
 }: ContactDetailProps) {
   const isPerson = contact.contactType === 'person'
+  const canImpersonate = isPerson && !!contact.email
+  const [impersonating, setImpersonating] = useState(false)
+
+  async function handleImpersonate() {
+    setImpersonating(true)
+    try {
+      const data = await apiRequest(`/api/v1/lab/contacts/${contact.id}/impersonate`, { method: 'POST' })
+      if (data?.url) {
+        window.open(data.url, '_blank')
+      }
+    } catch (err) {
+      // silently fail — admin will see the error in console
+    } finally {
+      setImpersonating(false)
+    }
+  }
   const hasDesign = linkedActivities.designProjects.length > 0
   const hasAcademy = linkedActivities.academyRegistrations.length > 0
   const hasNursery = linkedActivities.nurseryOrders.length > 0
@@ -71,6 +90,16 @@ export function ContactDetail({
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
+              {canImpersonate && (
+                <button
+                  onClick={handleImpersonate}
+                  disabled={impersonating}
+                  className="px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  My Semisto
+                </button>
+              )}
               {onEdit && (
                 <button
                   onClick={onEdit}

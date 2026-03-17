@@ -45,8 +45,8 @@ class MySemistoController < ApplicationController
 
   def verify_magic_link
     token = params[:token].to_s
-    data = Rails.application.message_verifier(:contact_login).verify(token, purpose: :contact_login)
-    contact = Contact.find(data[:contact_id])
+    data = verify_contact_token(token)
+    contact = Contact.find(data[:contact_id] || data["contact_id"])
     session[:contact_id] = contact.id
     redirect_to "/my"
   rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
@@ -94,6 +94,15 @@ class MySemistoController < ApplicationController
   def require_contact_authentication
     unless current_contact
       redirect_to "/my/login"
+    end
+  end
+
+  def verify_contact_token(token)
+    verifier = Rails.application.message_verifier(:contact_login)
+    begin
+      verifier.verify(token, purpose: :contact_login)
+    rescue ActiveSupport::MessageVerifier::InvalidSignature
+      verifier.verify(token, purpose: :contact_impersonation)
     end
   end
 

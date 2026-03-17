@@ -966,6 +966,16 @@ section_technique = KnowledgeSection.find_or_create_by!(name: "Technique") do |s
   s.position = 3
 end
 
+section_documentation = KnowledgeSection.find_or_create_by!(name: "Documentation") do |s|
+  s.description = "Documents de référence, rapports et études"
+  s.position = 4
+end
+
+section_presse = KnowledgeSection.find_or_create_by!(name: "Presse") do |s|
+  s.description = "Articles de presse, communiqués et revue médiatique"
+  s.position = 5
+end
+
 # Topics
 knowledge_topics = [
   {

@@ -3,13 +3,17 @@
     "file": "assets/leaflet-CIGW-MKW.css",
     "src": "../../node_modules/leaflet/dist/leaflet.css"
   },
-  "_leaflet-src-BqMMkubf.js": {
-    "file": "assets/leaflet-src-BqMMkubf.js",
+  "_leaflet-src-CsUs6sOb.js": {
+    "file": "assets/leaflet-src-CsUs6sOb.js",
     "name": "leaflet-src",
     "isDynamicEntry": true,
     "imports": [
       "entrypoints/application.jsx"
     ]
+  },
+  "assets/semisto-square-main.png": {
+    "file": "assets/semisto-square-main-WW6PcdSx.png",
+    "src": "assets/semisto-square-main.png"
   },
   "assets/terranova.svg": {
     "file": "assets/terranova-mhra3Bjy.svg",
@@ -20,21 +24,22 @@
     "src": "components/nova-chat/nova-avatar.jpg"
   },
   "entrypoints/application.jsx": {
-    "file": "assets/application-DGx7T0tG.js",
+    "file": "assets/application-Dkty0glK.js",
     "name": "application",
     "src": "entrypoints/application.jsx",
     "isEntry": true,
     "dynamicImports": [
-      "_leaflet-src-BqMMkubf.js",
-      "_leaflet-src-BqMMkubf.js",
-      "_leaflet-src-BqMMkubf.js",
-      "_leaflet-src-BqMMkubf.js"
+      "_leaflet-src-CsUs6sOb.js",
+      "_leaflet-src-CsUs6sOb.js",
+      "_leaflet-src-CsUs6sOb.js",
+      "_leaflet-src-CsUs6sOb.js"
     ],
     "css": [
-      "assets/application-DRfYiKyI.css"
+      "assets/application-B63H-rvs.css"
     ],
     "assets": [
       "assets/terranova-mhra3Bjy.svg",
+      "assets/semisto-square-main-WW6PcdSx.png",
       "assets/nova-avatar-Zmmp7TEI.jpg"
     ]
   }

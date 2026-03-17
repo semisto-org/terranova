@@ -355,6 +355,74 @@
   animation: my-modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Sidebar decorative stripe */
+.my-sidebar-stripe {
+  background: linear-gradient(
+    180deg,
+    #2D6A4F 0%,
+    #5B5781 25%,
+    #B01A19 50%,
+    #EF9B0D 75%,
+    #234766 100%
+  );
+}
+
+/* Decorative dot grid for section backgrounds */
+.my-dot-grid {
+  background-image: radial-gradient(circle, #2D6A4F12 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Colored left-border accent for cards */
+@keyframes my-border-shimmer {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 0% 100%; }
+}
+
+.my-card-accent {
+  position: relative;
+  overflow: hidden;
+}
+
+.my-card-accent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(180deg, #2D6A4F, #40916C);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.my-card-accent:hover::before {
+  opacity: 1;
+}
+
+/* Section divider with Semisto colors */
+.my-section-divider {
+  height: 2px;
+  background: linear-gradient(90deg, #2D6A4F 0%, #5B578140 30%, #B01A1920 60%, transparent 100%);
+  border: none;
+}
+
+/* Warm glow hover for interactive elements */
+.my-warm-glow:hover {
+  box-shadow: 0 4px 20px -4px rgba(45, 106, 79, 0.15), 0 0 0 1px rgba(45, 106, 79, 0.08);
+}
+
+/* Training status dot pulse */
+@keyframes my-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.my-status-live {
+  animation: my-status-pulse 2s ease-in-out infinite;
+}
+
 /* ─── Client Portal ─── */
 
 @keyframes portal-fade-up {
