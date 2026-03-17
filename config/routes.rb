@@ -1,4 +1,15 @@
 Rails.application.routes.draw do
+  # My Semisto — Contact Portal
+  scope "/my", as: :my_semisto do
+    get "/", to: "my_semisto#dashboard", as: :dashboard
+    get "/login", to: "my_semisto#login", as: :login
+    post "/login", to: "my_semisto#request_magic_link", as: :request_link
+    get "/auth/verify", to: "my_semisto#verify_magic_link", as: :verify
+    delete "/logout", to: "my_semisto#logout", as: :logout
+    get "/academy", to: "my_semisto#academy", as: :academy
+    get "/academy/:training_id", to: "my_semisto#training_detail", as: :training
+  end
+
   # Authentication
   get "login", to: "sessions#new", as: :login
   post "login", to: "sessions#create"
@@ -44,6 +55,14 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      # My Semisto (contact portal API)
+      scope :my do
+        post "auth/request-link", to: "my_semisto#request_magic_link"
+        get "auth/verify", to: "my_semisto#verify"
+        get "academy", to: "my_semisto#academy_trainings"
+        get "academy/:training_id", to: "my_semisto#academy_training_detail"
+      end
+
       get "health", to: "health#show"
 
       post "nova/chat", to: "nova#chat"
@@ -123,6 +142,7 @@ Rails.application.routes.draw do
       post "lab/contacts", to: "lab_management#create_contact"
       patch "lab/contacts/:id", to: "lab_management#update_contact"
       delete "lab/contacts/:id", to: "lab_management#destroy_contact"
+      post "lab/contacts/:id/impersonate", to: "lab_management#impersonate_contact"
 
       get "lab/timesheets", to: "lab_management#list_timesheets"
       post "lab/timesheets", to: "lab_management#create_timesheet"

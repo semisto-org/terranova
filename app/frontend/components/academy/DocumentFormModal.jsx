@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Upload } from 'lucide-react'
 
 function formatSessionLabel(session) {
@@ -19,6 +19,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
   const [file, setFile] = useState(null)
   const [sessionId, setSessionId] = useState('')
   const [error, setError] = useState(null)
+  const [dragging, setDragging] = useState(false)
 
   // Focus first input when modal opens
   useEffect(() => {
@@ -68,10 +69,41 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
 
   const handleFileChange = (e) => {
     const chosen = e.target.files?.[0]
+    selectFile(chosen)
+  }
+
+  const selectFile = (chosen) => {
     setFile(chosen || null)
     if (chosen && !name.trim()) {
       setName(chosen.name.replace(/\.[^.]+$/, '') || chosen.name)
     }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragging(false)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragging(false)
+    const dropped = e.dataTransfer.files?.[0]
+    if (dropped) selectFile(dropped)
   }
 
   return (
@@ -149,11 +181,17 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
                   </label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
                     className={`
                       flex items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 transition-all cursor-pointer
                       ${file
                         ? 'border-[#B01A19]/50 bg-[#B01A19]/5'
-                        : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
+                        : dragging
+                          ? 'border-[#B01A19] bg-[#B01A19]/10 scale-[1.01]'
+                          : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
                       }
                     `}
                   >
@@ -161,7 +199,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
                       ref={fileInputRef}
                       type="file"
                       className="hidden"
-                      accept=".pdf,.doc,.docx,image/*,video/*,.txt,.csv"
+                      accept=".pdf,.doc,.docx,image/*,video/*,.txt,.csv,.zip,.rar,.7z"
                       onChange={handleFileChange}
                     />
                     <Upload className="w-8 h-8 text-stone-400 shrink-0" />
@@ -176,7 +214,7 @@ export function DocumentFormModal({ onSubmit, onCancel, busy = false, sessions =
                       ) : (
                         <>
                           <p className="font-medium text-stone-700">Cliquez ou glissez un fichier</p>
-                          <p className="text-xs text-stone-500 mt-0.5">PDF, images, vidéos, etc.</p>
+                          <p className="text-xs text-stone-500 mt-0.5">PDF, images, vidéos, ZIP, etc.</p>
                         </>
                       )}
                     </div>
