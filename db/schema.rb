@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_112249) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_112448) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -977,10 +977,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112249) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.text "description"
+    t.bigint "guild_id"
     t.string "name", null: false
     t.integer "position", default: 0
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_knowledge_sections_on_created_by_id"
+    t.index ["guild_id", "name"], name: "index_knowledge_sections_on_guild_id_and_name", unique: true
+    t.index ["guild_id"], name: "index_knowledge_sections_on_guild_id"
   end
 
   create_table "knowledge_topic_editors", force: :cascade do |t|
@@ -2033,6 +2036,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112249) do
   add_foreign_key "knowledge_bookmarks", "members", column: "user_id"
   add_foreign_key "knowledge_comments", "knowledge_topics", column: "topic_id"
   add_foreign_key "knowledge_comments", "members", column: "user_id"
+  add_foreign_key "knowledge_sections", "guilds"
   add_foreign_key "knowledge_sections", "members", column: "created_by_id"
   add_foreign_key "knowledge_topic_editors", "knowledge_topics", column: "topic_id"
   add_foreign_key "knowledge_topic_editors", "members", column: "user_id"

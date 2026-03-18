@@ -2,9 +2,10 @@
 
 class KnowledgeSection < ApplicationRecord
   belongs_to :creator, class_name: "Member", foreign_key: :created_by_id, optional: true
+  belongs_to :guild, optional: true
   has_many :topics, class_name: "KnowledgeTopic", foreign_key: :section_id, dependent: :nullify
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :guild_id }
 
   scope :ordered, -> { order(position: :asc, name: :asc) }
 

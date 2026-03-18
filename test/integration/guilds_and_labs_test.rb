@@ -113,4 +113,43 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     assert_equal guild, list.guild
     assert_equal guild, action.guild
   end
+
+  test 'knowledge sections can be scoped to a guild' do
+    guild_a = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    guild_b = Guild.create!(name: 'Design', color: 'green', guild_type: 'network')
+
+    KnowledgeSection.where(guild_id: [guild_a.id, guild_b.id]).delete_all
+
+    section_a = KnowledgeSection.create!(name: 'Ressources', guild: guild_a)
+    section_b = KnowledgeSection.create!(name: 'Ressources', guild: guild_b)
+
+    # Same name, different guilds: both valid
+    assert section_a.valid?
+    assert section_b.valid?
+    assert_equal 1, guild_a.knowledge_sections.count
+  end
+
+  test 'knowledge topic inherits guild from section' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    section = KnowledgeSection.create!(name: 'Wiki', guild: guild)
+    topic = KnowledgeTopic.create!(
+      title: 'How to post',
+      content: 'Steps to post on social media',
+      status: 'published',
+      section: section
+    )
+
+    assert_equal guild, topic.guild
+  end
+
+  test 'knowledge topics for_guild scope works' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    section = KnowledgeSection.create!(name: 'Wiki', guild: guild)
+    KnowledgeTopic.create!(title: 'Guild Topic', content: 'content', status: 'published', section: section)
+
+    global_section = KnowledgeSection.find_or_create_by!(name: 'Global Section Test', guild_id: nil)
+    KnowledgeTopic.create!(title: 'Global Topic', content: 'content', status: 'published', section: global_section)
+
+    assert_equal 1, KnowledgeTopic.for_guild(guild.id).count
+  end
 end
