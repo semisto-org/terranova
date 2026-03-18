@@ -158,6 +158,8 @@ function TasksTab({ guild, members, onRefresh }) {
   const [editingAction, setEditingAction] = useState(null)
   const [editForm, setEditForm] = useState({ name: '', assignee_name: '', due_date: '', priority: '' })
   const [editBusy, setEditBusy] = useState(false)
+  const [editingListId, setEditingListId] = useState(null)
+  const [editListName, setEditListName] = useState('')
 
   const guildMembers = useMemo(() => {
     const ids = new Set(guild.memberIds || [])
@@ -195,6 +197,13 @@ function TasksTab({ guild, members, onRefresh }) {
     onRefresh()
   }
 
+  async function handleRenameList(listId) {
+    if (!editListName.trim()) return
+    await apiRequest(`/api/v1/guilds/${guild.id}/task-lists/${listId}`, { method: 'PATCH', body: JSON.stringify({ name: editListName }) })
+    setEditingListId(null)
+    onRefresh()
+  }
+
   function openEditAction(action) {
     setEditingAction(action)
     setEditForm({
@@ -222,9 +231,16 @@ function TasksTab({ guild, members, onRefresh }) {
     <div className="space-y-4">
       {lists.map((list) => (
         <div key={list.id} className="border border-stone-200 rounded-lg overflow-hidden">
-          <div className="px-3 py-2 bg-stone-50 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-stone-700">{list.name}</h4>
+          <div className="px-3 py-2 bg-stone-50 flex items-center justify-between group/header">
+            {editingListId === list.id ? (
+              <form onSubmit={(e) => { e.preventDefault(); handleRenameList(list.id) }} className="flex items-center gap-2 flex-1">
+                <input value={editListName} onChange={(e) => setEditListName(e.target.value)} className="flex-1 text-sm font-semibold border border-stone-300 rounded px-2 py-0.5 bg-white text-stone-800" autoFocus onBlur={() => handleRenameList(list.id)} />
+              </form>
+            ) : (
+              <h4 className="text-sm font-semibold text-stone-700">{list.name}</h4>
+            )}
             <div className="flex items-center gap-1">
+              <button onClick={() => { setEditingListId(list.id); setEditListName(list.name) }} className="p-1 rounded hover:bg-stone-200 text-stone-400 opacity-0 group-hover/header:opacity-100 transition-opacity"><Pencil className="w-3.5 h-3.5" /></button>
               <button onClick={() => { setAddingToList(list.id); setNewActionName('') }} className="p-1 rounded hover:bg-stone-200 text-stone-500"><Plus className="w-3.5 h-3.5" /></button>
               <button onClick={() => deleteList(list.id)} className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
