@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_111650) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_111936) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -904,9 +904,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_111650) do
     t.string "color", default: "blue", null: false
     t.datetime "created_at", null: false
     t.text "description", default: "", null: false
+    t.string "guild_type", default: "network", null: false
+    t.string "icon"
+    t.bigint "lab_id"
     t.bigint "leader_id"
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["guild_type"], name: "index_guilds_on_guild_type"
+    t.index ["lab_id"], name: "index_guilds_on_lab_id"
     t.index ["leader_id"], name: "index_guilds_on_leader_id"
   end
 
@@ -2002,6 +2007,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_111650) do
   add_foreign_key "expenses", "design_projects"
   add_foreign_key "guild_memberships", "guilds"
   add_foreign_key "guild_memberships", "members"
+  add_foreign_key "guilds", "labs"
   add_foreign_key "guilds", "members", column: "leader_id"
   add_foreign_key "hill_chart_snapshots", "pitches"
   add_foreign_key "idea_items", "idea_lists"
