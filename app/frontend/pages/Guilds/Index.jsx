@@ -651,7 +651,7 @@ export default function GuildsIndex() {
     Promise.all([
       loadGuilds(),
       apiRequest('/api/v1/labs').then((res) => setLabs(res.labs || [])).catch(() => {}),
-      apiRequest('/api/v1/lab/members').then((res) => setMembers(res.members || [])).catch(() => {}),
+      apiRequest('/api/v1/lab/members').then((res) => setMembers(res.items || [])).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
 
