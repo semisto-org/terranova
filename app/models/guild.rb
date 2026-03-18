@@ -6,6 +6,7 @@ class Guild < ApplicationRecord
   belongs_to :lab, optional: true
 
   has_many :guild_memberships, dependent: :destroy
+  has_many :documents, class_name: "GuildDocument", dependent: :destroy
   has_many :members, through: :guild_memberships
 
   validates :name, :color, presence: true

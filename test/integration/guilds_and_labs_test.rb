@@ -72,4 +72,34 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     assert_equal 1, Guild.network_guilds.count
     assert_equal 1, Guild.lab_guilds.count
   end
+
+  test 'guild document requires name and file' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+
+    doc = GuildDocument.new(guild: guild)
+    assert_not doc.valid?
+    assert_includes doc.errors[:name], "can't be blank"
+  end
+
+  test 'guild document tags filtering' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    member = Member.first || Member.create!(first_name: 'Test', last_name: 'User', email: 'doc-test@test.com', status: 'active', joined_at: Date.today, member_kind: 'human', membership_type: 'effective')
+
+    GuildDocument.create!(
+      guild: guild,
+      name: 'Brand Guide',
+      tags: ['branding', 'design'],
+      uploaded_by_id: member.id,
+      file: fixture_file_upload('test/fixtures/files/sample.pdf', 'application/pdf')
+    )
+    GuildDocument.create!(
+      guild: guild,
+      name: 'Meeting Notes',
+      tags: ['admin'],
+      file: fixture_file_upload('test/fixtures/files/sample.pdf', 'application/pdf')
+    )
+
+    assert_equal 1, GuildDocument.by_tag('branding').count
+    assert_equal 2, guild.documents.count
+  end
 end

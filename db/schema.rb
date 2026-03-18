@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_111936) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -888,6 +888,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_111936) do
     t.index ["notion_id"], name: "index_expenses_on_notion_id", unique: true
     t.index ["supplier_contact_id"], name: "index_expenses_on_supplier_contact_id"
     t.index ["training_id"], name: "index_expenses_on_training_id"
+  end
+
+  create_table "guild_documents", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "guild_id", null: false
+    t.string "name", null: false
+    t.jsonb "tags", default: []
+    t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_id"
+    t.index ["guild_id"], name: "index_guild_documents_on_guild_id"
+    t.index ["uploaded_by_id"], name: "index_guild_documents_on_uploaded_by_id"
   end
 
   create_table "guild_memberships", force: :cascade do |t|
@@ -2005,6 +2016,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_111936) do
   add_foreign_key "expenses", "academy_trainings", column: "training_id"
   add_foreign_key "expenses", "contacts", column: "supplier_contact_id"
   add_foreign_key "expenses", "design_projects"
+  add_foreign_key "guild_documents", "guilds"
+  add_foreign_key "guild_documents", "members", column: "uploaded_by_id"
   add_foreign_key "guild_memberships", "guilds"
   add_foreign_key "guild_memberships", "members"
   add_foreign_key "guilds", "labs"
