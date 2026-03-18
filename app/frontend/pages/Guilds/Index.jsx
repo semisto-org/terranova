@@ -381,45 +381,148 @@ function TasksTab({ guild, members, onRefresh }) {
 // Wiki Tab
 // ---------------------------------------------------------------------------
 function WikiTab({ guild, onRefresh }) {
-  const [showForm, setShowForm] = useState(false)
+  const [showSectionForm, setShowSectionForm] = useState(false)
   const [sectionForm, setSectionForm] = useState({ name: '', description: '' })
-  const [busy, setBusy] = useState(false)
+  const [sectionBusy, setSectionBusy] = useState(false)
+  const [expandedSection, setExpandedSection] = useState(null)
+  const [sectionTopics, setSectionTopics] = useState({})
+  const [showTopicForm, setShowTopicForm] = useState(null)
+  const [topicForm, setTopicForm] = useState({ title: '', content: '' })
+  const [topicBusy, setTopicBusy] = useState(false)
+  const [viewingTopic, setViewingTopic] = useState(null)
   const sections = guild.knowledgeSections || []
 
   async function handleCreateSection() {
-    setBusy(true)
+    setSectionBusy(true)
     try {
       await apiRequest('/api/v1/knowledge/sections', { method: 'POST', body: JSON.stringify({ ...sectionForm, guild_id: guild.id }) })
-      setShowForm(false)
+      setShowSectionForm(false)
       setSectionForm({ name: '', description: '' })
       onRefresh()
     } finally {
-      setBusy(false)
+      setSectionBusy(false)
     }
+  }
+
+  async function toggleSection(sectionId) {
+    if (expandedSection === sectionId) {
+      setExpandedSection(null)
+      return
+    }
+    setExpandedSection(sectionId)
+    if (!sectionTopics[sectionId]) {
+      const res = await apiRequest(`/api/v1/knowledge/topics?section_id=${sectionId}&guild_id=${guild.id}`)
+      setSectionTopics((prev) => ({ ...prev, [sectionId]: res.topics || [] }))
+    }
+  }
+
+  async function loadTopicDetail(topicId) {
+    const res = await apiRequest(`/api/v1/knowledge/topics/${topicId}`)
+    setViewingTopic(res.topic)
+  }
+
+  async function handleCreateTopic(sectionId) {
+    setTopicBusy(true)
+    try {
+      await apiRequest('/api/v1/knowledge/topics', { method: 'POST', body: JSON.stringify({ ...topicForm, section_id: sectionId, status: 'published' }) })
+      setShowTopicForm(null)
+      setTopicForm({ title: '', content: '' })
+      // Reload section topics
+      const res = await apiRequest(`/api/v1/knowledge/topics?section_id=${sectionId}&guild_id=${guild.id}`)
+      setSectionTopics((prev) => ({ ...prev, [sectionId]: res.topics || [] }))
+      onRefresh()
+    } finally {
+      setTopicBusy(false)
+    }
+  }
+
+  // Viewing a topic
+  if (viewingTopic) {
+    return (
+      <div>
+        <button onClick={() => setViewingTopic(null)} className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-4">
+          <ChevronLeft className="w-4 h-4" />Retour au wiki
+        </button>
+        <h3 className="text-lg font-bold text-stone-900 mb-1" style={{ fontFamily: 'var(--font-heading, Sole Serif, serif)' }}>{viewingTopic.title}</h3>
+        <div className="flex items-center gap-3 text-xs text-stone-400 mb-4">
+          {viewingTopic.creatorName && <span>{viewingTopic.creatorName}</span>}
+          {viewingTopic.readingTimeMinutes && <span>{viewingTopic.readingTimeMinutes} min de lecture</span>}
+        </div>
+        <div className="prose prose-stone prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: viewingTopic.content }} />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setShowForm(true)} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
+        <button onClick={() => setShowSectionForm(true)} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
           <Plus className="w-4 h-4" />Nouvelle section
         </button>
       </div>
       {sections.length === 0 ? (
         <p className="text-sm text-stone-400 py-8 text-center">Aucune section wiki</p>
       ) : (
-        sections.map((s) => (
-          <div key={s.id} className="border border-stone-200 rounded-lg px-4 py-3">
-            <h4 className="text-sm font-semibold text-stone-800">{s.name}</h4>
-            {s.description && <p className="text-xs text-stone-500 mt-0.5">{s.description}</p>}
-            <span className="text-xs text-stone-400 mt-1 block">{s.topicsCount} article{s.topicsCount !== 1 ? 's' : ''}</span>
-          </div>
-        ))
+        sections.map((s) => {
+          const isExpanded = expandedSection === s.id
+          const topics = sectionTopics[s.id] || []
+          return (
+            <div key={s.id} className="border border-stone-200 rounded-lg overflow-hidden">
+              <button type="button" onClick={() => toggleSection(s.id)} className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-stone-50 transition-colors">
+                <div>
+                  <h4 className="text-sm font-semibold text-stone-800">{s.name}</h4>
+                  {s.description && <p className="text-xs text-stone-500 mt-0.5">{s.description}</p>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-stone-400">{s.topicsCount} article{s.topicsCount !== 1 ? 's' : ''}</span>
+                  <svg className={`w-4 h-4 text-stone-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </button>
+              {isExpanded && (
+                <div className="border-t border-stone-100">
+                  {topics.length === 0 ? (
+                    <p className="text-xs text-stone-400 px-4 py-3">Aucun article dans cette section</p>
+                  ) : (
+                    <div className="divide-y divide-stone-100">
+                      {topics.map((t) => (
+                        <button key={t.id} type="button" onClick={() => loadTopicDetail(t.id)} className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-stone-50 transition-colors">
+                          <div className="min-w-0">
+                            <span className="text-sm text-stone-700 font-medium">{t.title}</span>
+                            {t.creatorName && <span className="text-xs text-stone-400 ml-2">{t.creatorName}</span>}
+                          </div>
+                          {t.readingTimeMinutes && <span className="text-xs text-stone-400 shrink-0 ml-2">{t.readingTimeMinutes} min</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="px-4 py-2 border-t border-stone-100">
+                    <button type="button" onClick={() => { setShowTopicForm(s.id); setTopicForm({ title: '', content: '' }) }} className="text-xs font-medium flex items-center gap-1" style={{ color: ACCENT }}>
+                      <Plus className="w-3.5 h-3.5" />Nouvel article
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })
       )}
-      {showForm && (
-        <FormModal title="Nouvelle section wiki" onSubmit={handleCreateSection} onClose={() => setShowForm(false)} busy={busy}>
+      {showSectionForm && (
+        <FormModal title="Nouvelle section wiki" onSubmit={handleCreateSection} onClose={() => setShowSectionForm(false)} busy={sectionBusy}>
           <Field label="Nom"><input className={inputCls} value={sectionForm.name} onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })} required /></Field>
           <Field label="Description"><textarea className={inputCls} rows={2} value={sectionForm.description} onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })} /></Field>
+        </FormModal>
+      )}
+      {showTopicForm && (
+        <FormModal title="Nouvel article" onSubmit={() => handleCreateTopic(showTopicForm)} onClose={() => setShowTopicForm(null)} busy={topicBusy}>
+          <Field label="Titre"><input className={inputCls} value={topicForm.title} onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })} required /></Field>
+          <Field label="Contenu">
+            <SimpleEditor
+              content={topicForm.content}
+              onUpdate={(html) => setTopicForm((f) => ({ ...f, content: html }))}
+              minHeight="150px"
+              toolbar={['bold', 'italic', 'strike', '|', 'h2', 'h3', '|', 'bulletList', 'orderedList', 'blockquote']}
+            />
+          </Field>
         </FormModal>
       )}
     </div>
