@@ -152,4 +152,37 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
 
     assert_equal 1, KnowledgeTopic.for_guild(guild.id).count
   end
+
+  test 'credential encrypts sensitive fields' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    member = Member.first || Member.create!(first_name: 'Test', last_name: 'User', email: 'cred-test@test.com', status: 'active', joined_at: Date.today, member_kind: 'human', membership_type: 'effective')
+
+    cred = Credential.create!(
+      guild: guild,
+      service_name: 'Canva',
+      username: 'team@semisto.org',
+      password: 'super-secret-123',
+      url: 'https://canva.com',
+      notes: 'Shared team account',
+      created_by_id: member.id
+    )
+
+    assert_equal 'Canva', cred.service_name
+    assert_equal 'team@semisto.org', cred.username
+    assert_equal 'super-secret-123', cred.password
+    assert_equal 'Shared team account', cred.notes
+
+    # Verify the raw DB value is NOT plaintext
+    raw_password = Credential.connection.select_value(
+      "SELECT password FROM credentials WHERE id = #{cred.id}"
+    )
+    assert_not_equal 'super-secret-123', raw_password
+  end
+
+  test 'credential requires service_name' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    cred = Credential.new(guild: guild)
+    assert_not cred.valid?
+    assert_includes cred.errors[:service_name], "can't be blank"
+  end
 end

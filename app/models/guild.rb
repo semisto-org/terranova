@@ -9,6 +9,7 @@ class Guild < ApplicationRecord
   has_many :documents, class_name: "GuildDocument", dependent: :destroy
   has_many :task_lists, dependent: :destroy
   has_many :knowledge_sections, class_name: "KnowledgeSection", dependent: :nullify
+  has_many :credentials, dependent: :destroy
   has_many :members, through: :guild_memberships
 
   validates :name, :color, presence: true

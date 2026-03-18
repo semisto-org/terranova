@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_112448) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_112652) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -340,6 +340,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112448) do
     t.index ["name"], name: "index_contacts_on_name"
     t.index ["notion_id"], name: "index_contacts_on_notion_id", unique: true
     t.index ["organization_id"], name: "index_contacts_on_organization_id"
+  end
+
+  create_table "credentials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.bigint "guild_id", null: false
+    t.text "notes"
+    t.string "password"
+    t.string "service_name", null: false
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.string "username"
+    t.index ["created_by_id"], name: "index_credentials_on_created_by_id"
+    t.index ["guild_id"], name: "index_credentials_on_guild_id"
   end
 
   create_table "cycle_periods", force: :cascade do |t|
@@ -1980,6 +1994,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112448) do
   add_foreign_key "chowder_items", "pitches"
   add_foreign_key "contact_tags", "contacts"
   add_foreign_key "contacts", "contacts", column: "organization_id"
+  add_foreign_key "credentials", "guilds"
+  add_foreign_key "credentials", "members", column: "created_by_id"
   add_foreign_key "design_actions", "design_projects"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
