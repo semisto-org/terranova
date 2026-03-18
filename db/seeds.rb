@@ -49,10 +49,10 @@ members_data = [
     joined_at: Date.new(2021, 9, 10),
     roles: %w[comptable coordination],
     password: "terranova2026"
-  }
+  },
   {
     first_name: "Beebopelula",
-    last_name: "",
+    last_name: "IA",
     email: "beebopelula@semisto.org",
     avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Beebopelula",
     status: "active",
@@ -64,7 +64,7 @@ members_data = [
   },
   {
     first_name: "Eddy",
-    last_name: "",
+    last_name: "IA",
     email: "eddy@semisto.org",
     avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Eddy",
     status: "active",
@@ -76,7 +76,7 @@ members_data = [
   },
   {
     first_name: "Lovely",
-    last_name: "",
+    last_name: "IA",
     email: "lovely@semisto.org",
     avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Lovely",
     status: "active",
@@ -88,7 +88,7 @@ members_data = [
   },
   {
     first_name: "Nova",
-    last_name: "",
+    last_name: "IA",
     email: "nova@semisto.org",
     avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Nova",
     status: "active",
@@ -112,6 +112,19 @@ members = members_data.map do |attrs|
   Wallet.find_or_create_by!(member: member)
   member
 end
+
+# === Labs ===
+wallonie_lab = Lab.find_or_create_by!(slug: 'wallonie-bruxelles') do |lab|
+  lab.name = 'Wallonie-Bruxelles'
+end
+
+puts "  Lab: #{wallonie_lab.name}"
+
+# Assign all existing members to the first lab
+Member.find_each do |member|
+  LabMembership.find_or_create_by!(lab: wallonie_lab, member: member)
+end
+puts "  Assigned #{wallonie_lab.members.count} members to #{wallonie_lab.name}"
 
 it_guild = Guild.find_or_create_by!(name: "IT & Outils") do |guild|
   guild.description = "Developpement et maintenance des outils numeriques du Lab"
