@@ -10,6 +10,9 @@ class Member < ApplicationRecord
   has_many :guild_memberships, dependent: :destroy
   has_many :guilds, through: :guild_memberships
 
+  has_many :lab_memberships, dependent: :destroy
+  has_many :labs, through: :lab_memberships
+
   has_one :wallet, dependent: :destroy
 
   has_many :timesheets, dependent: :destroy

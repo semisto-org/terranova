@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_17_102010) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_111650) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1009,6 +1009,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_102010) do
     t.index ["title"], name: "idx_knowledge_topics_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
+  create_table "lab_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "lab_id", null: false
+    t.bigint "member_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lab_id", "member_id"], name: "index_lab_memberships_on_lab_id_and_member_id", unique: true
+    t.index ["lab_id"], name: "index_lab_memberships_on_lab_id"
+    t.index ["member_id"], name: "index_lab_memberships_on_member_id"
+  end
+
+  create_table "labs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_labs_on_slug", unique: true
+  end
+
   create_table "location_zones", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "location_id"
@@ -1998,6 +2016,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_102010) do
   add_foreign_key "knowledge_topic_revisions", "members", column: "user_id"
   add_foreign_key "knowledge_topics", "knowledge_sections", column: "section_id"
   add_foreign_key "knowledge_topics", "members", column: "created_by_id"
+  add_foreign_key "lab_memberships", "labs"
+  add_foreign_key "lab_memberships", "members"
   add_foreign_key "location_zones", "locations"
   add_foreign_key "marketplace_listings", "members"
   add_foreign_key "member_roles", "members"
