@@ -593,12 +593,14 @@ export default function GuildsIndex() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [guilds, setGuilds] = useState([])
+  const [labs, setLabs] = useState([])
   const [members, setMembers] = useState([])
   const [selectedGuildId, setSelectedGuildId] = useState(null)
   const [selectedGuild, setSelectedGuild] = useState(null)
   const [showGuildForm, setShowGuildForm] = useState(false)
   const [editGuild, setEditGuild] = useState(null)
-  const [guildForm, setGuildForm] = useState({ name: '', description: '', color: 'blue', guild_type: 'network' })
+  const [guildForm, setGuildForm] = useState({ name: '', description: '', color: 'blue', guild_type: 'network', lab_id: '' })
+  const [formError, setFormError] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const loadGuilds = useCallback(async () => {
@@ -615,6 +617,7 @@ export default function GuildsIndex() {
     setLoading(true)
     Promise.all([
       loadGuilds(),
+      apiRequest('/api/v1/labs').then((res) => setLabs(res.labs || [])).catch(() => {}),
       apiRequest('/api/v1/lab/members').then((res) => setMembers(res.members || [])).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
@@ -635,26 +638,33 @@ export default function GuildsIndex() {
 
   function openCreateForm() {
     setEditGuild(null)
-    setGuildForm({ name: '', description: '', color: 'blue', guild_type: section })
+    setFormError(null)
+    setGuildForm({ name: '', description: '', color: 'blue', guild_type: section, lab_id: labs[0]?.id || '' })
     setShowGuildForm(true)
   }
 
   function openEditForm(guild) {
     setEditGuild(guild)
-    setGuildForm({ name: guild.name, description: guild.description || '', color: guild.color, guild_type: guild.guildType })
+    setFormError(null)
+    setGuildForm({ name: guild.name, description: guild.description || '', color: guild.color, guild_type: guild.guildType, lab_id: guild.labId || '' })
     setShowGuildForm(true)
   }
 
   async function handleSaveGuild() {
+    setFormError(null)
+    const payload = { ...guildForm }
+    if (payload.guild_type === 'network') delete payload.lab_id
     setBusy(true)
     try {
       if (editGuild) {
-        await apiRequest(`/api/v1/guilds/${editGuild.id}`, { method: 'PATCH', body: JSON.stringify(guildForm) })
+        await apiRequest(`/api/v1/guilds/${editGuild.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
       } else {
-        await apiRequest('/api/v1/guilds', { method: 'POST', body: JSON.stringify(guildForm) })
+        await apiRequest('/api/v1/guilds', { method: 'POST', body: JSON.stringify(payload) })
       }
       setShowGuildForm(false)
       await loadGuilds()
+    } catch (err) {
+      setFormError(err.message || 'Une erreur est survenue')
     } finally {
       setBusy(false)
     }
@@ -747,6 +757,7 @@ export default function GuildsIndex() {
             <p className="mb-0.5"><strong className="text-stone-800">Guilde Réseau</strong> — transversale à tous les Labs (ex. communication, infrastructure digitale).</p>
             <p><strong className="text-stone-800">Guilde Lab</strong> — interne à un Lab spécifique (ex. gestion locale, événements).</p>
           </div>
+          {formError && <div className="rounded-lg px-3.5 py-2.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200">{formError}</div>}
           <Field label="Type">
             <div className="flex mt-1 rounded-lg border border-stone-200 overflow-hidden">
               <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'network' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium transition-colors" style={guildForm.guild_type === 'network' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
@@ -757,6 +768,13 @@ export default function GuildsIndex() {
               </button>
             </div>
           </Field>
+          {guildForm.guild_type === 'lab' && (
+            <Field label="Lab">
+              <select className={inputCls} value={guildForm.lab_id} onChange={(e) => setGuildForm({ ...guildForm, lab_id: e.target.value })} required>
+                {labs.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </Field>
+          )}
           <Field label="Nom"><input className={inputCls} value={guildForm.name} onChange={(e) => setGuildForm({ ...guildForm, name: e.target.value })} required /></Field>
           <Field label="Fonctions">
             <SimpleEditor
