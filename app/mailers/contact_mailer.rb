@@ -6,7 +6,7 @@ class ContactMailer < ApplicationMailer
     @token = Rails.application.message_verifier(:contact_login).generate(
       { contact_id: contact.id },
       purpose: :contact_login,
-      expires_in: 24.hours
+      expires_in: 72.hours
     )
     my_host = ENV["MY_SEMISTO_HOST"]
     if my_host.present?
@@ -19,7 +19,7 @@ class ContactMailer < ApplicationMailer
 
     mail(
       to: @contact.email,
-      subject: "Votre lien de connexion — Mon Espace Semisto"
+      subject: "My Semisto / Connexion à ton compte"
     )
   end
 end
