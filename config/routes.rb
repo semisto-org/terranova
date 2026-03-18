@@ -205,6 +205,40 @@ Rails.application.routes.draw do
       post "lab/projects/:id/documents", to: "lab_management#upload_project_document"
       delete "lab/documents/:id", to: "lab_management#delete_project_document"
 
+      # Guilds
+      get "guilds", to: "guilds#index"
+      get "guilds/:id", to: "guilds#show"
+      post "guilds", to: "guilds#create"
+      patch "guilds/:id", to: "guilds#update"
+      delete "guilds/:id", to: "guilds#destroy"
+
+      # Guild documents
+      get "guilds/:guild_id/documents", to: "guilds#list_documents"
+      post "guilds/:guild_id/documents", to: "guilds#create_document"
+      delete "guilds/:guild_id/documents/:id", to: "guilds#destroy_document"
+
+      # Guild task lists
+      get "guilds/:guild_id/task-lists", to: "guilds#list_task_lists"
+      post "guilds/:guild_id/task-lists", to: "guilds#create_task_list"
+      patch "guilds/:guild_id/task-lists/:id", to: "guilds#update_task_list"
+      delete "guilds/:guild_id/task-lists/:id", to: "guilds#destroy_task_list"
+
+      # Guild task list actions
+      post "guilds/:guild_id/task-lists/:task_list_id/actions", to: "guilds#create_action"
+      patch "guilds/:guild_id/actions/:id", to: "guilds#update_action"
+      delete "guilds/:guild_id/actions/:id", to: "guilds#destroy_action"
+
+      # Guild credentials
+      get "guilds/:guild_id/credentials", to: "guilds#list_credentials"
+      post "guilds/:guild_id/credentials", to: "guilds#create_credential"
+      patch "guilds/:guild_id/credentials/:id", to: "guilds#update_credential"
+      get "guilds/:guild_id/credentials/:id/reveal", to: "guilds#reveal_credential"
+      delete "guilds/:guild_id/credentials/:id", to: "guilds#destroy_credential"
+
+      # Guild memberships
+      post "guilds/:guild_id/members", to: "guilds#add_member"
+      delete "guilds/:guild_id/members/:member_id", to: "guilds#remove_member"
+
       get "lab/albums", to: "lab_management#list_albums"
       post "lab/albums", to: "lab_management#create_album"
       patch "lab/albums/:id", to: "lab_management#update_album"

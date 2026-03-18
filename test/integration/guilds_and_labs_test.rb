@@ -185,4 +185,100 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     assert_not cred.valid?
     assert_includes cred.errors[:service_name], "can't be blank"
   end
+
+  # === API Tests ===
+
+  test 'GET /api/v1/guilds returns all guilds with details' do
+    guild = Guild.create!(name: 'Communication', color: 'blue', guild_type: 'network')
+    member = Member.first || Member.create!(first_name: 'Test', last_name: 'User', email: 'api-test@test.com', status: 'active', joined_at: Date.today, member_kind: 'human', membership_type: 'effective')
+    GuildMembership.create!(guild: guild, member: member)
+
+    get '/api/v1/guilds', as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert body['guilds'].any? { |g| g['name'] == 'Communication' }
+  end
+
+  test 'GET /api/v1/guilds/:id returns guild detail with all associations' do
+    guild = Guild.create!(name: 'Communication', color: 'blue', guild_type: 'network')
+
+    get "/api/v1/guilds/#{guild.id}", as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal 'Communication', body['guild']['name']
+    assert body['guild'].key?('documents')
+    assert body['guild'].key?('taskLists')
+    assert body['guild'].key?('credentials')
+    assert body['guild'].key?('knowledgeSections')
+  end
+
+  test 'POST /api/v1/guilds creates a guild' do
+    post '/api/v1/guilds', params: {
+      name: 'New Guild', color: 'purple', guild_type: 'network', description: 'Test'
+    }, as: :json
+    assert_response :created
+
+    body = JSON.parse(response.body)
+    assert_equal 'New Guild', body['guild']['name']
+    assert_equal 'network', body['guild']['guildType']
+  end
+
+  test 'PATCH /api/v1/guilds/:id updates a guild' do
+    guild = Guild.create!(name: 'Old Name', color: 'blue', guild_type: 'network')
+
+    patch "/api/v1/guilds/#{guild.id}", params: { name: 'New Name' }, as: :json
+    assert_response :success
+
+    assert_equal 'New Name', guild.reload.name
+  end
+
+  test 'DELETE /api/v1/guilds/:id destroys a guild' do
+    guild = Guild.create!(name: 'To Delete', color: 'red', guild_type: 'network')
+
+    delete "/api/v1/guilds/#{guild.id}", as: :json
+    assert_response :no_content
+    assert_nil Guild.find_by(id: guild.id)
+  end
+
+  test 'guild task list CRUD via API' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+
+    post "/api/v1/guilds/#{guild.id}/task-lists", params: { name: 'Sprint 1' }, as: :json
+    assert_response :created
+    body = JSON.parse(response.body)
+    list_id = body['taskList']['id']
+
+    post "/api/v1/guilds/#{guild.id}/task-lists/#{list_id}/actions",
+      params: { name: 'Write post', status: 'todo' }, as: :json
+    assert_response :created
+
+    get "/api/v1/guilds/#{guild.id}/task-lists", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body['taskLists'].size
+    assert_equal 1, body['taskLists'][0]['actions'].size
+  end
+
+  test 'guild credential CRUD via API with password masking' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+
+    post "/api/v1/guilds/#{guild.id}/credentials",
+      params: { service_name: 'Canva', username: 'team@test.com', password: 'secret123', url: 'https://canva.com' },
+      as: :json
+    assert_response :created
+    body = JSON.parse(response.body)
+    cred_id = body['credential']['id']
+
+    # Password not in default response
+    assert_not body['credential'].key?('password')
+    assert body['credential']['hasPassword']
+
+    # Reveal endpoint returns password
+    get "/api/v1/guilds/#{guild.id}/credentials/#{cred_id}/reveal", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 'secret123', body['credential']['password']
+  end
 end
