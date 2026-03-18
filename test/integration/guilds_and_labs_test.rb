@@ -102,4 +102,15 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     assert_equal 1, GuildDocument.by_tag('branding').count
     assert_equal 2, guild.documents.count
   end
+
+  test 'guild can have task lists with actions' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+
+    list = TaskList.create!(name: 'Sprint 1', guild: guild)
+    action = Action.create!(name: 'Write newsletter', task_list: list, guild: guild, status: 'todo')
+
+    assert_equal 1, guild.task_lists.count
+    assert_equal guild, list.guild
+    assert_equal guild, action.guild
+  end
 end

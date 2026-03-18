@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_112249) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -183,6 +183,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
     t.string "assignee_name"
     t.datetime "created_at", null: false
     t.date "due_date"
+    t.bigint "guild_id"
     t.string "name"
     t.datetime "notion_created_at"
     t.string "notion_id"
@@ -197,6 +198,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
     t.integer "time_minutes"
     t.bigint "training_id"
     t.datetime "updated_at", null: false
+    t.index ["guild_id"], name: "index_actions_on_guild_id"
     t.index ["notion_id"], name: "index_actions_on_notion_id", unique: true
     t.index ["parent_id"], name: "index_actions_on_parent_id"
     t.index ["pole_project_id"], name: "index_actions_on_pole_project_id"
@@ -1887,11 +1889,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
 
   create_table "task_lists", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "guild_id"
     t.string "name", null: false
     t.bigint "pole_project_id"
     t.integer "position", default: 0
     t.bigint "training_id"
     t.datetime "updated_at", null: false
+    t.index ["guild_id"], name: "index_task_lists_on_guild_id"
     t.index ["pole_project_id"], name: "index_task_lists_on_pole_project_id"
     t.index ["training_id"], name: "index_task_lists_on_training_id"
   end
@@ -1958,6 +1962,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
   add_foreign_key "academy_trainings", "academy_training_types", column: "training_type_id"
   add_foreign_key "actions", "academy_trainings", column: "training_id"
   add_foreign_key "actions", "actions", column: "parent_id"
+  add_foreign_key "actions", "guilds"
   add_foreign_key "actions", "pole_projects"
   add_foreign_key "actions", "task_lists"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -2091,6 +2096,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112111) do
   add_foreign_key "strategy_reactions", "strategy_proposals", column: "proposal_id"
   add_foreign_key "strategy_resources", "members", column: "created_by_id"
   add_foreign_key "task_lists", "academy_trainings", column: "training_id"
+  add_foreign_key "task_lists", "guilds"
   add_foreign_key "task_lists", "pole_projects"
   add_foreign_key "timesheets", "academy_trainings", column: "training_id"
   add_foreign_key "timesheets", "design_projects"
