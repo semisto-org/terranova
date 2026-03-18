@@ -76,8 +76,13 @@ const inputCls = 'w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg
 // Documents Tab
 // ---------------------------------------------------------------------------
 function DocumentsTab({ guild, onRefresh }) {
-  const [uploading, setUploading] = useState(false)
   const [tagFilter, setTagFilter] = useState(null)
+  const [showUpload, setShowUpload] = useState(false)
+  const [uploadFile, setUploadFile] = useState(null)
+  const [uploadName, setUploadName] = useState('')
+  const [uploadTags, setUploadTags] = useState([])
+  const [tagInput, setTagInput] = useState('')
+  const [uploadBusy, setUploadBusy] = useState(false)
   const docs = guild.documents || []
 
   const allTags = useMemo(() => {
@@ -88,20 +93,53 @@ function DocumentsTab({ guild, onRefresh }) {
 
   const filtered = tagFilter ? docs.filter((d) => (d.tags || []).includes(tagFilter)) : docs
 
-  async function handleUpload(e) {
+  function openUpload() {
+    setUploadFile(null)
+    setUploadName('')
+    setUploadTags([])
+    setTagInput('')
+    setShowUpload(true)
+  }
+
+  function handleFileSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploading(true)
+    setUploadFile(file)
+    if (!uploadName) setUploadName(file.name.replace(/\.[^.]+$/, ''))
+  }
+
+  function addTag() {
+    const tag = tagInput.trim()
+    if (tag && !uploadTags.includes(tag)) {
+      setUploadTags((t) => [...t, tag])
+    }
+    setTagInput('')
+  }
+
+  function handleTagKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag()
+    } else if (e.key === 'Backspace' && !tagInput && uploadTags.length > 0) {
+      setUploadTags((t) => t.slice(0, -1))
+    }
+  }
+
+  async function handleUpload() {
+    if (!uploadFile || !uploadName.trim()) return
+    setUploadBusy(true)
     try {
       const fd = new FormData()
-      fd.append('file', file)
-      fd.append('name', file.name)
+      fd.append('file', uploadFile)
+      fd.append('name', uploadName)
+      uploadTags.forEach((t) => fd.append('tags[]', t))
       await apiRequest(`/api/v1/guilds/${guild.id}/documents`, { method: 'POST', body: fd, headers: { 'X-CSRF-Token': getCsrfToken() } })
+      setShowUpload(false)
       onRefresh()
     } catch (err) {
       console.error(err)
     } finally {
-      setUploading(false)
+      setUploadBusy(false)
     }
   }
 
@@ -120,10 +158,9 @@ function DocumentsTab({ guild, onRefresh }) {
             </button>
           ))}
         </div>
-        <label className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white cursor-pointer flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
-          <Upload className="w-4 h-4" />{uploading ? 'Envoi…' : 'Ajouter'}
-          <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
-        </label>
+        <button onClick={openUpload} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
+          <Upload className="w-4 h-4" />Ajouter
+        </button>
       </div>
       {filtered.length === 0 ? (
         <p className="text-sm text-stone-400 py-8 text-center">Aucun document</p>
@@ -135,13 +172,52 @@ function DocumentsTab({ guild, onRefresh }) {
                 <FileText className="w-4 h-4 text-stone-400 shrink-0" />
                 <div className="min-w-0">
                   <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-stone-800 hover:underline truncate block">{doc.name}</a>
-                  <span className="text-xs text-stone-400">{doc.fileName} · {doc.byteSize ? `${(doc.byteSize / 1024).toFixed(0)} Ko` : ''}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-stone-400">{doc.fileName} · {doc.byteSize ? `${(doc.byteSize / 1024).toFixed(0)} Ko` : ''}</span>
+                    {(doc.tags || []).map((t) => (
+                      <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">{t}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
               <button onClick={() => handleDelete(doc.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           ))}
         </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUpload && (
+        <FormModal title="Ajouter un document" onSubmit={handleUpload} onClose={() => setShowUpload(false)} busy={uploadBusy}>
+          <Field label="Fichier">
+            <label className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-stone-300 rounded-lg px-3 py-4 cursor-pointer hover:border-stone-400 transition-colors">
+              <Upload className="w-4 h-4 text-stone-400" />
+              <span className="text-sm text-stone-500">{uploadFile ? uploadFile.name : 'Choisir un fichier…'}</span>
+              <input type="file" className="hidden" onChange={handleFileSelect} />
+            </label>
+          </Field>
+          <Field label="Nom"><input className={inputCls} value={uploadName} onChange={(e) => setUploadName(e.target.value)} required /></Field>
+          <Field label="Tags">
+            <div className="flex flex-wrap items-center gap-1.5 border border-stone-300 rounded-lg px-2 py-1.5 bg-white min-h-[38px]">
+              {uploadTags.map((t) => (
+                <span key={t} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 text-xs text-stone-700">
+                  {t}
+                  <button type="button" onClick={() => setUploadTags((tags) => tags.filter((x) => x !== t))} className="p-0.5 rounded-full hover:bg-stone-200 text-stone-400">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={addTag}
+                placeholder={uploadTags.length === 0 ? 'Taper un tag puis Entrée…' : ''}
+                className="flex-1 min-w-[100px] text-sm outline-none bg-transparent text-stone-900 placeholder:text-stone-400"
+              />
+            </div>
+          </Field>
+        </FormModal>
       )}
     </div>
   )
