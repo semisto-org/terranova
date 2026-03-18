@@ -6,7 +6,7 @@ import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import {
   Users, Plus, FileText, ListChecks, BookOpen, KeyRound,
   ChevronLeft, Upload, X, Eye, EyeOff, Trash2, Pencil,
-  Check, Circle, Globe, Building2, Search, Tag
+  Check, Circle, Globe, Building2, Tag, Copy, UserPlus, UserMinus
 } from 'lucide-react'
 
 const ACCENT = '#5B5781'
@@ -22,6 +22,7 @@ const GUILD_TABS = [
   { id: 'tasks', label: 'Tâches', icon: ListChecks },
   { id: 'wiki', label: 'Wiki', icon: BookOpen },
   { id: 'credentials', label: 'Credentials', icon: KeyRound },
+  { id: 'members', label: 'Membres', icon: Users },
 ]
 
 const COLOR_MAP = {
@@ -142,10 +143,18 @@ function DocumentsTab({ guild, onRefresh }) {
 // ---------------------------------------------------------------------------
 // Tasks Tab
 // ---------------------------------------------------------------------------
-function TasksTab({ guild, onRefresh }) {
+function TasksTab({ guild, members, onRefresh }) {
   const [newListName, setNewListName] = useState('')
   const [addingToList, setAddingToList] = useState(null)
   const [newActionName, setNewActionName] = useState('')
+  const [editingAction, setEditingAction] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', assignee_name: '', due_date: '', priority: '' })
+  const [editBusy, setEditBusy] = useState(false)
+
+  const guildMembers = useMemo(() => {
+    const ids = new Set(guild.memberIds || [])
+    return (members || []).filter((m) => ids.has(m.id))
+  }, [members, guild.memberIds])
 
   async function handleAddList() {
     if (!newListName.trim()) return
@@ -178,6 +187,27 @@ function TasksTab({ guild, onRefresh }) {
     onRefresh()
   }
 
+  function openEditAction(action) {
+    setEditingAction(action)
+    setEditForm({
+      name: action.name || '',
+      assignee_name: action.assigneeName || '',
+      due_date: action.dueDate || '',
+      priority: action.priority || '',
+    })
+  }
+
+  async function handleSaveAction() {
+    setEditBusy(true)
+    try {
+      await apiRequest(`/api/v1/guilds/${guild.id}/actions/${editingAction.id}`, { method: 'PATCH', body: JSON.stringify(editForm) })
+      setEditingAction(null)
+      onRefresh()
+    } finally {
+      setEditBusy(false)
+    }
+  }
+
   const lists = guild.taskLists || []
 
   return (
@@ -198,7 +228,9 @@ function TasksTab({ guild, onRefresh }) {
                   {action.status === 'done' ? <Check className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-stone-300" />}
                 </button>
                 <span className={`text-sm flex-1 ${action.status === 'done' ? 'line-through text-stone-400' : 'text-stone-700'}`}>{action.name}</span>
-                {action.assigneeName && <span className="text-xs text-stone-400">{action.assigneeName}</span>}
+                {action.assigneeName && <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">{action.assigneeName}</span>}
+                {action.dueDate && <span className="text-xs text-stone-400">{new Date(action.dueDate).toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' })}</span>}
+                <button onClick={() => openEditAction(action)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-stone-100 text-stone-400"><Pencil className="w-3 h-3" /></button>
                 <button onClick={() => deleteAction(action.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-red-400"><Trash2 className="w-3 h-3" /></button>
               </div>
             ))}
@@ -218,6 +250,30 @@ function TasksTab({ guild, onRefresh }) {
           <Plus className="w-4 h-4 inline mr-1" />Liste
         </button>
       </form>
+
+      {/* Edit Action Modal */}
+      {editingAction && (
+        <FormModal title="Modifier la tâche" onSubmit={handleSaveAction} onClose={() => setEditingAction(null)} busy={editBusy}>
+          <Field label="Nom"><input className={inputCls} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required /></Field>
+          <Field label="Assigné à">
+            <select className={inputCls} value={editForm.assignee_name} onChange={(e) => setEditForm({ ...editForm, assignee_name: e.target.value })}>
+              <option value="">Non assigné</option>
+              {guildMembers.map((m) => (
+                <option key={m.id} value={`${m.firstName} ${m.lastName}`}>{m.firstName} {m.lastName}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Échéance"><input className={inputCls} type="date" value={editForm.due_date} onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })} /></Field>
+          <Field label="Priorité">
+            <select className={inputCls} value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}>
+              <option value="">Aucune</option>
+              <option value="low">Basse</option>
+              <option value="medium">Moyenne</option>
+              <option value="high">Haute</option>
+            </select>
+          </Field>
+        </FormModal>
+      )}
     </div>
   )
 }
@@ -225,12 +281,33 @@ function TasksTab({ guild, onRefresh }) {
 // ---------------------------------------------------------------------------
 // Wiki Tab
 // ---------------------------------------------------------------------------
-function WikiTab({ guild }) {
+function WikiTab({ guild, onRefresh }) {
+  const [showForm, setShowForm] = useState(false)
+  const [sectionForm, setSectionForm] = useState({ name: '', description: '' })
+  const [busy, setBusy] = useState(false)
   const sections = guild.knowledgeSections || []
+
+  async function handleCreateSection() {
+    setBusy(true)
+    try {
+      await apiRequest('/api/v1/knowledge/sections', { method: 'POST', body: JSON.stringify({ ...sectionForm, guild_id: guild.id }) })
+      setShowForm(false)
+      setSectionForm({ name: '', description: '' })
+      onRefresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowForm(true)} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
+          <Plus className="w-4 h-4" />Nouvelle section
+        </button>
+      </div>
       {sections.length === 0 ? (
-        <p className="text-sm text-stone-400 py-8 text-center">Aucune section wiki. Créez-en depuis la Knowledge Base.</p>
+        <p className="text-sm text-stone-400 py-8 text-center">Aucune section wiki</p>
       ) : (
         sections.map((s) => (
           <div key={s.id} className="border border-stone-200 rounded-lg px-4 py-3">
@@ -239,6 +316,12 @@ function WikiTab({ guild }) {
             <span className="text-xs text-stone-400 mt-1 block">{s.topicsCount} article{s.topicsCount !== 1 ? 's' : ''}</span>
           </div>
         ))
+      )}
+      {showForm && (
+        <FormModal title="Nouvelle section wiki" onSubmit={handleCreateSection} onClose={() => setShowForm(false)} busy={busy}>
+          <Field label="Nom"><input className={inputCls} value={sectionForm.name} onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })} required /></Field>
+          <Field label="Description"><textarea className={inputCls} rows={2} value={sectionForm.description} onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })} /></Field>
+        </FormModal>
       )}
     </div>
   )
@@ -249,6 +332,7 @@ function WikiTab({ guild }) {
 // ---------------------------------------------------------------------------
 function CredentialsTab({ guild, onRefresh }) {
   const [revealed, setRevealed] = useState({})
+  const [copied, setCopied] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
   const [form, setForm] = useState({ service_name: '', username: '', password: '', url: '', notes: '' })
@@ -261,6 +345,19 @@ function CredentialsTab({ guild, onRefresh }) {
     }
     const res = await apiRequest(`/api/v1/guilds/${guild.id}/credentials/${credId}/reveal`)
     setRevealed((r) => ({ ...r, [credId]: res.credential.password }))
+  }
+
+  async function copyPassword(credId) {
+    let pw = revealed[credId]
+    if (!pw) {
+      const res = await apiRequest(`/api/v1/guilds/${guild.id}/credentials/${credId}/reveal`)
+      pw = res.credential.password
+    }
+    if (pw) {
+      await navigator.clipboard.writeText(pw)
+      setCopied(credId)
+      setTimeout(() => setCopied(null), 2000)
+    }
   }
 
   async function handleSave() {
@@ -321,7 +418,10 @@ function CredentialsTab({ guild, onRefresh }) {
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-stone-400">Mot de passe:</span>
                   <span className="text-xs font-mono text-stone-600">{revealed[cred.id] || '••••••••'}</span>
-                  <button onClick={() => revealPassword(cred.id)} className="p-0.5 rounded hover:bg-stone-100 text-stone-400">
+                  <button onClick={() => copyPassword(cred.id)} className="p-0.5 rounded hover:bg-stone-100 text-stone-400" title="Copier le mot de passe">
+                    {copied === cred.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                  <button onClick={() => revealPassword(cred.id)} className="p-0.5 rounded hover:bg-stone-100 text-stone-400" title={revealed[cred.id] ? 'Masquer' : 'Afficher'}>
                     {revealed[cred.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
@@ -339,6 +439,94 @@ function CredentialsTab({ guild, onRefresh }) {
           <Field label="Mot de passe"><input className={inputCls} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editId ? 'Laisser vide pour ne pas changer' : ''} /></Field>
           <Field label="Notes"><textarea className={inputCls} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
         </FormModal>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Members Tab
+// ---------------------------------------------------------------------------
+function MembersTab({ guild, members, onRefresh }) {
+  const [showAdd, setShowAdd] = useState(false)
+
+  const guildMemberIds = new Set(guild.memberIds || [])
+  const guildMembers = (members || []).filter((m) => guildMemberIds.has(m.id))
+  const availableMembers = (members || []).filter((m) => !guildMemberIds.has(m.id))
+
+  async function addMember(memberId) {
+    await apiRequest(`/api/v1/guilds/${guild.id}/members`, { method: 'POST', body: JSON.stringify({ member_id: memberId }) })
+    setShowAdd(false)
+    onRefresh()
+  }
+
+  async function removeMember(memberId) {
+    await apiRequest(`/api/v1/guilds/${guild.id}/members/${memberId}`, { method: 'DELETE' })
+    onRefresh()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-stone-500">{guildMembers.length} membre{guildMembers.length !== 1 ? 's' : ''}</span>
+        <button onClick={() => setShowAdd(true)} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
+          <UserPlus className="w-4 h-4" />Ajouter
+        </button>
+      </div>
+      {guildMembers.length === 0 ? (
+        <p className="text-sm text-stone-400 py-8 text-center">Aucun membre dans cette guilde</p>
+      ) : (
+        <div className="divide-y divide-stone-100">
+          {guildMembers.map((m) => (
+            <div key={m.id} className="flex items-center justify-between py-2.5 group">
+              <div className="flex items-center gap-3">
+                {m.avatarUrl ? (
+                  <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                ) : (
+                  <span className="w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-xs font-medium text-stone-600">
+                    {m.firstName?.[0]}{m.lastName?.[0]}
+                  </span>
+                )}
+                <span className="text-sm text-stone-800">{m.firstName} {m.lastName}</span>
+              </div>
+              <button onClick={() => removeMember(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-red-400" title="Retirer de la guilde">
+                <UserMinus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add member modal */}
+      {showAdd && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={() => setShowAdd(false)}>
+          <div className="w-full max-w-sm max-h-[70vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
+              <h2 className="text-lg font-bold text-stone-900">Ajouter un membre</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {availableMembers.length === 0 ? (
+                <p className="text-sm text-stone-400 py-6 text-center">Tous les membres font déjà partie de cette guilde</p>
+              ) : (
+                availableMembers.map((m) => (
+                  <button key={m.id} onClick={() => addMember(m.id)} className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-stone-50 transition-colors">
+                    {m.avatarUrl ? (
+                      <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-xs font-medium text-stone-600">
+                        {m.firstName?.[0]}{m.lastName?.[0]}
+                      </span>
+                    )}
+                    <span className="text-sm text-stone-800">{m.firstName} {m.lastName}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex justify-end">
+              <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-sm border border-stone-300 rounded-lg bg-white text-stone-700 font-medium">Fermer</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -379,9 +567,10 @@ function GuildDetail({ guild, onBack, onRefresh, members }) {
       </div>
 
       {activeTab === 'documents' && <DocumentsTab guild={guild} onRefresh={onRefresh} />}
-      {activeTab === 'tasks' && <TasksTab guild={guild} onRefresh={onRefresh} />}
-      {activeTab === 'wiki' && <WikiTab guild={guild} />}
+      {activeTab === 'tasks' && <TasksTab guild={guild} members={members} onRefresh={onRefresh} />}
+      {activeTab === 'wiki' && <WikiTab guild={guild} onRefresh={onRefresh} />}
       {activeTab === 'credentials' && <CredentialsTab guild={guild} onRefresh={onRefresh} />}
+      {activeTab === 'members' && <MembersTab guild={guild} members={members} onRefresh={onRefresh} />}
     </div>
   )
 }
@@ -399,7 +588,6 @@ export default function GuildsIndex() {
   const [members, setMembers] = useState([])
   const [selectedGuildId, setSelectedGuildId] = useState(null)
   const [selectedGuild, setSelectedGuild] = useState(null)
-  const [search, setSearch] = useState('')
   const [showGuildForm, setShowGuildForm] = useState(false)
   const [editGuild, setEditGuild] = useState(null)
   const [guildForm, setGuildForm] = useState({ name: '', description: '', color: 'blue', guild_type: 'network' })
@@ -423,12 +611,10 @@ export default function GuildsIndex() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  // Filter guilds by section and search
+  // Filter guilds by section
   const filtered = useMemo(() => {
-    return guilds
-      .filter((g) => g.guildType === section)
-      .filter((g) => !search || g.name.toLowerCase().includes(search.toLowerCase()))
-  }, [guilds, section, search])
+    return guilds.filter((g) => g.guildType === section)
+  }, [guilds, section])
 
   function openGuild(guild) {
     setSelectedGuildId(guild.id)
@@ -511,12 +697,6 @@ export default function GuildsIndex() {
             <button onClick={openCreateForm} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
               <Plus className="w-4 h-4" />Nouvelle guilde
             </button>
-          </div>
-
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher une guilde…" className="w-full border border-stone-200 rounded-lg pl-9 pr-3 py-2 text-sm bg-white text-stone-900" />
           </div>
 
           {/* Guild Cards */}
