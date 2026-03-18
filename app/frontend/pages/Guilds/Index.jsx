@@ -7,7 +7,7 @@ import SimpleEditor from '@/components/SimpleEditor'
 import {
   Users, Plus, FileText, ListChecks, BookOpen, KeyRound,
   ChevronLeft, Upload, X, Eye, EyeOff, Trash2, Pencil,
-  Check, Circle, Globe, Building2, Tag, Copy, UserPlus, UserMinus
+  Check, Circle, Globe, Building2, Tag, Copy
 } from 'lucide-react'
 
 const ACCENT = '#5B5781'
@@ -23,7 +23,6 @@ const GUILD_TABS = [
   { id: 'tasks', label: 'Tâches', icon: ListChecks },
   { id: 'wiki', label: 'Wiki', icon: BookOpen },
   { id: 'credentials', label: 'Credentials', icon: KeyRound },
-  { id: 'members', label: 'Membres', icon: Users },
 ]
 
 const COLOR_MAP = {
@@ -469,104 +468,21 @@ function CredentialsTab({ guild, onRefresh }) {
 }
 
 // ---------------------------------------------------------------------------
-// Members Tab
-// ---------------------------------------------------------------------------
-function MembersTab({ guild, members, onRefresh }) {
-  const [showAdd, setShowAdd] = useState(false)
-
-  const guildMemberIds = new Set(guild.memberIds || [])
-  const guildMembers = (members || []).filter((m) => guildMemberIds.has(m.id))
-  const availableMembers = (members || []).filter((m) => !guildMemberIds.has(m.id))
-
-  async function addMember(memberId) {
-    await apiRequest(`/api/v1/guilds/${guild.id}/members`, { method: 'POST', body: JSON.stringify({ member_id: memberId }) })
-    setShowAdd(false)
-    onRefresh()
-  }
-
-  async function removeMember(memberId) {
-    await apiRequest(`/api/v1/guilds/${guild.id}/members/${memberId}`, { method: 'DELETE' })
-    onRefresh()
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-stone-500">{guildMembers.length} membre{guildMembers.length !== 1 ? 's' : ''}</span>
-        <button onClick={() => setShowAdd(true)} className="px-3 py-1.5 text-sm rounded-lg font-semibold text-white flex items-center gap-1.5" style={{ backgroundColor: ACCENT }}>
-          <UserPlus className="w-4 h-4" />Ajouter
-        </button>
-      </div>
-      {guildMembers.length === 0 ? (
-        <p className="text-sm text-stone-400 py-8 text-center">Aucun membre dans cette guilde</p>
-      ) : (
-        <div className="divide-y divide-stone-100">
-          {guildMembers.map((m) => (
-            <div key={m.id} className="flex items-center justify-between py-2.5 group">
-              <div className="flex items-center gap-3">
-                {m.avatarUrl ? (
-                  <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
-                ) : (
-                  <span className="w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-xs font-medium text-stone-600">
-                    {m.firstName?.[0]}{m.lastName?.[0]}
-                  </span>
-                )}
-                <span className="text-sm text-stone-800">{m.firstName} {m.lastName}</span>
-              </div>
-              <button onClick={() => removeMember(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-red-400" title="Retirer de la guilde">
-                <UserMinus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Add member modal */}
-      {showAdd && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={() => setShowAdd(false)}>
-          <div className="w-full max-w-sm max-h-[70vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
-              <h2 className="text-lg font-bold text-stone-900">Ajouter un membre</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto min-h-0">
-              {availableMembers.length === 0 ? (
-                <p className="text-sm text-stone-400 py-6 text-center">Tous les membres font déjà partie de cette guilde</p>
-              ) : (
-                availableMembers.map((m) => (
-                  <button key={m.id} onClick={() => addMember(m.id)} className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-stone-50 transition-colors">
-                    {m.avatarUrl ? (
-                      <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
-                    ) : (
-                      <span className="w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-xs font-medium text-stone-600">
-                        {m.firstName?.[0]}{m.lastName?.[0]}
-                      </span>
-                    )}
-                    <span className="text-sm text-stone-800">{m.firstName} {m.lastName}</span>
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex justify-end">
-              <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-sm border border-stone-300 rounded-lg bg-white text-stone-700 font-medium">Fermer</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Guild Detail View
 // ---------------------------------------------------------------------------
 function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
   const [activeTab, setActiveTab] = useState('documents')
   const [showEdit, setShowEdit] = useState(false)
   const [editForm, setEditForm] = useState(null)
+  const [editMemberIds, setEditMemberIds] = useState([])
   const [editBusy, setEditBusy] = useState(false)
+
+  const guildMemberIds = useMemo(() => new Set(guild.memberIds || []), [guild.memberIds])
+  const guildMembers = useMemo(() => (members || []).filter((m) => guildMemberIds.has(m.id)), [members, guildMemberIds])
 
   function openEdit() {
     setEditForm({ name: guild.name, description: guild.description || '', color: guild.color, guild_type: guild.guildType, lab_id: guild.labId || '' })
+    setEditMemberIds([...(guild.memberIds || [])])
     setShowEdit(true)
   }
 
@@ -576,11 +492,26 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
       const payload = { ...editForm }
       if (payload.guild_type === 'network') delete payload.lab_id
       await apiRequest(`/api/v1/guilds/${guild.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+
+      // Sync members: add new, remove old
+      const current = new Set(guild.memberIds || [])
+      const desired = new Set(editMemberIds)
+      for (const id of desired) {
+        if (!current.has(id)) await apiRequest(`/api/v1/guilds/${guild.id}/members`, { method: 'POST', body: JSON.stringify({ member_id: id }) })
+      }
+      for (const id of current) {
+        if (!desired.has(id)) await apiRequest(`/api/v1/guilds/${guild.id}/members/${id}`, { method: 'DELETE' })
+      }
+
       setShowEdit(false)
       onRefresh()
     } finally {
       setEditBusy(false)
     }
+  }
+
+  function toggleEditMember(memberId) {
+    setEditMemberIds((ids) => ids.includes(memberId) ? ids.filter((id) => id !== memberId) : [...ids, memberId])
   }
 
   return (
@@ -597,9 +528,29 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
         <button onClick={openEdit} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Modifier la guilde">
           <Pencil className="w-4 h-4" />
         </button>
-        <span className="text-xs text-stone-400 ml-auto">{guild.memberCount} membre{guild.memberCount !== 1 ? 's' : ''}</span>
       </div>
-      {guild.description && <div className="text-sm text-stone-600 mb-6 prose prose-stone prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: guild.description }} />}
+      {guild.description && <div className="text-sm text-stone-600 mb-4 prose prose-stone prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: guild.description }} />}
+
+      {/* Members row */}
+      <div className="flex items-center gap-2 mb-6">
+        <Users className="w-4 h-4 text-stone-400" />
+        {guildMembers.length === 0 ? (
+          <span className="text-xs text-stone-400">Aucun membre</span>
+        ) : (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {guildMembers.map((m) => (
+              <div key={m.id} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-stone-100 text-xs text-stone-700" title={`${m.firstName} ${m.lastName}`}>
+                {m.avatarUrl ? (
+                  <img src={m.avatarUrl} alt="" className="w-4 h-4 rounded-full object-cover" />
+                ) : (
+                  <span className="w-4 h-4 rounded-full bg-stone-300 flex items-center justify-center text-[8px] font-medium text-white">{m.firstName?.[0]}{m.lastName?.[0]}</span>
+                )}
+                {m.firstName}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Edit Guild Modal */}
       {showEdit && editForm && (
@@ -619,6 +570,27 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
                 <button key={name} type="button" onClick={() => setEditForm({ ...editForm, color: name })} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: hex, borderColor: editForm.color === name ? '#1c1917' : 'transparent', transform: editForm.color === name ? 'scale(1.15)' : 'scale(1)' }} />
               ))}
             </div>
+          </Field>
+          <Field label="Membres">
+            <div className="mt-1 border border-stone-200 rounded-lg max-h-48 overflow-y-auto">
+              {(members || []).map((m) => {
+                const selected = editMemberIds.includes(m.id)
+                return (
+                  <button key={m.id} type="button" onClick={() => toggleEditMember(m.id)} className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm transition-colors ${selected ? 'bg-stone-50' : 'hover:bg-stone-50'}`}>
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${selected ? 'border-transparent' : 'border-stone-300'}`} style={selected ? { backgroundColor: ACCENT } : undefined}>
+                      {selected && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    {m.avatarUrl ? (
+                      <img src={m.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-5 h-5 rounded-full bg-stone-200 flex items-center justify-center text-[9px] font-medium text-stone-600">{m.firstName?.[0]}{m.lastName?.[0]}</span>
+                    )}
+                    <span className="text-stone-700">{m.firstName} {m.lastName}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-stone-400 mt-1">{editMemberIds.length} membre{editMemberIds.length !== 1 ? 's' : ''} sélectionné{editMemberIds.length !== 1 ? 's' : ''}</p>
           </Field>
         </FormModal>
       )}
@@ -640,7 +612,6 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
       {activeTab === 'tasks' && <TasksTab guild={guild} members={members} onRefresh={onRefresh} />}
       {activeTab === 'wiki' && <WikiTab guild={guild} onRefresh={onRefresh} />}
       {activeTab === 'credentials' && <CredentialsTab guild={guild} onRefresh={onRefresh} />}
-      {activeTab === 'members' && <MembersTab guild={guild} members={members} onRefresh={onRefresh} />}
     </div>
   )
 }
