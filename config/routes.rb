@@ -66,6 +66,8 @@ Rails.application.routes.draw do
   get "client/design/:project_id", to: "app#design_client_portal"
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
+  get "guilds", to: "app#guilds"
+  get "guilds/:id", to: "app#guilds"
   get "profile", to: "app#profile"
   get "knowledge", to: "app#knowledge"
   get "strategy", to: "app#strategy"

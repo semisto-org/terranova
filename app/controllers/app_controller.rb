@@ -127,6 +127,12 @@ class AppController < ApplicationController
     }
   end
 
+  def guilds
+    render inertia: "Guilds/Index", props: {
+      milestone: "Guilds"
+    }
+  end
+
   def profile
     render inertia: "Profile/Index", props: {
       milestone: "Profile"
@@ -175,6 +181,8 @@ class AppController < ApplicationController
       knowledge
     when /\Astrategy(\/|\z)/
       strategy
+    when /\Aguilds(\/|\z)/
+      guilds
     when /\Aprofile(\/|\z)/
       profile
     else
