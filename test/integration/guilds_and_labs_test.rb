@@ -186,6 +186,33 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     assert_includes cred.errors[:service_name], "can't be blank"
   end
 
+  test 'GET /api/v1/labs returns all labs' do
+    Lab.delete_all
+    Lab.create!(name: 'Wallonie-Bruxelles', slug: 'wallonie-bruxelles')
+    Lab.create!(name: 'Île-de-France', slug: 'ile-de-france')
+
+    get '/api/v1/labs', as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal 2, body['labs'].size
+  end
+
+  test 'GET /api/v1/labs/:id returns lab with members and guilds' do
+    lab = Lab.create!(name: 'Wallonie-Bruxelles', slug: 'wallonie-bruxelles')
+    member = Member.first || Member.create!(first_name: 'Test', last_name: 'User', email: 'lab-test@test.com', status: 'active', joined_at: Date.today, member_kind: 'human', membership_type: 'effective')
+    LabMembership.create!(lab: lab, member: member)
+    Guild.create!(name: 'Design Local', color: 'green', guild_type: 'lab', lab: lab)
+
+    get "/api/v1/labs/#{lab.id}", as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal 'Wallonie-Bruxelles', body['lab']['name']
+    assert_equal 1, body['lab']['memberCount']
+    assert_equal 1, body['lab']['guilds'].size
+  end
+
   # === API Tests ===
 
   test 'GET /api/v1/guilds returns all guilds with details' do

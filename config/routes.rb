@@ -205,6 +205,15 @@ Rails.application.routes.draw do
       post "lab/projects/:id/documents", to: "lab_management#upload_project_document"
       delete "lab/documents/:id", to: "lab_management#delete_project_document"
 
+      # Labs
+      get "labs", to: "labs#index"
+      get "labs/:id", to: "labs#show"
+      post "labs", to: "labs#create"
+      patch "labs/:id", to: "labs#update"
+      delete "labs/:id", to: "labs#destroy"
+      post "labs/:lab_id/members", to: "labs#add_member"
+      delete "labs/:lab_id/members/:member_id", to: "labs#remove_member"
+
       # Guilds
       get "guilds", to: "guilds#index"
       get "guilds/:id", to: "guilds#show"
