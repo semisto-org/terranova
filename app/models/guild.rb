@@ -1,5 +1,5 @@
 class Guild < ApplicationRecord
-  COLORS = %w[blue purple green orange red].freeze
+  COLORS = %w[blue purple green orange red teal pink amber indigo slate emerald rose].freeze
   GUILD_TYPES = %w[lab network].freeze
 
   belongs_to :leader, class_name: "Member", optional: true

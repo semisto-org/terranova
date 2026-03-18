@@ -3,6 +3,7 @@ import { apiRequest, getCsrfToken } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
+import SimpleEditor from '@/components/SimpleEditor'
 import {
   Users, Plus, FileText, ListChecks, BookOpen, KeyRound,
   ChevronLeft, Upload, X, Eye, EyeOff, Trash2, Pencil,
@@ -31,6 +32,13 @@ const COLOR_MAP = {
   green: '#22c55e',
   orange: '#f97316',
   red: '#ef4444',
+  teal: '#14b8a6',
+  pink: '#ec4899',
+  amber: '#f59e0b',
+  indigo: '#6366f1',
+  slate: '#64748b',
+  emerald: '#10b981',
+  rose: '#f43f5e',
 }
 
 // ---------------------------------------------------------------------------
@@ -551,7 +559,7 @@ function GuildDetail({ guild, onBack, onRefresh, members }) {
         </span>
         <span className="text-xs text-stone-400 ml-auto">{guild.memberCount} membre{guild.memberCount !== 1 ? 's' : ''}</span>
       </div>
-      {guild.description && <p className="text-sm text-stone-600 mb-6">{guild.description}</p>}
+      {guild.description && <div className="text-sm text-stone-600 mb-6 prose prose-stone prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: guild.description }} />}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-stone-200 mb-4">
@@ -719,7 +727,7 @@ export default function GuildsIndex() {
                       <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(guild) }} className="p-1 rounded hover:bg-red-50 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
-                  {guild.description && <p className="text-xs text-stone-500 mt-1.5 line-clamp-2">{guild.description}</p>}
+                  {guild.description && <p className="text-xs text-stone-500 mt-1.5 line-clamp-2">{guild.description.replace(/<[^>]*>/g, '')}</p>}
                   <div className="flex items-center gap-3 mt-3 text-xs text-stone-400">
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />{guild.memberCount}</span>
                     {guild.labName && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{guild.labName}</span>}
@@ -735,19 +743,30 @@ export default function GuildsIndex() {
       {showGuildForm && (
         <FormModal title={editGuild ? 'Modifier la guilde' : 'Nouvelle guilde'} onSubmit={handleSaveGuild} onClose={() => setShowGuildForm(false)} busy={busy}>
           <Field label="Nom"><input className={inputCls} value={guildForm.name} onChange={(e) => setGuildForm({ ...guildForm, name: e.target.value })} required /></Field>
-          <Field label="Description"><textarea className={inputCls} rows={2} value={guildForm.description} onChange={(e) => setGuildForm({ ...guildForm, description: e.target.value })} /></Field>
+          <Field label="Fonctions">
+            <SimpleEditor
+              content={guildForm.description}
+              onUpdate={(html) => setGuildForm((f) => ({ ...f, description: html }))}
+              minHeight="100px"
+              toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']}
+            />
+          </Field>
           <Field label="Couleur">
-            <div className="flex gap-2 mt-1">
+            <div className="flex flex-wrap gap-2 mt-1">
               {Object.entries(COLOR_MAP).map(([name, hex]) => (
                 <button key={name} type="button" onClick={() => setGuildForm({ ...guildForm, color: name })} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: hex, borderColor: guildForm.color === name ? '#1c1917' : 'transparent', transform: guildForm.color === name ? 'scale(1.15)' : 'scale(1)' }} />
               ))}
             </div>
           </Field>
           <Field label="Type">
-            <select className={inputCls} value={guildForm.guild_type} onChange={(e) => setGuildForm({ ...guildForm, guild_type: e.target.value })}>
-              <option value="network">Réseau</option>
-              <option value="lab">Lab</option>
-            </select>
+            <div className="flex mt-1 rounded-lg border border-stone-200 overflow-hidden">
+              <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'network' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium transition-colors" style={guildForm.guild_type === 'network' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
+                <Globe className="w-4 h-4" />Réseau
+              </button>
+              <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'lab' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium border-l border-stone-200 transition-colors" style={guildForm.guild_type === 'lab' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
+                <Building2 className="w-4 h-4" />Lab
+              </button>
+            </div>
           </Field>
         </FormModal>
       )}
