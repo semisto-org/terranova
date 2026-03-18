@@ -559,8 +559,29 @@ function MembersTab({ guild, members, onRefresh }) {
 // ---------------------------------------------------------------------------
 // Guild Detail View
 // ---------------------------------------------------------------------------
-function GuildDetail({ guild, onBack, onRefresh, members }) {
+function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
   const [activeTab, setActiveTab] = useState('documents')
+  const [showEdit, setShowEdit] = useState(false)
+  const [editForm, setEditForm] = useState(null)
+  const [editBusy, setEditBusy] = useState(false)
+
+  function openEdit() {
+    setEditForm({ name: guild.name, description: guild.description || '', color: guild.color, guild_type: guild.guildType, lab_id: guild.labId || '' })
+    setShowEdit(true)
+  }
+
+  async function handleSaveEdit() {
+    setEditBusy(true)
+    try {
+      const payload = { ...editForm }
+      if (payload.guild_type === 'network') delete payload.lab_id
+      await apiRequest(`/api/v1/guilds/${guild.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+      setShowEdit(false)
+      onRefresh()
+    } finally {
+      setEditBusy(false)
+    }
+  }
 
   return (
     <div>
@@ -573,9 +594,34 @@ function GuildDetail({ guild, onBack, onRefresh, members }) {
         <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: ACCENT_BG, color: ACCENT }}>
           {guild.guildType === 'network' ? 'Réseau' : 'Lab'}
         </span>
+        <button onClick={openEdit} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Modifier la guilde">
+          <Pencil className="w-4 h-4" />
+        </button>
         <span className="text-xs text-stone-400 ml-auto">{guild.memberCount} membre{guild.memberCount !== 1 ? 's' : ''}</span>
       </div>
       {guild.description && <div className="text-sm text-stone-600 mb-6 prose prose-stone prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: guild.description }} />}
+
+      {/* Edit Guild Modal */}
+      {showEdit && editForm && (
+        <FormModal title="Modifier la guilde" onSubmit={handleSaveEdit} onClose={() => setShowEdit(false)} busy={editBusy}>
+          <Field label="Nom"><input className={inputCls} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required /></Field>
+          <Field label="Fonctions">
+            <SimpleEditor
+              content={editForm.description}
+              onUpdate={(html) => setEditForm((f) => ({ ...f, description: html }))}
+              minHeight="100px"
+              toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList']}
+            />
+          </Field>
+          <Field label="Couleur">
+            <div className="flex flex-wrap gap-2 mt-1">
+              {Object.entries(COLOR_MAP).map(([name, hex]) => (
+                <button key={name} type="button" onClick={() => setEditForm({ ...editForm, color: name })} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: hex, borderColor: editForm.color === name ? '#1c1917' : 'transparent', transform: editForm.color === name ? 'scale(1.15)' : 'scale(1)' }} />
+              ))}
+            </div>
+          </Field>
+        </FormModal>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-stone-200 mb-4">
@@ -703,6 +749,7 @@ export default function GuildsIndex() {
         <GuildDetail
           guild={selectedGuild}
           members={members}
+          labs={labs}
           onBack={() => { setSelectedGuildId(null); setSelectedGuild(null); loadGuilds() }}
           onRefresh={refreshGuildDetail}
         />
