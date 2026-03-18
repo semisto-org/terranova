@@ -742,6 +742,11 @@ export default function GuildsIndex() {
       {/* Guild Form Modal */}
       {showGuildForm && (
         <FormModal title={editGuild ? 'Modifier la guilde' : 'Nouvelle guilde'} onSubmit={handleSaveGuild} onClose={() => setShowGuildForm(false)} busy={busy}>
+          <div className="rounded-lg px-3.5 py-3 text-xs leading-relaxed text-stone-600" style={{ backgroundColor: ACCENT_BG + '66' }}>
+            <p className="mb-1.5">Une <strong className="text-stone-800">guilde</strong> est une équipe qui prend en charge un service ou une fonction au sein de Semisto.</p>
+            <p className="mb-0.5"><strong className="text-stone-800">Guilde Réseau</strong> — transversale à tous les Labs (ex. communication, infrastructure digitale).</p>
+            <p><strong className="text-stone-800">Guilde Lab</strong> — interne à un Lab spécifique (ex. gestion locale, événements).</p>
+          </div>
           <Field label="Type">
             <div className="flex mt-1 rounded-lg border border-stone-200 overflow-hidden">
               <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'network' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium transition-colors" style={guildForm.guild_type === 'network' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
