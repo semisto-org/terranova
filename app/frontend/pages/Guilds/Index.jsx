@@ -742,6 +742,16 @@ export default function GuildsIndex() {
       {/* Guild Form Modal */}
       {showGuildForm && (
         <FormModal title={editGuild ? 'Modifier la guilde' : 'Nouvelle guilde'} onSubmit={handleSaveGuild} onClose={() => setShowGuildForm(false)} busy={busy}>
+          <Field label="Type">
+            <div className="flex mt-1 rounded-lg border border-stone-200 overflow-hidden">
+              <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'network' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium transition-colors" style={guildForm.guild_type === 'network' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
+                <Globe className="w-4 h-4" />Réseau
+              </button>
+              <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'lab' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium border-l border-stone-200 transition-colors" style={guildForm.guild_type === 'lab' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
+                <Building2 className="w-4 h-4" />Lab
+              </button>
+            </div>
+          </Field>
           <Field label="Nom"><input className={inputCls} value={guildForm.name} onChange={(e) => setGuildForm({ ...guildForm, name: e.target.value })} required /></Field>
           <Field label="Fonctions">
             <SimpleEditor
@@ -756,16 +766,6 @@ export default function GuildsIndex() {
               {Object.entries(COLOR_MAP).map(([name, hex]) => (
                 <button key={name} type="button" onClick={() => setGuildForm({ ...guildForm, color: name })} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: hex, borderColor: guildForm.color === name ? '#1c1917' : 'transparent', transform: guildForm.color === name ? 'scale(1.15)' : 'scale(1)' }} />
               ))}
-            </div>
-          </Field>
-          <Field label="Type">
-            <div className="flex mt-1 rounded-lg border border-stone-200 overflow-hidden">
-              <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'network' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium transition-colors" style={guildForm.guild_type === 'network' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
-                <Globe className="w-4 h-4" />Réseau
-              </button>
-              <button type="button" onClick={() => setGuildForm({ ...guildForm, guild_type: 'lab' })} className="flex items-center gap-2 flex-1 px-4 py-2.5 text-sm font-medium border-l border-stone-200 transition-colors" style={guildForm.guild_type === 'lab' ? { backgroundColor: ACCENT, color: '#fff' } : { color: '#57534e' }}>
-                <Building2 className="w-4 h-4" />Lab
-              </button>
             </div>
           </Field>
         </FormModal>
