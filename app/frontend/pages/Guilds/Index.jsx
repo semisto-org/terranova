@@ -468,100 +468,22 @@ function CredentialsTab({ guild, onRefresh }) {
 }
 
 // ---------------------------------------------------------------------------
-// Member Picker (autocomplete + pills)
-// ---------------------------------------------------------------------------
-function MemberPicker({ members, selectedIds, onAdd, onRemove }) {
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const inputRef = React.useRef(null)
-
-  const selected = useMemo(() => (members || []).filter((m) => selectedIds.includes(m.id)), [members, selectedIds])
-
-  const suggestions = useMemo(() => {
-    if (!query.trim()) return []
-    const q = query.toLowerCase()
-    return (members || [])
-      .filter((m) => !selectedIds.includes(m.id))
-      .filter((m) => `${m.firstName} ${m.lastName}`.toLowerCase().includes(q))
-      .slice(0, 6)
-  }, [members, selectedIds, query])
-
-  function handleSelect(m) {
-    onAdd(m.id)
-    setQuery('')
-    setOpen(false)
-    inputRef.current?.focus()
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === 'Backspace' && !query && selected.length > 0) {
-      onRemove(selected[selected.length - 1].id)
-    }
-  }
-
-  return (
-    <Field label="Membres">
-      <div className="mt-1 relative">
-        <div className="flex flex-wrap items-center gap-1.5 border border-stone-300 rounded-lg px-2 py-1.5 bg-white min-h-[38px] cursor-text" onClick={() => inputRef.current?.focus()}>
-          {selected.map((m) => (
-            <span key={m.id} className="flex items-center gap-1 pl-1 pr-0.5 py-0.5 rounded-full bg-stone-100 text-xs text-stone-700">
-              {m.avatarUrl ? (
-                <img src={m.avatarUrl} alt="" className="w-4 h-4 rounded-full object-cover" />
-              ) : (
-                <span className="w-4 h-4 rounded-full bg-stone-300 flex items-center justify-center text-[8px] font-medium text-white">{m.firstName?.[0]}{m.lastName?.[0]}</span>
-              )}
-              {m.firstName} {m.lastName}
-              <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(m.id) }} className="ml-0.5 p-0.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-600">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
-            onFocus={() => { if (query) setOpen(true) }}
-            onBlur={() => setTimeout(() => setOpen(false), 150)}
-            onKeyDown={handleKeyDown}
-            placeholder={selected.length === 0 ? 'Rechercher un membre…' : ''}
-            className="flex-1 min-w-[120px] text-sm outline-none bg-transparent text-stone-900 placeholder:text-stone-400"
-          />
-        </div>
-        {open && suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-lg shadow-lg z-10 overflow-hidden">
-            {suggestions.map((m) => (
-              <button key={m.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => handleSelect(m)} className="flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm hover:bg-stone-50 transition-colors">
-                {m.avatarUrl ? (
-                  <img src={m.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
-                ) : (
-                  <span className="w-5 h-5 rounded-full bg-stone-200 flex items-center justify-center text-[9px] font-medium text-stone-600">{m.firstName?.[0]}{m.lastName?.[0]}</span>
-                )}
-                <span className="text-stone-700">{m.firstName} {m.lastName}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </Field>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Guild Detail View
 // ---------------------------------------------------------------------------
 function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
   const [activeTab, setActiveTab] = useState('documents')
   const [showEdit, setShowEdit] = useState(false)
   const [editForm, setEditForm] = useState(null)
-  const [editMemberIds, setEditMemberIds] = useState([])
   const [editBusy, setEditBusy] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberBusy, setMemberBusy] = useState(null)
 
   const guildMemberIds = useMemo(() => new Set(guild.memberIds || []), [guild.memberIds])
   const guildMembers = useMemo(() => (members || []).filter((m) => guildMemberIds.has(m.id)), [members, guildMemberIds])
 
   function openEdit() {
     setEditForm({ name: guild.name, description: guild.description || '', color: guild.color, guild_type: guild.guildType, lab_id: guild.labId || '' })
-    setEditMemberIds([...(guild.memberIds || [])])
     setShowEdit(true)
   }
 
@@ -571,23 +493,33 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
       const payload = { ...editForm }
       if (payload.guild_type === 'network') delete payload.lab_id
       await apiRequest(`/api/v1/guilds/${guild.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
-
-      // Sync members: add new, remove old
-      const current = new Set(guild.memberIds || [])
-      const desired = new Set(editMemberIds)
-      for (const id of desired) {
-        if (!current.has(id)) await apiRequest(`/api/v1/guilds/${guild.id}/members`, { method: 'POST', body: JSON.stringify({ member_id: id }) })
-      }
-      for (const id of current) {
-        if (!desired.has(id)) await apiRequest(`/api/v1/guilds/${guild.id}/members/${id}`, { method: 'DELETE' })
-      }
-
       setShowEdit(false)
       onRefresh()
     } finally {
       setEditBusy(false)
     }
   }
+
+  async function toggleMember(memberId) {
+    const isMember = guildMemberIds.has(memberId)
+    setMemberBusy(memberId)
+    try {
+      if (isMember) {
+        await apiRequest(`/api/v1/guilds/${guild.id}/members/${memberId}`, { method: 'DELETE' })
+      } else {
+        await apiRequest(`/api/v1/guilds/${guild.id}/members`, { method: 'POST', body: JSON.stringify({ member_id: memberId }) })
+      }
+      onRefresh()
+    } finally {
+      setMemberBusy(null)
+    }
+  }
+
+  const filteredMembers = useMemo(() => {
+    if (!memberSearch.trim()) return members || []
+    const q = memberSearch.toLowerCase()
+    return (members || []).filter((m) => `${m.firstName} ${m.lastName}`.toLowerCase().includes(q))
+  }, [members, memberSearch])
 
   return (
     <div>
@@ -625,7 +557,43 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
             ))}
           </div>
         )}
+        <button onClick={() => { setShowMembers(true); setMemberSearch('') }} className="text-xs font-medium hover:underline ml-1" style={{ color: ACCENT }}>Modifier</button>
       </div>
+
+      {/* Members Modal */}
+      {showMembers && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={() => setShowMembers(false)}>
+          <div className="w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="shrink-0 px-4 pt-4 pb-3 border-b border-stone-200">
+              <h2 className="text-lg font-bold text-stone-900 mb-3">Membres de la guilde</h2>
+              <input value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Rechercher…" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white text-stone-900" autoFocus />
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {filteredMembers.map((m) => {
+                const selected = guildMemberIds.has(m.id)
+                const loading = memberBusy === m.id
+                return (
+                  <button key={m.id} type="button" onClick={() => toggleMember(m.id)} disabled={loading} className="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm hover:bg-stone-50 transition-colors disabled:opacity-50">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${selected ? 'border-transparent' : 'border-stone-300'}`} style={selected ? { backgroundColor: ACCENT } : undefined}>
+                      {selected && <Check className="w-3.5 h-3.5 text-white" />}
+                    </div>
+                    {m.avatarUrl ? (
+                      <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-xs font-medium text-stone-600">{m.firstName?.[0]}{m.lastName?.[0]}</span>
+                    )}
+                    <span className="text-stone-700">{m.firstName} {m.lastName}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex items-center justify-between">
+              <span className="text-xs text-stone-400">{guildMemberIds.size} membre{guildMemberIds.size !== 1 ? 's' : ''}</span>
+              <button onClick={() => setShowMembers(false)} className="px-3 py-1.5 text-sm border rounded-lg font-semibold text-white" style={{ backgroundColor: ACCENT, borderColor: ACCENT }}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Guild Modal */}
       {showEdit && editForm && (
@@ -646,7 +614,6 @@ function GuildDetail({ guild, onBack, onRefresh, members, labs }) {
               ))}
             </div>
           </Field>
-          <MemberPicker members={members} selectedIds={editMemberIds} onAdd={(id) => setEditMemberIds((ids) => [...ids, id])} onRemove={(id) => setEditMemberIds((ids) => ids.filter((x) => x !== id))} />
         </FormModal>
       )}
 
