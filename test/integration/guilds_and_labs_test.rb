@@ -281,4 +281,43 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_equal 'secret123', body['credential']['password']
   end
+
+  test 'GET knowledge sections filters by guild_id param' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    KnowledgeSection.create!(name: 'Guild Section', guild: guild)
+    KnowledgeSection.find_or_create_by!(name: 'Global Section', guild_id: nil)
+
+    # Without filter: only global sections
+    get '/api/v1/knowledge/sections', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body['sections'].none? { |s| s['name'] == 'Guild Section' }
+
+    # With guild_id filter: only guild sections
+    get "/api/v1/knowledge/sections?guild_id=#{guild.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body['sections'].any? { |s| s['name'] == 'Guild Section' }
+  end
+
+  test 'GET knowledge topics filters by guild_id param' do
+    guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
+    section = KnowledgeSection.create!(name: 'Wiki', guild: guild)
+    KnowledgeTopic.create!(title: 'Guild Topic', content: 'c', status: 'published', section: section)
+
+    global_section = KnowledgeSection.find_or_create_by!(name: 'Global Test', guild_id: nil)
+    KnowledgeTopic.create!(title: 'Global Topic', content: 'c', status: 'published', section: global_section)
+
+    # Without filter: only global topics
+    get '/api/v1/knowledge/topics', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body['topics'].none? { |t| t['title'] == 'Guild Topic' }
+
+    # With guild_id filter: only guild topics
+    get "/api/v1/knowledge/topics?guild_id=#{guild.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body['topics'].any? { |t| t['title'] == 'Guild Topic' }
+  end
 end

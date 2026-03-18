@@ -5,7 +5,11 @@ module Api
     module Knowledge
       class SectionsController < BaseController
         def index
-          sections = KnowledgeSection.ordered
+          sections = if params[:guild_id].present?
+                       KnowledgeSection.where(guild_id: params[:guild_id]).ordered
+                     else
+                       KnowledgeSection.where(guild_id: nil).ordered
+                     end
           render json: { sections: sections.map(&:as_json_brief) }
         end
 
@@ -42,7 +46,7 @@ module Api
         private
 
         def section_params
-          params.permit(:name, :description, :position)
+          params.permit(:name, :description, :position, :guild_id)
         end
       end
     end

@@ -14,6 +14,13 @@ module Api
                    end
 
           topics = topics.by_section(params[:section_id])
+          if params[:guild_id].present?
+            topics = topics.for_guild(params[:guild_id])
+          else
+            topics = topics.left_joins(:section).where(knowledge_sections: { guild_id: nil }).or(
+              topics.left_joins(:section).where(section_id: nil)
+            )
+          end
           topics = topics.by_tag(params[:tag])
           topics = topics.search(params[:search])
           topics = topics.where(status: params[:status]) if params[:status].present?
