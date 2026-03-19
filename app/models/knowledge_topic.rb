@@ -37,7 +37,7 @@ class KnowledgeTopic < ApplicationRecord
 
   scope :visible_to, ->(member) {
     if member
-      where("status = 'published' OR (status = 'draft' AND created_by_id = ?)", member.id)
+      where("knowledge_topics.status = 'published' OR (knowledge_topics.status = 'draft' AND knowledge_topics.created_by_id = ?)", member.id)
     else
       published
     end
