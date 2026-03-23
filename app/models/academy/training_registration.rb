@@ -9,9 +9,14 @@ module Academy
     belongs_to :training, class_name: 'Academy::Training'
     belongs_to :contact, optional: true
     has_many :attendances, class_name: 'Academy::TrainingAttendance', foreign_key: :registration_id, dependent: :destroy
+    has_many :registration_items, class_name: 'Academy::RegistrationItem', foreign_key: :registration_id, dependent: :destroy
 
     validates :contact_name, :payment_status, :registered_at, presence: true
     validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
     validates :carpooling, inclusion: { in: CARPOOLING_OPTIONS }
+
+    def recompute_payment_amount!
+      update!(payment_amount: registration_items.sum(:subtotal))
+    end
   end
 end

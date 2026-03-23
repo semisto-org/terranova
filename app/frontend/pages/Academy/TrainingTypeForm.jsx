@@ -35,6 +35,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [checklist, setChecklist] = useState([{ id: Date.now().toString(), value: 'Définir contenu' }])
+  const [categories, setCategories] = useState([])
   const [activeId, setActiveId] = useState(null)
 
   // Register Academy navigation
@@ -73,6 +74,14 @@ export default function TrainingTypeForm({ trainingTypeId }) {
             setDescription(trainingType.description || '')
             const template = trainingType.checklistTemplate || ['Définir contenu']
             setChecklist(template.map((value, index) => ({ id: `item-${Date.now()}-${index}`, value })))
+            const defaultCats = trainingType.defaultCategories || []
+            setCategories(defaultCats.map((c, i) => ({
+              id: `cat-${Date.now()}-${i}`,
+              label: c.label || '',
+              price: c.price || 0,
+              maxSpots: c.maxSpots || c.max_spots || 0,
+              depositAmount: c.depositAmount || c.deposit_amount || 0,
+            })))
           }
           setLoading(false)
         })
@@ -97,21 +106,31 @@ export default function TrainingTypeForm({ trainingTypeId }) {
 
     try {
       if (isEditing) {
+        const categoriesPayload = categories
+          .filter((c) => c.label.trim())
+          .map((c) => ({ label: c.label.trim(), price: Number(c.price) || 0, maxSpots: Number(c.maxSpots) || 0, depositAmount: Number(c.depositAmount) || 0 }))
+
         await apiRequest(`/api/v1/academy/training-types/${trainingTypeId}`, {
           method: 'PATCH',
           body: JSON.stringify({
             name: name.trim(),
             description,
             checklist_template: checklist.map((item) => item.value),
+            default_categories: categoriesPayload,
           }),
         })
       } else {
+        const categoriesPayload = categories
+          .filter((c) => c.label.trim())
+          .map((c) => ({ label: c.label.trim(), price: Number(c.price) || 0, maxSpots: Number(c.maxSpots) || 0, depositAmount: Number(c.depositAmount) || 0 }))
+
         await apiRequest('/api/v1/academy/training-types', {
           method: 'POST',
           body: JSON.stringify({
             name: name.trim(),
             description,
             checklist_template: checklist.map((item) => item.value),
+            default_categories: categoriesPayload,
             photo_gallery: [],
             trainer_ids: [],
           }),
@@ -123,7 +142,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
     } finally {
       setBusy(false)
     }
-  }, [name, description, checklist, isEditing, trainingTypeId])
+  }, [name, description, checklist, categories, isEditing, trainingTypeId])
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id)
@@ -321,6 +340,115 @@ export default function TrainingTypeForm({ trainingTypeId }) {
                 ) : null}
               </DragOverlay>
             </DndContext>
+          </div>
+
+          {/* Default Participant Categories */}
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-stone-900">Catégories de participants par défaut</h2>
+                <p className="mt-1 text-sm text-stone-500">
+                  Ces catégories seront utilisées par défaut lors de la création d'une activité de ce type
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCategories([...categories, { id: `cat-${Date.now()}`, label: '', price: 0, maxSpots: 0, depositAmount: 0 }])}
+                className="flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-all hover:bg-stone-50 shrink-0 self-start"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Ajouter une catégorie
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-4">
+              {categories.length === 0 ? (
+                <div className="py-8 text-center">
+                  <svg className="mx-auto h-12 w-12 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <p className="mt-3 text-sm text-stone-400">Aucune catégorie de participants définie</p>
+                  <p className="mt-1 text-xs text-stone-400">Les catégories seront créées manuellement pour chaque activité</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {categories.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className="rounded-lg border border-stone-200 bg-white p-3"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={cat.label}
+                          onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, label: e.target.value } : c))}
+                          className="flex-1 min-w-0 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
+                          placeholder="Libellé (ex: Adulte)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setCategories((cats) => cats.filter((c) => c.id !== cat.id))}
+                          className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                          title="Supprimer"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <div className="flex-1 min-w-[90px]">
+                          <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Tarif</label>
+                          <div className="flex rounded-lg border border-stone-300 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={cat.price}
+                              onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, price: e.target.value } : c))}
+                              className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                              placeholder="0"
+                            />
+                            <span className="flex items-center px-2 bg-stone-50 border-l border-stone-300 text-xs text-stone-500 font-medium">€</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-[80px]">
+                          <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Places</label>
+                          <div className="flex rounded-lg border border-stone-300 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                            <input
+                              type="number"
+                              min="0"
+                              value={cat.maxSpots}
+                              onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, maxSpots: e.target.value } : c))}
+                              className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                              placeholder="0"
+                            />
+                            <span className="flex items-center px-2 bg-stone-50 border-l border-stone-300 text-[10px] text-stone-500 font-medium uppercase tracking-wider">max</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-[100px]">
+                          <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Acompte</label>
+                          <div className="flex rounded-lg border border-stone-300 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={cat.depositAmount}
+                              onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, depositAmount: e.target.value } : c))}
+                              className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                              placeholder="0"
+                            />
+                            <span className="flex items-center px-2 bg-stone-50 border-l border-stone-300 text-xs text-stone-500 font-medium">€</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {error && (

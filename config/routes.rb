@@ -401,6 +401,8 @@ Rails.application.routes.draw do
       get "academy/team/:contact_id", to: "academy#show_team_member"
       patch "academy/team/:contact_id", to: "academy#update_team_member"
       delete "academy/team/:contact_id", to: "academy#remove_team_member"
+      get "academy/settings", to: "academy#academy_settings"
+      patch "academy/settings", to: "academy#update_academy_settings"
 
       get "nursery", to: "nursery#index"
       get "nursery/dashboard", to: "nursery#dashboard"

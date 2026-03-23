@@ -117,8 +117,9 @@ export default function CalendarMonthView({
   const registrationsCount = selectedTraining
     ? getRegistrationsCount(selectedTraining.id)
     : 0
-  const fillPercentage = selectedTraining?.maxParticipants
-    ? Math.min(100, (registrationsCount / selectedTraining.maxParticipants) * 100)
+  const selectedCapacity = selectedTraining?.totalCapacity || selectedTraining?.maxParticipants
+  const fillPercentage = selectedCapacity
+    ? Math.min(100, (registrationsCount / selectedCapacity) * 100)
     : 0
 
   return (
@@ -188,8 +189,9 @@ export default function CalendarMonthView({
                     ? getLocationNames(firstSess.locationIds || [])
                     : []
                   const regCount = getRegistrationsCount(t.id)
-                  const fill = t.maxParticipants
-                    ? Math.min(100, (regCount / t.maxParticipants) * 100)
+                  const capacity = t.totalCapacity || t.maxParticipants
+                  const fill = capacity
+                    ? Math.min(100, (regCount / capacity) * 100)
                     : 0
                   return (
                     <button
@@ -265,7 +267,7 @@ export default function CalendarMonthView({
                   Participants
                 </div>
                 <div className="text-sm font-semibold text-stone-900">
-                  {registrationsCount} / {selectedTraining.maxParticipants || 0}
+                  {registrationsCount} / {selectedTraining.totalCapacity || selectedTraining.maxParticipants || 0}
                 </div>
                 <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden mt-2">
                   <div

@@ -181,7 +181,7 @@ export default function KanbanBoard({
               trainingType={activeRow.trainingType}
               nextSession={activeRow.nextSession}
               registrationsCount={activeRow.registrationsCount}
-              maxParticipants={Number(activeRow.training.maxParticipants) || 0}
+              maxParticipants={Number(activeRow.training.totalCapacity) || Number(activeRow.training.maxParticipants) || 0}
               readinessChecks={activeRow.readinessChecks}
               allReady={activeRow.allReady}
               isUrgent={activeRow.isUrgent}

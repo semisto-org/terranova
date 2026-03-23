@@ -12,6 +12,9 @@ const PAYMENT_STATUSES = [
 export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCancel, busy = false }) {
   const statusRef = useRef(null)
 
+  // Use paymentAmount from registration items if available, otherwise fall back to trainingPrice
+  const effectivePrice = registration?.paymentAmount > 0 ? registration.paymentAmount : trainingPrice
+
   const [status, setStatus] = useState(registration?.paymentStatus ?? 'pending')
   const [amountPaid, setAmountPaid] = useState(registration?.amountPaid ?? 0)
   const [error, setError] = useState(null)
@@ -48,12 +51,12 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
     }
 
     // Status validation
-    if (status === 'paid' && amountPaid < trainingPrice) {
-      setError(`Pour un statut "Payé", le montant doit être au moins ${trainingPrice.toFixed(2)} €`)
+    if (status === 'paid' && amountPaid < effectivePrice) {
+      setError(`Pour un statut "Payé", le montant doit être au moins ${effectivePrice.toFixed(2)} €`)
       return
     }
 
-    if (status === 'partial' && (amountPaid <= 0 || amountPaid >= trainingPrice)) {
+    if (status === 'partial' && (amountPaid <= 0 || amountPaid >= effectivePrice)) {
       setError('Pour un statut "Partiel", le montant doit être entre 0 et le prix total')
       return
     }
@@ -70,7 +73,7 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
     }
   }
 
-  const remainingAmount = Math.max(0, trainingPrice - amountPaid)
+  const remainingAmount = Math.max(0, effectivePrice - amountPaid)
 
   return (
     <>
@@ -122,10 +125,20 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
               <div className="space-y-6">
                 {/* Training price info */}
                 <div className="p-4 rounded-xl bg-stone-100 border border-stone-200">
-                  <div className="text-sm text-stone-600 mb-1">Prix de l'activité</div>
+                  <div className="text-sm text-stone-600 mb-1">Montant de l'inscription</div>
                   <div className="text-2xl font-bold text-stone-900">
-                    {trainingPrice.toFixed(2)} €
+                    {effectivePrice.toFixed(2)} €
                   </div>
+                  {registration?.items?.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {registration.items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between text-xs text-stone-500">
+                          <span>{item.quantity}× {item.categoryLabel}</span>
+                          <span>{item.subtotal.toFixed(2)} €{item.discountPercent > 0 ? ` (-${item.discountPercent}%)` : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Payment Status */}
@@ -242,7 +255,7 @@ export function PaymentStatusModal({ registration, trainingPrice, onSubmit, onCa
                           <>
                             <p className="font-medium">Restant dû : {remainingAmount.toFixed(2)} €</p>
                             <p className="mt-1 text-xs">
-                              {((amountPaid / trainingPrice) * 100).toFixed(0)}% payé
+                              {((amountPaid / effectivePrice) * 100).toFixed(0)}% payé
                             </p>
                           </>
                         )}

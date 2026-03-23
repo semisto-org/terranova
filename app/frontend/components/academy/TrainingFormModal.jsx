@@ -10,12 +10,22 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
 
   const [trainingTypeId, setTrainingTypeId] = useState(training?.trainingTypeId ?? (trainingTypes[0]?.id ?? ''))
   const [title, setTitle] = useState(training?.title ?? '')
-  const [price, setPrice] = useState(training?.price ?? 180)
   const [vatRate, setVatRate] = useState(training?.vatRate ?? 0)
-  const [maxParticipants, setMaxParticipants] = useState(training?.maxParticipants ?? 20)
   const [requiresAccommodation, setRequiresAccommodation] = useState(training?.requiresAccommodation ?? false)
   const [description, setDescription] = useState(training?.description ?? '')
   const [coordinatorNote, setCoordinatorNote] = useState(training?.coordinatorNote ?? '')
+  const [categories, setCategories] = useState(() => {
+    if (training?.participantCategories?.length > 0) {
+      return training.participantCategories.map((c) => ({
+        id: c.id,
+        label: c.label,
+        price: c.price,
+        maxSpots: c.maxSpots,
+        depositAmount: c.depositAmount || 0,
+      }))
+    }
+    return []
+  })
   const [error, setError] = useState(null)
 
   // Focus first input when modal opens
@@ -27,6 +37,23 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
       return () => clearTimeout(timer)
     }
   }, [])
+
+  // Auto-fill categories from training type defaults when type changes
+  useEffect(() => {
+    if (!isEdit && categories.length === 0 && trainingTypeId) {
+      const selectedType = trainingTypes.find((t) => t.id === trainingTypeId)
+      const defaults = selectedType?.defaultCategories || []
+      if (defaults.length > 0) {
+        setCategories(defaults.map((c, i) => ({
+          id: `new-${Date.now()}-${i}`,
+          label: c.label || '',
+          price: c.price || 0,
+          maxSpots: c.maxSpots || c.max_spots || 0,
+          depositAmount: c.depositAmount || c.deposit_amount || 0,
+        })))
+      }
+    }
+  }, [trainingTypeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle Escape key
   useEffect(() => {
@@ -54,31 +81,29 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
       return
     }
 
-    if (price < 0) {
-      setError('Le prix ne peut pas être négatif')
-      return
-    }
-
     if (vatRate < 0 || vatRate >= 100) {
       setError('Le taux de TVA doit être entre 0 et 100')
       return
     }
 
-    if (maxParticipants < 1) {
-      setError('Le nombre de participants doit être au moins 1')
-      return
-    }
+    const validCategories = categories.filter((c) => c.label.trim())
+    const categoriesPayload = validCategories.map((c) => ({
+      ...(c.id && !String(c.id).startsWith('new-') ? { id: c.id } : {}),
+      label: c.label.trim(),
+      price: Number(c.price) || 0,
+      max_spots: Number(c.maxSpots) || 0,
+      deposit_amount: Number(c.depositAmount) || 0,
+    }))
 
     try {
       await onSubmit({
         training_type_id: trainingTypeId,
         title: title.trim(),
-        price,
         vat_rate: vatRate,
-        max_participants: maxParticipants,
         requires_accommodation: requiresAccommodation,
         description: description === '<p></p>' ? '' : description,
         coordinator_note: coordinatorNote === '<p></p>' ? '' : coordinatorNote,
+        participant_categories: categoriesPayload,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -178,67 +203,133 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                   />
                 </div>
 
-                {/* Price, TVA, Max Participants */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label
-                      htmlFor="training-price"
-                      className="block text-sm font-semibold text-stone-700 mb-2"
+                {/* TVA */}
+                <div className="w-full sm:w-1/3">
+                  <label
+                    htmlFor="training-vat-rate"
+                    className="block text-sm font-semibold text-stone-700 mb-2"
+                  >
+                    TVA (%)
+                  </label>
+                  <input
+                    id="training-vat-rate"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    max="99.99"
+                    value={vatRate}
+                    onChange={(e) => setVatRate(Number(e.target.value) || 0)}
+                    className={inputBase}
+                    placeholder="0"
+                  />
+                </div>
+
+                {/* Participant Categories */}
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-stone-700">
+                        Catégories de participants
+                      </label>
+                      {categories.length > 0 && (
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Capacité totale : {categories.reduce((sum, c) => sum + (Number(c.maxSpots) || 0), 0)} places
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCategories([...categories, { id: `new-${Date.now()}`, label: '', price: 0, maxSpots: 0, depositAmount: 0 }])}
+                      className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors shrink-0 self-start"
                     >
-                      Prix (€)
-                    </label>
-                    <input
-                      id="training-price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={price}
-                      onChange={(e) => setPrice(Number(e.target.value))}
-                      className={inputBase}
-                      placeholder="180"
-                    />
-                    {vatRate > 0 && (
-                      <p className="mt-1 text-xs text-stone-500">
-                        = {(price / (1 + vatRate / 100)).toFixed(2)} € HT
-                      </p>
-                    )}
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Ajouter
+                    </button>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="training-vat-rate"
-                      className="block text-sm font-semibold text-stone-700 mb-2"
-                    >
-                      TVA (%)
-                    </label>
-                    <input
-                      id="training-vat-rate"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      max="99.99"
-                      value={vatRate}
-                      onChange={(e) => setVatRate(Number(e.target.value) || 0)}
-                      className={inputBase}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="training-max-participants"
-                      className="block text-sm font-semibold text-stone-700 mb-2"
-                    >
-                      Participants max
-                    </label>
-                    <input
-                      id="training-max-participants"
-                      type="number"
-                      min="1"
-                      value={maxParticipants}
-                      onChange={(e) => setMaxParticipants(Number(e.target.value))}
-                      className={inputBase}
-                      placeholder="20"
-                    />
-                  </div>
+
+                  {categories.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50/50 p-6 text-center">
+                      <p className="text-sm text-stone-400">Aucune catégorie de participants</p>
+                      <p className="text-xs text-stone-400 mt-1">Ajoutez une catégorie pour définir les tarifs et places</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {categories.map((cat) => (
+                        <div
+                          key={cat.id}
+                          className="rounded-xl border border-stone-200 bg-stone-50 p-3"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="text"
+                              value={cat.label}
+                              onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, label: e.target.value } : c))}
+                              className="flex-1 min-w-0 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
+                              placeholder="Libellé (ex: Adulte)"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCategories((cats) => cats.filter((c) => c.id !== cat.id))}
+                              className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                              title="Supprimer"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <div className="flex-1 min-w-[90px]">
+                              <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Tarif</label>
+                              <div className="flex rounded-lg border border-stone-200 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={cat.price}
+                                  onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, price: e.target.value } : c))}
+                                  className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                                  placeholder="0"
+                                />
+                                <span className="flex items-center px-2 bg-stone-50 border-l border-stone-200 text-xs text-stone-500 font-medium">€</span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-[80px]">
+                              <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Places</label>
+                              <div className="flex rounded-lg border border-stone-200 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={cat.maxSpots}
+                                  onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, maxSpots: e.target.value } : c))}
+                                  className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                                  placeholder="0"
+                                />
+                                <span className="flex items-center px-2 bg-stone-50 border-l border-stone-200 text-[10px] text-stone-500 font-medium uppercase tracking-wider">max</span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-[100px]">
+                              <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Acompte</label>
+                              <div className="flex rounded-lg border border-stone-200 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={cat.depositAmount}
+                                  onChange={(e) => setCategories((cats) => cats.map((c) => c.id === cat.id ? { ...c, depositAmount: e.target.value } : c))}
+                                  className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                                  placeholder="0"
+                                />
+                                <span className="flex items-center px-2 bg-stone-50 border-l border-stone-200 text-xs text-stone-500 font-medium">€</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Requires Accommodation */}

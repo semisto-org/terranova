@@ -82,7 +82,10 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
       price: 210,
       vat_rate: 21,
       max_participants: 16,
-      description: 'Session 1'
+      description: 'Session 1',
+      participant_categories: [
+        { label: 'Tarif standard', price: 210, max_spots: 16 }
+      ]
     }, as: :json
     assert_response :created
     created = JSON.parse(response.body)
@@ -835,7 +838,10 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     statuses_to_test.each_with_index do |status, i|
       post '/api/v1/academy/trainings', params: {
         training_type_id: training_type_id,
-        title: "Formation #{status}"
+        title: "Formation #{status}",
+        participant_categories: [
+          { label: 'Standard', price: 100, max_spots: 10 }
+        ]
       }, as: :json
       training_id = JSON.parse(response.body)['id']
       training_ids << training_id

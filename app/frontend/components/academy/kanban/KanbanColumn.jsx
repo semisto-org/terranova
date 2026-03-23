@@ -143,7 +143,7 @@ export default function KanbanColumn({
                 trainingType={row.trainingType}
                 nextSession={row.nextSession}
                 registrationsCount={row.registrationsCount}
-                maxParticipants={Number(row.training.maxParticipants) || 0}
+                maxParticipants={Number(row.training.totalCapacity) || Number(row.training.maxParticipants) || 0}
                 readinessChecks={row.readinessChecks}
                 allReady={row.allReady}
                 isUrgent={row.isUrgent}

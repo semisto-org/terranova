@@ -41,7 +41,7 @@ export default function TrainingCard({
   const menuRef = useRef(null)
 
   const participantCount = registrations.length
-  const maxParticipants = Number(training.maxParticipants) || 0
+  const maxParticipants = Number(training.totalCapacity) || Number(training.maxParticipants) || 0
   const fillPercentage = maxParticipants > 0
     ? Math.round((participantCount / maxParticipants) * 100)
     : 0

@@ -24,6 +24,7 @@ import {
   ChecklistItemModal,
   IdeaNoteFormModal,
   TeamMemberFormModal,
+  AcademySettingsPanel,
 } from '@/components/academy'
 import { ExpenseFormModal } from '@/components/shared/ExpenseFormModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
@@ -37,6 +38,7 @@ const ACADEMY_SECTIONS = [
   { id: 'locations', label: 'Lieux' },
   { id: 'ideas', label: 'Bloc-notes' },
   { id: 'reporting', label: 'Reporting' },
+  { id: 'settings', label: 'Paramètres' },
 ]
 
 export default function AcademyIndex({ initialTrainingId }) {
@@ -67,6 +69,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     members: [],
     academyContacts: [],
     stats: { byStatus: {}, total: 0 },
+    academySettings: null,
   })
   const [selectedTrainingId, setSelectedTrainingId] = useState(initialTrainingId || null)
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState(null)
@@ -472,7 +475,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     },
     addRegistration: (trainingId) => {
       const training = data.trainings.find((item) => item.id === trainingId)
-      setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0 })
+      setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0, participantCategories: training?.participantCategories || [] })
       setActiveModal('registration')
     },
     deleteRegistration: (registrationId) => {
@@ -487,7 +490,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       const current = data.trainingRegistrations.find((item) => item.id === registrationId)
       if (!current) return
       const training = data.trainings.find((item) => item.id === current.trainingId)
-      setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0 })
+      setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0, participantCategories: training?.participantCategories || [] })
       setActiveModal('registration')
     },
     updatePaymentStatus: (registrationId, status, amountPaid) => {
@@ -677,6 +680,8 @@ export default function AcademyIndex({ initialTrainingId }) {
         <RegistrationFormModal
           registration={modalData?.isEdit ? modalData.registration : null}
           trainingPrice={modalData?.trainingPrice || 0}
+          participantCategories={modalData?.participantCategories || []}
+          academySettings={data.academySettings}
           onSubmit={handleRegistrationSubmit}
           onCancel={() => {
             setActiveModal(null)
@@ -1117,6 +1122,10 @@ export default function AcademyIndex({ initialTrainingId }) {
 
         {view === 'reporting' && (
           <ReportingDashboard data={reporting} />
+        )}
+
+        {view === 'settings' && (
+          <AcademySettingsPanel />
         )}
 
         {(busy || error || notice) && (

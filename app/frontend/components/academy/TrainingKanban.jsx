@@ -323,7 +323,7 @@ export default function TrainingKanban({
                       </td>
                     </tr>
                     {group.rows.map((row) => {
-                      const maxP = Number(row.training.maxParticipants) || 0
+                      const maxP = Number(row.training.totalCapacity) || Number(row.training.maxParticipants) || 0
                       const fillPct = maxP > 0 ? Math.round((row.registrationsCount / maxP) * 100) : 0
                       const fillColor = fillPct >= 60 ? 'bg-emerald-500' : fillPct >= 30 ? 'bg-amber-500' : 'bg-rose-500'
                       return (
@@ -427,7 +427,7 @@ export default function TrainingKanban({
               trainingType={row.trainingType}
               nextSession={row.nextSession}
               registrationsCount={row.registrationsCount}
-              maxParticipants={Number(row.training.maxParticipants) || 0}
+              maxParticipants={Number(row.training.totalCapacity) || Number(row.training.maxParticipants) || 0}
               readinessChecks={row.readinessChecks}
               allReady={row.allReady}
               isUrgent={row.isUrgent}

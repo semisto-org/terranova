@@ -223,7 +223,7 @@ export default function TrainingDetail({
   const profitability = revenue - expenseTotal
   const profitabilityPercent = revenue > 0 ? Math.round((profitability / revenue) * 100) : 0
   const registrationCount = registrations.length
-  const maxParticipants = Number(training.maxParticipants) || 0
+  const maxParticipants = Number(training.totalCapacity) || Number(training.maxParticipants) || 0
   const fillRate = maxParticipants > 0 ? Math.round((registrationCount / maxParticipants) * 100) : 0
 
   const checklistItems = training.checklistItems || []

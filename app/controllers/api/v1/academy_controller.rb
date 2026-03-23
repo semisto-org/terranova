@@ -52,7 +52,21 @@ module Api
         item.checklist_items = training_type.checklist_template if item.checklist_items.blank?
         item.save!
 
-        broadcast_training_change(action: "created", training: item)
+        if params[:participant_categories].present?
+          create_categories_from_params(item, params[:participant_categories])
+        elsif training_type.default_categories.present?
+          training_type.default_categories.each_with_index do |dc, idx|
+            item.participant_categories.create!(
+              label: dc['label'],
+              price: dc['price'] || 0,
+              max_spots: dc['maxSpots'] || dc['max_spots'] || 0,
+              deposit_amount: dc['depositAmount'] || dc['deposit_amount'] || 0,
+              position: idx
+            )
+          end
+        end
+
+        broadcast_training_change(action: "created", training: item.reload)
         render json: serialize_training(item), status: :created
       end
 
@@ -60,8 +74,14 @@ module Api
         item = Academy::Training.find(params.require(:training_id))
         item.update!(training_update_params)
 
-        broadcast_training_change(action: "updated", training: item)
+        if params[:participant_categories].present?
+          update_categories_for_training(item, params[:participant_categories])
+        end
+
+        broadcast_training_change(action: "updated", training: item.reload)
         render json: serialize_training(item)
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def destroy_training
@@ -75,7 +95,13 @@ module Api
 
       def update_training_status
         item = Academy::Training.find(params.require(:training_id))
-        item.update!(status: params.require(:status))
+        new_status = params.require(:status)
+
+        if new_status == 'registrations_open' && item.participant_categories.where('max_spots > 0').none?
+          return render json: { error: "Impossible d'ouvrir les inscriptions sans catégorie de participants active" }, status: :unprocessable_entity
+        end
+
+        item.update!(status: new_status)
 
         broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
@@ -110,13 +136,40 @@ module Api
       def create_registration
         training = Academy::Training.find(params.require(:training_id))
         resolved_id = resolve_contact_for_registration(registration_params)
-        item = training.registrations.create!(
-          registration_params.except(:registered_at).merge(
-            registered_at: registration_params[:registered_at] || Time.current,
-            contact_id: resolved_id
+
+        ActiveRecord::Base.transaction do
+          item = training.registrations.create!(
+            registration_params.except(:registered_at).merge(
+              registered_at: registration_params[:registered_at] || Time.current,
+              contact_id: resolved_id
+            )
           )
-        )
-        render json: serialize_registration(item), status: :created
+
+          if params[:items].present?
+            setting = Academy::Setting.current
+            params[:items].each do |item_params|
+              cat = training.participant_categories.find(item_params[:participant_category_id])
+              qty = item_params[:quantity].to_i
+
+              if qty > cat.spots_remaining
+                raise ActiveRecord::RecordInvalid.new(item), "Plus assez de places pour la catégorie '#{cat.label}'"
+              end
+
+              discount = setting.discount_for_quantity(qty)
+              item.registration_items.create!(
+                participant_category: cat,
+                quantity: qty,
+                unit_price: cat.price,
+                discount_percent: discount
+              )
+            end
+            item.recompute_payment_amount!
+          end
+
+          render json: serialize_registration(item.reload), status: :created
+        end
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def update_registration
@@ -319,6 +372,19 @@ module Api
         end
       end
 
+      def academy_settings
+        render json: serialize_academy_settings(Academy::Setting.current)
+      end
+
+      def update_academy_settings
+        setting = Academy::Setting.current
+        setting.update!(
+          volume_discount_per_spot: params[:volume_discount_per_spot],
+          volume_discount_max: params[:volume_discount_max]
+        )
+        render json: serialize_academy_settings(setting)
+      end
+
       def toggle_holiday
         date = Date.parse(params.require(:date))
         existing = Academy::Holiday.find_by(date: date)
@@ -357,15 +423,17 @@ module Api
         expenses_by_category = Expense.where(training_id: training_ids).where.not(category: nil).group(:category).sum(:amount_excl_vat).transform_values(&:to_f)
 
         fill_rates = trainings.filter_map do |t|
-          next if t.max_participants.to_i.zero?
-          (t.registrations.size.to_f / t.max_participants * 100).round(1)
+          cap = t.total_capacity
+          next if cap.zero?
+          (t.registrations.size.to_f / cap * 100).round(1)
         end
         average_fill_rate = fill_rates.any? ? (fill_rates.sum / fill_rates.size).round(1) : 0
 
         fill_rates_by_type = trainings.group_by { |t| t.training_type&.name || "Sans type" }.filter_map do |type_name, type_trainings|
           rates = type_trainings.filter_map do |t|
-            next if t.max_participants.to_i.zero?
-            (t.registrations.size.to_f / t.max_participants * 100).round(1)
+            cap = t.total_capacity
+            next if cap.zero?
+            (t.registrations.size.to_f / cap * 100).round(1)
           end
           next if rates.empty?
           { name: type_name, fillRate: (rates.sum / rates.size).round(1), trainingsCount: type_trainings.size }
@@ -418,7 +486,7 @@ module Api
 
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
-        trainings = Academy::Training.includes(:album).order(updated_at: :desc)
+        trainings = Academy::Training.includes(:album, :participant_categories).order(updated_at: :desc)
         sessions = Academy::TrainingSession.order(start_date: :asc)
         locations = Academy::TrainingLocation.order(:name)
         registrations = Academy::TrainingRegistration.order(registered_at: :desc)
@@ -449,6 +517,7 @@ module Api
           ideaNotes: idea_notes.map { |item| serialize_idea_note(item) },
           members: members.map { |item| serialize_member(item) },
           academyContacts: team.map { |item| serialize_academy_contact(item) },
+          academySettings: serialize_academy_settings(Academy::Setting.current),
           stats: build_stats(trainings)
         }
       end
@@ -487,7 +556,7 @@ module Api
       end
 
       def training_type_params
-        params.permit(:name, :description, checklist_template: [], photo_gallery: [], trainer_ids: [])
+        params.permit(:name, :description, checklist_template: [], photo_gallery: [], trainer_ids: [], default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount])
       end
 
       def location_params
@@ -560,6 +629,7 @@ module Api
           name: item.name,
           description: item.description,
           checklistTemplate: item.checklist_template,
+          defaultCategories: item.default_categories,
           photoGallery: item.photo_gallery,
           trainerIds: item.trainer_ids,
           createdAt: item.created_at.iso8601
@@ -599,6 +669,13 @@ module Api
           checklistItems: item.checklist_items,
           checkedItems: item.checked_items,
           album: item.album ? serialize_training_album(item.album) : nil,
+          participantCategories: item.participant_categories.order(:position).map { |c|
+            { id: c.id.to_s, label: c.label, price: c.price.to_f, maxSpots: c.max_spots,
+              depositAmount: c.deposit_amount.to_f, spotsTaken: c.spots_taken,
+              spotsRemaining: c.spots_remaining, position: c.position }
+          },
+          totalCapacity: item.total_capacity,
+          totalSpotsTaken: item.total_spots_taken,
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
@@ -643,7 +720,13 @@ module Api
           paymentStatus: item.payment_status,
           stripePaymentIntentId: item.stripe_payment_intent_id,
           internalNote: item.internal_note,
-          registeredAt: item.registered_at.iso8601
+          registeredAt: item.registered_at.iso8601,
+          items: item.registration_items.includes(:participant_category).map { |ri|
+            { id: ri.id.to_s, participantCategoryId: ri.participant_category_id.to_s,
+              categoryLabel: ri.participant_category.label, quantity: ri.quantity,
+              unitPrice: ri.unit_price.to_f, discountPercent: ri.discount_percent.to_f,
+              subtotal: ri.subtotal.to_f }
+          }
         }
       end
 
@@ -775,6 +858,56 @@ module Api
           next unless contact
           { name: contact.name, sessionCount: count }
         end.sort_by { |entry| -entry[:sessionCount] }
+      end
+
+      def serialize_academy_settings(setting)
+        {
+          volumeDiscountPerSpot: setting.volume_discount_per_spot.to_f,
+          volumeDiscountMax: setting.volume_discount_max.to_f
+        }
+      end
+
+      def create_categories_from_params(training, categories_params)
+        categories_params.each_with_index do |cp, idx|
+          training.participant_categories.create!(
+            label: cp[:label],
+            price: cp[:price] || 0,
+            max_spots: cp[:max_spots] || cp[:maxSpots] || 0,
+            deposit_amount: cp[:deposit_amount] || cp[:depositAmount] || 0,
+            position: idx
+          )
+        end
+      end
+
+      def update_categories_for_training(training, categories_params)
+        categories_params.each_with_index do |cp, idx|
+          if cp[:id].present?
+            cat = training.participant_categories.with_deleted.find(cp[:id])
+            if cp[:_destroy].present? && cp[:_destroy].to_s != 'false'
+              if cat.registration_items.any?
+                raise ActiveRecord::RecordInvalid.new(cat), "La catégorie '#{cat.label}' a des inscriptions et ne peut pas être supprimée"
+              end
+              cat.soft_delete!
+            else
+              cat.restore! if cat.deleted?
+              cat.update!(
+                label: cp[:label] || cat.label,
+                price: cp[:price] || cat.price,
+                max_spots: cp[:max_spots] || cp[:maxSpots] || cat.max_spots,
+                deposit_amount: cp[:deposit_amount] || cp[:depositAmount] || cat.deposit_amount,
+                position: idx
+              )
+            end
+          else
+            training.participant_categories.create!(
+              label: cp[:label],
+              price: cp[:price] || 0,
+              max_spots: cp[:max_spots] || cp[:maxSpots] || 0,
+              deposit_amount: cp[:deposit_amount] || cp[:depositAmount] || 0,
+              position: idx
+            )
+          end
+        end
       end
 
       def build_stats(trainings)

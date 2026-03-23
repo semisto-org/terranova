@@ -1,0 +1,1 @@
+[     422ms] [ERROR] WebSocket connection to 'ws://localhost:3000/vite-dev/?token=u-S1eOvXq88n' failed: Error during WebSocket handshake: 'Upgrade' header is missing @ http://localhost:3000/vite-dev/@vite/client:535

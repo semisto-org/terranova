@@ -27,3 +27,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+.a5c/

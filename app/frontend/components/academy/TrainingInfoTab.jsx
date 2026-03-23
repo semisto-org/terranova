@@ -91,28 +91,73 @@ export default function TrainingInfoTab({
             <h3 className="text-lg font-semibold text-stone-900">Tarif et places</h3>
           </div>
           <div className="space-y-3">
-            <div>
-              <span className="text-sm text-stone-500">Tarif :</span>
-              <p className="text-stone-900 font-medium text-lg">
-                {Number(training.price || 0).toLocaleString('fr-FR')} €
+            {training.participantCategories?.length > 0 ? (
+              <>
+                <div className="rounded-lg border border-stone-200 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-stone-50">
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">Catégorie</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">Tarif</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">Places</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider hidden sm:table-cell">Acompte</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {training.participantCategories.map((cat) => (
+                        <tr key={cat.id} className="hover:bg-stone-50/50">
+                          <td className="px-3 py-2 font-medium text-stone-900">{cat.label}</td>
+                          <td className="px-3 py-2 text-right text-stone-700">{Number(cat.price).toLocaleString('fr-FR')} €</td>
+                          <td className="px-3 py-2 text-right">
+                            <span className="text-stone-700">{cat.spotsTaken || 0}</span>
+                            <span className="text-stone-400"> / {cat.maxSpots}</span>
+                          </td>
+                          <td className="px-3 py-2 text-right text-stone-500 hidden sm:table-cell">
+                            {cat.depositAmount > 0 ? `${Number(cat.depositAmount).toLocaleString('fr-FR')} €` : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 {Number(training.vatRate || 0) > 0 && (
-                  <span className="text-stone-500 font-normal text-base">
-                    {' '}TVAC (dont {Number(training.vatRate).toLocaleString('fr-FR')}% TVA)
-                  </span>
+                  <p className="text-xs text-stone-500">
+                    Tarifs TVAC (dont {Number(training.vatRate).toLocaleString('fr-FR')}% TVA)
+                  </p>
                 )}
-              </p>
-              {Number(training.vatRate || 0) > 0 && training.priceExclVat != null && (
-                <p className="text-sm text-stone-500 mt-0.5">
-                  {Number(training.priceExclVat).toLocaleString('fr-FR')} € HT
-                </p>
-              )}
-            </div>
-            <div>
-              <span className="text-sm text-stone-500">Places :</span>
-              <p className="text-stone-900 font-medium">
-                {training.maxParticipants || 0} participant{(training.maxParticipants || 0) > 1 ? 's' : ''} maximum
-              </p>
-            </div>
+                <div>
+                  <span className="text-sm text-stone-500">Capacité totale :</span>
+                  <span className="text-stone-900 font-medium ml-1">
+                    {training.totalCapacity || 0} places
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <span className="text-sm text-stone-500">Tarif :</span>
+                  <p className="text-stone-900 font-medium text-lg">
+                    {Number(training.price || 0).toLocaleString('fr-FR')} €
+                    {Number(training.vatRate || 0) > 0 && (
+                      <span className="text-stone-500 font-normal text-base">
+                        {' '}TVAC (dont {Number(training.vatRate).toLocaleString('fr-FR')}% TVA)
+                      </span>
+                    )}
+                  </p>
+                  {Number(training.vatRate || 0) > 0 && training.priceExclVat != null && (
+                    <p className="text-sm text-stone-500 mt-0.5">
+                      {Number(training.priceExclVat).toLocaleString('fr-FR')} € HT
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <span className="text-sm text-stone-500">Places :</span>
+                  <p className="text-stone-900 font-medium">
+                    {training.totalCapacity || training.maxParticipants || 0} participant{(training.totalCapacity || training.maxParticipants || 0) > 1 ? 's' : ''} maximum
+                  </p>
+                </div>
+              </>
+            )}
             {training.requiresAccommodation && (
               <div className="pt-2">
                 <span className="inline-flex items-center gap-1 rounded-lg bg-[#eac7b8] px-2.5 py-1 text-sm font-medium text-[#B01A19]">

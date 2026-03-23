@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_112652) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_23_183530) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -35,6 +35,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112652) do
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_academy_idea_notes_on_deleted_at"
     t.index ["notion_id"], name: "index_academy_idea_notes_on_notion_id", unique: true
+  end
+
+  create_table "academy_participant_categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.decimal "deposit_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "label", null: false
+    t.integer "max_spots", default: 0, null: false
+    t.integer "position", default: 0, null: false
+    t.decimal "price", precision: 12, scale: 2, default: "0.0", null: false
+    t.bigint "training_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_participant_categories_on_deleted_at"
+    t.index ["training_id"], name: "index_academy_participant_categories_on_training_id"
+  end
+
+  create_table "academy_registration_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "discount_percent", precision: 5, scale: 2, default: "0.0", null: false
+    t.bigint "participant_category_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.bigint "registration_id", null: false
+    t.decimal "subtotal", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "unit_price", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["participant_category_id"], name: "index_academy_registration_items_on_participant_category_id"
+    t.index ["registration_id", "participant_category_id"], name: "idx_reg_items_unique", unique: true
+    t.index ["registration_id"], name: "index_academy_registration_items_on_registration_id"
+  end
+
+  create_table "academy_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "volume_discount_max", precision: 5, scale: 2, default: "30.0", null: false
+    t.decimal "volume_discount_per_spot", precision: 5, scale: 2, default: "10.0", null: false
   end
 
   create_table "academy_training_attendances", force: :cascade do |t|
@@ -135,6 +170,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112652) do
   create_table "academy_training_types", force: :cascade do |t|
     t.jsonb "checklist_template", default: [], null: false
     t.datetime "created_at", null: false
+    t.jsonb "default_categories", default: [], null: false
     t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.string "name", null: false
@@ -1969,6 +2005,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_112652) do
     t.index ["member_id"], name: "index_wallets_on_member_id", unique: true
   end
 
+  add_foreign_key "academy_participant_categories", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_registration_items", "academy_participant_categories", column: "participant_category_id"
+  add_foreign_key "academy_registration_items", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_training_sessions", column: "session_id"

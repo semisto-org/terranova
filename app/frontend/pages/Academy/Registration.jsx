@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { CalendarDays, MapPin, Users, Euro, Car, CheckCircle, AlertCircle, Loader2, TreePine } from 'lucide-react'
+import { CalendarDays, MapPin, Users, Euro, Car, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
 function PaymentForm({ clientSecret, amount, onSuccess, onError }) {
   const stripe = useStripe()
@@ -118,6 +118,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
     departure_country: 'BE',
     carpooling: 'none',
     payment_type: 'full',
+    items: {},
   })
   const [formErrors, setFormErrors] = useState({})
   const [clientSecret, setClientSecret] = useState(null)
@@ -170,6 +171,9 @@ export default function Registration({ trainingId, stripePublicKey }) {
     }
     if (!formData.phone.trim()) errors.phone = 'Le numéro de téléphone est requis'
     if (!formData.departure_city.trim()) errors.departure_city = 'Le lieu de départ est requis'
+    if (hasCategories && !Object.values(formData.items).some((q) => q > 0)) {
+      errors.items = 'Veuillez sélectionner au moins une place'
+    }
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -187,7 +191,14 @@ export default function Registration({ trainingId, stripePublicKey }) {
           'Content-Type': 'application/json',
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          items: hasCategories
+            ? Object.entries(formData.items)
+                .filter(([, qty]) => qty > 0)
+                .map(([categoryId, qty]) => ({ category_id: categoryId, quantity: qty }))
+            : undefined,
+        }),
       })
 
       if (!res.ok) {
@@ -280,10 +291,45 @@ export default function Registration({ trainingId, stripePublicKey }) {
     )
   }
 
-  const canPayDeposit = training.depositAmount > 0 && training.depositAmount < training.price
-  const selectedAmount = formData.payment_type === 'deposit' && canPayDeposit
-    ? training.depositAmount
+  const categories = training.participantCategories || []
+  const volumeDiscount = training.volumeDiscount || { perSpot: 10, max: 30 }
+  const hasCategories = categories.length > 0
+
+  const computeCatDiscount = (qty) => {
+    if (qty <= 1) return 0
+    return Math.min(volumeDiscount.perSpot * (qty - 1), volumeDiscount.max)
+  }
+
+  const computeCatSubtotal = (price, qty) => {
+    const d = computeCatDiscount(qty)
+    return +(price * qty * (1 - d / 100)).toFixed(2)
+  }
+
+  const itemsTotal = hasCategories
+    ? categories.reduce((sum, cat) => {
+        const qty = formData.items[cat.id] || 0
+        return sum + computeCatSubtotal(cat.price, qty)
+      }, 0)
     : training.price
+
+  const depositTotal = hasCategories
+    ? categories.reduce((sum, cat) => {
+        const qty = formData.items[cat.id] || 0
+        if (qty === 0) return sum
+        if (cat.depositAmount > 0) return sum + cat.depositAmount * qty
+        return sum + computeCatSubtotal(cat.price, qty)
+      }, 0)
+    : training.depositAmount
+
+  const canPayDeposit = hasCategories
+    ? depositTotal > 0 && depositTotal < itemsTotal
+    : training.depositAmount > 0 && training.depositAmount < training.price
+
+  const selectedAmount = formData.payment_type === 'deposit' && canPayDeposit
+    ? depositTotal
+    : itemsTotal
+
+  const hasSelectedItems = hasCategories ? Object.values(formData.items).some((q) => q > 0) : true
 
   const firstSession = training.sessions?.[0]
   const lastSession = training.sessions?.[training.sessions.length - 1]
@@ -299,10 +345,11 @@ export default function Registration({ trainingId, stripePublicKey }) {
       {/* Header */}
       <div style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <TreePine size={28} style={{ color: '#B01A19' }} />
+          <img src="/icons/academy.png" alt="Academy" style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
           <span style={{
             fontFamily: 'var(--font-heading)',
             fontSize: '20px',
+            lineHeight: '28px',
             color: '#B01A19',
           }}>Semisto Academy</span>
         </div>
@@ -376,8 +423,13 @@ export default function Registration({ trainingId, stripePublicKey }) {
             <div>
               <div style={styles.infoLabel}>Prix</div>
               <div style={styles.infoValue}>
-                {training.price.toFixed(2)} €
-                {training.vatRate > 0 && <span style={{ fontSize: '12px', color: '#9ca3af' }}> TTC</span>}
+                {hasCategories ? (
+                  categories.length === 1
+                    ? <>{categories[0].price.toFixed(2)} €{training.vatRate > 0 && <span style={{ fontSize: '12px', color: '#9ca3af' }}> TTC</span>}</>
+                    : <>à partir de {Math.min(...categories.map((c) => c.price)).toFixed(2)} €</>
+                ) : (
+                  <>{training.price.toFixed(2)} €{training.vatRate > 0 && <span style={{ fontSize: '12px', color: '#9ca3af' }}> TTC</span>}</>
+                )}
               </div>
             </div>
           </div>
@@ -397,7 +449,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
         </div>
       </div>
 
-      {training.spotsRemaining === 0 ? (
+      {(hasCategories ? categories.every((c) => c.spotsRemaining <= 0) : training.spotsRemaining === 0) ? (
         <div style={styles.card}>
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <AlertCircle size={48} style={{ color: '#f59e0b', marginBottom: '16px' }} />
@@ -546,6 +598,93 @@ export default function Registration({ trainingId, stripePublicKey }) {
                 </div>
               </div>
 
+              {/* Category Selection */}
+              {hasCategories && (
+                <div style={styles.section}>
+                  <h3 style={styles.sectionTitle}>
+                    <Users size={18} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
+                    Places
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {categories.map((cat) => {
+                      const qty = formData.items[cat.id] || 0
+                      const discount = computeCatDiscount(qty)
+                      const subtotal = computeCatSubtotal(cat.price, qty)
+                      const isFull = cat.spotsRemaining <= 0
+                      const isClosed = cat.maxSpots === 0
+
+                      return (
+                        <div
+                          key={cat.id}
+                          style={{
+                            padding: '14px 16px',
+                            border: qty > 0 ? '2px solid #B01A19' : '2px solid #e5e7eb',
+                            borderRadius: '8px',
+                            backgroundColor: isFull || isClosed ? '#f9fafb' : qty > 0 ? '#fef2f2' : 'white',
+                            opacity: isFull || isClosed ? 0.5 : 1,
+                            transition: 'border-color 0.15s, background-color 0.15s',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: 1, minWidth: '140px' }}>
+                              <div style={{ fontWeight: '500', color: '#1f2937', fontFamily: 'var(--font-body)' }}>{cat.label}</div>
+                              <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>
+                                {cat.price.toFixed(2)} € par place
+                                {' — '}
+                                {isFull || isClosed ? 'Complet' : `${cat.spotsRemaining} place${cat.spotsRemaining > 1 ? 's' : ''}`}
+                              </div>
+                            </div>
+                            {!isFull && !isClosed && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '6px', overflow: 'hidden' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateField('items', { ...formData.items, [cat.id]: Math.max(0, qty - 1) })}
+                                    disabled={qty === 0}
+                                    style={{ padding: '6px 10px', border: 'none', background: 'none', cursor: qty === 0 ? 'not-allowed' : 'pointer', color: '#6b7280', fontSize: '16px', opacity: qty === 0 ? 0.3 : 1 }}
+                                  >−</button>
+                                  <span style={{ padding: '6px 12px', fontWeight: '600', color: '#1f2937', minWidth: '28px', textAlign: 'center', fontFamily: 'var(--font-body)' }}>{qty}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateField('items', { ...formData.items, [cat.id]: Math.min(cat.spotsRemaining, qty + 1) })}
+                                    disabled={qty >= cat.spotsRemaining}
+                                    style={{ padding: '6px 10px', border: 'none', background: 'none', cursor: qty >= cat.spotsRemaining ? 'not-allowed' : 'pointer', color: '#6b7280', fontSize: '16px', opacity: qty >= cat.spotsRemaining ? 0.3 : 1 }}
+                                  >+</button>
+                                </div>
+                                <div style={{ textAlign: 'right', minWidth: '70px', opacity: qty > 0 ? 1 : 0, transition: 'opacity 0.15s' }}>
+                                  <div style={{ fontWeight: '600', color: '#B01A19', fontFamily: 'var(--font-body)' }}>{subtotal.toFixed(2)} €</div>
+                                  {discount > 0 && (
+                                    <div style={{ fontSize: '12px', color: '#16a34a', fontFamily: 'var(--font-body)' }}>-{discount}%</div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {hasSelectedItems && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px 16px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <span style={{ fontWeight: '500', color: '#374151', fontFamily: 'var(--font-body)' }}>Total</span>
+                      <span style={{ fontWeight: '700', fontSize: '18px', color: '#B01A19', fontFamily: 'var(--font-body)' }}>
+                        {itemsTotal.toFixed(2)} €
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Payment Selection */}
               <div style={styles.section}>
                 <h3 style={styles.sectionTitle}>Paiement</h3>
@@ -571,7 +710,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
                         <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>Régler la totalité maintenant</div>
                       </div>
                       <div style={{ fontWeight: '700', fontSize: '18px', color: '#B01A19', fontFamily: 'var(--font-body)' }}>
-                        {training.price.toFixed(2)} €
+                        {itemsTotal.toFixed(2)} €
                       </div>
                     </label>
                     <label
@@ -592,11 +731,11 @@ export default function Registration({ trainingId, stripePublicKey }) {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '500', color: '#1f2937', fontFamily: 'var(--font-body)' }}>Acompte</div>
                         <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>
-                          Le solde de {(training.price - training.depositAmount).toFixed(2)} € sera à régler ultérieurement
+                          Le solde de {(itemsTotal - depositTotal).toFixed(2)} € sera à régler ultérieurement
                         </div>
                       </div>
                       <div style={{ fontWeight: '700', fontSize: '18px', color: '#B01A19', fontFamily: 'var(--font-body)' }}>
-                        {training.depositAmount.toFixed(2)} €
+                        {depositTotal.toFixed(2)} €
                       </div>
                     </label>
                   </div>
@@ -610,7 +749,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: '#374151', fontFamily: 'var(--font-body)' }}>Montant à payer</span>
                       <span style={{ fontWeight: '700', fontSize: '20px', color: '#B01A19', fontFamily: 'var(--font-body)' }}>
-                        {training.price.toFixed(2)} €
+                        {itemsTotal.toFixed(2)} €
                       </span>
                     </div>
                   </div>
@@ -638,11 +777,11 @@ export default function Registration({ trainingId, stripePublicKey }) {
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || (hasCategories && !hasSelectedItems)}
                 style={{
                   width: '100%',
                   padding: '14px 24px',
-                  backgroundColor: submitting ? '#9ca3af' : '#B01A19',
+                  backgroundColor: (submitting || (hasCategories && !hasSelectedItems)) ? '#9ca3af' : '#B01A19',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',

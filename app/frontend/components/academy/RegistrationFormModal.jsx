@@ -19,7 +19,7 @@ function debounce(fn, ms) {
   }
 }
 
-export function RegistrationFormModal({ registration, trainingPrice, onSubmit, onCancel, busy = false }) {
+export function RegistrationFormModal({ registration, trainingPrice, participantCategories = [], academySettings, onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(registration)
   const nameRef = useRef(null)
   const suggestionsRef = useRef(null)
@@ -33,7 +33,36 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
   const [amountPaid, setAmountPaid] = useState(registration?.amountPaid ?? 0)
   const [paymentStatus, setPaymentStatus] = useState(registration?.paymentStatus ?? 'pending')
   const [internalNote, setInternalNote] = useState(registration?.internalNote ?? '')
+  const [items, setItems] = useState(() => {
+    if (registration?.items?.length > 0) {
+      return registration.items.reduce((acc, item) => {
+        acc[item.participantCategoryId] = item.quantity
+        return acc
+      }, {})
+    }
+    return {}
+  })
   const [error, setError] = useState(null)
+
+  const discountPerSpot = academySettings?.volumeDiscountPerSpot ?? 10
+  const discountMax = academySettings?.volumeDiscountMax ?? 30
+
+  const computeDiscount = (qty) => {
+    if (qty <= 1) return 0
+    return Math.min(discountPerSpot * (qty - 1), discountMax)
+  }
+
+  const computeSubtotal = (price, qty) => {
+    const discount = computeDiscount(qty)
+    return +(price * qty * (1 - discount / 100)).toFixed(2)
+  }
+
+  const grandTotal = participantCategories.reduce((sum, cat) => {
+    const qty = items[cat.id] || 0
+    return sum + computeSubtotal(cat.price, qty)
+  }, 0)
+
+  const hasItems = Object.values(items).some((qty) => qty > 0)
 
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -139,6 +168,13 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
       return
     }
 
+    const itemsPayload = Object.entries(items)
+      .filter(([, qty]) => qty > 0)
+      .map(([categoryId, qty]) => ({
+        participant_category_id: categoryId,
+        quantity: Number(qty),
+      }))
+
     try {
       await onSubmit({
         contact_id: contactId || undefined,
@@ -150,6 +186,7 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
         amount_paid: amountPaid,
         payment_status: paymentStatus,
         internal_note: internalNote.trim(),
+        items: itemsPayload.length > 0 ? itemsPayload : undefined,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -389,8 +426,102 @@ export function RegistrationFormModal({ registration, trainingPrice, onSubmit, o
                   </div>
                 </div>
 
-                {/* Payment info */}
-                {trainingPrice > 0 && (
+                {/* Participant Categories — Place Selection */}
+                {participantCategories.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-semibold text-stone-700 mb-3">
+                      Places
+                    </label>
+                    <div className="space-y-2">
+                      {participantCategories.map((cat) => {
+                        const qty = items[cat.id] || 0
+                        const discount = computeDiscount(qty)
+                        const subtotal = computeSubtotal(cat.price, qty)
+                        const maxQty = cat.spotsRemaining + (registration?.items?.find((i) => i.participantCategoryId === cat.id)?.quantity || 0)
+                        const isClosed = cat.maxSpots === 0
+
+                        return (
+                          <div
+                            key={cat.id}
+                            className={`rounded-xl border p-3 transition-colors ${
+                              isClosed
+                                ? 'border-stone-100 bg-stone-50 opacity-50'
+                                : qty > 0
+                                  ? 'border-[#B01A19]/20 bg-red-50/30'
+                                  : 'border-stone-200 bg-white'
+                            }`}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-stone-900">{cat.label}</span>
+                                  <span className="text-sm text-stone-500">{cat.price.toFixed(2)} €</span>
+                                </div>
+                                <p className="text-xs text-stone-400 mt-0.5">
+                                  {isClosed ? 'Fermé' : `${cat.spotsRemaining} place${cat.spotsRemaining !== 1 ? 's' : ''} disponible${cat.spotsRemaining !== 1 ? 's' : ''}`}
+                                </p>
+                              </div>
+                              {!isClosed && (
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden">
+                                    <button
+                                      type="button"
+                                      onClick={() => setItems((prev) => ({ ...prev, [cat.id]: Math.max(0, (prev[cat.id] || 0) - 1) }))}
+                                      disabled={qty === 0}
+                                      className="px-2.5 py-1.5 text-stone-500 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                      </svg>
+                                    </button>
+                                    <span className="w-8 text-center text-sm font-medium text-stone-900">{qty}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setItems((prev) => ({ ...prev, [cat.id]: Math.min(maxQty, (prev[cat.id] || 0) + 1) }))}
+                                      disabled={qty >= maxQty}
+                                      className="px-2.5 py-1.5 text-stone-500 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                  {qty > 0 && (
+                                    <div className="text-right min-w-[80px]">
+                                      <span className="text-sm font-medium text-stone-900">{subtotal.toFixed(2)} €</span>
+                                      {discount > 0 && (
+                                        <span className="block text-xs text-emerald-600">-{discount}%</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Grand Total */}
+                    {hasItems && (
+                      <div className="mt-3 p-3 rounded-xl bg-stone-50 border border-stone-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-stone-700">Total</span>
+                          <span className="text-base font-bold text-stone-900">{grandTotal.toFixed(2)} €</span>
+                        </div>
+                        {amountPaid > 0 && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-stone-500">Restant dû</span>
+                            <span className="text-sm text-stone-600">{Math.max(0, grandTotal - amountPaid).toFixed(2)} €</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Legacy single-price info */}
+                {participantCategories.length === 0 && trainingPrice > 0 && (
                   <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
                     <div className="flex items-start gap-3">
                       <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

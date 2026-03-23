@@ -13,6 +13,7 @@ module Academy
     has_many :sessions, class_name: 'Academy::TrainingSession', foreign_key: :training_id, dependent: :destroy
     has_many :registrations, class_name: 'Academy::TrainingRegistration', foreign_key: :training_id, dependent: :destroy
     has_many :documents, class_name: 'Academy::TrainingDocument', foreign_key: :training_id, dependent: :destroy
+    has_many :participant_categories, class_name: 'Academy::ParticipantCategory', foreign_key: :training_id, dependent: :destroy
     has_many :expenses, class_name: "Expense", foreign_key: :training_id, dependent: :destroy
     has_many :revenues, class_name: "Revenue", foreign_key: :training_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
@@ -26,6 +27,18 @@ module Academy
 
     def price_excl_vat
       vat_rate.to_f > 0 ? (price / (1 + vat_rate / 100.0)).round(2) : price
+    end
+
+    def total_capacity
+      participant_categories.sum(:max_spots)
+    end
+
+    def total_spots_taken
+      participant_categories.sum(&:spots_taken)
+    end
+
+    def total_spots_remaining
+      total_capacity - total_spots_taken
     end
 
     private
