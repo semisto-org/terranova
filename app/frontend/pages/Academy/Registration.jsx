@@ -585,9 +585,6 @@ export default function Registration({ trainingId, stripePublicKey }) {
           }}>
             {training.title}
           </h1>
-          {training.description && (
-            <p style={{ ...styles.text, marginTop: '8px' }}>{training.description}</p>
-          )}
         </div>
 
         <div style={{
@@ -830,7 +827,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
                             <div style={{ flex: 1, minWidth: '140px' }}>
                               <div style={{ fontWeight: '500', color: '#1f2937', fontFamily: 'var(--font-body)' }}>{cat.label}</div>
                               <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>
-                                {cat.price.toFixed(2)} € par place
+                                {Number.isInteger(cat.price) ? cat.price : cat.price.toFixed(2).replace('.', ',')} € par place
                                 {' — '}
                                 {isFull || isClosed ? 'Complet' : `${cat.spotsRemaining} place${cat.spotsRemaining > 1 ? 's' : ''}`}
                               </div>
