@@ -6,6 +6,8 @@ require "json"
 
 class SlackNotifier
   def self.post(text:, url: nil)
+    return if Rails.env.test?
+
     webhook_url = url || ENV["SLACK_WEBHOOK_URL"]
     return if webhook_url.blank?
 
