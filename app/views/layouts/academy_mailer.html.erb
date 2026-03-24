@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--[if mso]>
+    <noscript>
+      <xml>
+        <o:OfficeDocumentSettings>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    </noscript>
+    <![endif]-->
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f5f0eb; font-family: Georgia, 'Times New Roman', serif; -webkit-font-smoothing: antialiased;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f0eb;">
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+
+            <!-- Header -->
+            <tr>
+              <td style="background-color: #B01A19; padding: 24px 32px; border-radius: 12px 12px 0 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="44" valign="middle">
+                      <img src="<%= attachments['academy-logo.png']&.url || '' %>" alt="Academy" width="36" height="36" style="display: block; border-radius: 6px;" />
+                    </td>
+                    <td valign="middle" style="padding-left: 12px;">
+                      <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 22px; color: #ffffff; font-weight: bold; letter-spacing: 0.3px;">Semisto Academy</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Accent stripe -->
+            <tr>
+              <td style="background: linear-gradient(90deg, #B01A19, #8a1413); height: 3px; font-size: 0; line-height: 0;">&nbsp;</td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="background-color: #ffffff; padding: 36px 32px;">
+                <%= yield %>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="background-color: #faf8f6; padding: 24px 32px; border-radius: 0 0 12px 12px; border-top: 1px solid #e8e2dc;">
+                <p style="margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #6b5e54;">
+                  Pour toute information compl&eacute;mentaire, contacte-nous &agrave;
+                  <a href="mailto:formations@semisto.org" style="color: #B01A19; text-decoration: none; font-weight: 600;">formations@semisto.org</a>.
+                  Nous serons ravis de te r&eacute;pondre.
+                </p>
+                <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 11px; color: #a89e94;">
+                  <a href="https://www.semisto.org" style="color: #a89e94; text-decoration: underline;">Semisto ASBL</a> &mdash; En route vers l'&egrave;re des for&ecirc;ts comestibles
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,192 @@
+<%
+  def format_eur(value)
+    if value == value.to_i.to_f
+      "#{value.to_i}\u{00A0}\u{20AC}"
+    else
+      "#{sprintf('%.2f', value).gsub('.', ',')}\u{00A0}\u{20AC}"
+    end
+  end
+
+  def date_fr(date)
+    mois = %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre]
+    "#{date.day} #{mois[date.month - 1]} #{date.year}"
+  end
+%>
+
+<!-- Confirmation badge -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 24px; padding: 8px 20px;">
+            <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #16a34a; letter-spacing: 0.3px;">&#10003; Inscription confirm&eacute;e</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Greeting -->
+<p style="margin: 0 0 20px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.7; color: #1f2937;">
+  Bonjour <strong><%= @registration.contact_name %></strong>,
+</p>
+
+<p style="margin: 0 0 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  Ton inscription a bien &eacute;t&eacute; enregistr&eacute;e et ton paiement a &eacute;t&eacute; re&ccedil;u. Voici le r&eacute;capitulatif.
+</p>
+
+<p style="margin: 0 0 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  Tu recevras un e-mail de notre &eacute;quipe avec tous les d&eacute;tails concernant cette activit&eacute;, au plus tard 4 jours avant la date de la session.
+</p>
+
+<!-- Training card -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+  <!-- Training header -->
+  <tr>
+    <td style="background-color: #fef2f2; padding: 20px 24px; border-bottom: 1px solid #e5e7eb;">
+      <p style="margin: 0 0 4px; font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #1f2937; line-height: 1.4;">
+        <%= @training.title %>
+      </p>
+      <% if @training.training_type %>
+        <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+          <%= @training.training_type.name %>
+        </p>
+      <% end %>
+    </td>
+  </tr>
+
+  <!-- Details -->
+  <tr>
+    <td style="padding: 20px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <% if @sessions.any? %>
+          <tr>
+            <td width="90" valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+              Dates
+            </td>
+            <td valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+              <%= date_fr(@sessions.first.start_date) %><% if @sessions.size > 1 %> &mdash; <%= date_fr(@sessions.last.end_date) %><% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @locations.any? %>
+          <tr>
+            <td width="90" valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+              Lieu
+            </td>
+            <td valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+              <%= @locations.map(&:name).join(", ") %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Payment details -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+  <tr>
+    <td style="padding: 20px 24px; border-bottom: 1px solid #f3f4f6;">
+      <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+        D&eacute;tail du paiement
+      </p>
+    </td>
+  </tr>
+
+  <!-- Line items -->
+  <% if @items.any? %>
+    <% @items.each do |item| %>
+      <tr>
+        <td style="padding: 12px 24px; border-bottom: 1px solid #f3f4f6;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #374151;">
+                <%= item.participant_category&.label || "Place" %>
+                <span style="color: #9ca3af;">&times; <%= item.quantity %></span>
+                <% if item.discount_percent.to_f > 0 %>
+                  <span style="display: inline-block; margin-left: 6px; padding: 1px 6px; background-color: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 600; border-radius: 3px;">&minus;<%= item.discount_percent.to_i %>&nbsp;%</span>
+                <% end %>
+              </td>
+              <td align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937; font-weight: 500; white-space: nowrap;">
+                <%= format_eur(item.subtotal.to_f) %>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    <% end %>
+  <% else %>
+    <tr>
+      <td style="padding: 12px 24px; border-bottom: 1px solid #f3f4f6;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #374151;">
+              Inscription
+            </td>
+            <td align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937; font-weight: 500;">
+              <%= format_eur(@payment_amount) %>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  <% end %>
+
+  <!-- Total row -->
+  <tr>
+    <td style="padding: 16px 24px; background-color: #faf8f6;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #374151; font-weight: 600;">
+            <% if @payment_status == "partial" %>
+              Acompte pay&eacute;
+            <% else %>
+              Total pay&eacute;
+            <% end %>
+          </td>
+          <td align="right" style="font-family: Georgia, 'Times New Roman', serif; font-size: 20px; color: #B01A19; font-weight: bold;">
+            <%= format_eur(@amount_paid) %>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Payment method -->
+  <tr>
+    <td style="padding: 12px 24px; border-top: 1px solid #e5e7eb;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; color: #9ca3af;">
+            M&eacute;thode de paiement
+          </td>
+          <td align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; color: #374151; font-weight: 500;">
+            <%= @payment_method %>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Deposit notice -->
+<% if @payment_status == "partial" %>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px;">
+    <tr>
+      <td style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px 20px;">
+        <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #92400e;">
+          <strong>Solde restant&nbsp;: <%= format_eur(@payment_amount - @amount_paid) %></strong><br>
+          Une demande de paiement pour le solde te sera envoy&eacute;e ult&eacute;rieurement par l'&eacute;quipe Semisto Academy.
+        </p>
+      </td>
+    </tr>
+  </table>
+<% end %>
+
+<!-- Closing -->
+<p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  &Agrave; tr&egrave;s bient&ocirc;t&nbsp;!
+</p>

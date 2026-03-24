@@ -1,0 +1,62 @@
+<%
+  def format_eur_text(value)
+    if value == value.to_i.to_f
+      "#{value.to_i} €"
+    else
+      "#{sprintf('%.2f', value).gsub('.', ',')} €"
+    end
+  end
+
+  def date_fr(date)
+    mois = %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre]
+    "#{date.day} #{mois[date.month - 1]} #{date.year}"
+  end
+%>
+SEMISTO ACADEMY
+Confirmation d'inscription
+===========================
+
+Bonjour <%= @registration.contact_name %>,
+
+Ton inscription a bien été enregistrée et ton paiement a été reçu. Voici le récapitulatif.
+
+Tu recevras un e-mail de notre équipe avec tous les détails concernant cette activité, au plus tard 4 jours avant la date de la session.
+
+<%= @training.title %>
+<% if @training.training_type %>(<%= @training.training_type.name %>)<% end %>
+<% if @sessions.any? %>
+Dates : <%= date_fr(@sessions.first.start_date) %><% if @sessions.size > 1 %> — <%= date_fr(@sessions.last.end_date) %><% end %>
+<% end %>
+<% if @locations.any? %>
+Lieu : <%= @locations.map(&:name).join(", ") %>
+<% end %>
+
+DÉTAIL DU PAIEMENT
+-------------------
+<% if @items.any? %>
+<% @items.each do |item| %>
+<%= item.participant_category&.label || "Place" %> × <%= item.quantity %><% if item.discount_percent.to_f > 0 %> (-<%= item.discount_percent.to_i %>%)<% end %> : <%= format_eur_text(item.subtotal.to_f) %>
+<% end %>
+<% else %>
+Inscription : <%= format_eur_text(@payment_amount) %>
+<% end %>
+-------------------
+<% if @payment_status == "partial" %>
+Acompte payé : <%= format_eur_text(@amount_paid) %>
+<% else %>
+Total payé : <%= format_eur_text(@amount_paid) %>
+<% end %>
+Méthode de paiement : <%= @payment_method %>
+<% if @payment_status == "partial" %>
+
+Solde restant : <%= format_eur_text(@payment_amount - @amount_paid) %>
+Une demande de paiement pour le solde te sera envoyée ultérieurement par l'équipe Semisto Academy.
+<% end %>
+
+À très bientôt !
+
+--
+Pour toute information complémentaire, contacte-nous à formations@semisto.org.
+Nous serons ravis de te répondre.
+
+Semisto ASBL (https://www.semisto.org) — En route vers l'ère des forêts comestibles

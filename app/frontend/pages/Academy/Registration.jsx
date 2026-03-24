@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { CalendarDays, MapPin, Users, Euro, Car, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import confetti from 'canvas-confetti'
 
 function PaymentForm({ clientSecret, amount, onSuccess, onError }) {
   const stripe = useStripe()
@@ -141,8 +142,6 @@ export default function Registration({ trainingId, stripePublicKey }) {
   }, [])
 
   useEffect(() => {
-    if (step === 'success') return
-
     fetch(`/api/v1/public/academy/trainings/${trainingId}`)
       .then(res => {
         if (!res.ok) throw new Error('Activité non disponible')
@@ -156,10 +155,41 @@ export default function Registration({ trainingId, stripePublicKey }) {
         setLoading(false)
       })
       .catch(err => {
-        setError(err.message)
-        setLoading(false)
+        if (step === 'success') {
+          setLoading(false)
+        } else {
+          setError(err.message)
+          setLoading(false)
+        }
       })
-  }, [trainingId, step])
+  }, [trainingId])
+
+  const fireConfetti = useCallback(() => {
+    const end = Date.now() + 1500
+    const colors = ['#B01A19', '#16a34a', '#AFBD00', '#234766']
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors,
+      })
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors,
+      })
+      if (Date.now() < end) requestAnimationFrame(frame)
+    }
+    frame()
+  }, [])
+
+  useEffect(() => {
+    if (step === 'success') fireConfetti()
+  }, [step, fireConfetti])
 
   const validateForm = () => {
     const errors = {}
@@ -262,30 +292,201 @@ export default function Registration({ trainingId, stripePublicKey }) {
   }
 
   if (step === 'success') {
+    const firstSession = training?.sessions?.[0]
+    const lastSession = training?.sessions?.[training.sessions.length - 1]
+    const locationNames = training?.locations?.map(l => l.name).join(', ')
+
     return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <CheckCircle size={56} style={{ color: '#16a34a', marginBottom: '16px' }} />
-            <h2 style={{ ...styles.heading, color: '#16a34a' }}>Inscription confirmée !</h2>
-            <p style={styles.text}>
-              Votre inscription a bien été enregistrée et votre paiement a été reçu.
-              Vous recevrez un e-mail de confirmation prochainement.
-            </p>
-            {training && (
-              <div style={{
-                marginTop: '24px',
-                padding: '16px',
-                backgroundColor: '#f0fdf4',
-                borderRadius: '8px',
-                border: '1px solid #bbf7d0',
-              }}>
-                <p style={{ fontWeight: '600', color: '#166534', fontFamily: 'var(--font-body)' }}>
-                  {training.title}
-                </p>
-              </div>
-            )}
+      <div style={{
+        maxWidth: '640px',
+        margin: '0 auto',
+        padding: '24px 16px',
+        minHeight: '100vh',
+        fontFamily: 'var(--font-body)',
+        background: 'linear-gradient(170deg, #1a3a2a 0%, #2d5a3d 35%, #3b7a4a 65%, #4a9a55 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <style>{`
+          @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+          @keyframes leafFloat1 { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(12px,-18px) rotate(15deg); } }
+          @keyframes leafFloat2 { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(-10px,-14px) rotate(-12deg); } }
+          @keyframes leafFloat3 { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(8px,10px) rotate(10deg); } }
+        `}</style>
+
+        {/* Floating organic shapes */}
+        <div style={{ position: 'absolute', top: '60px', left: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(175, 189, 0, 0.08)', animation: 'leafFloat1 8s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: '200px', right: '-30px', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.04)', animation: 'leafFloat2 10s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: '120px', left: '10px', width: '90px', height: '90px', borderRadius: '50%', background: 'rgba(175, 189, 0, 0.06)', animation: 'leafFloat3 7s ease-in-out infinite' }} />
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px', animation: 'fadeUp 0.6s ease-out both' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <img src="/icons/academy.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>Semisto Academy</span>
           </div>
+        </div>
+
+        {/* Main celebration */}
+        <div style={{
+          textAlign: 'center',
+          padding: '0 12px',
+          marginBottom: '36px',
+          animation: 'fadeUp 0.6s ease-out 0.15s both',
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '72px',
+            height: '72px',
+            borderRadius: '50%',
+            background: 'rgba(175, 189, 0, 0.15)',
+            border: '2px solid rgba(175, 189, 0, 0.3)',
+            marginBottom: '24px',
+            animation: 'scaleIn 0.5s ease-out 0.3s both',
+          }}>
+            <CheckCircle size={36} style={{ color: '#AFBD00' }} />
+          </div>
+
+          <h1 style={{
+            fontFamily: 'var(--font-heading)',
+            fontSize: '32px',
+            color: '#ffffff',
+            margin: '0 0 12px',
+            lineHeight: '1.2',
+            letterSpacing: '-0.3px',
+          }}>
+            C'est confirmé !
+          </h1>
+
+          <p style={{
+            fontSize: '17px',
+            color: 'rgba(255,255,255,0.75)',
+            lineHeight: '1.6',
+            margin: '0 0 6px',
+          }}>
+            Ta nouvelle aventure commence ici.
+          </p>
+          <p style={{
+            fontSize: '14px',
+            color: 'rgba(255,255,255,0.5)',
+            lineHeight: '1.5',
+            margin: '0',
+          }}>
+            Un e-mail de confirmation vient de partir à <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{formData.contact_email}</strong>
+          </p>
+        </div>
+
+        {/* Training card */}
+        {training && (
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)',
+            marginBottom: '20px',
+            animation: 'fadeUp 0.6s ease-out 0.3s both',
+          }}>
+            {/* Training header band */}
+            <div style={{
+              padding: '20px 24px',
+              background: 'linear-gradient(135deg, #B01A19 0%, #8a1413 100%)',
+              position: 'relative',
+            }}>
+              {training.trainingType?.name && (
+                <span style={{
+                  display: 'inline-block',
+                  padding: '3px 10px',
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: 'rgba(255,255,255,0.9)',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  marginBottom: '8px',
+                }}>
+                  {training.trainingType.name}
+                </span>
+              )}
+              <h2 style={{
+                fontFamily: 'var(--font-heading)',
+                fontSize: '22px',
+                color: '#ffffff',
+                margin: '0',
+                lineHeight: '1.3',
+              }}>
+                {training.title}
+              </h2>
+            </div>
+
+            {/* Details */}
+            <div style={{ padding: '20px 24px' }}>
+              {firstSession && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+                  <CalendarDays size={18} style={{ color: '#B01A19', flexShrink: 0, marginTop: '1px' }} />
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600', marginBottom: '2px' }}>Dates</div>
+                    <div style={{ fontSize: '15px', color: '#1f2937', fontWeight: '500' }}>
+                      {formatDate(firstSession.startDate)}
+                      {lastSession && lastSession !== firstSession && ` — ${formatDate(lastSession.endDate)}`}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {locationNames && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <MapPin size={18} style={{ color: '#B01A19', flexShrink: 0, marginTop: '1px' }} />
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600', marginBottom: '2px' }}>Lieu</div>
+                    <div style={{ fontSize: '15px', color: '#1f2937', fontWeight: '500' }}>{locationNames}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Inspirational message */}
+        <div style={{
+          textAlign: 'center',
+          padding: '24px 20px',
+          animation: 'fadeUp 0.6s ease-out 0.45s both',
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}>
+            <img src="/icons/academy.png" alt="" style={{ width: '18px', height: '18px', borderRadius: '3px' }} />
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+              En route vers l'ère des forêts comestibles
+            </span>
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', paddingBottom: '24px', animation: 'fadeUp 0.6s ease-out 0.55s both' }}>
+          <a
+            href="https://www.semisto.org"
+            style={{
+              fontSize: '14px',
+              color: 'rgba(255,255,255,0.5)',
+              textDecoration: 'none',
+              borderBottom: '1px solid rgba(255,255,255,0.2)',
+              paddingBottom: '1px',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.8)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+          >
+            Retour vers semisto.org
+          </a>
         </div>
       </div>
     )
@@ -811,11 +1012,145 @@ export default function Registration({ trainingId, stripePublicKey }) {
         </div>
       ) : step === 'payment' && clientSecret && stripePromise ? (
         /* Stripe Payment Step */
+        <>
+        {/* Order Summary */}
+        <div style={styles.card}>
+          <div style={{ padding: '24px' }}>
+            <h2 style={{ ...styles.heading, marginBottom: '16px' }}>Récapitulatif</h2>
+
+            <div style={{
+              fontSize: '15px',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '16px',
+              fontFamily: 'var(--font-body)',
+            }}>
+              {training.title}
+            </div>
+
+            {hasCategories ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {categories.filter(cat => (formData.items[cat.id] || 0) > 0).map((cat) => {
+                  const qty = formData.items[cat.id] || 0
+                  const discount = computeCatDiscount(qty)
+                  const subtotal = computeCatSubtotal(cat.price, qty)
+                  return (
+                    <div key={cat.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'baseline',
+                      padding: '10px 0',
+                      borderBottom: '1px solid #f3f4f6',
+                      fontFamily: 'var(--font-body)',
+                    }}>
+                      <div>
+                        <span style={{ color: '#374151', fontSize: '14px' }}>
+                          {cat.label}
+                        </span>
+                        <span style={{ color: '#9ca3af', fontSize: '13px', marginLeft: '6px' }}>
+                          × {qty}
+                        </span>
+                        {discount > 0 && (
+                          <span style={{
+                            display: 'inline-block',
+                            marginLeft: '8px',
+                            padding: '1px 6px',
+                            backgroundColor: '#f0fdf4',
+                            color: '#16a34a',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            borderRadius: '4px',
+                          }}>
+                            −{discount}%
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontWeight: '500', color: '#1f2937', fontSize: '14px', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                        {subtotal.toFixed(2)} €
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                padding: '10px 0',
+                borderBottom: '1px solid #f3f4f6',
+                fontFamily: 'var(--font-body)',
+                fontSize: '14px',
+                color: '#374151',
+              }}>
+                <span>Inscription</span>
+                <span style={{ fontWeight: '500', color: '#1f2937' }}>{training.price.toFixed(2)} €</span>
+              </div>
+            )}
+
+            {/* Total / Deposit line */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'baseline',
+              marginTop: '12px',
+              paddingTop: '12px',
+              borderTop: '2px solid #e5e7eb',
+              fontFamily: 'var(--font-body)',
+            }}>
+              {formData.payment_type === 'deposit' && canPayDeposit ? (
+                <>
+                  <div>
+                    <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                      Acompte
+                    </span>
+                    <span style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                      Solde de {(itemsTotal - depositTotal).toFixed(2)} € à régler ultérieurement
+                    </span>
+                  </div>
+                  <span style={{ fontWeight: '700', fontSize: '18px', color: '#B01A19' }}>
+                    {paymentAmount.toFixed(2)} €
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>Total</span>
+                  <span style={{ fontWeight: '700', fontSize: '18px', color: '#B01A19' }}>
+                    {paymentAmount.toFixed(2)} €
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Email confirmation callout */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+          padding: '14px 16px',
+          backgroundColor: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          color: '#1e40af',
+          lineHeight: '1.5',
+        }}>
+          <CheckCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <span>
+            Une confirmation vous sera envoyée par e-mail à <strong>{formData.contact_email}</strong>
+          </span>
+        </div>
+
+        {/* Payment Form */}
         <div style={styles.card}>
           <div style={{ padding: '24px' }}>
             <h2 style={{ ...styles.heading, marginBottom: '8px' }}>Paiement</h2>
             <p style={{ ...styles.text, marginBottom: '24px' }}>
-              Complétez votre paiement de <strong>{paymentAmount.toFixed(2)} €</strong> par carte bancaire ou Bancontact.
+              Choisissez votre mode de paiement.
             </p>
             <Elements
               stripe={stripePromise}
@@ -858,6 +1193,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
             </button>
           </div>
         </div>
+        </>
       ) : null}
 
       {/* Footer */}

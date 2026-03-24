@@ -1,7 +1,10 @@
 require 'test_helper'
 
 class AcademyRegistrationTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
   setup do
+    ENV["STRIPE_WEBHOOK_SECRET"] = ""
+
     [
       Academy::TrainingAttendance,
       Academy::TrainingRegistration,
@@ -153,9 +156,11 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
     }
 
     assert_difference 'Academy::TrainingRegistration.count', 1 do
-      post '/api/v1/public/stripe-webhooks', params: payload.to_json,
-        headers: { 'Content-Type' => 'application/json' }
-      assert_response :ok
+      assert_enqueued_emails 1 do
+        post '/api/v1/public/stripe-webhooks', params: payload.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        assert_response :ok
+      end
     end
 
     reg = Academy::TrainingRegistration.last

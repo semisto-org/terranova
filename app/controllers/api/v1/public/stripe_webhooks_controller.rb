@@ -47,6 +47,8 @@ module Api
           amount_paid = payment_intent.amount / 100.0
           payment_type = metadata["payment_type"]
 
+          registration = nil
+
           ActiveRecord::Base.transaction do
             registration = Academy::TrainingRegistration.create!(
               training: training,
@@ -93,6 +95,67 @@ module Api
             end
 
             registration.update!(payment_status: payment_status)
+          end
+
+          if registration
+            payment_method_label = resolve_payment_method(payment_intent)
+            AcademyMailer.registration_confirmation(registration, payment_method: payment_method_label).deliver_later
+            notify_slack(registration, payment_intent)
+          end
+        end
+
+        def notify_slack(registration, payment_intent)
+          training = registration.training
+          app_host = ENV.fetch("APP_HOST", "localhost:3000")
+          scheme = app_host.include?("localhost") ? "http" : "https"
+          training_url = "#{scheme}://#{app_host}/academy/#{training.id}"
+
+          status_label = registration.payment_status == "partial" ? "acompte" : "paiement complet"
+          amount = format_amount(registration.amount_paid.to_f)
+
+          payment_method = resolve_payment_method(payment_intent)
+
+          items_lines = registration.registration_items.includes(:participant_category).map do |item|
+            label = item.participant_category&.label || "Place"
+            "    #{label} x #{item.quantity}"
+          end
+
+          lines = [
+            ":tada: *Nouvelle inscription*",
+            "*#{registration.contact_name}* s'est inscrit(e) à <#{training_url}|#{training.title}>"
+          ]
+          lines.concat(items_lines) if items_lines.any?
+          lines << "Montant payé : *#{amount}* (#{status_label} — #{payment_method})"
+
+          SlackNotifier.post(text: lines.join("\n"))
+        end
+
+        def resolve_payment_method(payment_intent)
+          type = nil
+          last4 = nil
+          begin
+            charges = payment_intent.try(:charges)
+            if charges.respond_to?(:data) && charges.data.is_a?(Array) && charges.data.any?
+              details = charges.data.first.try(:payment_method_details)
+              type = details&.try(:type)
+              last4 = details&.try(:card)&.try(:last4) if type == "card"
+            end
+          rescue StandardError
+            # Ignore — charges may not be present in test/webhook payloads
+          end
+          type ||= Array(payment_intent.try(:payment_method_types)).first
+          case type
+          when "bancontact" then "Bancontact"
+          when "card" then last4.present? ? "Carte ***#{last4}" : "Carte"
+          else type&.capitalize || "Carte"
+          end
+        end
+
+        def format_amount(value)
+          if value == value.to_i.to_f
+            "#{value.to_i} \u20AC"
+          else
+            "#{sprintf('%.2f', value).gsub('.', ',')} \u20AC"
           end
         end
       end
