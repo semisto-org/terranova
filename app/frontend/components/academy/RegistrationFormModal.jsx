@@ -168,8 +168,9 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
       return
     }
 
+    const validCategoryIds = new Set(participantCategories.map((c) => c.id))
     const itemsPayload = Object.entries(items)
-      .filter(([, qty]) => qty > 0)
+      .filter(([categoryId, qty]) => qty > 0 && validCategoryIds.has(categoryId))
       .map(([categoryId, qty]) => ({
         participant_category_id: categoryId,
         quantity: Number(qty),
@@ -186,7 +187,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
         amount_paid: amountPaid,
         payment_status: paymentStatus,
         internal_note: internalNote.trim(),
-        items: itemsPayload.length > 0 ? itemsPayload : undefined,
+        items: participantCategories.length > 0 ? itemsPayload : undefined,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")

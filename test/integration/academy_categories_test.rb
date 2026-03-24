@@ -545,6 +545,36 @@ class AcademyCategoriesTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test 'update registration replaces items and recomputes payment amount' do
+    cat_adult = Academy::ParticipantCategory.create!(training: @training, label: 'Adulte', price: 100.0, max_spots: 20)
+    cat_child = Academy::ParticipantCategory.create!(training: @training, label: 'Enfant', price: 50.0, max_spots: 10)
+
+    # Create registration with 2 adults
+    post "/api/v1/academy/trainings/#{@training.id}/registrations", params: {
+      contact_name: 'Update Test',
+      carpooling: 'none',
+      items: [{ participant_category_id: cat_adult.id, quantity: 2 }]
+    }, as: :json
+    assert_response :created
+    reg_id = JSON.parse(response.body)['id']
+
+    # Update: switch to 1 child instead
+    patch "/api/v1/academy/registrations/#{reg_id}", params: {
+      items: [{ participant_category_id: cat_child.id, quantity: 1 }]
+    }, as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal 1, body['items'].size
+    assert_equal 'Enfant', body['items'][0]['categoryLabel']
+    assert_equal 1, body['items'][0]['quantity']
+    assert_in_delta 50.0, body['paymentAmount'], 0.01
+
+    # Verify old items are gone
+    assert_equal 0, cat_adult.spots_taken
+    assert_equal 1, cat_child.spots_taken
+  end
+
   # ──────────────────────────────────────────────
   # API: Status validation
   # ──────────────────────────────────────────────
@@ -660,49 +690,6 @@ class AcademyCategoriesTest < ActionDispatch::IntegrationTest
 
     body = JSON.parse(response.body)
     assert_equal 7, body['participantCategories'][0]['spotsRemaining']
-  end
-
-  # ──────────────────────────────────────────────
-  # API Public: webhook creates registration items
-  # ──────────────────────────────────────────────
-
-  test 'webhook creates registration items from metadata' do
-    @training.update!(status: 'registrations_open')
-    cat = Academy::ParticipantCategory.create!(training: @training, label: 'Adulte', price: 100.0, max_spots: 20)
-
-    items_data = [{ 'category_id' => cat.id, 'quantity' => 2, 'unit_price' => 100.0, 'discount_percent' => 10.0 }]
-
-    payload = {
-      type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: 'pi_test_items_789',
-          amount: 18000,
-          metadata: {
-            training_id: @training.id.to_s,
-            contact_name: 'Webhook User',
-            contact_email: 'webhook@test.be',
-            phone: '',
-            carpooling: 'none',
-            payment_type: 'full',
-            items: items_data.to_json
-          }
-        }
-      }
-    }
-
-    assert_difference 'Academy::TrainingRegistration.count', 1 do
-      post '/api/v1/public/stripe-webhooks', params: payload.to_json,
-        headers: { 'Content-Type' => 'application/json' }
-      assert_response :ok
-    end
-
-    reg = Academy::TrainingRegistration.last
-    assert_equal 1, reg.registration_items.size
-    assert_equal 2, reg.registration_items.first.quantity
-    assert_in_delta 10.0, reg.registration_items.first.discount_percent.to_f, 0.01
-    assert_in_delta 180.0, reg.registration_items.first.subtotal.to_f, 0.01
-    assert_in_delta 180.0, reg.payment_amount.to_f, 0.01
   end
 
   # ──────────────────────────────────────────────

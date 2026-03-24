@@ -333,7 +333,13 @@ export default function TrainingKanban({
                             <button type="button" onClick={() => onViewTraining?.(row.training.id)} className="font-semibold text-stone-900 text-left hover:text-[#B01A19] underline-offset-2 hover:underline">
                               {row.training.title}
                             </button>
-                            <p className="text-xs text-stone-500">{row.trainingType?.name || '—'}</p>
+                            <p className="flex items-center gap-1.5 text-xs text-stone-500">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: row.trainingType?.color || '#6B7280' }}
+                              />
+                              {row.trainingType?.name || '—'}
+                            </p>
                           </td>
                           <td className="px-4 py-3 text-stone-700 text-xs">{formatDate(row.nextSession?.startDate)}</td>
                           <td className="px-4 py-3">

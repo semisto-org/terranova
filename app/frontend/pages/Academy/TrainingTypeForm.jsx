@@ -28,12 +28,32 @@ import {
 } from '@dnd-kit/sortable'
 import SortableChecklistItem from '@/components/SortableChecklistItem'
 
+const TYPE_COLORS = [
+  { hex: '#EF4444', label: 'Rouge' },
+  { hex: '#F97316', label: 'Orange' },
+  { hex: '#F59E0B', label: 'Ambre' },
+  { hex: '#EAB308', label: 'Jaune' },
+  { hex: '#84CC16', label: 'Lime' },
+  { hex: '#22C55E', label: 'Vert' },
+  { hex: '#14B8A6', label: 'Sarcelle' },
+  { hex: '#06B6D4', label: 'Cyan' },
+  { hex: '#3B82F6', label: 'Bleu' },
+  { hex: '#6366F1', label: 'Indigo' },
+  { hex: '#8B5CF6', label: 'Violet' },
+  { hex: '#A855F7', label: 'Pourpre' },
+  { hex: '#EC4899', label: 'Rose' },
+  { hex: '#F43F5E', label: 'Framboise' },
+  { hex: '#78716C', label: 'Pierre' },
+  { hex: '#6B7280', label: 'Gris' },
+]
+
 export default function TrainingTypeForm({ trainingTypeId }) {
   const [loading, setLoading] = useState(!!trainingTypeId)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [color, setColor] = useState('#6B7280')
   const [checklist, setChecklist] = useState([{ id: Date.now().toString(), value: 'Définir contenu' }])
   const [categories, setCategories] = useState([])
   const [activeId, setActiveId] = useState(null)
@@ -71,6 +91,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
           const trainingType = payload.trainingTypes.find((item) => item.id === trainingTypeId)
           if (trainingType) {
             setName(trainingType.name)
+            setColor(trainingType.color || '#6B7280')
             setDescription(trainingType.description || '')
             const template = trainingType.checklistTemplate || ['Définir contenu']
             setChecklist(template.map((value, index) => ({ id: `item-${Date.now()}-${index}`, value })))
@@ -115,6 +136,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
           body: JSON.stringify({
             name: name.trim(),
             description,
+            color,
             checklist_template: checklist.map((item) => item.value),
             default_categories: categoriesPayload,
           }),
@@ -129,6 +151,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
           body: JSON.stringify({
             name: name.trim(),
             description,
+            color,
             checklist_template: checklist.map((item) => item.value),
             default_categories: categoriesPayload,
             photo_gallery: [],
@@ -142,7 +165,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
     } finally {
       setBusy(false)
     }
-  }, [name, description, checklist, categories, isEditing, trainingTypeId])
+  }, [name, description, color, checklist, categories, isEditing, trainingTypeId])
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id)
@@ -243,6 +266,26 @@ export default function TrainingTypeForm({ trainingTypeId }) {
                   autoFocus
                   required
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-stone-700">Couleur</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TYPE_COLORS.map((c) => (
+                    <button
+                      key={c.hex}
+                      type="button"
+                      onClick={() => setColor(c.hex)}
+                      className={`w-7 h-7 rounded-lg transition-all duration-150 ${
+                        color === c.hex
+                          ? 'ring-2 ring-offset-2 ring-stone-900 scale-110'
+                          : 'hover:scale-110 hover:ring-1 hover:ring-stone-300'
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div>

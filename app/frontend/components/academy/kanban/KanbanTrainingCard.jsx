@@ -124,7 +124,11 @@ export default function KanbanTrainingCard({
         {/* Type badge */}
         {trainingType && (
           <div className="mb-3">
-            <span className="inline-flex rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600 truncate max-w-[140px]">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600 truncate max-w-[160px]">
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: trainingType.color || '#6B7280' }}
+              />
               {trainingType.name}
             </span>
           </div>

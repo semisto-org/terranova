@@ -55,12 +55,14 @@ export default function CalendarMonthView({
   trainingSessions = [],
   trainingLocations = [],
   trainingRegistrations = [],
+  trainingTypes = [],
   holidays = [],
   onViewTraining,
 }) {
   const [selectedTrainingId, setSelectedTrainingId] = useState(null)
   const modalRef = useRef(null)
   const holidaySet = useMemo(() => new Set(holidays), [holidays])
+  const typeMap = useMemo(() => Object.fromEntries(trainingTypes.map((t) => [t.id, t])), [trainingTypes])
 
   const getTraining = (id) => trainings.find((t) => t.id === id)
   const getLocationNames = (locationIds) =>
@@ -203,7 +205,13 @@ export default function CalendarMonthView({
                       }}
                       className={`w-full text-left p-2 rounded-lg border-2 text-xs font-medium hover:shadow-md transition-all duration-200 ${colors.bg} ${colors.border} ${colors.text}`}
                     >
-                      <div className="font-semibold truncate">{t.title}</div>
+                      <div className="flex items-center gap-1 font-semibold truncate">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: typeMap[t.trainingTypeId]?.color || '#6B7280' }}
+                        />
+                        <span className="truncate">{t.title}</span>
+                      </div>
                       {locationNames.length > 0 && (
                         <div className="flex items-center gap-1 mt-1 text-[10px] opacity-80">
                           <MapPin className="w-2.5 h-2.5 shrink-0" />

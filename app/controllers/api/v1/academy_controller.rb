@@ -178,8 +178,37 @@ module Api
         if attrs[:contact_email].present?
           attrs = attrs.merge(contact_id: resolve_contact_for_registration(attrs))
         end
-        item.update!(attrs)
-        render json: serialize_registration(item)
+
+        ActiveRecord::Base.transaction do
+          item.update!(attrs)
+
+          if params.key?(:items)
+            training = item.training
+            setting = Academy::Setting.current
+
+            item.registration_items.destroy_all
+
+            Array(params[:items]).each do |item_params|
+              cat = training.participant_categories.find(item_params[:participant_category_id])
+              qty = item_params[:quantity].to_i
+              next if qty <= 0
+
+              discount = setting.discount_for_quantity(qty)
+              item.registration_items.create!(
+                participant_category: cat,
+                quantity: qty,
+                unit_price: cat.price,
+                discount_percent: discount
+              )
+            end
+
+            item.recompute_payment_amount!
+          end
+        end
+
+        render json: serialize_registration(item.reload)
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def destroy_registration
@@ -556,7 +585,7 @@ module Api
       end
 
       def training_type_params
-        params.permit(:name, :description, checklist_template: [], photo_gallery: [], trainer_ids: [], default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount])
+        params.permit(:name, :description, :color, checklist_template: [], photo_gallery: [], trainer_ids: [], default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount])
       end
 
       def location_params
@@ -628,6 +657,7 @@ module Api
           id: item.id.to_s,
           name: item.name,
           description: item.description,
+          color: item.color,
           checklistTemplate: item.checklist_template,
           defaultCategories: item.default_categories,
           photoGallery: item.photo_gallery,

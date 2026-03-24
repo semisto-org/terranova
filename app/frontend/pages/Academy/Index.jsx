@@ -954,6 +954,7 @@ export default function AcademyIndex({ initialTrainingId }) {
                 trainingSessions={data.trainingSessions}
                 trainingLocations={data.trainingLocations}
                 trainingRegistrations={data.trainingRegistrations}
+                trainingTypes={data.trainingTypes}
                 holidays={data.holidays || []}
                 onViewTraining={openTrainingDrawer}
               />
@@ -1051,8 +1052,12 @@ export default function AcademyIndex({ initialTrainingId }) {
                               <button
                                 type="button"
                                 onClick={() => actions.editTrainingType(item.id)}
-                                className="text-sm font-medium text-stone-900 hover:text-[#B01A19] transition-colors text-left"
+                                className="flex items-center gap-2 text-sm font-medium text-stone-900 hover:text-[#B01A19] transition-colors text-left"
                               >
+                                <span
+                                  className="w-3 h-3 rounded-full shrink-0"
+                                  style={{ backgroundColor: item.color || '#6B7280' }}
+                                />
                                 {item.name}
                               </button>
                             </td>
