@@ -486,6 +486,19 @@ class AcademyCategoriesTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test 'update training changes training type' do
+    new_type = Academy::TrainingType.create!(name: 'Atelier pratique', description: 'Hands-on')
+
+    patch "/api/v1/academy/trainings/#{@training.id}", params: {
+      training_type_id: new_type.id
+    }, as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal new_type.id.to_s, body['trainingTypeId']
+    assert_equal new_type.id, @training.reload.training_type_id
+  end
+
   # ──────────────────────────────────────────────
   # API: Registration with items
   # ──────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import {
   BookOpen,
+  Calendar,
   CalendarDays,
   UserPlus,
   CreditCard,
@@ -11,6 +12,7 @@ import {
   MapPin,
   User,
   Euro,
+  GraduationCap,
   CheckCircle2,
   XCircle,
   Clock,
@@ -279,9 +281,21 @@ export default function AcademyDashboard({ onNavigateToTraining }) {
                     {/* Readiness + Fill */}
                     <div className="hidden sm:flex items-center gap-3 shrink-0">
                       <div className="flex items-center gap-1">
-                        <CheckIcon ok={s.readinessChecks?.hasLocation} />
-                        <CheckIcon ok={s.readinessChecks?.hasTrainer} />
-                        <CheckIcon ok={s.readinessChecks?.hasPrice} />
+                        {[
+                          { icon: Calendar, ok: true },
+                          { icon: MapPin, ok: s.readinessChecks?.hasLocation },
+                          { icon: GraduationCap, ok: s.readinessChecks?.hasTrainer },
+                          { icon: Euro, ok: s.readinessChecks?.hasPrice },
+                        ].map(({ icon: Icon, ok }, i) => (
+                          <div
+                            key={i}
+                            className={`flex items-center justify-center w-5 h-5 rounded-md ${
+                              ok ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-400'
+                            }`}
+                          >
+                            <Icon className="w-3 h-3" />
+                          </div>
+                        ))}
                       </div>
                       <FillRateBar count={s.registrationCount} max={s.maxParticipants} />
                     </div>

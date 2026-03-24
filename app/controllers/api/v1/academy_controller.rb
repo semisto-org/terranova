@@ -597,7 +597,7 @@ module Api
       end
 
       def training_update_params
-        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, :training_type_id, checklist_items: [], checked_items: [])
       end
 
       def session_params
