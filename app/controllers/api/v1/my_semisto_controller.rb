@@ -140,6 +140,8 @@ module Api
           name: doc.name,
           url: download_url,
           filename: doc.file.attached? ? doc.file.filename.to_s : nil,
+          byteSize: doc.file.attached? ? doc.file.byte_size : nil,
+          contentType: doc.file.attached? ? doc.file.content_type : nil,
           sessionId: doc.session_id&.to_s,
           uploadedAt: doc.uploaded_at.iso8601
         }

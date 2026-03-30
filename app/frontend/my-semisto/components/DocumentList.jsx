@@ -3,6 +3,30 @@ import { FileText, Download, Calendar, FolderOpen } from 'lucide-react'
 
 const DOC_COLORS = ['#5B5781', '#2D6A4F', '#234766', '#B01A19', '#EF9B0D']
 
+function formatFileSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+}
+
+function formatFileType(contentType) {
+  if (!contentType) return ''
+  const map = {
+    'application/pdf': 'PDF',
+    'image/jpeg': 'JPEG',
+    'image/png': 'PNG',
+    'image/webp': 'WebP',
+    'image/gif': 'GIF',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+    'application/msword': 'DOC',
+    'application/vnd.ms-excel': 'XLS',
+    'text/plain': 'TXT',
+  }
+  return map[contentType] || contentType.split('/').pop().toUpperCase()
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -32,8 +56,12 @@ export function DocumentItem({ doc, colorIndex = 0 }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-stone-800 truncate">{doc.name}</p>
-        {doc.filename && (
-          <p className="text-xs text-stone-400 truncate">{doc.filename}</p>
+        {(doc.byteSize || doc.contentType) && (
+          <p className="text-xs text-stone-400 truncate">
+            {doc.contentType ? formatFileType(doc.contentType) : ''}
+            {doc.byteSize && doc.contentType ? ' · ' : ''}
+            {doc.byteSize ? formatFileSize(doc.byteSize) : ''}
+          </p>
         )}
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">

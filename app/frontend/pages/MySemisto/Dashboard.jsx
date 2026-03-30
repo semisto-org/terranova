@@ -37,7 +37,7 @@ export default function Dashboard() {
             Bienvenue, {contactName} !
           </h1>
           <p className="text-sm text-white/70">
-            Retrouvez ici vos activités, documents et informations personnelles.
+            Retrouve ici tes activités, documents et informations personnelles.
           </p>
         </div>
       </div>
