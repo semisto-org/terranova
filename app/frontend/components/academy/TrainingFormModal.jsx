@@ -86,14 +86,17 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
       return
     }
 
-    const validCategories = categories.filter((c) => c.label.trim())
-    const categoriesPayload = validCategories.map((c) => ({
-      ...(c.id && !String(c.id).startsWith('new-') ? { id: c.id } : {}),
-      label: c.label.trim(),
-      price: Number(c.price) || 0,
-      max_spots: Number(c.maxSpots) || 0,
-      deposit_amount: Number(c.depositAmount) || 0,
-    }))
+    const categoriesPayload = categories
+      .filter((c) => c._destroy || c.label.trim())
+      .map((c) => ({
+        ...(c.id && !String(c.id).startsWith('new-') ? { id: c.id } : {}),
+        ...(c._destroy ? { _destroy: true } : {
+          label: c.label.trim(),
+          price: Number(c.price) || 0,
+          max_spots: Number(c.maxSpots) || 0,
+          deposit_amount: Number(c.depositAmount) || 0,
+        }),
+      }))
 
     try {
       await onSubmit({
@@ -231,9 +234,9 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                       <label className="block text-sm font-semibold text-stone-700">
                         Catégories de participants
                       </label>
-                      {categories.length > 0 && (
+                      {categories.filter((c) => !c._destroy).length > 0 && (
                         <p className="text-xs text-stone-500 mt-0.5">
-                          Capacité totale : {categories.reduce((sum, c) => sum + (Number(c.maxSpots) || 0), 0)} places
+                          Capacité totale : {categories.filter((c) => !c._destroy).reduce((sum, c) => sum + (Number(c.maxSpots) || 0), 0)} places
                         </p>
                       )}
                     </div>
@@ -249,14 +252,14 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                     </button>
                   </div>
 
-                  {categories.length === 0 ? (
+                  {categories.filter((c) => !c._destroy).length === 0 ? (
                     <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50/50 p-6 text-center">
                       <p className="text-sm text-stone-400">Aucune catégorie de participants</p>
                       <p className="text-xs text-stone-400 mt-1">Ajoutez une catégorie pour définir les tarifs et places</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {categories.map((cat) => (
+                      {categories.filter((c) => !c._destroy).map((cat) => (
                         <div
                           key={cat.id}
                           className="rounded-xl border border-stone-200 bg-stone-50 p-3"
@@ -271,7 +274,10 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                             />
                             <button
                               type="button"
-                              onClick={() => setCategories((cats) => cats.filter((c) => c.id !== cat.id))}
+                              onClick={() => setCategories((cats) => {
+                                if (String(cat.id).startsWith('new-')) return cats.filter((c) => c.id !== cat.id)
+                                return cats.map((c) => c.id === cat.id ? { ...c, _destroy: true } : c)
+                              })}
                               className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
                               title="Supprimer"
                             >
