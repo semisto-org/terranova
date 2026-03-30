@@ -35,14 +35,20 @@ const CATEGORY_COLORS = {
   other: 'bg-stone-500',
 }
 
+function formatCurrency(value) {
+  return Number(value).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—'
   const date = new Date(dateStr)
-  return date.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  const d = String(date.getDate()).padStart(2, '0')
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const y = String(date.getFullYear()).slice(-2)
+  return `${d}/${m}/${y}`
 }
 
 export default function TrainingFinancesTab({
@@ -114,12 +120,12 @@ export default function TrainingFinancesTab({
             </span>
           </div>
           <div className="text-2xl font-bold text-stone-900">
-            {totalRevenue.toLocaleString('fr-FR')} €
+            {formatCurrency(totalRevenue)} €
           </div>
           <div className="text-xs text-stone-500 mt-1">
             {registrations.length} inscription{registrations.length !== 1 ? 's' : ''}
             {Number(vatRate) > 0 && (
-              <> · TVAC : {totalRevenueInclVat.toLocaleString('fr-FR')} € / HT : {totalRevenue.toLocaleString('fr-FR')} €</>
+              <> · {formatCurrency(totalRevenueInclVat)} € TVAC</>
             )}
           </div>
         </div>
@@ -129,10 +135,10 @@ export default function TrainingFinancesTab({
             <span className="text-sm text-stone-500">Dépenses (HT)</span>
           </div>
           <div className="text-2xl font-bold text-stone-900">
-            {totalExpenses.toLocaleString('fr-FR')} €
+            {formatCurrency(totalExpenses)} €
           </div>
           <div className="text-xs text-stone-500 mt-1">
-            {expenses.length} dépense{expenses.length !== 1 ? 's' : ''} · hors taxes
+            {expenses.length} dépense{expenses.length !== 1 ? 's' : ''}
           </div>
         </div>
         <div className="bg-white rounded-lg p-6 border border-stone-200">
@@ -149,11 +155,9 @@ export default function TrainingFinancesTab({
               profitability >= 0 ? 'text-emerald-600' : 'text-red-600'
             }`}
           >
-            {profitability >= 0 ? '+' : ''}
-            {profitability.toLocaleString('fr-FR')} €
+            {formatCurrency(profitability)} €
           </div>
           <div className="text-xs text-stone-500 mt-1">
-            {profitabilityPercent >= 0 ? '+' : ''}
             {profitabilityPercent}%
           </div>
         </div>
@@ -162,7 +166,7 @@ export default function TrainingFinancesTab({
       {Object.keys(expensesByCategory).length > 0 && (
         <div className="bg-white rounded-lg p-6 border border-stone-200">
           <h4 className="text-base font-semibold text-stone-900 mb-4">
-            Dépenses par catégorie (HT)
+            Dépenses par catégorie
           </h4>
           <div className="mb-4 relative">
             <div className="w-full bg-stone-200 rounded-full h-4 overflow-visible flex">
@@ -176,7 +180,7 @@ export default function TrainingFinancesTab({
                       key={category}
                       className={`${CATEGORY_COLORS[category] || CATEGORY_COLORS.other} h-full transition-all duration-300 hover:opacity-80 relative group cursor-default rounded-full first:rounded-l-full last:rounded-r-full`}
                       style={{ width: `${percentage}%` }}
-                      title={`${CATEGORY_LABELS[category] || category}: ${amount.toLocaleString('fr-FR')} € HT (${Math.round(percentage)}%)`}
+                      title={`${CATEGORY_LABELS[category] || category}: ${formatCurrency(amount)} € HT (${Math.round(percentage)}%)`}
                     />
                   )
                 })}
@@ -232,10 +236,10 @@ export default function TrainingFinancesTab({
                     Fournisseur
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">
-                    Catégorie
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase">
                     Libellé
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">
+                    Montant HTVA
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-stone-600 uppercase text-right">
                     Montant TVAC
@@ -275,17 +279,14 @@ function ExpenseRow({ expense, formatDate, onEdit, onDelete }) {
         {expense.supplier || '—'}
       </td>
       <td className="px-4 py-3">
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${categoryColor}`}
-        >
-          {categoryLabel}
-        </span>
-      </td>
-      <td className="px-4 py-3">
         <p className="text-sm text-stone-900">{expense.name || '—'}</p>
+        <p className="text-xs text-stone-500 mt-0.5">{categoryLabel}</p>
       </td>
       <td className="px-4 py-3 text-right font-medium text-stone-900">
-        {Number(expense.totalInclVat ?? expense.amount ?? 0).toLocaleString('fr-FR')} €
+        {formatCurrency(expense.amountExclVat ?? 0)} €
+      </td>
+      <td className="px-4 py-3 text-right font-medium text-stone-900">
+        {formatCurrency(expense.totalInclVat ?? expense.amount ?? 0)} €
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1">

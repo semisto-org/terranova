@@ -327,7 +327,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       reimbursement_date: payload.reimbursement_date || null,
       billable_to_client: payload.billable_to_client,
       rebilling_status: payload.rebilling_status || null,
-      description: payload.description || '',
+      name: payload.name || '',
       notes: payload.notes || '',
       poles: payload.poles || [],
       training_id: payload.training_id || trainingId || null,

@@ -76,6 +76,13 @@ const STATUS_HOVER = {
 
 const STATUS_ORDER = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
 
+function formatCurrency(value) {
+  return Number(value).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
 function StatusDropdown({ currentStatus, onChangeStatus, readinessChecks = [] }) {
   const [open, setOpen] = useState(false)
   const [tooltipStatus, setTooltipStatus] = useState(null)
@@ -219,7 +226,7 @@ export default function TrainingDetail({
     const paid = Number(r.amountPaid || 0)
     return sum + (vatRate > 0 ? paid / (1 + vatRate / 100) : paid)
   }, 0)
-  const expenseTotal = expenses.reduce((sum, e) => sum + Number(e.totalInclVat ?? e.amount ?? 0), 0)
+  const expenseTotal = expenses.reduce((sum, e) => sum + Number(e.amountExclVat || e.totalInclVat || e.amount || 0), 0)
   const profitability = revenue - expenseTotal
   const profitabilityPercent = revenue > 0 ? Math.round((profitability / revenue) * 100) : 0
   const registrationCount = registrations.length
@@ -372,14 +379,7 @@ export default function TrainingDetail({
               </span>
             </div>
             <div className="text-2xl font-bold text-stone-900">
-              {revenue.toLocaleString('fr-FR')} €
-            </div>
-            <div className="text-xs text-stone-500">
-              {Number(training.price || 0).toLocaleString('fr-FR')} €
-              {Number(training.vatRate || 0) > 0 ? ' TVAC' : ''} / participant
-              {Number(training.vatRate || 0) > 0 && training.priceExclVat != null && (
-                <span> ({Number(training.priceExclVat).toLocaleString('fr-FR')} € HT)</span>
-              )}
+              {formatCurrency(revenue)} €
             </div>
           </div>
           <div className="group bg-white rounded-xl p-5 border border-stone-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden">
@@ -389,11 +389,11 @@ export default function TrainingDetail({
                 <TrendingUp className="w-4 h-4 text-orange-600" />
               </div>
               <span className="text-xs font-medium text-stone-500 uppercase tracking-wide">
-                Dépenses
+                Dépenses (HT)
               </span>
             </div>
             <div className="text-2xl font-bold text-stone-900">
-              {expenseTotal.toLocaleString('fr-FR')} €
+              {formatCurrency(expenseTotal)} €
             </div>
             <div className="text-xs text-stone-500">
               {expenses.length} dépense{expenses.length !== 1 ? 's' : ''}
@@ -428,11 +428,9 @@ export default function TrainingDetail({
                 profitability >= 0 ? 'text-emerald-600' : 'text-red-600'
               }`}
             >
-              {profitability >= 0 ? '+' : ''}
-              {profitability.toLocaleString('fr-FR')} €
+              {formatCurrency(profitability)} €
             </div>
             <div className="text-xs text-stone-500">
-              {profitabilityPercent >= 0 ? '+' : ''}
               {profitabilityPercent}%
             </div>
           </div>

@@ -77,7 +77,11 @@ export default function TrainingRegistrationsTab({
             {totalExpected.toLocaleString('fr-FR')} €
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-stone-200">
+        <div className={`rounded-lg p-4 border ${
+          remainingAmount <= 0
+            ? 'bg-emerald-50 border-emerald-200'
+            : 'bg-white border-stone-200'
+        }`}>
           <div className="text-sm text-stone-500 mb-1">Reste à payer</div>
           <div
             className={`text-xl font-semibold ${
