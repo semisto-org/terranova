@@ -96,7 +96,27 @@
     </td>
   </tr>
 
-  <!-- Line items -->
+  <!-- Pack line items -->
+  <% @registration_packs.each do |rp| %>
+    <tr>
+      <td style="padding: 12px 24px; border-bottom: 1px solid #f3f4f6;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #374151;">
+              Pack &laquo;&nbsp;<%= rp.pack.name %>&nbsp;&raquo;
+              <span style="color: #9ca3af; font-size: 12px;">(<%= rp.pack.pack_items.map { |pi| "#{pi.quantity} #{pi.participant_category.label}" }.join(" + ") %>)</span>
+              <span style="color: #9ca3af;">&times; <%= rp.quantity %></span>
+            </td>
+            <td align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937; font-weight: 500; white-space: nowrap;">
+              <%= format_eur(rp.subtotal.to_f) %>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  <% end %>
+
+  <!-- Individual line items -->
   <% if @items.any? %>
     <% @items.each do |item| %>
       <tr>
@@ -118,7 +138,7 @@
         </td>
       </tr>
     <% end %>
-  <% else %>
+  <% elsif @registration_packs.empty? %>
     <tr>
       <td style="padding: 12px 24px; border-bottom: 1px solid #f3f4f6;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">

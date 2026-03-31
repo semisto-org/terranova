@@ -26,7 +26,25 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
     }
     return []
   })
+  const [packs, setPacks] = useState(() => {
+    if (training?.packs?.length > 0) {
+      return training.packs.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        depositAmount: p.depositAmount || 0,
+        items: (p.items || []).reduce((acc, pi) => {
+          acc[pi.participantCategoryId] = pi.quantity
+          return acc
+        }, {}),
+      }))
+    }
+    return []
+  })
   const [error, setError] = useState(null)
+
+  const activeCategories = categories.filter((c) => !c._destroy && c.label.trim())
+  const showPacks = activeCategories.length >= 2
 
   // Focus first input when modal opens
   useEffect(() => {
@@ -66,6 +84,14 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onCancel])
 
+  const computePackSavings = (pack) => {
+    const individualTotal = activeCategories.reduce((sum, cat) => {
+      const qty = pack.items?.[cat.id] || 0
+      return sum + (Number(cat.price) || 0) * qty
+    }, 0)
+    return individualTotal - (Number(pack.price) || 0)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
@@ -98,6 +124,23 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
         }),
       }))
 
+    const packsPayload = packs
+      .filter((p) => p._destroy || p.name?.trim())
+      .map((p) => ({
+        ...(p.id && !String(p.id).startsWith('new-') ? { id: p.id } : {}),
+        ...(p._destroy ? { _destroy: true } : {
+          name: p.name.trim(),
+          price: Number(p.price) || 0,
+          deposit_amount: Number(p.depositAmount) || 0,
+          items: Object.entries(p.items || {})
+            .filter(([, qty]) => Number(qty) > 0)
+            .map(([categoryId, qty]) => ({
+              participant_category_id: categoryId,
+              quantity: Number(qty),
+            })),
+        }),
+      }))
+
     try {
       await onSubmit({
         training_type_id: trainingTypeId,
@@ -107,6 +150,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
         description: description === '<p></p>' ? '' : description,
         coordinator_note: coordinatorNote === '<p></p>' ? '' : coordinatorNote,
         participant_categories: categoriesPayload,
+        packs: packsPayload.length > 0 ? packsPayload : undefined,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -337,6 +381,170 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                     </div>
                   )}
                 </div>
+
+                {/* Packs / Formules */}
+                {showPacks && (
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                      <div>
+                        <label className="block text-sm font-semibold text-stone-700">
+                          Formules / Packs
+                        </label>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Proposez des combinaisons à prix réduit
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPacks([...packs, { id: `new-${Date.now()}`, name: '', price: 0, depositAmount: 0, items: {} }])}
+                        className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors shrink-0 self-start"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Ajouter un pack
+                      </button>
+                    </div>
+
+                    {packs.filter((p) => !p._destroy).length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50/50 p-6 text-center">
+                        <p className="text-sm text-stone-400">Aucun pack configuré</p>
+                        <p className="text-xs text-stone-400 mt-1">Les packs permettent d'offrir des formules groupées à prix avantageux</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {packs.filter((p) => !p._destroy).map((pack) => {
+                          const savings = computePackSavings(pack)
+                          const hasComposition = Object.values(pack.items || {}).some((q) => Number(q) > 0)
+                          return (
+                            <div
+                              key={pack.id}
+                              className="rounded-xl border border-stone-200 bg-stone-50 p-3"
+                            >
+                              {/* Pack name + delete */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <input
+                                  type="text"
+                                  value={pack.name}
+                                  onChange={(e) => setPacks((ps) => ps.map((p) => p.id === pack.id ? { ...p, name: e.target.value } : p))}
+                                  className="flex-1 min-w-0 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 focus:border-[#B01A19] focus:outline-none focus:ring-2 focus:ring-[#B01A19]/10"
+                                  placeholder="Nom du pack (ex: Duo, Famille)"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setPacks((ps) => {
+                                    if (String(pack.id).startsWith('new-')) return ps.filter((p) => p.id !== pack.id)
+                                    return ps.map((p) => p.id === pack.id ? { ...p, _destroy: true } : p)
+                                  })}
+                                  className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                                  title="Supprimer"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+
+                              {/* Price + deposit */}
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="flex-1 min-w-[90px]">
+                                  <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Prix du pack</label>
+                                  <div className="flex rounded-lg border border-stone-200 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={pack.price}
+                                      onChange={(e) => setPacks((ps) => ps.map((p) => p.id === pack.id ? { ...p, price: e.target.value } : p))}
+                                      className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                                      placeholder="0"
+                                    />
+                                    <span className="flex items-center px-2 bg-stone-50 border-l border-stone-200 text-xs text-stone-500 font-medium">€</span>
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-[100px]">
+                                  <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">Acompte</label>
+                                  <div className="flex rounded-lg border border-stone-200 bg-white overflow-hidden focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={pack.depositAmount}
+                                      onChange={(e) => setPacks((ps) => ps.map((p) => p.id === pack.id ? { ...p, depositAmount: e.target.value } : p))}
+                                      className="w-full px-2.5 py-1.5 text-sm text-right text-stone-900 border-0 bg-transparent focus:outline-none"
+                                      placeholder="0"
+                                    />
+                                    <span className="flex items-center px-2 bg-stone-50 border-l border-stone-200 text-xs text-stone-500 font-medium">€</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Composition: qty per category */}
+                              <div className="rounded-lg border border-stone-200 bg-white p-2.5">
+                                <label className="block text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-2">Composition</label>
+                                <div className="space-y-1.5">
+                                  {activeCategories.map((cat) => {
+                                    const qty = pack.items?.[cat.id] || 0
+                                    return (
+                                      <div key={cat.id} className="flex items-center gap-2">
+                                        <span className="flex-1 text-xs text-stone-600 truncate">{cat.label || 'Sans nom'}</span>
+                                        <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden">
+                                          <button
+                                            type="button"
+                                            onClick={() => setPacks((ps) => ps.map((p) => {
+                                              if (p.id !== pack.id) return p
+                                              return { ...p, items: { ...p.items, [cat.id]: Math.max(0, (p.items?.[cat.id] || 0) - 1) } }
+                                            }))}
+                                            disabled={qty === 0}
+                                            className="px-2 py-1 text-stone-500 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                            </svg>
+                                          </button>
+                                          <span className="w-6 text-center text-xs font-medium text-stone-900">{qty}</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setPacks((ps) => ps.map((p) => {
+                                              if (p.id !== pack.id) return p
+                                              return { ...p, items: { ...p.items, [cat.id]: (p.items?.[cat.id] || 0) + 1 } }
+                                            }))}
+                                            className="px-2 py-1 text-stone-500 hover:bg-stone-100 transition-colors"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Savings badge */}
+                              {hasComposition && savings > 0 && (
+                                <div className="mt-2 flex items-center gap-1.5">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Économie de {savings.toFixed(2)} €
+                                  </span>
+                                </div>
+                              )}
+                              {hasComposition && savings <= 0 && Number(pack.price) > 0 && (
+                                <p className="mt-2 text-[10px] text-amber-600">
+                                  Le prix du pack est supérieur ou égal au total individuel
+                                </p>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Requires Accommodation */}
                 <div className="pt-2">

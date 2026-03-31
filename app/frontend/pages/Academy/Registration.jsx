@@ -120,6 +120,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
     carpooling: 'none',
     payment_type: 'full',
     items: {},
+    packs: {},
   })
   const [formErrors, setFormErrors] = useState({})
   const [clientSecret, setClientSecret] = useState(null)
@@ -228,6 +229,9 @@ export default function Registration({ trainingId, stripePublicKey }) {
                 .filter(([, qty]) => qty > 0)
                 .map(([categoryId, qty]) => ({ category_id: categoryId, quantity: qty }))
             : undefined,
+          packs: Object.entries(formData.packs)
+            .filter(([, qty]) => qty > 0)
+            .map(([packId, qty]) => ({ pack_id: packId, quantity: qty })),
         }),
       })
 
@@ -493,6 +497,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
   }
 
   const categories = training.participantCategories || []
+  const trainingPacks = training.packs || []
   const volumeDiscount = training.volumeDiscount || { perSpot: 10, max: 30 }
   const hasCategories = categories.length > 0
 
@@ -506,14 +511,39 @@ export default function Registration({ trainingId, stripePublicKey }) {
     return +(price * qty * (1 - d / 100)).toFixed(2)
   }
 
-  const itemsTotal = hasCategories
+  // Spots used by selected packs per category
+  const spotsUsedByPacks = {}
+  trainingPacks.forEach((pack) => {
+    const qty = formData.packs[pack.id] || 0
+    if (qty > 0) {
+      (pack.items || []).forEach((pi) => {
+        spotsUsedByPacks[pi.participantCategoryId] = (spotsUsedByPacks[pi.participantCategoryId] || 0) + pi.quantity * qty
+      })
+    }
+  })
+
+  const packsTotal = trainingPacks.reduce((sum, pack) => {
+    const qty = formData.packs[pack.id] || 0
+    return sum + pack.price * qty
+  }, 0)
+
+  const individualItemsTotal = hasCategories
     ? categories.reduce((sum, cat) => {
         const qty = formData.items[cat.id] || 0
         return sum + computeCatSubtotal(cat.price, qty)
       }, 0)
     : training.price
 
-  const depositTotal = hasCategories
+  const itemsTotal = packsTotal + individualItemsTotal
+
+  const packsDeposit = trainingPacks.reduce((sum, pack) => {
+    const qty = formData.packs[pack.id] || 0
+    if (qty === 0) return sum
+    if (pack.depositAmount > 0) return sum + pack.depositAmount * qty
+    return sum + pack.price * qty
+  }, 0)
+
+  const individualDeposit = hasCategories
     ? categories.reduce((sum, cat) => {
         const qty = formData.items[cat.id] || 0
         if (qty === 0) return sum
@@ -521,6 +551,8 @@ export default function Registration({ trainingId, stripePublicKey }) {
         return sum + computeCatSubtotal(cat.price, qty)
       }, 0)
     : training.depositAmount
+
+  const depositTotal = packsDeposit + individualDeposit
 
   const canPayDeposit = hasCategories
     ? depositTotal > 0 && depositTotal < itemsTotal
@@ -530,7 +562,9 @@ export default function Registration({ trainingId, stripePublicKey }) {
     ? depositTotal
     : itemsTotal
 
-  const hasSelectedItems = hasCategories ? Object.values(formData.items).some((q) => q > 0) : true
+  const hasSelectedItems = hasCategories
+    ? Object.values(formData.items).some((q) => q > 0) || Object.values(formData.packs).some((q) => q > 0)
+    : true
 
   const firstSession = training.sessions?.[0]
   const lastSession = training.sessions?.[training.sessions.length - 1]
@@ -796,19 +830,119 @@ export default function Registration({ trainingId, stripePublicKey }) {
                 </div>
               </div>
 
+              {/* Pack Selection */}
+              {trainingPacks.length > 0 && (
+                <div style={styles.section}>
+                  <h3 style={styles.sectionTitle}>Formules</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {trainingPacks.map((pack) => {
+                      const qty = formData.packs[pack.id] || 0
+                      const composition = (pack.items || []).map((pi) => {
+                        const cat = categories.find((c) => c.id === pi.participantCategoryId)
+                        return `${pi.quantity} ${cat?.label || '?'}`
+                      }).join(' + ')
+                      const individualPrice = (pack.items || []).reduce((sum, pi) => {
+                        const cat = categories.find((c) => c.id === pi.participantCategoryId)
+                        return sum + (cat?.price || 0) * pi.quantity
+                      }, 0)
+                      const savings = individualPrice - pack.price
+                      // Max qty: limited by category with fewest remaining spots
+                      const maxPackQty = Math.min(...(pack.items || []).map((pi) => {
+                        const cat = categories.find((c) => c.id === pi.participantCategoryId)
+                        if (!cat) return 0
+                        const otherPackSpots = trainingPacks.reduce((s, op) => {
+                          if (op.id === pack.id) return s
+                          const oq = formData.packs[op.id] || 0
+                          const opi = (op.items || []).find((i) => i.participantCategoryId === pi.participantCategoryId)
+                          return s + (opi ? opi.quantity * oq : 0)
+                        }, 0)
+                        const indQty = formData.items[pi.participantCategoryId] || 0
+                        return Math.floor((cat.spotsRemaining - otherPackSpots - indQty) / pi.quantity)
+                      }))
+                      const isUnavailable = maxPackQty <= 0
+
+                      return (
+                        <div
+                          key={pack.id}
+                          style={{
+                            padding: '14px 16px',
+                            border: qty > 0 ? '2px solid #B01A19' : '2px solid #e5e7eb',
+                            borderRadius: '8px',
+                            backgroundColor: isUnavailable ? '#f9fafb' : qty > 0 ? '#fef2f2' : 'white',
+                            opacity: isUnavailable ? 0.5 : 1,
+                            transition: 'border-color 0.15s, background-color 0.15s',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: 1, minWidth: '140px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: '500', color: '#1f2937', fontFamily: 'var(--font-body)' }}>{pack.name}</span>
+                                <span style={{ fontWeight: '700', color: '#B01A19', fontFamily: 'var(--font-body)' }}>{pack.price.toFixed(2)} €</span>
+                                {savings > 0 && (
+                                  <span style={{
+                                    display: 'inline-block',
+                                    padding: '1px 6px',
+                                    backgroundColor: '#f0fdf4',
+                                    color: '#16a34a',
+                                    fontSize: '11px',
+                                    fontWeight: '600',
+                                    borderRadius: '4px',
+                                    border: '1px solid #bbf7d0',
+                                  }}>
+                                    -{savings.toFixed(2)} €
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>
+                                {composition}
+                                {isUnavailable && ' — Indisponible'}
+                              </div>
+                            </div>
+                            {!isUnavailable && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '6px', overflow: 'hidden' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateField('packs', { ...formData.packs, [pack.id]: Math.max(0, qty - 1) })}
+                                    disabled={qty === 0}
+                                    style={{ padding: '6px 10px', border: 'none', background: 'none', cursor: qty === 0 ? 'not-allowed' : 'pointer', color: '#6b7280', fontSize: '16px', opacity: qty === 0 ? 0.3 : 1 }}
+                                  >−</button>
+                                  <span style={{ padding: '6px 12px', fontWeight: '600', color: '#1f2937', minWidth: '28px', textAlign: 'center', fontFamily: 'var(--font-body)' }}>{qty}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateField('packs', { ...formData.packs, [pack.id]: Math.min(maxPackQty, qty + 1) })}
+                                    disabled={qty >= maxPackQty}
+                                    style={{ padding: '6px 10px', border: 'none', background: 'none', cursor: qty >= maxPackQty ? 'not-allowed' : 'pointer', color: '#6b7280', fontSize: '16px', opacity: qty >= maxPackQty ? 0.3 : 1 }}
+                                  >+</button>
+                                </div>
+                                <div style={{ textAlign: 'right', minWidth: '70px', opacity: qty > 0 ? 1 : 0, transition: 'opacity 0.15s' }}>
+                                  <div style={{ fontWeight: '600', color: '#B01A19', fontFamily: 'var(--font-body)' }}>{(pack.price * qty).toFixed(2)} €</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Category Selection */}
               {hasCategories && (
                 <div style={styles.section}>
                   <h3 style={styles.sectionTitle}>
                     <Users size={18} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
-                    Places
+                    Places individuelles
                   </h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {categories.map((cat) => {
                       const qty = formData.items[cat.id] || 0
                       const discount = computeCatDiscount(qty)
                       const subtotal = computeCatSubtotal(cat.price, qty)
-                      const isFull = cat.spotsRemaining <= 0
+                      const packSpotsUsed = spotsUsedByPacks[cat.id] || 0
+                      const adjustedRemaining = Math.max(0, cat.spotsRemaining - packSpotsUsed)
+                      const isFull = adjustedRemaining <= 0
                       const isClosed = cat.maxSpots === 0
 
                       return (
@@ -829,7 +963,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
                               <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>
                                 {Number.isInteger(cat.price) ? cat.price : cat.price.toFixed(2).replace('.', ',')} € par place
                                 {' — '}
-                                {isFull || isClosed ? 'Complet' : `${cat.spotsRemaining} place${cat.spotsRemaining > 1 ? 's' : ''}`}
+                                {isFull || isClosed ? 'Complet' : `${adjustedRemaining} place${adjustedRemaining > 1 ? 's' : ''}`}
                               </div>
                             </div>
                             {!isFull && !isClosed && (
@@ -844,9 +978,9 @@ export default function Registration({ trainingId, stripePublicKey }) {
                                   <span style={{ padding: '6px 12px', fontWeight: '600', color: '#1f2937', minWidth: '28px', textAlign: 'center', fontFamily: 'var(--font-body)' }}>{qty}</span>
                                   <button
                                     type="button"
-                                    onClick={() => updateField('items', { ...formData.items, [cat.id]: Math.min(cat.spotsRemaining, qty + 1) })}
-                                    disabled={qty >= cat.spotsRemaining}
-                                    style={{ padding: '6px 10px', border: 'none', background: 'none', cursor: qty >= cat.spotsRemaining ? 'not-allowed' : 'pointer', color: '#6b7280', fontSize: '16px', opacity: qty >= cat.spotsRemaining ? 0.3 : 1 }}
+                                    onClick={() => updateField('items', { ...formData.items, [cat.id]: Math.min(adjustedRemaining, qty + 1) })}
+                                    disabled={qty >= adjustedRemaining}
+                                    style={{ padding: '6px 10px', border: 'none', background: 'none', cursor: qty >= adjustedRemaining ? 'not-allowed' : 'pointer', color: '#6b7280', fontSize: '16px', opacity: qty >= adjustedRemaining ? 0.3 : 1 }}
                                   >+</button>
                                 </div>
                                 <div style={{ textAlign: 'right', minWidth: '70px', opacity: qty > 0 ? 1 : 0, transition: 'opacity 0.15s' }}>
@@ -1027,6 +1161,38 @@ export default function Registration({ trainingId, stripePublicKey }) {
 
             {hasCategories ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {trainingPacks.filter(pack => (formData.packs[pack.id] || 0) > 0).map((pack) => {
+                  const qty = formData.packs[pack.id] || 0
+                  const composition = (pack.items || []).map((pi) => {
+                    const cat = categories.find((c) => c.id === pi.participantCategoryId)
+                    return `${pi.quantity} ${cat?.label || '?'}`
+                  }).join(' + ')
+                  return (
+                    <div key={`pack-${pack.id}`} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'baseline',
+                      padding: '10px 0',
+                      borderBottom: '1px solid #f3f4f6',
+                      fontFamily: 'var(--font-body)',
+                    }}>
+                      <div>
+                        <span style={{ color: '#374151', fontSize: '14px' }}>
+                          Pack {pack.name}
+                        </span>
+                        <span style={{ color: '#9ca3af', fontSize: '12px', marginLeft: '6px' }}>
+                          ({composition})
+                        </span>
+                        <span style={{ color: '#9ca3af', fontSize: '13px', marginLeft: '6px' }}>
+                          × {qty}
+                        </span>
+                      </div>
+                      <span style={{ fontWeight: '500', color: '#1f2937', fontSize: '14px', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                        {(pack.price * qty).toFixed(2)} €
+                      </span>
+                    </div>
+                  )
+                })}
                 {categories.filter(cat => (formData.items[cat.id] || 0) > 0).map((cat) => {
                   const qty = formData.items[cat.id] || 0
                   const discount = computeCatDiscount(qty)

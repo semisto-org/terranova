@@ -10,13 +10,16 @@ module Academy
     belongs_to :contact, optional: true
     has_many :attendances, class_name: 'Academy::TrainingAttendance', foreign_key: :registration_id, dependent: :destroy
     has_many :registration_items, class_name: 'Academy::RegistrationItem', foreign_key: :registration_id, dependent: :destroy
+    has_many :registration_packs, class_name: 'Academy::RegistrationPack', foreign_key: :registration_id, dependent: :destroy
 
     validates :contact_name, :payment_status, :registered_at, presence: true
     validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
     validates :carpooling, inclusion: { in: CARPOOLING_OPTIONS }
 
     def recompute_payment_amount!
-      update!(payment_amount: registration_items.sum(:subtotal))
+      items_total = registration_items.sum(:subtotal)
+      packs_total = registration_packs.sum(:subtotal)
+      update!(payment_amount: items_total + packs_total)
     end
   end
 end

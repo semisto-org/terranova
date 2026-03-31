@@ -5,7 +5,7 @@ module Api
         skip_before_action :verify_authenticity_token, only: [:create_payment_intent]
 
         def training_info
-          training = Academy::Training.includes(:training_type, :sessions, :registrations, :participant_categories)
+          training = Academy::Training.includes(:training_type, :sessions, :registrations, :participant_categories, packs: { pack_items: :participant_category })
                                        .find(params[:training_id])
 
           unless training.status == "registrations_open"
@@ -13,8 +13,8 @@ module Api
             return
           end
 
-          spots_taken = training.registrations.count
-          spots_remaining = training.max_participants.positive? ? [training.max_participants - spots_taken, 0].max : nil
+          spots_taken = training.total_spots_taken
+          spots_remaining = training.total_capacity > 0 ? [training.total_capacity - spots_taken, 0].max : nil
 
           sessions = training.sessions.order(:start_date).map do |s|
             {
@@ -52,6 +52,21 @@ module Api
                 maxSpots: c.max_spots, depositAmount: c.deposit_amount.to_f,
                 spotsRemaining: c.spots_remaining }
             },
+            packs: training.packs.order(:position).map { |p|
+              pack_available = p.pack_items.all? { |pi| pi.participant_category.spots_remaining >= pi.quantity }
+              {
+                id: p.id.to_s,
+                name: p.name,
+                price: p.price.to_f,
+                depositAmount: p.deposit_amount.to_f,
+                available: pack_available,
+                items: p.pack_items.map { |pi|
+                  { participantCategoryId: pi.participant_category_id.to_s,
+                    categoryLabel: pi.participant_category.label,
+                    quantity: pi.quantity }
+                }
+              }
+            },
             volumeDiscount: {
               perSpot: setting.volume_discount_per_spot.to_f,
               max: setting.volume_discount_max.to_f
@@ -62,7 +77,7 @@ module Api
         end
 
         def create_payment_intent
-          training = Academy::Training.includes(:participant_categories).find(params[:training_id])
+          training = Academy::Training.includes(:participant_categories, packs: :pack_items).find(params[:training_id])
 
           unless training.status == "registrations_open"
             render json: { error: "Les inscriptions ne sont pas ouvertes." }, status: :gone
@@ -72,10 +87,10 @@ module Api
           setting = Academy::Setting.current
           payment_type = params[:payment_type] # "full" or "deposit"
           items_data = []
+          total_amount = 0
+          deposit_total = 0
 
           if params[:items].present?
-            total_amount = 0
-            deposit_total = 0
             params[:items].each do |item_param|
               cat = training.participant_categories.find(item_param[:category_id])
               qty = item_param[:quantity].to_i
@@ -98,17 +113,46 @@ module Api
 
               items_data << { category_id: cat.id, quantity: qty, unit_price: cat.price.to_f, discount_percent: discount }
             end
+          end
 
-            amount = if payment_type == "deposit" && deposit_total < total_amount
-              deposit_total
-            else
-              total_amount
+          packs_data = []
+          if params[:packs].present?
+            params[:packs].each do |pack_param|
+              pack = training.packs.find(pack_param[:pack_id])
+              qty = pack_param[:quantity].to_i
+              next if qty <= 0
+
+              pack.pack_items.includes(:participant_category).each do |pi|
+                if pi.quantity * qty > pi.participant_category.spots_remaining
+                  render json: { error: "Plus assez de places pour le pack '#{pack.name}'." }, status: :unprocessable_entity
+                  return
+                end
+              end
+
+              pack_subtotal = (pack.price * qty).round(2)
+              total_amount += pack_subtotal
+
+              if pack.deposit_amount.to_f > 0
+                deposit_total += (pack.deposit_amount * qty).round(2)
+              else
+                deposit_total += pack_subtotal
+              end
+
+              packs_data << { pack_id: pack.id, quantity: qty, unit_price: pack.price.to_f }
             end
-          else
+          end
+
+          if total_amount == 0 && items_data.empty? && packs_data.empty?
             amount = if payment_type == "deposit" && training.deposit_amount.positive?
               training.deposit_amount
             else
               training.price
+            end
+          else
+            amount = if payment_type == "deposit" && deposit_total < total_amount
+              deposit_total
+            else
+              total_amount
             end
           end
 
@@ -131,6 +175,7 @@ module Api
             payment_type: payment_type
           }
           metadata[:items] = items_data.to_json if items_data.present?
+          metadata[:packs] = packs_data.to_json if packs_data.present?
 
           intent = Stripe::PaymentIntent.create(
             amount: amount_cents,

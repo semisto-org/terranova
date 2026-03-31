@@ -12,10 +12,18 @@ module Academy
     validates :deposit_amount, numericality: { greater_than_or_equal_to: 0 }
 
     def spots_taken
-      registration_items
+      individual = registration_items
         .joins(:registration)
         .where(academy_training_registrations: { deleted_at: nil })
         .sum(:quantity)
+
+      pack_spots = Academy::RegistrationPack
+        .joins(:registration, pack: :pack_items)
+        .where(academy_training_registrations: { deleted_at: nil })
+        .where(academy_training_pack_items: { participant_category_id: id })
+        .sum("academy_registration_packs.quantity * academy_training_pack_items.quantity")
+
+      individual + pack_spots
     end
 
     def spots_remaining

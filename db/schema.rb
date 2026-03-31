@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_24_171818) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -63,6 +63,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_171818) do
     t.index ["participant_category_id"], name: "index_academy_registration_items_on_participant_category_id"
     t.index ["registration_id", "participant_category_id"], name: "idx_reg_items_unique", unique: true
     t.index ["registration_id"], name: "index_academy_registration_items_on_registration_id"
+  end
+
+  create_table "academy_registration_packs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "pack_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.bigint "registration_id", null: false
+    t.decimal "subtotal", precision: 12, scale: 2, null: false
+    t.decimal "unit_price", precision: 12, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["pack_id"], name: "index_academy_registration_packs_on_pack_id"
+    t.index ["registration_id", "pack_id"], name: "idx_reg_packs_on_registration_and_pack", unique: true
+    t.index ["registration_id"], name: "index_academy_registration_packs_on_registration_id"
   end
 
   create_table "academy_settings", force: :cascade do |t|
@@ -120,6 +133,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_171818) do
     t.string "website_url", default: "", null: false
     t.index ["deleted_at"], name: "index_academy_training_locations_on_deleted_at"
     t.index ["notion_id"], name: "index_academy_training_locations_on_notion_id", unique: true
+  end
+
+  create_table "academy_training_pack_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "pack_id", null: false
+    t.bigint "participant_category_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.datetime "updated_at", null: false
+    t.index ["pack_id", "participant_category_id"], name: "idx_pack_items_on_pack_and_category", unique: true
+    t.index ["pack_id"], name: "index_academy_training_pack_items_on_pack_id"
+    t.index ["participant_category_id"], name: "index_academy_training_pack_items_on_participant_category_id"
+  end
+
+  create_table "academy_training_packs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.decimal "deposit_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.decimal "price", precision: 12, scale: 2, null: false
+    t.bigint "training_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_training_packs_on_deleted_at"
+    t.index ["training_id"], name: "index_academy_training_packs_on_training_id"
   end
 
   create_table "academy_training_registrations", force: :cascade do |t|
@@ -2009,10 +2046,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_171818) do
   add_foreign_key "academy_participant_categories", "academy_trainings", column: "training_id"
   add_foreign_key "academy_registration_items", "academy_participant_categories", column: "participant_category_id"
   add_foreign_key "academy_registration_items", "academy_training_registrations", column: "registration_id"
+  add_foreign_key "academy_registration_packs", "academy_training_packs", column: "pack_id"
+  add_foreign_key "academy_registration_packs", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_training_pack_items", "academy_participant_categories", column: "participant_category_id"
+  add_foreign_key "academy_training_pack_items", "academy_training_packs", column: "pack_id"
+  add_foreign_key "academy_training_packs", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_registrations", "academy_trainings", column: "training_id"
   add_foreign_key "academy_training_registrations", "contacts"
   add_foreign_key "academy_training_sessions", "academy_trainings", column: "training_id"

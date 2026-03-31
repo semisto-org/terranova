@@ -475,7 +475,7 @@ export default function AcademyIndex({ initialTrainingId }) {
     },
     addRegistration: (trainingId) => {
       const training = data.trainings.find((item) => item.id === trainingId)
-      setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0, participantCategories: training?.participantCategories || [] })
+      setModalData({ isEdit: false, trainingId, trainingPrice: training?.price || 0, participantCategories: training?.participantCategories || [], packs: training?.packs || [] })
       setActiveModal('registration')
     },
     deleteRegistration: (registrationId) => {
@@ -490,7 +490,7 @@ export default function AcademyIndex({ initialTrainingId }) {
       const current = data.trainingRegistrations.find((item) => item.id === registrationId)
       if (!current) return
       const training = data.trainings.find((item) => item.id === current.trainingId)
-      setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0, participantCategories: training?.participantCategories || [] })
+      setModalData({ isEdit: true, registration: current, trainingPrice: training?.price || 0, participantCategories: training?.participantCategories || [], packs: training?.packs || [] })
       setActiveModal('registration')
     },
     updatePaymentStatus: (registrationId, status, amountPaid) => {
@@ -681,6 +681,7 @@ export default function AcademyIndex({ initialTrainingId }) {
           registration={modalData?.isEdit ? modalData.registration : null}
           trainingPrice={modalData?.trainingPrice || 0}
           participantCategories={modalData?.participantCategories || []}
+          packs={modalData?.packs || []}
           academySettings={data.academySettings}
           onSubmit={handleRegistrationSubmit}
           onCancel={() => {

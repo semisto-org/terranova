@@ -47,7 +47,7 @@ function getTrainingMetrics(training, sessions, registrations) {
   const doneChecks = readinessChecks.filter((c) => c.done).length
   const totalChecks = readinessChecks.length
   const completionRatio = totalChecks > 0 ? doneChecks / totalChecks : 0
-  const registrationsCount = registrations.length
+  const registrationsCount = Number(training.totalSpotsTaken) || 0
 
   const isUrgent =
     nextSession &&

@@ -14,6 +14,7 @@ module Academy
     has_many :registrations, class_name: 'Academy::TrainingRegistration', foreign_key: :training_id, dependent: :destroy
     has_many :documents, class_name: 'Academy::TrainingDocument', foreign_key: :training_id, dependent: :destroy
     has_many :participant_categories, class_name: 'Academy::ParticipantCategory', foreign_key: :training_id, dependent: :destroy
+    has_many :packs, class_name: 'Academy::TrainingPack', foreign_key: :training_id, dependent: :destroy
     has_many :expenses, class_name: "Expense", foreign_key: :training_id, dependent: :destroy
     has_many :revenues, class_name: "Revenue", foreign_key: :training_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy

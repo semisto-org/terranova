@@ -66,6 +66,8 @@ module Api
           end
         end
 
+        create_packs_from_params(item, params[:packs]) if params[:packs].present?
+
         broadcast_training_change(action: "created", training: item.reload)
         render json: serialize_training(item), status: :created
       end
@@ -77,6 +79,8 @@ module Api
         if params[:participant_categories].present?
           update_categories_for_training(item, params[:participant_categories])
         end
+
+        update_packs_for_training(item, params[:packs]) if params[:packs].present?
 
         broadcast_training_change(action: "updated", training: item.reload)
         render json: serialize_training(item)
@@ -163,8 +167,31 @@ module Api
                 discount_percent: discount
               )
             end
-            item.recompute_payment_amount!
           end
+
+          if params[:packs].present?
+            params[:packs].each do |pack_params|
+              pack = training.packs.find(pack_params[:pack_id])
+              qty = pack_params[:quantity].to_i
+              next if qty <= 0
+
+              pack.pack_items.includes(:participant_category).each do |pi|
+                needed = pi.quantity * qty
+                if needed > pi.participant_category.spots_remaining
+                  raise ActiveRecord::RecordInvalid.new(item),
+                    "Plus assez de places '#{pi.participant_category.label}' pour le pack '#{pack.name}'"
+                end
+              end
+
+              item.registration_packs.create!(
+                pack: pack,
+                quantity: qty,
+                unit_price: pack.price
+              )
+            end
+          end
+
+          item.recompute_payment_amount! if params[:items].present? || params[:packs].present?
 
           render json: serialize_registration(item.reload), status: :created
         end
@@ -181,6 +208,8 @@ module Api
 
         ActiveRecord::Base.transaction do
           item.update!(attrs)
+
+          needs_recompute = false
 
           if params.key?(:items)
             training = item.training
@@ -202,8 +231,37 @@ module Api
               )
             end
 
-            item.recompute_payment_amount!
+            needs_recompute = true
           end
+
+          if params.key?(:packs)
+            training = item.training
+            item.registration_packs.destroy_all
+
+            Array(params[:packs]).each do |pack_params|
+              pack = training.packs.find(pack_params[:pack_id])
+              qty = pack_params[:quantity].to_i
+              next if qty <= 0
+
+              pack.pack_items.includes(:participant_category).each do |pi|
+                needed = pi.quantity * qty
+                if needed > pi.participant_category.spots_remaining
+                  raise ActiveRecord::RecordInvalid.new(item),
+                    "Plus assez de places '#{pi.participant_category.label}' pour le pack '#{pack.name}'"
+                end
+              end
+
+              item.registration_packs.create!(
+                pack: pack,
+                quantity: qty,
+                unit_price: pack.price
+              )
+            end
+
+            needs_recompute = true
+          end
+
+          item.recompute_payment_amount! if needs_recompute
         end
 
         render json: serialize_registration(item.reload)
@@ -704,6 +762,7 @@ module Api
               depositAmount: c.deposit_amount.to_f, spotsTaken: c.spots_taken,
               spotsRemaining: c.spots_remaining, position: c.position }
           },
+          packs: item.packs.includes(pack_items: :participant_category).order(:position).map { |p| serialize_pack(p) },
           totalCapacity: item.total_capacity,
           totalSpotsTaken: item.total_spots_taken,
           createdAt: item.created_at.iso8601,
@@ -756,6 +815,37 @@ module Api
               categoryLabel: ri.participant_category.label, quantity: ri.quantity,
               unitPrice: ri.unit_price.to_f, discountPercent: ri.discount_percent.to_f,
               subtotal: ri.subtotal.to_f }
+          },
+          packs: item.registration_packs.includes(pack: { pack_items: :participant_category }).map { |rp|
+            {
+              id: rp.id.to_s,
+              packId: rp.pack_id.to_s,
+              packName: rp.pack.name,
+              quantity: rp.quantity,
+              unitPrice: rp.unit_price.to_f,
+              subtotal: rp.subtotal.to_f,
+              items: rp.pack.pack_items.map { |pi|
+                { categoryLabel: pi.participant_category.label, quantity: pi.quantity }
+              }
+            }
+          }
+        }
+      end
+
+      def serialize_pack(pack)
+        {
+          id: pack.id.to_s,
+          trainingId: pack.training_id.to_s,
+          name: pack.name,
+          price: pack.price.to_f,
+          depositAmount: pack.deposit_amount.to_f,
+          position: pack.position,
+          items: pack.pack_items.includes(:participant_category).map { |pi|
+            {
+              participantCategoryId: pi.participant_category_id.to_s,
+              categoryLabel: pi.participant_category.label,
+              quantity: pi.quantity
+            }
           }
         }
       end
@@ -936,6 +1026,65 @@ module Api
               deposit_amount: cp[:deposit_amount] || cp[:depositAmount] || 0,
               position: idx
             )
+          end
+        end
+      end
+
+      def create_packs_from_params(training, packs_params)
+        packs_params.each_with_index do |pp, idx|
+          pack = training.packs.create!(
+            name: pp[:name],
+            price: pp[:price] || 0,
+            deposit_amount: pp[:deposit_amount] || 0,
+            position: idx
+          )
+          Array(pp[:items]).each do |ip|
+            pack.pack_items.create!(
+              participant_category_id: ip[:participant_category_id],
+              quantity: ip[:quantity].to_i
+            )
+          end
+        end
+      end
+
+      def update_packs_for_training(training, packs_params)
+        packs_params.each_with_index do |pp, idx|
+          if pp[:id].present?
+            pack = training.packs.with_deleted.find(pp[:id])
+            if pp[:_destroy].present? && pp[:_destroy].to_s != 'false'
+              if pack.registration_packs.any?
+                raise ActiveRecord::RecordInvalid.new(pack), "Le pack '#{pack.name}' est utilisé dans des inscriptions et ne peut pas être supprimé"
+              end
+              pack.soft_delete!
+            else
+              pack.restore! if pack.deleted?
+              pack.update!(
+                name: pp[:name] || pack.name,
+                price: pp[:price] || pack.price,
+                deposit_amount: pp[:deposit_amount] || pack.deposit_amount,
+                position: idx
+              )
+              pack.pack_items.destroy_all
+              Array(pp[:items]).each do |ip|
+                pack.pack_items.create!(
+                  participant_category_id: ip[:participant_category_id],
+                  quantity: ip[:quantity].to_i
+                )
+              end
+            end
+          else
+            pack = training.packs.create!(
+              name: pp[:name],
+              price: pp[:price] || 0,
+              deposit_amount: pp[:deposit_amount] || 0,
+              position: idx
+            )
+            Array(pp[:items]).each do |ip|
+              pack.pack_items.create!(
+                participant_category_id: ip[:participant_category_id],
+                quantity: ip[:quantity].to_i
+              )
+            end
           end
         end
       end

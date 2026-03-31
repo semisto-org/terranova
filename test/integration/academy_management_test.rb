@@ -6,10 +6,15 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
       AlbumMediaItem,
       Album,
       Academy::TrainingAttendance,
+      Academy::RegistrationPack,
       Expense,
       Academy::TrainingDocument,
+      Academy::RegistrationItem,
       Academy::TrainingRegistration,
+      Academy::TrainingPackItem,
+      Academy::TrainingPack,
       Academy::TrainingSession,
+      Academy::ParticipantCategory,
       Academy::Training,
       Academy::TrainingLocation,
       Academy::TrainingType,
@@ -1534,5 +1539,245 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_equal 1, stats['activeTrainingsCount']
     assert_equal 1, stats['upcomingSessionsCount']
     assert_equal 1, stats['pendingPaymentsCount']
+  end
+
+  # ── Pack Tests ──
+
+  test 'create training with packs and verify serialization' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+
+    post '/api/v1/academy/trainings', params: {
+      training_type_id: type.id,
+      title: 'Activité avec packs',
+      vat_rate: 0,
+      participant_categories: [
+        { label: 'Adulte', price: 70, max_spots: 10, deposit_amount: 20 },
+        { label: 'Enfant', price: 25, max_spots: 10, deposit_amount: 10 }
+      ]
+    }, as: :json
+    assert_response :created
+    training = JSON.parse(response.body)
+    training_id = training['id']
+    adult_cat_id = training['participantCategories'].find { |c| c['label'] == 'Adulte' }['id']
+    child_cat_id = training['participantCategories'].find { |c| c['label'] == 'Enfant' }['id']
+
+    # Now update with packs using real category IDs
+    patch "/api/v1/academy/trainings/#{training_id}", params: {
+      packs: [
+        {
+          name: 'Duo',
+          price: 85,
+          deposit_amount: 25,
+          items: [
+            { participant_category_id: adult_cat_id, quantity: 1 },
+            { participant_category_id: child_cat_id, quantity: 1 }
+          ]
+        },
+        {
+          name: 'Famille',
+          price: 150,
+          deposit_amount: 40,
+          items: [
+            { participant_category_id: adult_cat_id, quantity: 2 },
+            { participant_category_id: child_cat_id, quantity: 1 }
+          ]
+        }
+      ]
+    }, as: :json
+    assert_response :success
+    updated = JSON.parse(response.body)
+    assert_equal 2, updated['packs'].size
+
+    duo = updated['packs'].find { |p| p['name'] == 'Duo' }
+    assert_equal 85.0, duo['price']
+    assert_equal 25.0, duo['depositAmount']
+    assert_equal 2, duo['items'].size
+
+    famille = updated['packs'].find { |p| p['name'] == 'Famille' }
+    assert_equal 150.0, famille['price']
+    assert_equal 2, famille['items'].find { |i| i['categoryLabel'] == 'Adulte' }['quantity']
+
+    # Verify packs appear in academy payload
+    get '/api/v1/academy', as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    t = body['trainings'].find { |x| x['id'] == training_id }
+    assert_equal 2, t['packs'].size
+  end
+
+  test 'register with pack and verify spots and payment' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+    training = Academy::Training.create!(training_type: type, title: 'Pack Test', status: 'registrations_open')
+    adult = training.participant_categories.create!(label: 'Adulte', price: 70, max_spots: 10, deposit_amount: 0)
+    child = training.participant_categories.create!(label: 'Enfant', price: 25, max_spots: 10, deposit_amount: 0)
+    duo = training.packs.create!(name: 'Duo', price: 85, deposit_amount: 0)
+    duo.pack_items.create!(participant_category: adult, quantity: 1)
+    duo.pack_items.create!(participant_category: child, quantity: 1)
+
+    # Register with 1 Duo pack + 2 extra children
+    post "/api/v1/academy/trainings/#{training.id}/registrations", params: {
+      contact_name: 'Marie Test',
+      contact_email: 'marie@test.com',
+      amount_paid: 0,
+      payment_status: 'pending',
+      items: [
+        { participant_category_id: child.id, quantity: 2 }
+      ],
+      packs: [
+        { pack_id: duo.id, quantity: 1 }
+      ]
+    }, as: :json
+    assert_response :created
+    reg = JSON.parse(response.body)
+
+    # Verify payment amount: 85 (pack) + 50 (2 children at 25, no volume discount on qty=2 with default 10% = 10% discount)
+    # Actually the volume discount: qty=2 → discount = min(10*(2-1), 30) = 10%
+    # So 2 children = 25 * 2 * (1 - 10/100) = 45
+    assert_equal 130.0, reg['paymentAmount']
+
+    # Verify pack in response
+    assert_equal 1, reg['packs'].size
+    assert_equal 'Duo', reg['packs'][0]['packName']
+    assert_equal 1, reg['packs'][0]['quantity']
+    assert_equal 85.0, reg['packs'][0]['subtotal']
+
+    # Verify spots taken: adult = 1 (from pack), child = 3 (1 from pack + 2 individual)
+    adult.reload
+    child.reload
+    assert_equal 1, adult.spots_taken
+    assert_equal 9, adult.spots_remaining
+    assert_equal 3, child.spots_taken
+    assert_equal 7, child.spots_remaining
+  end
+
+  test 'pack registration rejected when not enough spots' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+    training = Academy::Training.create!(training_type: type, title: 'Full Test', status: 'registrations_open')
+    adult = training.participant_categories.create!(label: 'Adulte', price: 70, max_spots: 2, deposit_amount: 0)
+    child = training.participant_categories.create!(label: 'Enfant', price: 25, max_spots: 10, deposit_amount: 0)
+    famille = training.packs.create!(name: 'Famille', price: 150, deposit_amount: 0)
+    famille.pack_items.create!(participant_category: adult, quantity: 2)
+    famille.pack_items.create!(participant_category: child, quantity: 1)
+
+    # First family pack should work (uses 2 adult spots)
+    post "/api/v1/academy/trainings/#{training.id}/registrations", params: {
+      contact_name: 'Test 1',
+      contact_email: 'test1@test.com',
+      amount_paid: 0,
+      payment_status: 'pending',
+      packs: [{ pack_id: famille.id, quantity: 1 }]
+    }, as: :json
+    assert_response :created
+
+    # Second family pack should fail (not enough adult spots)
+    post "/api/v1/academy/trainings/#{training.id}/registrations", params: {
+      contact_name: 'Test 2',
+      contact_email: 'test2@test.com',
+      amount_paid: 0,
+      payment_status: 'pending',
+      packs: [{ pack_id: famille.id, quantity: 1 }]
+    }, as: :json
+    assert_response :unprocessable_entity
+    assert_match(/places/, JSON.parse(response.body)['error'])
+  end
+
+  test 'update packs on training and delete unused pack' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+    training = Academy::Training.create!(training_type: type, title: 'Update Pack Test', status: 'idea')
+    adult = training.participant_categories.create!(label: 'Adulte', price: 70, max_spots: 10, deposit_amount: 0)
+    child = training.participant_categories.create!(label: 'Enfant', price: 25, max_spots: 10, deposit_amount: 0)
+    duo = training.packs.create!(name: 'Duo', price: 85, deposit_amount: 0)
+    duo.pack_items.create!(participant_category: adult, quantity: 1)
+    duo.pack_items.create!(participant_category: child, quantity: 1)
+
+    # Update: rename + change price + delete
+    patch "/api/v1/academy/trainings/#{training.id}", params: {
+      packs: [
+        { id: duo.id, _destroy: true }
+      ]
+    }, as: :json
+    assert_response :success
+    updated = JSON.parse(response.body)
+    assert_equal 0, updated['packs'].size
+    assert duo.reload.deleted?
+  end
+
+  test 'cannot delete pack used in registration' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+    training = Academy::Training.create!(training_type: type, title: 'Delete Pack Test', status: 'registrations_open')
+    adult = training.participant_categories.create!(label: 'Adulte', price: 70, max_spots: 10, deposit_amount: 0)
+    duo = training.packs.create!(name: 'Duo', price: 85, deposit_amount: 0)
+    duo.pack_items.create!(participant_category: adult, quantity: 1)
+
+    reg = training.registrations.create!(contact_name: 'Test', payment_status: 'pending', registered_at: Time.current)
+    reg.registration_packs.create!(pack: duo, quantity: 1, unit_price: 85)
+
+    patch "/api/v1/academy/trainings/#{training.id}", params: {
+      packs: [{ id: duo.id, _destroy: true }]
+    }, as: :json
+    assert_response :unprocessable_entity
+    assert_match(/inscriptions/, JSON.parse(response.body)['error'])
+  end
+
+  test 'public training info includes packs' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+    training = Academy::Training.create!(training_type: type, title: 'Public Pack Test', status: 'registrations_open', max_participants: 20)
+    adult = training.participant_categories.create!(label: 'Adulte', price: 70, max_spots: 10, deposit_amount: 0)
+    child = training.participant_categories.create!(label: 'Enfant', price: 25, max_spots: 10, deposit_amount: 0)
+    training.sessions.create!(start_date: Date.current, end_date: Date.current)
+    duo = training.packs.create!(name: 'Duo', price: 85, deposit_amount: 25)
+    duo.pack_items.create!(participant_category: adult, quantity: 1)
+    duo.pack_items.create!(participant_category: child, quantity: 1)
+
+    get "/api/v1/public/academy/trainings/#{training.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+
+    assert_equal 1, body['packs'].size
+    pack = body['packs'][0]
+    assert_equal 'Duo', pack['name']
+    assert_equal 85.0, pack['price']
+    assert_equal 25.0, pack['depositAmount']
+    assert_equal true, pack['available']
+    assert_equal 2, pack['items'].size
+  end
+
+  test 'update registration replaces packs' do
+    type = Academy::TrainingType.create!(name: 'Formation', description: 'Test')
+    training = Academy::Training.create!(training_type: type, title: 'Update Reg Pack Test', status: 'registrations_open')
+    adult = training.participant_categories.create!(label: 'Adulte', price: 70, max_spots: 10, deposit_amount: 0)
+    child = training.participant_categories.create!(label: 'Enfant', price: 25, max_spots: 10, deposit_amount: 0)
+    duo = training.packs.create!(name: 'Duo', price: 85, deposit_amount: 0)
+    duo.pack_items.create!(participant_category: adult, quantity: 1)
+    duo.pack_items.create!(participant_category: child, quantity: 1)
+    famille = training.packs.create!(name: 'Famille', price: 150, deposit_amount: 0)
+    famille.pack_items.create!(participant_category: adult, quantity: 2)
+    famille.pack_items.create!(participant_category: child, quantity: 1)
+
+    # Create with Duo
+    post "/api/v1/academy/trainings/#{training.id}/registrations", params: {
+      contact_name: 'Update Test',
+      contact_email: 'update@test.com',
+      amount_paid: 0,
+      payment_status: 'pending',
+      packs: [{ pack_id: duo.id, quantity: 1 }]
+    }, as: :json
+    assert_response :created
+    reg_id = JSON.parse(response.body)['id']
+    assert_equal 85.0, JSON.parse(response.body)['paymentAmount']
+
+    # Update to Famille
+    patch "/api/v1/academy/registrations/#{reg_id}", params: {
+      packs: [{ pack_id: famille.id, quantity: 1 }]
+    }, as: :json
+    assert_response :success
+    updated = JSON.parse(response.body)
+    assert_equal 150.0, updated['paymentAmount']
+    assert_equal 1, updated['packs'].size
+    assert_equal 'Famille', updated['packs'][0]['packName']
+
+    # Verify spots: adult=2, child=1 (from famille only, duo was replaced)
+    assert_equal 2, adult.reload.spots_taken
+    assert_equal 1, child.reload.spots_taken
   end
 end

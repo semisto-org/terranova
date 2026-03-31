@@ -229,9 +229,9 @@ export default function TrainingDetail({
   const expenseTotal = expenses.reduce((sum, e) => sum + Number(e.amountExclVat || e.totalInclVat || e.amount || 0), 0)
   const profitability = revenue - expenseTotal
   const profitabilityPercent = revenue > 0 ? Math.round((profitability / revenue) * 100) : 0
-  const registrationCount = registrations.length
+  const participantCount = Number(training.totalSpotsTaken) || 0
   const maxParticipants = Number(training.totalCapacity) || Number(training.maxParticipants) || 0
-  const fillRate = maxParticipants > 0 ? Math.round((registrationCount / maxParticipants) * 100) : 0
+  const fillRate = maxParticipants > 0 ? Math.round((participantCount / maxParticipants) * 100) : 0
 
   const checklistItems = training.checklistItems || []
   const checkedItems = training.checkedItems || []
@@ -355,7 +355,7 @@ export default function TrainingDetail({
                 Participants
               </span>
             </div>
-            <div className="text-2xl font-bold text-stone-900 mb-2">{registrationCount}</div>
+            <div className="text-2xl font-bold text-stone-900 mb-2">{participantCount}</div>
             <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 rounded-full ${

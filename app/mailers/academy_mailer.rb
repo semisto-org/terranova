@@ -8,6 +8,7 @@ class AcademyMailer < ApplicationMailer
     @training = registration.training
     @sessions = @training.sessions.order(:start_date)
     @items = registration.registration_items.includes(:participant_category)
+    @registration_packs = registration.registration_packs.includes(pack: { pack_items: :participant_category })
 
     location_ids = @sessions.flat_map(&:location_ids).uniq
     @locations = Academy::TrainingLocation.where(id: location_ids)

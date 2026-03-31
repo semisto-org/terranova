@@ -199,9 +199,15 @@ function RegistrationRow({
           <Mail className="w-3 h-3 text-stone-400" />
           <span className="text-xs text-stone-500">{registration.contactEmail || '—'}</span>
         </div>
-        {registration.items?.length > 0 && (
+        {(registration.packs?.length > 0 || registration.items?.length > 0) && (
           <div className="text-xs text-stone-400 mt-1">
-            {registration.items.map((i) => `${i.quantity}× ${i.categoryLabel}`).join(', ')}
+            {[
+              ...(registration.packs || []).map((p) => {
+                const detail = (p.items || []).map((pi) => `${pi.quantity * p.quantity}× ${pi.categoryLabel}`).join(', ')
+                return `${detail} (Pack ${p.packName})`
+              }),
+              ...(registration.items || []).map((i) => `${i.quantity}× ${i.categoryLabel}`),
+            ].join(', ')}
           </div>
         )}
       </td>

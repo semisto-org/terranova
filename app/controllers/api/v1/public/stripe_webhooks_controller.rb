@@ -79,10 +79,25 @@ module Api
                   discount_percent: item_data["discount_percent"].to_f
                 )
               end
-              registration.recompute_payment_amount!
             end
 
-            total_due = if registration.registration_items.any?
+            if metadata["packs"].present?
+              packs = JSON.parse(metadata["packs"])
+              packs.each do |pack_data|
+                pack = training.packs.find_by(id: pack_data["pack_id"])
+                next unless pack
+
+                registration.registration_packs.create!(
+                  pack: pack,
+                  quantity: pack_data["quantity"].to_i,
+                  unit_price: pack_data["unit_price"].to_f
+                )
+              end
+            end
+
+            registration.recompute_payment_amount! if metadata["items"].present? || metadata["packs"].present?
+
+            total_due = if registration.registration_items.any? || registration.registration_packs.any?
               registration.payment_amount.to_f
             else
               training.price.to_f
@@ -120,10 +135,16 @@ module Api
             "    #{label} x #{item.quantity}"
           end
 
+          packs_lines = registration.registration_packs.includes(pack: { pack_items: :participant_category }).map do |rp|
+            desc = rp.pack.pack_items.map { |pi| "#{pi.quantity} #{pi.participant_category.label}" }.join(" + ")
+            "    Pack #{rp.pack.name} (#{desc}) x #{rp.quantity}"
+          end
+
           lines = [
             ":tada: *Nouvelle inscription*",
             "*#{registration.contact_name}* s'est inscrit(e) à <#{training_url}|#{training.title}>"
           ]
+          lines.concat(packs_lines) if packs_lines.any?
           lines.concat(items_lines) if items_lines.any?
           lines << "Montant payé : *#{amount}* (#{status_label} — #{payment_method})"
 

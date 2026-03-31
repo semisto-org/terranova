@@ -19,7 +19,7 @@ function debounce(fn, ms) {
   }
 }
 
-export function RegistrationFormModal({ registration, trainingPrice, participantCategories = [], academySettings, onSubmit, onCancel, busy = false }) {
+export function RegistrationFormModal({ registration, trainingPrice, participantCategories = [], packs = [], academySettings, onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(registration)
   const nameRef = useRef(null)
   const suggestionsRef = useRef(null)
@@ -42,6 +42,15 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
     }
     return {}
   })
+  const [selectedPacks, setSelectedPacks] = useState(() => {
+    if (registration?.packs?.length > 0) {
+      return registration.packs.reduce((acc, p) => {
+        acc[p.packId] = p.quantity
+        return acc
+      }, {})
+    }
+    return {}
+  })
   const [error, setError] = useState(null)
 
   const discountPerSpot = academySettings?.volumeDiscountPerSpot ?? 10
@@ -57,12 +66,32 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
     return +(price * qty * (1 - discount / 100)).toFixed(2)
   }
 
-  const grandTotal = participantCategories.reduce((sum, cat) => {
+  // Spots used by selected packs per category
+  const spotsUsedByPacks = {}
+  packs.forEach((pack) => {
+    const qty = selectedPacks[pack.id] || 0
+    if (qty > 0) {
+      (pack.items || []).forEach((pi) => {
+        spotsUsedByPacks[pi.participantCategoryId] = (spotsUsedByPacks[pi.participantCategoryId] || 0) + pi.quantity * qty
+      })
+    }
+  })
+
+  const packsTotal = packs.reduce((sum, pack) => {
+    const qty = selectedPacks[pack.id] || 0
+    return sum + pack.price * qty
+  }, 0)
+
+  const itemsTotal = participantCategories.reduce((sum, cat) => {
     const qty = items[cat.id] || 0
     return sum + computeSubtotal(cat.price, qty)
   }, 0)
 
+  const grandTotal = packsTotal + itemsTotal
+
   const hasItems = Object.values(items).some((qty) => qty > 0)
+  const hasPacks = Object.values(selectedPacks).some((qty) => qty > 0)
+  const hasSelection = hasItems || hasPacks
 
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -143,16 +172,36 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
   }
 
   const validateEmail = (email) => {
-    if (!email) return true // Email is optional
+    if (!email) return true
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return re.test(email)
+  }
+
+  // Max qty for a pack: limited by the category with the fewest remaining spots
+  const getPackMaxQty = (pack) => {
+    if (!pack.items || pack.items.length === 0) return 0
+    return Math.min(...pack.items.map((pi) => {
+      const cat = participantCategories.find((c) => c.id === pi.participantCategoryId)
+      if (!cat) return 0
+      const baseRemaining = cat.spotsRemaining + (registration?.items?.find((i) => i.participantCategoryId === cat.id)?.quantity || 0)
+      // Subtract spots used by OTHER packs (not this one)
+      const otherPackSpots = packs.reduce((sum, otherPack) => {
+        if (otherPack.id === pack.id) return sum
+        const otherQty = selectedPacks[otherPack.id] || 0
+        const otherPi = (otherPack.items || []).find((i) => i.participantCategoryId === pi.participantCategoryId)
+        return sum + (otherPi ? otherPi.quantity * otherQty : 0)
+      }, 0)
+      // Subtract individual items
+      const individualQty = items[pi.participantCategoryId] || 0
+      const available = baseRemaining - otherPackSpots - individualQty
+      return Math.floor(available / pi.quantity)
+    }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
 
-    // Validation
     if (!contactName.trim()) {
       setError('Veuillez saisir le nom du participant')
       return
@@ -176,6 +225,13 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
         quantity: Number(qty),
       }))
 
+    const packsPayload = Object.entries(selectedPacks)
+      .filter(([, qty]) => qty > 0)
+      .map(([packId, qty]) => ({
+        pack_id: packId,
+        quantity: Number(qty),
+      }))
+
     try {
       await onSubmit({
         contact_id: contactId || undefined,
@@ -188,6 +244,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
         payment_status: paymentStatus,
         internal_note: internalNote.trim(),
         items: participantCategories.length > 0 ? itemsPayload : undefined,
+        packs: packsPayload.length > 0 ? packsPayload : undefined,
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -427,18 +484,100 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
                   </div>
                 </div>
 
+                {/* Packs Selection */}
+                {packs.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-semibold text-stone-700 mb-3">
+                      Formules
+                    </label>
+                    <div className="space-y-2">
+                      {packs.map((pack) => {
+                        const qty = selectedPacks[pack.id] || 0
+                        const maxQty = Math.max(0, getPackMaxQty(pack))
+                        const composition = (pack.items || []).map((pi) => {
+                          const cat = participantCategories.find((c) => c.id === pi.participantCategoryId)
+                          return `${pi.quantity} ${cat?.label || '?'}`
+                        }).join(' + ')
+                        const individualPrice = (pack.items || []).reduce((sum, pi) => {
+                          const cat = participantCategories.find((c) => c.id === pi.participantCategoryId)
+                          return sum + (cat?.price || 0) * pi.quantity
+                        }, 0)
+                        const savings = individualPrice - pack.price
+
+                        return (
+                          <div
+                            key={pack.id}
+                            className={`rounded-xl border p-3 transition-colors ${
+                              qty > 0
+                                ? 'border-[#B01A19]/20 bg-red-50/30'
+                                : 'border-stone-200 bg-white'
+                            }`}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm font-medium text-stone-900">{pack.name}</span>
+                                  <span className="text-sm font-semibold text-[#B01A19]">{pack.price.toFixed(2)} €</span>
+                                  {savings > 0 && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-[10px] font-semibold text-emerald-700">
+                                      -{savings.toFixed(2)} €
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-stone-400 mt-0.5">{composition}</p>
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPacks((prev) => ({ ...prev, [pack.id]: Math.max(0, (prev[pack.id] || 0) - 1) }))}
+                                    disabled={qty === 0}
+                                    className="px-2.5 py-1.5 text-stone-500 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                    </svg>
+                                  </button>
+                                  <span className="w-8 text-center text-sm font-medium text-stone-900">{qty}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPacks((prev) => ({ ...prev, [pack.id]: Math.min(maxQty + qty, (prev[pack.id] || 0) + 1) }))}
+                                    disabled={maxQty <= 0}
+                                    className="px-2.5 py-1.5 text-stone-500 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                {qty > 0 && (
+                                  <div className="text-right min-w-[80px]">
+                                    <span className="text-sm font-medium text-stone-900">{(pack.price * qty).toFixed(2)} €</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Participant Categories — Place Selection */}
                 {participantCategories.length > 0 && (
                   <div>
                     <label className="block text-sm font-semibold text-stone-700 mb-3">
-                      Places
+                      Places individuelles
                     </label>
                     <div className="space-y-2">
                       {participantCategories.map((cat) => {
                         const qty = items[cat.id] || 0
                         const discount = computeDiscount(qty)
                         const subtotal = computeSubtotal(cat.price, qty)
-                        const maxQty = cat.spotsRemaining + (registration?.items?.find((i) => i.participantCategoryId === cat.id)?.quantity || 0)
+                        const packSpotsUsed = spotsUsedByPacks[cat.id] || 0
+                        const baseRemaining = cat.spotsRemaining + (registration?.items?.find((i) => i.participantCategoryId === cat.id)?.quantity || 0)
+                        const maxQty = Math.max(0, baseRemaining - packSpotsUsed)
                         const isClosed = cat.maxSpots === 0
 
                         return (
@@ -459,7 +598,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
                                   <span className="text-sm text-stone-500">{cat.price.toFixed(2)} €</span>
                                 </div>
                                 <p className="text-xs text-stone-400 mt-0.5">
-                                  {isClosed ? 'Fermé' : `${cat.spotsRemaining} place${cat.spotsRemaining !== 1 ? 's' : ''} disponible${cat.spotsRemaining !== 1 ? 's' : ''}`}
+                                  {isClosed ? 'Fermé' : `${maxQty} place${maxQty !== 1 ? 's' : ''} disponible${maxQty !== 1 ? 's' : ''}`}
                                 </p>
                               </div>
                               {!isClosed && (
@@ -504,7 +643,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
                     </div>
 
                     {/* Grand Total */}
-                    {hasItems && (
+                    {hasSelection && (
                       <div className="mt-3 p-3 rounded-xl bg-stone-50 border border-stone-200">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-stone-700">Total</span>
