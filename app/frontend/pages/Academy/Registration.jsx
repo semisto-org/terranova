@@ -202,8 +202,8 @@ export default function Registration({ trainingId, stripePublicKey }) {
     }
     if (!formData.phone.trim()) errors.phone = 'Le numéro de téléphone est requis'
     if (!formData.departure_city.trim()) errors.departure_city = 'Le lieu de départ est requis'
-    if (hasCategories && !Object.values(formData.items).some((q) => q > 0)) {
-      errors.items = 'Veuillez sélectionner au moins une place'
+    if (hasCategories && !Object.values(formData.items).some((q) => q > 0) && !Object.values(formData.packs).some((q) => q > 0)) {
+      errors.items = 'Veuillez sélectionner au moins une place ou une formule'
     }
     setFormErrors(errors)
     return Object.keys(errors).length === 0
