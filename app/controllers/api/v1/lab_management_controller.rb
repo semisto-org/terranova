@@ -149,7 +149,7 @@ module Api
           member.save!
           member.avatar_image.attach(params[:avatar_image]) if params[:avatar_image].present?
           Array(member_params[:roles]).each { |role| member.member_roles.create!(role: role) }
-          Array(member_params[:guild_ids]).each { |guild_id| GuildMembership.create!(member_id: member.id, guild_id: guild_id) }
+          Array(member_params[:guild_ids]).each { |guild_id| ProjectMembership.create!(member_id: member.id, projectable_type: "Guild", projectable_id: guild_id, role: "member") }
           Wallet.create!(member: member)
         end
 

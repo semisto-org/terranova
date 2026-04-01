@@ -132,8 +132,8 @@ it_guild = Guild.find_or_create_by!(name: "IT & Outils") do |guild|
   guild.leader = members.first
 end
 
-GuildMembership.find_or_create_by!(guild: it_guild, member: members.first)
-GuildMembership.find_or_create_by!(guild: it_guild, member: members.second)
+ProjectMembership.find_or_create_by!(projectable: it_guild, member: members.first, role: "member")
+ProjectMembership.find_or_create_by!(projectable: it_guild, member: members.second, role: "member")
 
 cycle = Cycle.find_or_create_by!(name: "Cycle Hiver 2025-2026") do |record|
   record.start_date = Date.new(2025, 12, 1)
