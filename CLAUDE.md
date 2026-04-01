@@ -140,6 +140,15 @@ bin/rails test test/integration/academy_management_test.rb  # Single file
 
 Minitest with `ActiveSupport::TestCase`. API base controller skips auth in test env.
 
+### Refactoring: mandatory endpoint verification
+
+When a refactoring removes or renames columns, tables, models, or associations, **every API endpoint that touches the affected models must be smoke-tested** before considering the work done. Automated tests do not cover all serializer paths — large controllers (e.g. `lab_management_controller` at 1600+ lines) have dozens of serializer methods that reference columns directly. A passing test suite is necessary but not sufficient.
+
+Checklist after a destructive migration:
+1. Grep for **every** removed column name, table name, model class, and association name across `app/`, `test/`, `db/seeds.rb`.
+2. For each affected controller, identify **all actions** that serialize the changed models (not just the obvious CRUD actions — also `index`, `show`, `overview`, `reporting`, serializer helpers).
+3. Hit each endpoint at least once via `curl` or the browser and confirm a 200 response — do not rely solely on `bin/rails test`.
+
 ## Dev Server
 
 ```bash
