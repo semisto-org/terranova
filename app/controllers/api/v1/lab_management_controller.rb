@@ -652,7 +652,7 @@ module Api
       # ── Projects ──
 
       def list_projects
-        projects = PoleProject.includes(:actions, :task_lists).order(:name)
+        projects = PoleProject.includes(:actions, :unified_task_lists).order(:name)
         render json: { items: projects.map { |p| serialize_project_summary(p) } }
       end
 
