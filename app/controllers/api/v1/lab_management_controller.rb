@@ -1012,7 +1012,7 @@ module Api
       end
 
       def project_params
-        params.permit(:name, :status, :lead_name, :needs_reclassification, :description, :pole, :notes, team_names: [])
+        params.permit(:name, :status, :needs_reclassification, :description, :pole, :notes)
       end
 
       def task_list_params
@@ -1500,8 +1500,8 @@ module Api
           description: p.description,
           pole: p.pole,
           status: p.status,
-          leadName: p.lead_name,
-          teamNames: p.team_names || [],
+          leadName: p.project_memberships.find_by(role: "lead")&.member&.then { |m| "#{m.first_name} #{m.last_name}".strip },
+          teamNames: p.project_memberships.where(role: "member").includes(:member).map { |pm| "#{pm.member.first_name} #{pm.member.last_name}".strip },
           needsReclassification: p.needs_reclassification,
           totalActions: actions.size,
           completedActions: actions.count { |a| a.status == "Terminé" },
