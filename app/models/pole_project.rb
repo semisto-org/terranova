@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 class PoleProject < ApplicationRecord
-  has_many :task_lists, dependent: :destroy
+  include Projectable
+
   has_many :actions, dependent: :destroy
   has_many :notes, dependent: :destroy
   has_many :events, dependent: :nullify

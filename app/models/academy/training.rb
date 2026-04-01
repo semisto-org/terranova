@@ -1,6 +1,7 @@
 module Academy
   class Training < ApplicationRecord
     include SoftDeletable
+    include Projectable
     self.table_name = 'academy_trainings'
 
     STATUSES = %w[

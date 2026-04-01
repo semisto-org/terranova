@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_01_193650) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -456,25 +456,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "design_actions", force: :cascade do |t|
-    t.string "assignee_name"
-    t.datetime "created_at", null: false
-    t.bigint "design_project_id"
-    t.date "due_date"
-    t.string "name"
-    t.datetime "notion_created_at"
-    t.string "notion_id"
-    t.datetime "notion_updated_at"
-    t.string "phase"
-    t.string "priority"
-    t.string "status"
-    t.integer "time_minutes"
-    t.decimal "time_planned_hours", precision: 5, scale: 2
-    t.datetime "updated_at", null: false
-    t.index ["design_project_id"], name: "index_design_actions_on_design_project_id"
-    t.index ["notion_id"], name: "index_design_actions_on_notion_id", unique: true
-  end
-
   create_table "design_annotations", force: :cascade do |t|
     t.string "author_id", null: false
     t.string "author_name", null: false
@@ -811,30 +792,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.index ["project_id"], name: "index_design_site_analyses_on_project_id", unique: true
   end
 
-  create_table "design_task_lists", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.integer "position", default: 0
-    t.bigint "project_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["project_id"], name: "index_design_task_lists_on_project_id"
-  end
-
-  create_table "design_tasks", force: :cascade do |t|
-    t.bigint "assignee_id"
-    t.string "assignee_name"
-    t.datetime "created_at", null: false
-    t.date "due_date"
-    t.string "name", null: false
-    t.text "notes"
-    t.integer "position", default: 0
-    t.string "status", default: "pending"
-    t.bigint "task_list_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["assignee_id"], name: "index_design_tasks_on_assignee_id"
-    t.index ["task_list_id"], name: "index_design_tasks_on_task_list_id"
-  end
-
   create_table "design_team_members", force: :cascade do |t|
     t.datetime "assigned_at", null: false
     t.datetime "created_at", null: false
@@ -989,16 +946,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.bigint "uploaded_by_id"
     t.index ["guild_id"], name: "index_guild_documents_on_guild_id"
     t.index ["uploaded_by_id"], name: "index_guild_documents_on_uploaded_by_id"
-  end
-
-  create_table "guild_memberships", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "guild_id", null: false
-    t.bigint "member_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["guild_id", "member_id"], name: "index_guild_memberships_on_guild_id_and_member_id", unique: true
-    t.index ["guild_id"], name: "index_guild_memberships_on_guild_id"
-    t.index ["member_id"], name: "index_guild_memberships_on_member_id"
   end
 
   create_table "guilds", force: :cascade do |t|
@@ -1746,7 +1693,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   create_table "pole_projects", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
-    t.string "lead_name"
     t.string "name", null: false
     t.boolean "needs_reclassification", default: false
     t.text "notes"
@@ -1755,7 +1701,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.datetime "notion_updated_at"
     t.string "pole"
     t.string "status"
-    t.jsonb "team_names", default: []
     t.datetime "updated_at", null: false
     t.index ["notion_id"], name: "index_pole_projects_on_notion_id", unique: true
   end
@@ -1778,6 +1723,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.index ["notion_id"], name: "index_post_its_on_notion_id", unique: true
     t.index ["pole_project_id"], name: "index_post_its_on_pole_project_id"
     t.index ["training_id"], name: "index_post_its_on_training_id"
+  end
+
+  create_table "project_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_paid", default: false
+    t.datetime "joined_at"
+    t.bigint "member_id", null: false
+    t.bigint "projectable_id", null: false
+    t.string "projectable_type", null: false
+    t.string "role"
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_project_memberships_on_member_id"
+    t.index ["projectable_type", "projectable_id", "member_id", "role"], name: "index_project_memberships_uniqueness", unique: true
+    t.index ["projectable_type", "projectable_id"], name: "index_project_memberships_on_projectable"
   end
 
   create_table "revenues", force: :cascade do |t|
@@ -1980,15 +1939,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
 
   create_table "task_lists", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "guild_id"
     t.string "name", null: false
-    t.bigint "pole_project_id"
     t.integer "position", default: 0
-    t.bigint "training_id"
+    t.bigint "taskable_id", null: false
+    t.string "taskable_type", null: false
     t.datetime "updated_at", null: false
-    t.index ["guild_id"], name: "index_task_lists_on_guild_id"
-    t.index ["pole_project_id"], name: "index_task_lists_on_pole_project_id"
-    t.index ["training_id"], name: "index_task_lists_on_training_id"
+    t.index ["taskable_type", "taskable_id"], name: "index_task_lists_on_taskable_type_and_taskable_id"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.bigint "assignee_id"
+    t.string "assignee_name"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.date "due_date"
+    t.string "name", null: false
+    t.bigint "parent_id"
+    t.integer "position", default: 0
+    t.string "priority"
+    t.string "status", default: "pending", null: false
+    t.jsonb "tags", default: []
+    t.bigint "task_list_id", null: false
+    t.integer "time_minutes"
+    t.datetime "updated_at", null: false
+    t.index ["assignee_id", "status"], name: "index_tasks_on_assignee_id_and_status"
+    t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
+    t.index ["parent_id"], name: "index_tasks_on_parent_id"
+    t.index ["task_list_id"], name: "index_tasks_on_task_list_id"
   end
 
   create_table "timesheet_service_types", force: :cascade do |t|
@@ -2078,7 +2055,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   add_foreign_key "contacts", "contacts", column: "organization_id"
   add_foreign_key "credentials", "guilds"
   add_foreign_key "credentials", "members", column: "created_by_id"
-  add_foreign_key "design_actions", "design_projects"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_follow_up_visits", "design_projects", column: "project_id"
@@ -2103,9 +2079,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   add_foreign_key "design_quote_lines", "design_quotes", column: "quote_id"
   add_foreign_key "design_quotes", "design_projects", column: "project_id"
   add_foreign_key "design_site_analyses", "design_projects", column: "project_id"
-  add_foreign_key "design_task_lists", "design_projects", column: "project_id"
-  add_foreign_key "design_tasks", "design_task_lists", column: "task_list_id"
-  add_foreign_key "design_tasks", "members", column: "assignee_id"
   add_foreign_key "design_team_members", "design_projects", column: "project_id"
   add_foreign_key "economic_inputs", "design_projects"
   add_foreign_key "economic_inputs", "location_zones", column: "zone_id"
@@ -2124,8 +2097,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   add_foreign_key "expenses", "design_projects"
   add_foreign_key "guild_documents", "guilds"
   add_foreign_key "guild_documents", "members", column: "uploaded_by_id"
-  add_foreign_key "guild_memberships", "guilds"
-  add_foreign_key "guild_memberships", "members"
   add_foreign_key "guilds", "labs"
   add_foreign_key "guilds", "members", column: "leader_id"
   add_foreign_key "hill_chart_snapshots", "pitches"
@@ -2176,6 +2147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   add_foreign_key "post_its", "academy_trainings", column: "training_id"
   add_foreign_key "post_its", "design_projects"
   add_foreign_key "post_its", "pole_projects"
+  add_foreign_key "project_memberships", "members"
   add_foreign_key "revenues", "academy_trainings", column: "training_id"
   add_foreign_key "revenues", "contacts"
   add_foreign_key "revenues", "design_projects"
@@ -2197,9 +2169,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
   add_foreign_key "strategy_reactions", "members"
   add_foreign_key "strategy_reactions", "strategy_proposals", column: "proposal_id"
   add_foreign_key "strategy_resources", "members", column: "created_by_id"
-  add_foreign_key "task_lists", "academy_trainings", column: "training_id"
-  add_foreign_key "task_lists", "guilds"
-  add_foreign_key "task_lists", "pole_projects"
+  add_foreign_key "tasks", "members", column: "assignee_id"
+  add_foreign_key "tasks", "task_lists"
+  add_foreign_key "tasks", "tasks", column: "parent_id"
   add_foreign_key "timesheets", "academy_trainings", column: "training_id"
   add_foreign_key "timesheets", "design_projects"
   add_foreign_key "timesheets", "events"

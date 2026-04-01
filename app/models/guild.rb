@@ -1,16 +1,15 @@
 class Guild < ApplicationRecord
+  include Projectable
+
   COLORS = %w[blue purple green orange red teal pink amber indigo slate emerald rose].freeze
   GUILD_TYPES = %w[lab network].freeze
 
   belongs_to :leader, class_name: "Member", optional: true
   belongs_to :lab, optional: true
 
-  has_many :guild_memberships, dependent: :destroy
   has_many :documents, class_name: "GuildDocument", dependent: :destroy
-  has_many :task_lists, dependent: :destroy
   has_many :knowledge_sections, class_name: "KnowledgeSection", dependent: :nullify
   has_many :credentials, dependent: :destroy
-  has_many :members, through: :guild_memberships
 
   validates :name, :color, presence: true
   validates :color, inclusion: { in: COLORS }

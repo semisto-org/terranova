@@ -22,7 +22,7 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
       Event,
       Pitch,
       Cycle,
-      GuildMembership,
+      ProjectMembership,
       Guild,
       Wallet,
       MemberRole,

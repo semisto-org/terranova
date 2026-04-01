@@ -15,7 +15,7 @@ module Api
 
       # GET /api/v1/guilds
       def index
-        guilds = Guild.includes(:guild_memberships, :lab).order(:name)
+        guilds = Guild.includes(:project_memberships, :lab).order(:name)
         guilds = guilds.where(guild_type: params[:guild_type]) if params[:guild_type].present?
         guilds = guilds.where(lab_id: params[:lab_id]) if params[:lab_id].present?
 
@@ -79,12 +79,12 @@ module Api
       # --- Task Lists ---
 
       def list_task_lists
-        lists = @guild.task_lists.includes(:actions).order(:position, :id)
+        lists = @guild.unified_task_lists.includes(:actions).order(:position, :id)
         render json: { taskLists: lists.map { |l| serialize_task_list(l) } }
       end
 
       def create_task_list
-        list = @guild.task_lists.build(task_list_params)
+        list = @guild.unified_task_lists.build(task_list_params)
         if list.save
           render json: { taskList: serialize_task_list(list) }, status: :created
         else
@@ -93,7 +93,7 @@ module Api
       end
 
       def update_task_list
-        list = @guild.task_lists.find(params[:id])
+        list = @guild.unified_task_lists.find(params[:id])
         if list.update(task_list_params)
           render json: { taskList: serialize_task_list(list) }
         else
@@ -102,7 +102,7 @@ module Api
       end
 
       def destroy_task_list
-        list = @guild.task_lists.find(params[:id])
+        list = @guild.unified_task_lists.find(params[:id])
         list.destroy!
         head :no_content
       end
@@ -110,7 +110,7 @@ module Api
       # --- Actions ---
 
       def create_action
-        list = @guild.task_lists.find(params[:task_list_id])
+        list = @guild.unified_task_lists.find(params[:task_list_id])
         action = list.actions.build(action_params)
         action.guild = @guild
         if action.save
@@ -174,16 +174,16 @@ module Api
       # --- Members ---
 
       def add_member
-        membership = @guild.guild_memberships.build(member_id: params[:member_id])
+        membership = @guild.project_memberships.build(member_id: params[:member_id], role: "member")
         if membership.save
-          render json: { memberIds: @guild.guild_memberships.pluck(:member_id).map(&:to_s) }, status: :created
+          render json: { memberIds: @guild.project_memberships.where(role: "member").pluck(:member_id).map(&:to_s) }, status: :created
         else
           render json: { errors: membership.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
       def remove_member
-        membership = @guild.guild_memberships.find_by!(member_id: params[:member_id])
+        membership = @guild.project_memberships.find_by!(member_id: params[:member_id])
         membership.destroy!
         head :no_content
       end
@@ -227,8 +227,8 @@ module Api
           labName: guild.lab&.name,
           icon: guild.icon,
           leaderId: guild.leader_id&.to_s,
-          memberIds: guild.guild_memberships.map { |gm| gm.member_id.to_s },
-          memberCount: guild.guild_memberships.size,
+          memberIds: guild.project_memberships.where(role: "member").map { |pm| pm.member_id.to_s },
+          memberCount: guild.project_memberships.where(role: "member").size,
           createdAt: guild.created_at&.iso8601
         }
       end
@@ -236,7 +236,7 @@ module Api
       def serialize_guild_full(guild)
         serialize_guild_brief(guild).merge(
           documents: guild.documents.order(created_at: :desc).map { |d| serialize_document(d) },
-          taskLists: guild.task_lists.includes(:actions).order(:position, :id).map { |l| serialize_task_list(l) },
+          taskLists: guild.unified_task_lists.includes(:actions).order(:position, :id).map { |l| serialize_task_list(l) },
           knowledgeSections: guild.knowledge_sections.ordered.map(&:as_json_brief),
           credentials: guild.credentials.map { |c| serialize_credential(c) }
         )

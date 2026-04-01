@@ -49,7 +49,7 @@ module Api
           isAdmin: member.is_admin,
           joinedAt: member.joined_at&.iso8601,
           walletId: member.wallet&.id&.to_s,
-          guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s }
+          guildIds: member.guild_ids_list.map(&:to_s)
         }
       end
     end

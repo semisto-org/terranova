@@ -1,6 +1,7 @@
 module Design
   class Project < ApplicationRecord
     include SoftDeletable
+    include Projectable
     self.table_name = 'design_projects'
 
     PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion termine].freeze
@@ -33,7 +34,6 @@ module Design
     has_many :plant_records, class_name: 'Design::PlantRecord', foreign_key: :project_id, dependent: :destroy
     has_many :follow_up_visits, class_name: 'Design::FollowUpVisit', foreign_key: :project_id, dependent: :destroy
     has_many :interventions, class_name: 'Design::Intervention', foreign_key: :project_id, dependent: :destroy
-    has_many :task_lists, class_name: 'Design::TaskList', foreign_key: :project_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
     before_validation :normalize_client_interests
