@@ -396,6 +396,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.jsonb "expertise", default: [], null: false
     t.string "linkedin_url", default: "", null: false
     t.string "name", null: false
+    t.boolean "newsletter_subscribed", default: false, null: false
     t.text "notes", default: ""
     t.text "notes_html", default: ""
     t.datetime "notion_created_at"

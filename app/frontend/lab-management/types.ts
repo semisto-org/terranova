@@ -262,6 +262,7 @@ export interface Contact {
   organizationId: string | null
   organization: { id: string; name: string } | null
   people: { id: string; name: string }[]
+  newsletterSubscribed: boolean
   tagNames: string[]
   createdAt: string
   updatedAt: string
