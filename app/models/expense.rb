@@ -62,6 +62,7 @@ class Expense < ApplicationRecord
   belongs_to :design_project, class_name: "Design::Project", optional: true
   belongs_to :training, class_name: "Academy::Training", optional: true
 
+  has_one :bank_reconciliation, as: :reconcilable, class_name: "BankReconciliation", dependent: :nullify
   has_one_attached :document
 
   before_validation :set_supplier_from_contact, if: :supplier_contact_id_changed?

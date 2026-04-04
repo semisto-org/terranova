@@ -12,6 +12,7 @@ import {
   ProjectBoard,
   AlbumList,
   ReportingDashboard,
+  BankSection,
 } from '../../lab-management/components'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
@@ -22,6 +23,7 @@ const SECTION_TABS = [
   { id: 'contacts', label: 'Contacts' },
   { id: 'albums', label: 'Albums' },
   { id: 'reporting', label: 'Reporting' },
+  { id: 'bank', label: 'Banque' },
 ]
 
 const EVENT_TYPES = [
@@ -680,6 +682,8 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           }}
         />
       )}
+
+      {tab === 'bank' && <BankSection />}
 
       {formModal && (
         <FormModal
