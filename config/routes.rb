@@ -24,6 +24,8 @@ Rails.application.routes.draw do
           get "profile", to: "api/v1/my_semisto#profile", as: false
           patch "profile", to: "api/v1/my_semisto#update_profile", as: false
           delete "profile/avatar", to: "api/v1/my_semisto#remove_avatar", as: false
+          get "academy/:training_id/carpooling", to: "api/v1/my_semisto#carpooling", as: false
+          patch "academy/:training_id/carpooling", to: "api/v1/my_semisto#update_carpooling", as: false
         end
       end
 
@@ -105,6 +107,8 @@ Rails.application.routes.draw do
         get "profile", to: "my_semisto#profile"
         patch "profile", to: "my_semisto#update_profile"
         delete "profile/avatar", to: "my_semisto#remove_avatar"
+        get "academy/:training_id/carpooling", to: "my_semisto#carpooling"
+        patch "academy/:training_id/carpooling", to: "my_semisto#update_carpooling"
       end
 
       get "health", to: "health#show"
