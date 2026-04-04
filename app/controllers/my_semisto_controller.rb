@@ -15,7 +15,15 @@ class MySemistoController < ApplicationController
           {
             id: current_contact.id.to_s,
             name: current_contact.display_name,
-            email: current_contact.email
+            email: current_contact.email,
+            phone: current_contact.phone.to_s,
+            city: current_contact.city.to_s,
+            bio: current_contact.bio.to_s,
+            expertise: current_contact.expertise || [],
+            latitude: current_contact.latitude&.to_f,
+            longitude: current_contact.longitude&.to_f,
+            avatarUrl: current_contact.avatar_image.attached? ?
+              Rails.application.routes.url_helpers.rails_blob_url(current_contact.avatar_image, only_path: true) : nil
           }
         end,
         member: nil
@@ -89,6 +97,20 @@ class MySemistoController < ApplicationController
     render inertia: "MySemisto/TrainingDetail", props: {
       trainingId: params[:training_id].to_s
     }
+  end
+
+  def directory
+    render inertia: "MySemisto/Directory"
+  end
+
+  def directory_contact
+    render inertia: "MySemisto/Directory", props: {
+      contactId: params[:id].to_s
+    }
+  end
+
+  def profile
+    render inertia: "MySemisto/Profile"
   end
 
   private

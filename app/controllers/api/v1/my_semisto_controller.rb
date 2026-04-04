@@ -34,6 +34,68 @@ module Api
 
       end
 
+      # ── Directory API ──
+
+      def directory
+        contacts = Contact.people_only
+          .where(deleted_at: nil)
+          .where.not(email: [nil, ""])
+          .order(:name)
+
+        render json: {
+          contacts: contacts.map { |c| serialize_directory_contact(c) }
+        }
+      end
+
+      def directory_contact
+        contact = Contact.people_only.where(deleted_at: nil).find(params[:id])
+
+        # Find trainings linked to this contact
+        registrations = Academy::TrainingRegistration
+          .where("contact_id = :id OR LOWER(contact_email) = :email",
+                 id: contact.id,
+                 email: contact.email&.downcase)
+          .includes(training: [:training_type, :sessions])
+
+        training_ids = registrations.map(&:training_id).uniq
+        trainings = Academy::Training.where(id: training_ids).includes(:training_type, :sessions)
+
+        render json: {
+          contact: serialize_directory_contact_detail(contact),
+          trainings: trainings.map { |t| serialize_directory_training(t) }
+        }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Contact introuvable" }, status: :not_found
+      end
+
+      # ── Profile API ──
+
+      def profile
+        render json: { contact: serialize_directory_contact_detail(current_contact) }
+      end
+
+      def update_profile
+        permitted = params.permit(:email, :phone, :city, :bio, :latitude, :longitude, :avatar, expertise: [])
+
+        if permitted[:avatar].present?
+          current_contact.avatar_image.attach(permitted[:avatar])
+        end
+
+        updates = permitted.except(:avatar).to_h
+        updates.delete_if { |_, v| v.nil? }
+
+        if current_contact.update(updates)
+          render json: { contact: serialize_directory_contact_detail(current_contact.reload) }
+        else
+          render json: { error: current_contact.errors.full_messages.join(", ") }, status: :unprocessable_entity
+        end
+      end
+
+      def remove_avatar
+        current_contact.avatar_image.purge if current_contact.avatar_image.attached?
+        render json: { status: "ok" }
+      end
+
       # ── Academy API ──
 
       def academy_trainings
@@ -165,6 +227,58 @@ module Api
           return nil
         end
         Academy::Training.includes(:training_type, :sessions, :documents).find(registration.training_id)
+      end
+
+      def contact_avatar_url(contact)
+        return nil unless contact.avatar_image.attached?
+        Rails.application.routes.url_helpers.rails_blob_url(contact.avatar_image, only_path: true)
+      end
+
+      def serialize_directory_contact(contact)
+        {
+          id: contact.id.to_s,
+          name: contact.display_name,
+          email: contact.email.to_s,
+          phone: contact.phone.to_s,
+          city: contact.city.to_s,
+          bio: contact.bio.to_s,
+          expertise: contact.expertise || [],
+          avatarUrl: contact_avatar_url(contact),
+          latitude: contact.latitude&.to_f,
+          longitude: contact.longitude&.to_f
+        }
+      end
+
+      def serialize_directory_contact_detail(contact)
+        {
+          id: contact.id.to_s,
+          name: contact.display_name,
+          email: contact.email.to_s,
+          phone: contact.phone.to_s,
+          city: contact.city.to_s,
+          bio: contact.bio.to_s,
+          expertise: contact.expertise || [],
+          avatarUrl: contact_avatar_url(contact),
+          latitude: contact.latitude&.to_f,
+          longitude: contact.longitude&.to_f,
+          region: contact.region.to_s,
+          address: contact.address.to_s,
+          linkedinUrl: contact.linkedin_url.to_s,
+          createdAt: contact.created_at.iso8601
+        }
+      end
+
+      def serialize_directory_training(training)
+        sessions = training.sessions.sort_by(&:start_date)
+        {
+          id: training.id.to_s,
+          title: training.title,
+          status: training.status,
+          trainingType: training.training_type&.name,
+          trainingTypeColor: training.training_type&.color,
+          startDate: sessions.first&.start_date&.iso8601,
+          endDate: sessions.last&.end_date&.iso8601
+        }
       end
 
       def serialize_portal_training(training)

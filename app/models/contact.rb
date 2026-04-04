@@ -4,6 +4,8 @@ class Contact < ApplicationRecord
   include SoftDeletable
   CONTACT_TYPES = %w[person organization].freeze
 
+  has_one_attached :avatar_image
+
   belongs_to :organization, class_name: "Contact", optional: true
   has_many :people, class_name: "Contact", foreign_key: :organization_id, dependent: :nullify
   has_many :contact_tags, dependent: :destroy

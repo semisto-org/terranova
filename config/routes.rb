@@ -9,6 +9,9 @@ Rails.application.routes.draw do
       delete "/logout", to: "my_semisto#logout", as: false
       get "/academy", to: "my_semisto#academy", as: false
       get "/academy/:training_id", to: "my_semisto#training_detail", as: false
+      get "/directory", to: "my_semisto#directory", as: false
+      get "/directory/:id", to: "my_semisto#directory_contact", as: false
+      get "/profile", to: "my_semisto#profile", as: false
 
       scope :api, as: false do
         scope :v1, as: false do
@@ -16,6 +19,11 @@ Rails.application.routes.draw do
           get "auth/verify", to: "api/v1/my_semisto#verify", as: false
           get "academy", to: "api/v1/my_semisto#academy_trainings", as: false
           get "academy/:training_id", to: "api/v1/my_semisto#academy_training_detail", as: false
+          get "directory", to: "api/v1/my_semisto#directory", as: false
+          get "directory/:id", to: "api/v1/my_semisto#directory_contact", as: false
+          get "profile", to: "api/v1/my_semisto#profile", as: false
+          patch "profile", to: "api/v1/my_semisto#update_profile", as: false
+          delete "profile/avatar", to: "api/v1/my_semisto#remove_avatar", as: false
           get "academy/:training_id/carpooling", to: "api/v1/my_semisto#carpooling", as: false
           patch "academy/:training_id/carpooling", to: "api/v1/my_semisto#update_carpooling", as: false
         end
@@ -36,6 +44,9 @@ Rails.application.routes.draw do
     delete "/logout", to: "my_semisto#logout", as: :logout
     get "/academy", to: "my_semisto#academy", as: :academy
     get "/academy/:training_id", to: "my_semisto#training_detail", as: :training
+    get "/directory", to: "my_semisto#directory", as: :directory
+    get "/directory/:id", to: "my_semisto#directory_contact", as: :directory_contact
+    get "/profile", to: "my_semisto#profile", as: :profile
   end
 
   # Authentication
@@ -91,6 +102,11 @@ Rails.application.routes.draw do
         get "auth/verify", to: "my_semisto#verify"
         get "academy", to: "my_semisto#academy_trainings"
         get "academy/:training_id", to: "my_semisto#academy_training_detail"
+        get "directory", to: "my_semisto#directory"
+        get "directory/:id", to: "my_semisto#directory_contact"
+        get "profile", to: "my_semisto#profile"
+        patch "profile", to: "my_semisto#update_profile"
+        delete "profile/avatar", to: "my_semisto#remove_avatar"
         get "academy/:training_id/carpooling", to: "my_semisto#carpooling"
         patch "academy/:training_id/carpooling", to: "my_semisto#update_carpooling"
       end
