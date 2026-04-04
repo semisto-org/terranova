@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_04_215810) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -389,12 +389,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
 
   create_table "contacts", force: :cascade do |t|
     t.text "address", default: ""
+    t.text "bio", default: "", null: false
+    t.string "city", default: "", null: false
     t.string "contact_type", default: "person", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "email", default: ""
     t.jsonb "expertise", default: [], null: false
+    t.decimal "latitude", precision: 10, scale: 6
     t.string "linkedin_url", default: "", null: false
+    t.decimal "longitude", precision: 10, scale: 6
     t.string "name", null: false
     t.boolean "newsletter_subscribed", default: false, null: false
     t.text "notes", default: ""
@@ -408,11 +412,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.string "position", default: "", null: false
     t.string "region", default: "", null: false
     t.jsonb "teams", default: [], null: false
-    t.string "city", default: "", null: false
-    t.text "bio", default: "", null: false
-    t.decimal "latitude", precision: 10, scale: 6
-    t.decimal "longitude", precision: 10, scale: 6
     t.datetime "updated_at", null: false
+    t.boolean "visible_in_directory", default: false, null: false
     t.index ["contact_type"], name: "index_contacts_on_contact_type"
     t.index ["deleted_at"], name: "index_contacts_on_deleted_at"
     t.index ["name"], name: "idx_contacts_name_trgm", opclass: :gin_trgm_ops, using: :gin

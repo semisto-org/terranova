@@ -38,7 +38,7 @@ module Api
 
       def directory
         contacts = Contact.people_only
-          .where(deleted_at: nil)
+          .where(deleted_at: nil, visible_in_directory: true)
           .where.not(email: [nil, ""])
           .order(:name)
 
@@ -75,7 +75,7 @@ module Api
       end
 
       def update_profile
-        permitted = params.permit(:email, :phone, :city, :bio, :latitude, :longitude, :avatar, expertise: [])
+        permitted = params.permit(:email, :phone, :city, :bio, :latitude, :longitude, :avatar, :visible_in_directory, expertise: [])
 
         if permitted[:avatar].present?
           current_contact.avatar_image.attach(permitted[:avatar])
@@ -264,6 +264,7 @@ module Api
           region: contact.region.to_s,
           address: contact.address.to_s,
           linkedinUrl: contact.linkedin_url.to_s,
+          visibleInDirectory: contact.visible_in_directory,
           createdAt: contact.created_at.iso8601
         }
       end

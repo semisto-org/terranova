@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { usePage, router } from '@inertiajs/react'
-import { User, Camera, Trash2, Save, Loader2, MapPin, Mail, Phone, Sparkles, Check, LocateFixed } from 'lucide-react'
+import { User, Camera, Trash2, Save, Loader2, MapPin, Mail, Phone, Sparkles, Check, LocateFixed, BookUser } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
@@ -35,6 +35,7 @@ export default function Profile() {
     bio: contact?.bio || '',
     latitude: contact?.latitude || null,
     longitude: contact?.longitude || null,
+    visibleInDirectory: contact?.visibleInDirectory || false,
   })
   const [expertise, setExpertise] = useState(contact?.expertise || [])
   const [newTag, setNewTag] = useState('')
@@ -129,6 +130,7 @@ export default function Profile() {
       formData.append('phone', form.phone)
       formData.append('city', form.city)
       formData.append('bio', form.bio)
+      formData.append('visible_in_directory', form.visibleInDirectory ? '1' : '0')
       if (form.latitude != null) formData.append('latitude', form.latitude)
       if (form.longitude != null) formData.append('longitude', form.longitude)
       expertise.forEach((tag) => formData.append('expertise[]', tag))
@@ -173,12 +175,64 @@ export default function Profile() {
           </div>
         </div>
         <p className="text-sm text-stone-500 ml-12">
-          Tes informations visibles dans l'annuaire Semisto
+          Gere tes informations et ta visibilite dans l'annuaire
         </p>
         <hr className="my-section-divider mt-5" />
       </div>
 
       <form onSubmit={handleSave} className="max-w-xl">
+        {/* Directory visibility toggle */}
+        <div className="mb-8 my-animate-section" style={{ animationDelay: '80ms' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setForm((prev) => ({ ...prev, visibleInDirectory: !prev.visibleInDirectory }))
+              setSaved(false)
+            }}
+            className="w-full group cursor-pointer"
+          >
+            <div
+              className="flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-all"
+              style={{
+                borderColor: form.visibleInDirectory ? '#2D6A4F40' : '#e7e5e4',
+                backgroundColor: form.visibleInDirectory ? '#2D6A4F08' : '#fafaf9',
+              }}
+            >
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                style={{
+                  backgroundColor: form.visibleInDirectory ? '#2D6A4F18' : '#a8a29e20',
+                }}
+              >
+                <BookUser
+                  size={18}
+                  style={{ color: form.visibleInDirectory ? '#2D6A4F' : '#a8a29e' }}
+                  className="transition-colors"
+                />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-stone-700">
+                  Visible dans l'annuaire
+                </p>
+                <p className="text-xs text-stone-400 mt-0.5">
+                  {form.visibleInDirectory
+                    ? 'Ton profil apparait dans l\'annuaire Semisto'
+                    : 'Ton profil n\'est pas visible dans l\'annuaire'}
+                </p>
+              </div>
+              <div
+                className="relative w-11 h-6 rounded-full shrink-0 transition-colors"
+                style={{ backgroundColor: form.visibleInDirectory ? '#2D6A4F' : '#d6d3d1' }}
+              >
+                <div
+                  className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
+                  style={{ left: form.visibleInDirectory ? '22px' : '2px' }}
+                />
+              </div>
+            </div>
+          </button>
+        </div>
+
         {/* Avatar section */}
         <div className="mb-8 my-animate-section" style={{ animationDelay: '100ms' }}>
           <div className="flex items-center gap-5">
