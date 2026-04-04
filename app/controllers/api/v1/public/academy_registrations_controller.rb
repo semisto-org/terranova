@@ -43,10 +43,10 @@ module Api
             maxParticipants: training.max_participants,
             spotsRemaining: spots_remaining,
             requiresAccommodation: training.requires_accommodation,
-            trainingType: {
+            trainingType: training.training_type ? {
               name: training.training_type.name,
               description: training.training_type.description
-            },
+            } : nil,
             participantCategories: training.participant_categories.order(:position).map { |c|
               { id: c.id.to_s, label: c.label, price: c.price.to_f,
                 maxSpots: c.max_spots, depositAmount: c.deposit_amount.to_f,
