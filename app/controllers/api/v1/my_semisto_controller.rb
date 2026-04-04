@@ -56,6 +56,52 @@ module Api
         render json: serialize_portal_training_detail(training, sessions, documents)
       end
 
+      # ── Carpooling API ──
+
+      def carpooling
+        registration = find_contact_registration!
+        return unless registration
+
+        all_registrations = Academy::TrainingRegistration
+          .where(training_id: registration.training_id, deleted_at: nil)
+          .where.not(carpooling: "none")
+
+        drivers = all_registrations.where(carpooling: "offering").where.not(id: registration.id)
+        seekers = all_registrations.where(carpooling: "seeking").where.not(id: registration.id)
+
+        render json: {
+          myRegistration: {
+            carpooling: registration.carpooling,
+            departureCity: registration.departure_city,
+            departurePostalCode: registration.departure_postal_code,
+            departureCountry: registration.departure_country
+          },
+          drivers: drivers.map { |r| serialize_carpooling_participant(r, show_contact: true) },
+          seekers: seekers.map { |r| serialize_carpooling_participant(r, show_contact: false) }
+        }
+      end
+
+      def update_carpooling
+        registration = find_contact_registration!
+        return unless registration
+
+        permitted = params.permit(:carpooling, :departure_city, :departure_postal_code, :departure_country)
+
+        if permitted[:carpooling].present? &&
+           !Academy::TrainingRegistration::CARPOOLING_OPTIONS.include?(permitted[:carpooling])
+          render json: { error: "Option de covoiturage invalide" }, status: :unprocessable_entity
+          return
+        end
+
+        registration.update!(permitted.to_h.compact)
+        render json: {
+          carpooling: registration.carpooling,
+          departureCity: registration.departure_city,
+          departurePostalCode: registration.departure_postal_code,
+          departureCountry: registration.departure_country
+        }
+      end
+
       private
 
       def verify_contact_token(token)
@@ -80,6 +126,36 @@ module Api
           .where("contact_id = :id OR LOWER(contact_email) = :email",
                  id: current_contact.id,
                  email: current_contact.email&.downcase)
+      end
+
+      def find_contact_registration!
+        registration = contact_registrations.find_by(training_id: params[:training_id])
+        unless registration
+          render json: { error: "Inscription introuvable" }, status: :not_found
+          return nil
+        end
+        registration
+      end
+
+      def serialize_carpooling_participant(registration, show_contact:)
+        data = {
+          firstName: registration.contact_name.to_s.split(" ").first,
+          departureCity: registration.departure_city,
+          departurePostalCode: registration.departure_postal_code,
+          departureCountry: registration.departure_country
+        }
+
+        if show_contact
+          if registration.phone.present?
+            data[:contactMethod] = "phone"
+            data[:contactValue] = registration.phone
+          elsif registration.contact_email.present?
+            data[:contactMethod] = "email"
+            data[:contactValue] = registration.contact_email
+          end
+        end
+
+        data
       end
 
       def find_contact_training!
