@@ -93,10 +93,10 @@ export default function Profile() {
         }))
         setSaved(false)
       } else {
-        setGeocodeError('Localisation introuvable. Verifie le nom de ta ville.')
+        setGeocodeError('Localisation introuvable. Vérifie le nom de ta ville.')
       }
     } catch {
-      setGeocodeError('Erreur de geolocalisation. Reessaie plus tard.')
+      setGeocodeError('Erreur de géolocalisation. Réessaie plus tard.')
     } finally {
       setGeocoding(false)
     }
@@ -175,7 +175,7 @@ export default function Profile() {
           </div>
         </div>
         <p className="text-sm text-stone-500 ml-12">
-          Gere tes informations et ta visibilite dans l'annuaire
+          Gère tes informations et ta visibilité dans l'annuaire
         </p>
         <hr className="my-section-divider mt-5" />
       </div>
@@ -216,7 +216,7 @@ export default function Profile() {
                 </p>
                 <p className="text-xs text-stone-400 mt-0.5">
                   {form.visibleInDirectory
-                    ? 'Ton profil apparait dans l\'annuaire Semisto'
+                    ? 'Ton profil apparaît dans l\'annuaire Semisto'
                     : 'Ton profil n\'est pas visible dans l\'annuaire'}
                 </p>
               </div>
@@ -309,7 +309,7 @@ export default function Profile() {
             <textarea
               value={form.bio}
               onChange={(e) => handleChange('bio', e.target.value)}
-              placeholder="Presente-toi en quelques mots..."
+              placeholder="Présente-toi en quelques mots..."
               rows={3}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-[#5B5781]/30 focus:ring-2 focus:ring-[#5B5781]/10 transition-all resize-none"
             />
@@ -337,7 +337,7 @@ export default function Profile() {
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               <span className="flex items-center gap-1.5">
                 <Phone size={14} className="text-stone-400" />
-                Telephone
+                Téléphone
               </span>
             </label>
             <input
@@ -366,7 +366,7 @@ export default function Profile() {
                   // Clear coordinates when city changes
                   setForm((prev) => ({ ...prev, city: e.target.value, latitude: null, longitude: null }))
                 }}
-                placeholder="Bruxelles, Namur, Liege..."
+                placeholder="Bruxelles, Namur, Liège..."
                 className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-[#5B5781]/30 focus:ring-2 focus:ring-[#5B5781]/10 transition-all"
               />
               <button
@@ -374,21 +374,21 @@ export default function Profile() {
                 onClick={handleGeocode}
                 disabled={geocoding || !form.city.trim()}
                 className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-default whitespace-nowrap"
-                title="Geolocaliser pour apparaitre sur la carte"
+                title="Géolocaliser pour apparaître sur la carte"
               >
                 {geocoding ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <LocateFixed size={14} />
                 )}
-                Geolocaliser
+                Géolocaliser
               </button>
             </div>
             {form.latitude && form.longitude && (
               <div className="flex items-center gap-1.5 mt-1.5">
                 <span className="inline-flex items-center gap-1 text-xs text-[#2D6A4F] bg-[#2D6A4F]/10 px-2 py-0.5 rounded-full font-medium">
                   <MapPin size={10} />
-                  Position enregistree
+                  Position enregistrée
                 </span>
                 <button
                   type="button"
@@ -406,7 +406,7 @@ export default function Profile() {
               <p className="text-xs text-amber-600 mt-1.5">{geocodeError}</p>
             )}
             <p className="text-xs text-stone-400 mt-1">
-              Geolocalise ta ville pour apparaitre sur la carte de l'annuaire
+              Géolocalise ta ville pour apparaître sur la carte de l'annuaire
             </p>
           </div>
 
@@ -415,7 +415,7 @@ export default function Profile() {
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               <span className="flex items-center gap-1.5">
                 <Sparkles size={14} className="text-stone-400" />
-                Competences
+                Compétences
               </span>
             </label>
             <div className="border border-stone-200 rounded-xl bg-white p-3 focus-within:border-[#5B5781]/30 focus-within:ring-2 focus-within:ring-[#5B5781]/10 transition-all">
@@ -446,7 +446,7 @@ export default function Profile() {
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={handleAddTag}
-                placeholder="Ajoute une competence et appuie sur Entree..."
+                placeholder="Ajoute une compétence et appuie sur Entrée..."
                 className="w-full text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none bg-transparent"
               />
             </div>
@@ -479,7 +479,7 @@ export default function Profile() {
             ) : saved ? (
               <>
                 <Check size={16} />
-                Enregistre !
+                Enregistré !
               </>
             ) : (
               <>

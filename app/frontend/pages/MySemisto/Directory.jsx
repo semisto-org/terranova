@@ -80,7 +80,7 @@ export default function Directory() {
           </div>
         </div>
         <p className="text-sm text-stone-500 ml-12">
-          Decouvre les membres de la communaute, leurs competences et leurs activites
+          Découvre les membres de la communauté, leurs compétences et leurs activités
         </p>
         <hr className="my-section-divider mt-5" />
       </div>
@@ -142,7 +142,7 @@ export default function Directory() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher par nom, ville ou competence..."
+              placeholder="Rechercher par nom, ville ou compétence..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-stone-200 text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-[#2D6A4F]/30 focus:ring-2 focus:ring-[#2D6A4F]/10 transition-all"
             />
           </div>
@@ -174,7 +174,7 @@ export default function Directory() {
           </div>
           <p className="text-stone-600 text-sm font-medium mb-1">Aucun contact pour le moment</p>
           <p className="text-stone-400 text-xs">
-            L'annuaire se remplira au fur et a mesure.
+            L'annuaire se remplira au fur et à mesure.
           </p>
         </div>
       )}
@@ -203,7 +203,7 @@ export default function Directory() {
           {/* No results */}
           {contacts.length > 0 && filtered.length === 0 && (
             <div className="text-center py-12 my-animate-section">
-              <p className="text-stone-500 text-sm">Aucun resultat pour "{search}"</p>
+              <p className="text-stone-500 text-sm">Aucun résultat pour "{search}"</p>
             </div>
           )}
 

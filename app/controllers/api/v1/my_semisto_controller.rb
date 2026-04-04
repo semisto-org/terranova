@@ -30,7 +30,7 @@ module Api
         session[:contact_id] = contact.id
         redirect_to my_semisto_path("/")
       rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
-        redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
+        redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expiré. Veuillez en demander un nouveau."
 
       end
 
@@ -180,7 +180,7 @@ module Api
       end
 
       def require_contact_authentication
-        render json: { error: "Non autorise" }, status: :unauthorized unless current_contact
+        render json: { error: "Non autorisé" }, status: :unauthorized unless current_contact
       end
 
       def contact_registrations

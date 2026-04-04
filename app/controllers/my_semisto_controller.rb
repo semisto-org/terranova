@@ -22,6 +22,7 @@ class MySemistoController < ApplicationController
             expertise: current_contact.expertise || [],
             latitude: current_contact.latitude&.to_f,
             longitude: current_contact.longitude&.to_f,
+            visibleInDirectory: current_contact.visible_in_directory,
             avatarUrl: current_contact.avatar_image.attached? ?
               Rails.application.routes.url_helpers.rails_blob_url(current_contact.avatar_image, only_path: true) : nil
           }
@@ -52,7 +53,7 @@ class MySemistoController < ApplicationController
     end
 
     # Always redirect with same message (anti-enumeration)
-    redirect_to my_semisto_path("/login"), notice: "Si cette adresse est connue, un lien de connexion vient de vous etre envoye par email."
+    redirect_to my_semisto_path("/login"), notice: "Si cette adresse est connue, un lien de connexion vient de vous être envoyé par email."
 
   end
 
@@ -63,7 +64,7 @@ class MySemistoController < ApplicationController
     session[:contact_id] = contact.id
     redirect_to my_semisto_path("/")
   rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
-    redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
+    redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expiré. Veuillez en demander un nouveau."
 
   end
 
