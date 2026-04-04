@@ -20,6 +20,8 @@ class MySemistoController < ApplicationController
             city: current_contact.city.to_s,
             bio: current_contact.bio.to_s,
             expertise: current_contact.expertise || [],
+            latitude: current_contact.latitude&.to_f,
+            longitude: current_contact.longitude&.to_f,
             avatarUrl: current_contact.avatar_image.attached? ?
               Rails.application.routes.url_helpers.rails_blob_url(current_contact.avatar_image, only_path: true) : nil
           }

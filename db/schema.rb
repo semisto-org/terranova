@@ -409,6 +409,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_194523) do
     t.jsonb "teams", default: [], null: false
     t.string "city", default: "", null: false
     t.text "bio", default: "", null: false
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
     t.datetime "updated_at", null: false
     t.index ["contact_type"], name: "index_contacts_on_contact_type"
     t.index ["deleted_at"], name: "index_contacts_on_deleted_at"

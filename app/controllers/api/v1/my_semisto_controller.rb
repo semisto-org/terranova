@@ -75,7 +75,7 @@ module Api
       end
 
       def update_profile
-        permitted = params.permit(:email, :phone, :city, :bio, :avatar, expertise: [])
+        permitted = params.permit(:email, :phone, :city, :bio, :latitude, :longitude, :avatar, expertise: [])
 
         if permitted[:avatar].present?
           current_contact.avatar_image.attach(permitted[:avatar])
@@ -167,7 +167,9 @@ module Api
           city: contact.city.to_s,
           bio: contact.bio.to_s,
           expertise: contact.expertise || [],
-          avatarUrl: contact_avatar_url(contact)
+          avatarUrl: contact_avatar_url(contact),
+          latitude: contact.latitude&.to_f,
+          longitude: contact.longitude&.to_f
         }
       end
 
@@ -181,6 +183,8 @@ module Api
           bio: contact.bio.to_s,
           expertise: contact.expertise || [],
           avatarUrl: contact_avatar_url(contact),
+          latitude: contact.latitude&.to_f,
+          longitude: contact.longitude&.to_f,
           region: contact.region.to_s,
           address: contact.address.to_s,
           linkedinUrl: contact.linkedin_url.to_s,

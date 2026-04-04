@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { usePage, router } from '@inertiajs/react'
-import { User, Camera, Trash2, Save, Loader2, MapPin, Mail, Phone, Sparkles, Check } from 'lucide-react'
+import { User, Camera, Trash2, Save, Loader2, MapPin, Mail, Phone, Sparkles, Check, LocateFixed } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
@@ -33,6 +33,8 @@ export default function Profile() {
     phone: contact?.phone || '',
     city: contact?.city || '',
     bio: contact?.bio || '',
+    latitude: contact?.latitude || null,
+    longitude: contact?.longitude || null,
   })
   const [expertise, setExpertise] = useState(contact?.expertise || [])
   const [newTag, setNewTag] = useState('')
@@ -41,6 +43,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
+  const [geocoding, setGeocoding] = useState(false)
+  const [geocodeError, setGeocodeError] = useState(null)
   const fileInputRef = useRef(null)
 
   const color = hashColor(contact?.name)
@@ -67,6 +71,34 @@ export default function Profile() {
         router.reload({ only: ['auth'] })
       })
       .catch(() => {})
+  }
+
+  async function handleGeocode() {
+    const city = form.city.trim()
+    if (!city) return
+    setGeocoding(true)
+    setGeocodeError(null)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}&limit=1&accept-language=fr`,
+        { headers: { 'User-Agent': 'Semisto/1.0' } }
+      )
+      const data = await res.json()
+      if (data.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon),
+        }))
+        setSaved(false)
+      } else {
+        setGeocodeError('Localisation introuvable. Verifie le nom de ta ville.')
+      }
+    } catch {
+      setGeocodeError('Erreur de geolocalisation. Reessaie plus tard.')
+    } finally {
+      setGeocoding(false)
+    }
   }
 
   function handleAddTag(e) {
@@ -97,6 +129,8 @@ export default function Profile() {
       formData.append('phone', form.phone)
       formData.append('city', form.city)
       formData.append('bio', form.bio)
+      if (form.latitude != null) formData.append('latitude', form.latitude)
+      if (form.longitude != null) formData.append('longitude', form.longitude)
       expertise.forEach((tag) => formData.append('expertise[]', tag))
       if (avatarFile) {
         formData.append('avatar', avatarFile)
@@ -269,13 +303,57 @@ export default function Profile() {
                 Localisation
               </span>
             </label>
-            <input
-              type="text"
-              value={form.city}
-              onChange={(e) => handleChange('city', e.target.value)}
-              placeholder="Bruxelles, Namur, Liege..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-[#5B5781]/30 focus:ring-2 focus:ring-[#5B5781]/10 transition-all"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={form.city}
+                onChange={(e) => {
+                  handleChange('city', e.target.value)
+                  // Clear coordinates when city changes
+                  setForm((prev) => ({ ...prev, city: e.target.value, latitude: null, longitude: null }))
+                }}
+                placeholder="Bruxelles, Namur, Liege..."
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-[#5B5781]/30 focus:ring-2 focus:ring-[#5B5781]/10 transition-all"
+              />
+              <button
+                type="button"
+                onClick={handleGeocode}
+                disabled={geocoding || !form.city.trim()}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-default whitespace-nowrap"
+                title="Geolocaliser pour apparaitre sur la carte"
+              >
+                {geocoding ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <LocateFixed size={14} />
+                )}
+                Geolocaliser
+              </button>
+            </div>
+            {form.latitude && form.longitude && (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center gap-1 text-xs text-[#2D6A4F] bg-[#2D6A4F]/10 px-2 py-0.5 rounded-full font-medium">
+                  <MapPin size={10} />
+                  Position enregistree
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, latitude: null, longitude: null }))
+                    setSaved(false)
+                  }}
+                  className="text-xs text-stone-400 hover:text-red-500 cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            {geocodeError && (
+              <p className="text-xs text-amber-600 mt-1.5">{geocodeError}</p>
+            )}
+            <p className="text-xs text-stone-400 mt-1">
+              Geolocalise ta ville pour apparaitre sur la carte de l'annuaire
+            </p>
           </div>
 
           {/* Expertise tags */}
