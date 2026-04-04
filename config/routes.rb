@@ -16,6 +16,8 @@ Rails.application.routes.draw do
           get "auth/verify", to: "api/v1/my_semisto#verify", as: false
           get "academy", to: "api/v1/my_semisto#academy_trainings", as: false
           get "academy/:training_id", to: "api/v1/my_semisto#academy_training_detail", as: false
+          get "academy/:training_id/carpooling", to: "api/v1/my_semisto#carpooling", as: false
+          patch "academy/:training_id/carpooling", to: "api/v1/my_semisto#update_carpooling", as: false
         end
       end
 
@@ -89,6 +91,8 @@ Rails.application.routes.draw do
         get "auth/verify", to: "my_semisto#verify"
         get "academy", to: "my_semisto#academy_trainings"
         get "academy/:training_id", to: "my_semisto#academy_training_detail"
+        get "academy/:training_id/carpooling", to: "my_semisto#carpooling"
+        patch "academy/:training_id/carpooling", to: "my_semisto#update_carpooling"
       end
 
       get "health", to: "health#show"
