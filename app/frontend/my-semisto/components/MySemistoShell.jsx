@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
 import { usePage, Link, router } from '@inertiajs/react'
-import { Home, GraduationCap, Wallet, LogOut, Menu, X, Leaf } from 'lucide-react'
+import { Home, GraduationCap, Users, User, Wallet, LogOut, Menu, X, Leaf } from 'lucide-react'
 import semistoLogo from '../../assets/semisto-square-main.png'
 import { myPath } from '../lib/paths'
 
 const NAV_ITEMS = [
   { label: 'Accueil', href: myPath('/'), icon: Home, color: '#2D6A4F' },
+  { label: 'Annuaire', href: myPath('/directory'), icon: Users, color: '#2D6A4F' },
   { label: 'Semisto Academy', href: myPath('/academy'), icon: GraduationCap, color: '#B01A19' },
+  { label: 'Mon Profil', href: myPath('/profile'), icon: User, color: '#5B5781' },
   { label: 'Mes Semos (bientôt)', href: myPath('/wallet'), icon: Wallet, color: '#EF9B0D', disabled: true, hideBadge: true },
-
 ]
 
 export default function MySemistoShell({ children, activeNav }) {

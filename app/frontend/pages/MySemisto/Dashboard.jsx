@@ -1,6 +1,6 @@
 import React from 'react'
 import { usePage, Link } from '@inertiajs/react'
-import { GraduationCap, ArrowRight, CalendarCheck, Sprout, TreePine } from 'lucide-react'
+import { GraduationCap, ArrowRight, CalendarCheck, Sprout, TreePine, Users, User } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import WalletCard from '../../my-semisto/components/WalletCard'
 import { myPath } from '../../my-semisto/lib/paths'
@@ -47,7 +47,6 @@ export default function Dashboard() {
         <div className="my-animate-section space-y-4" style={{ animationDelay: '100ms' }}>
           <Link
             href={myPath('/academy')}
-
             className="block rounded-2xl bg-white border border-stone-200 p-5 hover:border-[#B01A19]/30 transition-all group my-card-accent my-warm-glow"
           >
             <div className="flex items-center justify-between mb-3">
@@ -86,8 +85,59 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Wallet */}
+        {/* Directory card */}
+        <div className="my-animate-section" style={{ animationDelay: '150ms' }}>
+          <Link
+            href={myPath('/directory')}
+            className="block rounded-2xl bg-white border border-stone-200 p-5 hover:border-[#2D6A4F]/30 transition-all group my-card-accent my-warm-glow"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: '#2D6A4F15' }}
+                >
+                  <Users size={20} style={{ color: '#2D6A4F' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-stone-800">Annuaire Semisto</p>
+                  <p className="text-xs text-stone-500">Découvre la communauté</p>
+                </div>
+              </div>
+              <ArrowRight size={18} className="text-stone-400 group-hover:translate-x-0.5 transition-all" style={{ '--tw-translate-x': '0' }} />
+            </div>
+            <p className="text-xs text-stone-400 mt-1">
+              Explore les profils, compétences et activités des membres.
+            </p>
+          </Link>
+        </div>
+
+        {/* Profile card */}
         <div className="my-animate-section" style={{ animationDelay: '200ms' }}>
+          <Link
+            href={myPath('/profile')}
+            className="block rounded-2xl bg-white border border-stone-200 p-5 hover:border-[#5B5781]/30 transition-all group my-card-accent my-warm-glow"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: '#5B578115' }}
+                >
+                  <User size={20} style={{ color: '#5B5781' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-stone-800">Mon Profil</p>
+                  <p className="text-xs text-stone-500">Photo, compétences, localisation</p>
+                </div>
+              </div>
+              <ArrowRight size={18} className="text-stone-400 group-hover:translate-x-0.5 transition-all" style={{ '--tw-translate-x': '0' }} />
+            </div>
+          </Link>
+        </div>
+
+        {/* Wallet */}
+        <div className="my-animate-section" style={{ animationDelay: '250ms' }}>
           <WalletCard />
         </div>
       </div>
