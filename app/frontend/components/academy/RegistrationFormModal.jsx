@@ -51,6 +51,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
     }
     return {}
   })
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false)
   const [error, setError] = useState(null)
 
   const discountPerSpot = academySettings?.volumeDiscountPerSpot ?? 10
@@ -243,6 +244,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
         amount_paid: amountPaid,
         payment_status: paymentStatus,
         internal_note: internalNote.trim(),
+        newsletter_subscribed: newsletterSubscribed,
         items: participantCategories.length > 0 ? itemsPayload : undefined,
         packs: packsPayload.length > 0 ? packsPayload : undefined,
       })
@@ -696,6 +698,28 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
                     placeholder="Notes pour l'équipe (besoins spéciaux, allergies, etc.)..."
                   />
                 </div>
+
+                {/* Newsletter Subscription */}
+                {!isEdit && (
+                  <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200/60">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newsletterSubscribed}
+                        onChange={(e) => setNewsletterSubscribed(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#B01A19] focus:ring-[#B01A19]/30"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-stone-900">
+                          S'inscrire à la newsletter
+                        </span>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Le participant recevra nos actualités et informations sur les prochaines activités
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
 
