@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { usePage, router } from '@inertiajs/react'
-import { User, Camera, Trash2, Save, Loader2, MapPin, Mail, Phone, Sparkles, Check, LocateFixed } from 'lucide-react'
+import { User, Camera, Trash2, Save, Loader2, MapPin, Mail, Phone, Sparkles, Check, LocateFixed, Eye, EyeOff, Users } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
@@ -36,6 +36,7 @@ export default function Profile() {
     latitude: contact?.latitude || null,
     longitude: contact?.longitude || null,
   })
+  const [directoryVisible, setDirectoryVisible] = useState(contact?.directoryVisible || false)
   const [expertise, setExpertise] = useState(contact?.expertise || [])
   const [newTag, setNewTag] = useState('')
   const [avatarPreview, setAvatarPreview] = useState(contact?.avatarUrl || null)
@@ -131,6 +132,7 @@ export default function Profile() {
       formData.append('bio', form.bio)
       if (form.latitude != null) formData.append('latitude', form.latitude)
       if (form.longitude != null) formData.append('longitude', form.longitude)
+      formData.append('directory_visible', directoryVisible ? '1' : '0')
       expertise.forEach((tag) => formData.append('expertise[]', tag))
       if (avatarFile) {
         formData.append('avatar', avatarFile)
@@ -239,6 +241,68 @@ export default function Profile() {
                       Supprimer
                     </button>
                   </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Directory opt-in */}
+        <div className="mb-8 my-animate-section" style={{ animationDelay: '150ms' }}>
+          <div
+            className="rounded-2xl border p-5 transition-all"
+            style={{
+              borderColor: directoryVisible ? '#2D6A4F30' : '#e7e5e4',
+              backgroundColor: directoryVisible ? '#2D6A4F08' : 'white',
+            }}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  backgroundColor: directoryVisible ? '#2D6A4F15' : '#f5f5f4',
+                }}
+              >
+                <Users size={18} style={{ color: directoryVisible ? '#2D6A4F' : '#a8a29e' }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-stone-800">
+                      Visible dans l'annuaire
+                    </p>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      {directoryVisible
+                        ? 'Ton profil est visible par les autres membres de la communaute'
+                        : 'Active cette option pour apparaitre dans l\'annuaire Semisto'}
+                    </p>
+                  </div>
+                  {/* Toggle switch */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={directoryVisible}
+                    onClick={() => { setDirectoryVisible(!directoryVisible); setSaved(false) }}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0"
+                    style={{
+                      backgroundColor: directoryVisible ? '#2D6A4F' : '#d6d3d1',
+                    }}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
+                      style={{
+                        transform: directoryVisible ? 'translateX(22px)' : 'translateX(4px)',
+                      }}
+                    />
+                  </button>
+                </div>
+                {directoryVisible && (
+                  <div className="flex items-center gap-1.5 mt-2.5">
+                    <Eye size={12} style={{ color: '#2D6A4F' }} />
+                    <span className="text-xs font-medium" style={{ color: '#2D6A4F' }}>
+                      Profil actif dans l'annuaire
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

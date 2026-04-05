@@ -172,9 +172,9 @@ export default function Directory() {
           >
             <Users size={28} style={{ color: '#2D6A4F' }} />
           </div>
-          <p className="text-stone-600 text-sm font-medium mb-1">Aucun contact pour le moment</p>
-          <p className="text-stone-400 text-xs">
-            L'annuaire se remplira au fur et a mesure.
+          <p className="text-stone-600 text-sm font-medium mb-1">L'annuaire est encore vide</p>
+          <p className="text-stone-400 text-xs max-w-xs mx-auto">
+            Les membres apparaitront ici une fois qu'ils auront active leur visibilite dans leur profil.
           </p>
         </div>
       )}

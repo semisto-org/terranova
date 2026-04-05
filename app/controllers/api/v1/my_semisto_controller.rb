@@ -38,7 +38,7 @@ module Api
 
       def directory
         contacts = Contact.people_only
-          .where(deleted_at: nil)
+          .where(deleted_at: nil, directory_visible: true)
           .where.not(email: [nil, ""])
           .order(:name)
 
@@ -48,7 +48,7 @@ module Api
       end
 
       def directory_contact
-        contact = Contact.people_only.where(deleted_at: nil).find(params[:id])
+        contact = Contact.people_only.where(deleted_at: nil, directory_visible: true).find(params[:id])
 
         # Find trainings linked to this contact
         registrations = Academy::TrainingRegistration
@@ -75,7 +75,7 @@ module Api
       end
 
       def update_profile
-        permitted = params.permit(:email, :phone, :city, :bio, :latitude, :longitude, :avatar, expertise: [])
+        permitted = params.permit(:email, :phone, :city, :bio, :latitude, :longitude, :directory_visible, :avatar, expertise: [])
 
         if permitted[:avatar].present?
           current_contact.avatar_image.attach(permitted[:avatar])
@@ -83,6 +83,11 @@ module Api
 
         updates = permitted.except(:avatar).to_h
         updates.delete_if { |_, v| v.nil? }
+
+        # Convert string "1"/"0" to boolean for directory_visible
+        if updates.key?("directory_visible")
+          updates["directory_visible"] = ActiveModel::Type::Boolean.new.cast(updates["directory_visible"])
+        end
 
         if current_contact.update(updates)
           render json: { contact: serialize_directory_contact_detail(current_contact.reload) }
@@ -261,6 +266,7 @@ module Api
           avatarUrl: contact_avatar_url(contact),
           latitude: contact.latitude&.to_f,
           longitude: contact.longitude&.to_f,
+          directoryVisible: contact.directory_visible,
           region: contact.region.to_s,
           address: contact.address.to_s,
           linkedinUrl: contact.linkedin_url.to_s,
