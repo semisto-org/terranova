@@ -70,6 +70,42 @@ module Api
         data = ImpactDashboardService.new.call
         render json: data
       end
+
+      def open_activities
+        trainings = Academy::Training
+          .where(status: "registrations_open")
+          .includes(:training_type, :sessions, :participant_categories)
+          .order(updated_at: :desc)
+
+        render json: {
+          trainings: trainings.map { |t| serialize_open_training(t) }
+        }
+      end
+
+      private
+
+      def serialize_open_training(training)
+        next_session = training.sessions
+          .select { |s| s.start_date >= Date.current }
+          .min_by(&:start_date)
+
+        {
+          id: training.id.to_s,
+          title: training.title,
+          trainingTypeName: training.training_type&.name,
+          trainingTypeColor: training.training_type&.color,
+          price: training.price.to_f,
+          vatRate: training.vat_rate.to_f,
+          totalCapacity: training.total_capacity,
+          totalSpotsTaken: training.total_spots_taken,
+          spotsRemaining: training.total_spots_remaining,
+          nextSession: next_session ? {
+            startDate: next_session.start_date.iso8601,
+            endDate: next_session.end_date.iso8601
+          } : nil,
+          description: training.description
+        }
+      end
     end
   end
 end

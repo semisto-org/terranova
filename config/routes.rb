@@ -121,6 +121,7 @@ Rails.application.routes.draw do
       get "foundation/shell", to: "foundation#shell"
       get "foundation/milestone", to: "foundation#milestone"
       get "foundation/impact", to: "foundation#impact"
+      get "foundation/open-activities", to: "foundation#open_activities"
 
       get "geocoding", to: "geocoding#show"
 

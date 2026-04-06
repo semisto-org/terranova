@@ -13,6 +13,7 @@ import {
   ImpactDashboard,
 } from '../../lab-management/components'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
+import OpenActivities from '@/components/home/OpenActivities'
 
 const SECTION_TABS = [
   { id: 'calendar', label: 'Tableau de bord' },
@@ -528,6 +529,10 @@ export default function HomeIndex() {
 
           <div className="mt-6">
             <MyTasksDashboard />
+          </div>
+
+          <div className="mt-6">
+            <OpenActivities />
           </div>
 
           {eventForm && (
