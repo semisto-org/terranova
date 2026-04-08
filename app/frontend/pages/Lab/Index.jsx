@@ -5,25 +5,19 @@ import { useUrlState } from '@/hooks/useUrlState'
 import {
   Dashboard,
   ShapeUpWorkboard,
-  ContactList,
-  ContactDetail,
-  ContactForm,
   EventForm,
   ProjectBoard,
-  AlbumList,
-  ReportingDashboard,
-  BankSection,
+  SemosDashboard,
+  ImpactDashboard,
 } from '../../lab-management/components'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
-  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'dashboard', label: 'Tableau de bord' },
   { id: 'projects', label: 'Projets' },
+  { id: 'semos', label: 'Semos' },
+  { id: 'impact', label: 'Impact' },
   { id: 'shapeup', label: 'Shape Up' },
-  { id: 'contacts', label: 'Contacts' },
-  { id: 'albums', label: 'Albums' },
-  { id: 'reporting', label: 'Reporting' },
-  { id: 'bank', label: 'Banque' },
 ]
 
 const EVENT_TYPES = [
@@ -159,22 +153,8 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
-  const [reporting, setReporting] = useState(null)
-  const [reportingLoading, setReportingLoading] = useState(false)
-  const [reportingError, setReportingError] = useState(null)
-  const [reportFilters, setReportFilters] = useState(() => {
-    const now = new Date()
-    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    const from = new Date(now.getFullYear(), now.getMonth() - 11, 1)
-    const toIso = to.toISOString().slice(0, 10)
-    const fromIso = from.toISOString().slice(0, 10)
-    return { from: fromIso, to: toIso, pole: '', category: '', supplier: '' }
-  })
-
   const [formModal, setFormModal] = useState(null)
   const [detailModal, setDetailModal] = useState(null)
-  const [contactDetailModal, setContactDetailModal] = useState(null)
-  const [contactFormModal, setContactFormModal] = useState(null)
   const [eventForm, setEventForm] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
@@ -195,34 +175,10 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     loadOverview()
   }, [loadOverview])
 
-  useEffect(() => {
-    if (tab !== 'reporting') return
-
-    const loadReporting = async () => {
-      setReportingLoading(true)
-      setReportingError(null)
-      try {
-        const params = new URLSearchParams()
-        Object.entries(reportFilters).forEach(([key, value]) => {
-          if (value) params.append(key, value)
-        })
-        const payload = await apiRequest(`/api/v1/lab/reporting?${params.toString()}`)
-        setReporting(payload)
-      } catch (err) {
-        setReportingError(err.message)
-      } finally {
-        setReportingLoading(false)
-      }
-    }
-
-    loadReporting()
-  }, [tab, reportFilters])
-
   const members = data?.members || []
   const pitches = data?.pitches || []
   const events = data?.events || []
   const scopes = data?.scopes || []
-  const contacts = data?.contacts || []
 
   const currentMemberId = useMemo(() => {
     if (initialMemberId && members.some((m) => m.id === initialMemberId)) return initialMemberId
@@ -455,31 +411,31 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
 
     onViewMember: (memberId) => showDetailFromApi('Détail membre', `/api/v1/lab/members/${memberId}`),
 
-    onCreateContact: () => setContactFormModal({ contact: null }),
-    onViewContact: async (contactId) => {
-      setBusy(true)
-      setError(null)
-      try {
-        const payload = await apiRequest(`/api/v1/lab/contacts/${contactId}`)
-        setContactDetailModal({ contact: payload.contact, linkedActivities: payload.linkedActivities })
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setBusy(false)
-      }
-    },
-    onEditContact: (contactId) => {
-      const contact = contacts.find((c) => c.id === contactId)
-      setContactFormModal({ contact: contact || null })
-    },
-    onDeleteContact: (contactId) => {
-      const contact = contacts.find((c) => c.id === contactId)
-      setDeleteConfirm({
-        title: 'Supprimer ce contact ?',
-        message: `Le contact « ${contact?.name || ''} » sera supprimé définitivement.`,
-        action: () => runAndRefresh(() => apiRequest(`/api/v1/lab/contacts/${contactId}`, { method: 'DELETE' })),
-      })
-    },
+    onTransferSemos: (toWalletId, amount, description) =>
+      runAndRefresh(() => {
+        const fromWalletId = (data?.wallets || []).find((wallet) => wallet.memberId === currentMemberId)?.id
+        if (!fromWalletId) throw new Error('Portefeuille courant introuvable')
+        return apiRequest('/api/v1/lab/semos/transfer', {
+          method: 'POST',
+          body: JSON.stringify({ from_wallet_id: fromWalletId, to_wallet_id: toWalletId, amount, description }),
+        })
+      }),
+
+    onEmitSemos: (walletId, amount, reason, description) =>
+      runAndRefresh(() =>
+        apiRequest('/api/v1/lab/semos/emissions', {
+          method: 'POST',
+          body: JSON.stringify({ wallet_id: walletId, amount, reason, description, created_by_id: currentMemberId }),
+        })
+      ),
+
+    onUpdateRate: (rateId, amount) =>
+      runAndRefresh(() =>
+        apiRequest(`/api/v1/lab/semos/rates/${rateId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ amount }),
+        })
+      ),
 
     onCreateEvent: () => {
       setEventForm({
@@ -554,7 +510,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (!guild) return
       setDetailModal({ title: 'Détail guilde', data: guild })
     },
-  }), [currentMemberId, contacts, data, events, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi])
+  }), [currentMemberId, data, events, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi])
 
   if (loading) {
     return (
@@ -637,53 +593,23 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
         />
       )}
 
-      {tab === 'contacts' && (
-        <ContactList
-          contacts={contacts}
-          onCreateContact={callbacks.onCreateContact}
-          onViewContact={callbacks.onViewContact}
-          onEditContact={callbacks.onEditContact}
-          onDeleteContact={callbacks.onDeleteContact}
+      {tab === 'semos' && (
+        <SemosDashboard
+          members={data.members}
+          wallets={data.wallets}
+          transactions={data.semosTransactions}
+          emissions={data.semosEmissions}
+          rates={data.semosRates}
+          currentMemberId={currentMemberId}
+          onTransferSemos={callbacks.onTransferSemos}
+          onEmitSemos={callbacks.onEmitSemos}
+          onUpdateRate={callbacks.onUpdateRate}
         />
       )}
 
-      {tab === 'albums' && (
-        <AlbumList
-          albums={data?.albums ?? []}
-          onRefresh={() => loadOverview(false)}
-        />
+      {tab === 'impact' && (
+        <ImpactDashboard />
       )}
-
-      {tab === 'reporting' && (
-        <ReportingDashboard
-          data={reporting}
-          loading={reportingLoading}
-          error={reportingError}
-          filters={reportFilters}
-          onChangeFilters={(next) => setReportFilters((prev) => ({ ...prev, ...next }))}
-          onApplyPreset={(preset) => {
-            const now = new Date()
-            if (preset === 'ytd') {
-              setReportFilters((prev) => ({
-                ...prev,
-                from: `${now.getFullYear()}-01-01`,
-                to: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10),
-              }))
-              return
-            }
-            const months = preset === '3m' ? 3 : preset === '6m' ? 6 : 12
-            const from = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1)
-            const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-            setReportFilters((prev) => ({
-              ...prev,
-              from: from.toISOString().slice(0, 10),
-              to: to.toISOString().slice(0, 10),
-            }))
-          }}
-        />
-      )}
-
-      {tab === 'bank' && <BankSection />}
 
       {formModal && (
         <FormModal
@@ -718,64 +644,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onClose={() => setDetailModal(null)}
         />
       )}
-
-      {contactDetailModal && (
-        <ContactDetail
-          contact={contactDetailModal.contact}
-          linkedActivities={contactDetailModal.linkedActivities}
-          onClose={() => setContactDetailModal(null)}
-          onEdit={() => {
-            setContactDetailModal(null)
-            callbacks.onEditContact(contactDetailModal.contact.id)
-          }}
-        />
-      )}
-
-      {contactFormModal && (
-        <ContactForm
-          contact={contactFormModal.contact}
-          organizations={contacts.filter((c) => c.contactType === 'organization')}
-          onSubmit={async (values) => {
-            const payload = {
-              contact_type: values.contactType,
-              name: values.name,
-              email: values.email,
-              phone: values.phone,
-              address: values.address,
-              organization_type: values.organizationType,
-              organization_id: values.organizationId || null,
-              notes: values.notes,
-              notes_html: values.notesHtml,
-              tag_names: values.tagNames,
-            }
-            setBusy(true)
-            setError(null)
-            try {
-              if (contactFormModal.contact) {
-                await apiRequest(`/api/v1/lab/contacts/${contactFormModal.contact.id}`, {
-                  method: 'PATCH',
-                  body: JSON.stringify(payload),
-                })
-              } else {
-                await apiRequest('/api/v1/lab/contacts', {
-                  method: 'POST',
-                  body: JSON.stringify(payload),
-                })
-              }
-              setContactFormModal(null)
-              await loadOverview()
-            } catch (err) {
-              setError(err.message)
-            } finally {
-              setBusy(false)
-            }
-          }}
-          onCancel={() => setContactFormModal(null)}
-          busy={busy}
-        />
-      )}
-
-
 
       {deleteConfirm && (
         <ConfirmDeleteModal

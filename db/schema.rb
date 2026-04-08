@@ -340,6 +340,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.index ["deleted_at"], name: "index_albums_on_deleted_at"
   end
 
+  create_table "bank_connections", force: :cascade do |t|
+    t.string "accounting_scope", default: "general", null: false
+    t.string "bank_name", null: false
+    t.bigint "connected_by_id", null: false
+    t.datetime "consent_expires_at"
+    t.datetime "created_at", null: false
+    t.string "iban"
+    t.string "institution_id"
+    t.datetime "last_synced_at"
+    t.string "provider", null: false
+    t.string "provider_account_id"
+    t.string "provider_requisition_id"
+    t.string "status", default: "linked", null: false
+    t.datetime "updated_at", null: false
+    t.index ["accounting_scope"], name: "index_bank_connections_on_accounting_scope"
+    t.index ["provider_account_id"], name: "index_bank_connections_on_provider_account_id", unique: true, where: "(provider_account_id IS NOT NULL)"
+    t.index ["status"], name: "index_bank_connections_on_status"
+  end
+
+  create_table "bank_reconciliations", force: :cascade do |t|
+    t.bigint "bank_transaction_id", null: false
+    t.string "confidence", default: "manual", null: false
+    t.datetime "created_at", null: false
+    t.bigint "matched_by_id"
+    t.text "notes"
+    t.bigint "reconcilable_id", null: false
+    t.string "reconcilable_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bank_transaction_id"], name: "index_bank_reconciliations_on_bank_transaction_id", unique: true
+    t.index ["reconcilable_type", "reconcilable_id"], name: "idx_bank_reconciliations_on_reconcilable"
+  end
+
+  create_table "bank_transactions", force: :cascade do |t|
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.bigint "bank_connection_id", null: false
+    t.date "booking_date"
+    t.string "category"
+    t.string "counterpart_iban"
+    t.string "counterpart_name"
+    t.datetime "created_at", null: false
+    t.string "currency", default: "EUR", null: false
+    t.date "date", null: false
+    t.string "internal_reference"
+    t.string "provider_transaction_id", null: false
+    t.text "remittance_info"
+    t.string "status", default: "unmatched", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bank_connection_id", "date"], name: "index_bank_transactions_on_bank_connection_id_and_date"
+    t.index ["bank_connection_id"], name: "index_bank_transactions_on_bank_connection_id"
+    t.index ["date"], name: "index_bank_transactions_on_date"
+    t.index ["provider_transaction_id"], name: "index_bank_transactions_on_provider_transaction_id", unique: true
+    t.index ["status"], name: "index_bank_transactions_on_status"
+  end
+
   create_table "bet_team_memberships", force: :cascade do |t|
     t.bigint "bet_id", null: false
     t.datetime "created_at", null: false
@@ -2077,6 +2131,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "album_media_items", "albums"
+  add_foreign_key "bank_connections", "members", column: "connected_by_id"
+  add_foreign_key "bank_reconciliations", "bank_transactions"
+  add_foreign_key "bank_reconciliations", "members", column: "matched_by_id"
+  add_foreign_key "bank_transactions", "bank_connections"
   add_foreign_key "bet_team_memberships", "bets"
   add_foreign_key "bet_team_memberships", "members"
   add_foreign_key "bets", "cycles"

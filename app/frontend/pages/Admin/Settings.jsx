@@ -15,6 +15,7 @@ import {
   ContactList,
   ContactDetail,
   ContactForm,
+  BankSection,
 } from '../../lab-management/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import { RevenueFormModal } from '../../components/shared/RevenueFormModal'
@@ -28,6 +29,7 @@ const SECTION_TABS = [
   { id: 'semos', label: 'Semos' },
   { id: 'contacts', label: 'Contacts' },
   { id: 'albums', label: 'Albums' },
+  { id: 'bank', label: 'Banque' },
 ]
 
 export default function AdminSettings({ currentMemberId: initialMemberId }) {
@@ -555,6 +557,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onRefresh={() => loadOverview(false)}
         />
       )}
+
+      {tab === 'bank' && <BankSection />}
 
       {detailModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={() => setDetailModal(null)}>
