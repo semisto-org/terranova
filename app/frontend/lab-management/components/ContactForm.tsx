@@ -12,6 +12,7 @@ export interface ContactFormValues {
   organizationId: string
   notes: string
   notesHtml: string
+  newsletterSubscribed: boolean
   tagNames: string[]
 }
 
@@ -46,6 +47,7 @@ export function ContactForm({
     organizationId: contact?.organizationId ?? '',
     notes: contact?.notes ?? '',
     notesHtml: contact?.notesHtml ?? '',
+    newsletterSubscribed: contact?.newsletterSubscribed ?? false,
     tagNames: contact?.tagNames ?? [],
   })
 
@@ -307,6 +309,24 @@ export function ContactForm({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Newsletter */}
+            <div className="space-y-3">
+              <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                Newsletter
+              </span>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={values.newsletterSubscribed}
+                  onChange={(e) => update('newsletterSubscribed', e.target.checked)}
+                  className="w-4 h-4 rounded border-stone-300 text-[#5B5781] focus:ring-[#5B5781]/30"
+                />
+                <span className="text-sm text-stone-700">
+                  Inscrit à la newsletter
+                </span>
+              </label>
             </div>
 
             {/* Notes section */}

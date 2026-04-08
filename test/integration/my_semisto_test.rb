@@ -170,6 +170,155 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert body["trainings"].any? { |t| t["title"] == "Formation email" }
   end
 
+  # ── Carpooling API ──
+
+  test "GET /api/v1/my/academy/:id/carpooling returns carpooling data" do
+    @registration.update!(
+      carpooling: "seeking",
+      departure_city: "Namur",
+      departure_postal_code: "5000",
+      departure_country: "BE"
+    )
+
+    # Add a driver
+    driver_contact = Contact.create!(contact_type: "person", name: "Pierre Martin", email: "pierre@example.com")
+    Academy::TrainingRegistration.create!(
+      training: @training,
+      contact: driver_contact,
+      contact_name: "Pierre Martin",
+      contact_email: "pierre@example.com",
+      phone: "0478123456",
+      payment_status: "paid",
+      registered_at: 1.week.ago,
+      carpooling: "offering",
+      departure_city: "Bruxelles",
+      departure_postal_code: "1000",
+      departure_country: "BE"
+    )
+
+    get "/api/v1/my/academy/#{@training.id}/carpooling", as: :json, headers: auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+
+    assert_equal "seeking", body["myRegistration"]["carpooling"]
+    assert_equal "Namur", body["myRegistration"]["departureCity"]
+    assert_equal 1, body["drivers"].length
+    assert_equal "Pierre", body["drivers"][0]["firstName"]
+    assert_equal "phone", body["drivers"][0]["contactMethod"]
+    assert_equal "0478123456", body["drivers"][0]["contactValue"]
+    assert_equal 0, body["seekers"].length
+  end
+
+  test "GET /api/v1/my/academy/:id/carpooling excludes participants with carpooling=none" do
+    # Create a registration with carpooling=none — should not appear in lists
+    Academy::TrainingRegistration.create!(
+      training: @training,
+      contact_name: "Invisible",
+      contact_email: "invisible@example.com",
+      payment_status: "paid",
+      registered_at: 1.week.ago,
+      carpooling: "none"
+    )
+
+    get "/api/v1/my/academy/#{@training.id}/carpooling", as: :json, headers: auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 0, body["drivers"].length
+    assert_equal 0, body["seekers"].length
+  end
+
+  test "PATCH /api/v1/my/academy/:id/carpooling updates departure info" do
+    auth_headers
+
+    patch "/api/v1/my/academy/#{@training.id}/carpooling",
+      params: { carpooling: "offering", departure_city: "Liège", departure_postal_code: "4000", departure_country: "BE" },
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "offering", body["carpooling"]
+    assert_equal "Liège", body["departureCity"]
+    assert_equal "4000", body["departurePostalCode"]
+
+    @registration.reload
+    assert_equal "offering", @registration.carpooling
+    assert_equal "Liège", @registration.departure_city
+  end
+
+  test "PATCH /api/v1/my/academy/:id/carpooling rejects invalid carpooling option" do
+    auth_headers
+
+    patch "/api/v1/my/academy/#{@training.id}/carpooling",
+      params: { carpooling: "invalid_value" },
+      as: :json
+
+    assert_response :unprocessable_entity
+  end
+
+  test "GET /api/v1/my/academy/:id/carpooling unauthenticated returns 401" do
+    get "/api/v1/my/academy/#{@training.id}/carpooling", as: :json
+    assert_response :unauthorized
+  end
+
+  test "GET /api/v1/my/academy/:id/carpooling for unrelated training returns 404" do
+    other_training = Academy::Training.create!(
+      training_type: @training_type,
+      title: "Autre formation",
+      status: "draft"
+    )
+
+    get "/api/v1/my/academy/#{other_training.id}/carpooling", as: :json, headers: auth_headers
+    assert_response :not_found
+  end
+
+  test "carpooling drivers show email when no phone" do
+    Academy::TrainingRegistration.create!(
+      training: @training,
+      contact_name: "Sophie Lemaire",
+      contact_email: "sophie@example.com",
+      phone: "",
+      payment_status: "paid",
+      registered_at: 1.week.ago,
+      carpooling: "offering",
+      departure_city: "Mons",
+      departure_postal_code: "7000",
+      departure_country: "BE"
+    )
+
+    get "/api/v1/my/academy/#{@training.id}/carpooling", as: :json, headers: auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    driver = body["drivers"].find { |d| d["firstName"] == "Sophie" }
+    assert_equal "email", driver["contactMethod"]
+    assert_equal "sophie@example.com", driver["contactValue"]
+  end
+
+  test "carpooling seekers do not expose contact info" do
+    Academy::TrainingRegistration.create!(
+      training: @training,
+      contact_name: "Lucas Bernard",
+      contact_email: "lucas@example.com",
+      phone: "0499000000",
+      payment_status: "paid",
+      registered_at: 1.week.ago,
+      carpooling: "seeking",
+      departure_city: "Charleroi",
+      departure_postal_code: "6000",
+      departure_country: "BE"
+    )
+
+    get "/api/v1/my/academy/#{@training.id}/carpooling", as: :json, headers: auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    seeker = body["seekers"].find { |s| s["firstName"] == "Lucas" }
+    assert_not seeker.key?("contactMethod")
+    assert_not seeker.key?("contactValue")
+  end
+
   # ── Admin impersonation ──
 
   test "POST /api/v1/lab/contacts/:id/impersonate generates impersonation token for admin" do

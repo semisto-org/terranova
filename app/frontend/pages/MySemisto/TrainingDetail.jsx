@@ -3,6 +3,7 @@ import { usePage, Link } from '@inertiajs/react'
 import { ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
+import CarpoolingSection from '../../my-semisto/components/CarpoolingSection'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
@@ -101,6 +102,9 @@ export default function TrainingDetail() {
 
           {/* Sessions timeline with inline documents */}
           <SessionsAndDocuments training={training} />
+
+          {/* Carpooling */}
+          <CarpoolingSection trainingId={trainingId} />
         </div>
       )}
     </MySemistoShell>

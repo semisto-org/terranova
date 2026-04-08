@@ -932,7 +932,7 @@ module Api
       end
 
       def contact_params
-        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, tag_names: [], expertise: [])
+        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, :newsletter_subscribed, tag_names: [], expertise: [])
       end
 
       def set_contact
@@ -1633,6 +1633,7 @@ module Api
           organization: contact.organization ? { id: contact.organization.id.to_s, name: contact.organization.name } : nil,
           people: contact.organization? ? contact.people.map { |p| { id: p.id.to_s, name: p.name } } : [],
           expertise: contact.expertise || [],
+          newsletterSubscribed: contact.newsletter_subscribed,
           tagNames: contact.tag_names,
           createdAt: contact.created_at.iso8601,
           updatedAt: contact.updated_at.iso8601

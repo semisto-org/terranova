@@ -17,7 +17,7 @@ if (import.meta.env.PROD) {
   }
 }
 
-const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPassword', 'Design/ClientPortal', 'Academy/Registration', 'MySemisto/Login', 'MySemisto/Dashboard', 'MySemisto/Academy', 'MySemisto/TrainingDetail']
+const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPassword', 'Design/ClientPortal', 'Academy/Registration', 'MySemisto/Login', 'MySemisto/Dashboard', 'MySemisto/Academy', 'MySemisto/TrainingDetail', 'MySemisto/Directory', 'MySemisto/Profile']
 
 createInertiaApp({
   resolve: (name) => {

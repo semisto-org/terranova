@@ -15,7 +15,16 @@ class MySemistoController < ApplicationController
           {
             id: current_contact.id.to_s,
             name: current_contact.display_name,
-            email: current_contact.email
+            email: current_contact.email,
+            phone: current_contact.phone.to_s,
+            city: current_contact.city.to_s,
+            bio: current_contact.bio.to_s,
+            expertise: current_contact.expertise || [],
+            latitude: current_contact.latitude&.to_f,
+            longitude: current_contact.longitude&.to_f,
+            visibleInDirectory: current_contact.visible_in_directory,
+            avatarUrl: current_contact.avatar_image.attached? ?
+              Rails.application.routes.url_helpers.rails_blob_url(current_contact.avatar_image, only_path: true) : nil
           }
         end,
         member: nil
@@ -44,7 +53,7 @@ class MySemistoController < ApplicationController
     end
 
     # Always redirect with same message (anti-enumeration)
-    redirect_to my_semisto_path("/login"), notice: "Si cette adresse est connue, un lien de connexion vient de vous etre envoye par email."
+    redirect_to my_semisto_path("/login"), notice: "Si cette adresse est connue, un lien de connexion vient de vous être envoyé par email."
 
   end
 
@@ -55,7 +64,7 @@ class MySemistoController < ApplicationController
     session[:contact_id] = contact.id
     redirect_to my_semisto_path("/")
   rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
-    redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expire. Veuillez en demander un nouveau."
+    redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expiré. Veuillez en demander un nouveau."
 
   end
 
@@ -89,6 +98,20 @@ class MySemistoController < ApplicationController
     render inertia: "MySemisto/TrainingDetail", props: {
       trainingId: params[:training_id].to_s
     }
+  end
+
+  def directory
+    render inertia: "MySemisto/Directory"
+  end
+
+  def directory_contact
+    render inertia: "MySemisto/Directory", props: {
+      contactId: params[:id].to_s
+    }
+  end
+
+  def profile
+    render inertia: "MySemisto/Profile"
   end
 
   private

@@ -9,6 +9,9 @@ Rails.application.routes.draw do
       delete "/logout", to: "my_semisto#logout", as: false
       get "/academy", to: "my_semisto#academy", as: false
       get "/academy/:training_id", to: "my_semisto#training_detail", as: false
+      get "/directory", to: "my_semisto#directory", as: false
+      get "/directory/:id", to: "my_semisto#directory_contact", as: false
+      get "/profile", to: "my_semisto#profile", as: false
 
       scope :api, as: false do
         scope :v1, as: false do
@@ -16,6 +19,13 @@ Rails.application.routes.draw do
           get "auth/verify", to: "api/v1/my_semisto#verify", as: false
           get "academy", to: "api/v1/my_semisto#academy_trainings", as: false
           get "academy/:training_id", to: "api/v1/my_semisto#academy_training_detail", as: false
+          get "directory", to: "api/v1/my_semisto#directory", as: false
+          get "directory/:id", to: "api/v1/my_semisto#directory_contact", as: false
+          get "profile", to: "api/v1/my_semisto#profile", as: false
+          patch "profile", to: "api/v1/my_semisto#update_profile", as: false
+          delete "profile/avatar", to: "api/v1/my_semisto#remove_avatar", as: false
+          get "academy/:training_id/carpooling", to: "api/v1/my_semisto#carpooling", as: false
+          patch "academy/:training_id/carpooling", to: "api/v1/my_semisto#update_carpooling", as: false
         end
       end
 
@@ -34,6 +44,9 @@ Rails.application.routes.draw do
     delete "/logout", to: "my_semisto#logout", as: :logout
     get "/academy", to: "my_semisto#academy", as: :academy
     get "/academy/:training_id", to: "my_semisto#training_detail", as: :training
+    get "/directory", to: "my_semisto#directory", as: :directory
+    get "/directory/:id", to: "my_semisto#directory_contact", as: :directory_contact
+    get "/profile", to: "my_semisto#profile", as: :profile
   end
 
   # Authentication
@@ -89,6 +102,13 @@ Rails.application.routes.draw do
         get "auth/verify", to: "my_semisto#verify"
         get "academy", to: "my_semisto#academy_trainings"
         get "academy/:training_id", to: "my_semisto#academy_training_detail"
+        get "directory", to: "my_semisto#directory"
+        get "directory/:id", to: "my_semisto#directory_contact"
+        get "profile", to: "my_semisto#profile"
+        patch "profile", to: "my_semisto#update_profile"
+        delete "profile/avatar", to: "my_semisto#remove_avatar"
+        get "academy/:training_id/carpooling", to: "my_semisto#carpooling"
+        patch "academy/:training_id/carpooling", to: "my_semisto#update_carpooling"
       end
 
       get "health", to: "health#show"
@@ -207,6 +227,23 @@ Rails.application.routes.draw do
       post "lab/revenues", to: "lab_management#create_revenue"
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
+
+      # Bank integration (CODA import + GoCardless)
+      post "bank/connect", to: "bank#connect"
+      post "bank/callback", to: "bank#callback"
+      post "bank/connections", to: "bank#create_connection"
+      get "bank/connections", to: "bank#list_connections"
+      delete "bank/connections/:id", to: "bank#destroy_connection"
+      post "bank/connections/:id/upload_coda", to: "bank#upload_coda"
+      post "bank/sync", to: "bank#sync"
+      get "bank/transactions", to: "bank#list_transactions"
+      get "bank/transactions/:id/candidates", to: "bank#candidates"
+      patch "bank/transactions/:id/ignore", to: "bank#ignore_transaction"
+      patch "bank/transactions/:id/unignore", to: "bank#unignore_transaction"
+      post "bank/reconciliations", to: "bank#create_reconciliation"
+      post "bank/reconciliations/auto", to: "bank#auto_reconcile"
+      delete "bank/reconciliations/:id", to: "bank#destroy_reconciliation"
+      get "bank/summary", to: "bank#summary"
 
       get "lab/projects", to: "lab_management#list_projects"
       get "lab/projects/:id", to: "lab_management#show_project"

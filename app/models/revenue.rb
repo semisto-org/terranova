@@ -6,6 +6,8 @@ class Revenue < ApplicationRecord
   POLES = %w[academy design_studio nursery roots].freeze
   STATUSES = %w[draft confirmed received].freeze
 
+  has_one :bank_reconciliation, as: :reconcilable, class_name: "BankReconciliation", dependent: :nullify
+
   belongs_to :contact, optional: true
   belongs_to :training, class_name: "Academy::Training", optional: true
   belongs_to :design_project, class_name: "Design::Project", optional: true

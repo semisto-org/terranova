@@ -671,19 +671,30 @@ module Api
       end
 
       def resolve_contact_for_registration(reg_params)
-        return reg_params[:contact_id] if reg_params[:contact_id].present?
+        newsletter = ActiveModel::Type::Boolean.new.cast(params[:newsletter_subscribed])
+
+        if reg_params[:contact_id].present?
+          if newsletter
+            Contact.where(id: reg_params[:contact_id]).update_all(newsletter_subscribed: true)
+          end
+          return reg_params[:contact_id]
+        end
 
         email = reg_params[:contact_email].to_s.strip
         return nil if email.blank?
 
         contact = Contact.find_by("LOWER(email) = ?", email.downcase)
-        return contact.id if contact
+        if contact
+          contact.update!(newsletter_subscribed: true) if newsletter
+          return contact.id
+        end
 
         Contact.create!(
           contact_type: "person",
           name: reg_params[:contact_name].to_s.strip,
           email: email,
-          phone: reg_params[:phone].to_s.strip.presence
+          phone: reg_params[:phone].to_s.strip.presence,
+          newsletter_subscribed: newsletter || false
         ).id
       end
 
