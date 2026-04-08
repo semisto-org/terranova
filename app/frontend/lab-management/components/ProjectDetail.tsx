@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { usePage } from '@inertiajs/react'
 import { apiRequest } from '@/lib/api'
-import { ArrowLeft, Plus, Calendar, MapPin, ChevronRight, Pencil, FileText } from 'lucide-react'
+import { ArrowLeft, Plus, Calendar, MapPin, ChevronRight, Pencil, FileText, Wallet } from 'lucide-react'
+import { BucketSection } from '@/components/shared/BucketSection'
 import {
   DndContext,
   closestCenter,
@@ -486,6 +487,22 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
           onUpload={handleUploadDocuments}
           onDelete={handleDeleteDocument}
           busy={busy}
+        />
+      </div>
+
+      {/* Bucket */}
+      <div className="mb-8">
+        <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-4">
+          <span className="inline-flex items-center gap-1.5">
+            <Wallet className="w-3.5 h-3.5" />
+            Budget du projet
+          </span>
+        </h2>
+        <BucketSection
+          projectType="lab-project"
+          projectId={projectId}
+          teamMembers={members.map(m => ({ id: m.id, name: `${m.firstName} ${m.lastName}` }))}
+          accentColor="#5B5781"
         />
       </div>
 

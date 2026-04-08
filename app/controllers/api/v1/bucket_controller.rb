@@ -66,7 +66,7 @@ module Api
       end
 
       def transaction_params
-        params.permit(:kind, :amount, :description, :date, :member_id)
+        params.expect(bucket: [:kind, :amount, :description, :date, :member_id])
       end
 
       def serialize_transaction(txn)

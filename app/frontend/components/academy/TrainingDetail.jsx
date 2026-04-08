@@ -20,6 +20,7 @@ import {
   MapPin,
   GraduationCap,
   AlertCircle,
+  Wallet,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -29,6 +30,7 @@ import TrainingDocumentsTab from './TrainingDocumentsTab'
 import TrainingChecklistTab from './TrainingChecklistTab'
 import TrainingFinancesTab from './TrainingFinancesTab'
 import TrainingAlbumTab from './TrainingAlbumTab'
+import { BucketSection } from '@/components/shared/BucketSection'
 
 const STATUS_LABELS = {
   idea: 'Idée',
@@ -192,6 +194,7 @@ const TABS = [
   { id: 'album', label: 'Album', icon: Camera },
   { id: 'checklist', label: 'Checklist', icon: CheckSquare },
   { id: 'finances', label: 'Finances', icon: DollarSign },
+  { id: 'bucket', label: 'Bucket', icon: Wallet },
 ]
 
 export default function TrainingDetail({
@@ -555,6 +558,14 @@ export default function TrainingDetail({
                 onAddExpense={() => actions.addExpense(training.id)}
                 onEditExpense={(id) => actions.editExpense(id)}
                 onDeleteExpense={(id) => actions.deleteExpense(id)}
+              />
+            )}
+            {tab === 'bucket' && (
+              <BucketSection
+                projectType="training"
+                projectId={training.id}
+                teamMembers={members.map((m) => ({ id: m.id, name: `${m.firstName} ${m.lastName}` }))}
+                accentColor="#B01A19"
               />
             )}
           </div>

@@ -3,8 +3,8 @@
     "file": "assets/leaflet-CIGW-MKW.css",
     "src": "../../node_modules/leaflet/dist/leaflet.css"
   },
-  "_leaflet-src-B5qApnbq.js": {
-    "file": "assets/leaflet-src-B5qApnbq.js",
+  "_leaflet-src-D1SnZ-7R.js": {
+    "file": "assets/leaflet-src-D1SnZ-7R.js",
     "name": "leaflet-src",
     "isDynamicEntry": true,
     "imports": [
@@ -24,23 +24,37 @@
     "src": "components/nova-chat/nova-avatar.jpg"
   },
   "entrypoints/application.jsx": {
-    "file": "assets/application-sSCJQ9Qo.js",
+    "file": "assets/application-CMU_EeoF.js",
     "name": "application",
     "src": "entrypoints/application.jsx",
     "isEntry": true,
     "dynamicImports": [
-      "_leaflet-src-B5qApnbq.js",
-      "_leaflet-src-B5qApnbq.js",
-      "_leaflet-src-B5qApnbq.js",
-      "_leaflet-src-B5qApnbq.js"
+      "_leaflet-src-D1SnZ-7R.js",
+      "_leaflet-src-D1SnZ-7R.js",
+      "_leaflet-src-D1SnZ-7R.js",
+      "_leaflet-src-D1SnZ-7R.js",
+      "my-semisto/components/DirectoryMap.jsx"
     ],
     "css": [
-      "assets/application-CShHbSHw.css"
+      "assets/application-Bt9yK9fz.css"
     ],
     "assets": [
       "assets/terranova-mhra3Bjy.svg",
       "assets/semisto-square-main-WW6PcdSx.png",
       "assets/nova-avatar-Zmmp7TEI.jpg"
+    ]
+  },
+  "my-semisto/components/DirectoryMap.jsx": {
+    "file": "assets/DirectoryMap-A2JcXrlc.js",
+    "name": "DirectoryMap",
+    "src": "my-semisto/components/DirectoryMap.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.jsx"
+    ],
+    "dynamicImports": [
+      "_leaflet-src-D1SnZ-7R.js",
+      "_leaflet-src-D1SnZ-7R.js"
     ]
   }
 }

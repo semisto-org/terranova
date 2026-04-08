@@ -173,6 +173,8 @@ bin/dev    # Rails (port 3000) + Vite (port 3036)
 - **Inertia page render**: `render inertia: "PageName", props: { ... }` in controllers
 - **Token verification**: `Rails.application.message_verifier(:purpose)` for client portal & password reset
 - **API skill sync**: When adding/modifying API endpoints in `app/controllers/api/v1/`, update the corresponding reference file in `~/.claude/skills/terranova-api/api-reference/`
+- **Destructive actions**: Every delete/remove action in the UI must be guarded by a `window.confirm()` dialog before executing
+- **Admin-only UI**: Elements restricted to admins (`isAdmin`) must be wrapped in a dashed amber callout with a `Lock` icon (lucide-react). Pattern: `<div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3"><div className="flex items-center gap-4"><Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />{ /* admin content */ }</div></div>`
 
 ## Milestones
 
