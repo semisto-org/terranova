@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_04_215810) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -363,6 +363,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_215810) do
     t.index ["deleted_at"], name: "index_bets_on_deleted_at"
     t.index ["pitch_id"], name: "index_bets_on_pitch_id"
     t.index ["placed_by_id"], name: "index_bets_on_placed_by_id"
+  end
+
+  create_table "billing_config", force: :cascade do |t|
+    t.decimal "asbl_support_rate", precision: 5, scale: 4, default: "0.15", null: false
+    t.datetime "created_at", null: false
+    t.decimal "hourly_rate", precision: 8, scale: 2, default: "60.0", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "bucket_transactions", force: :cascade do |t|
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.datetime "deleted_at"
+    t.string "description", null: false
+    t.string "kind", null: false
+    t.bigint "member_id"
+    t.string "member_name"
+    t.bigint "projectable_id", null: false
+    t.string "projectable_type", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "recorded_by_name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_bucket_transactions_on_deleted_at"
+    t.index ["kind"], name: "index_bucket_transactions_on_kind"
+    t.index ["member_id"], name: "index_bucket_transactions_on_member_id"
+    t.index ["projectable_type", "projectable_id"], name: "index_bucket_transactions_on_projectable"
   end
 
   create_table "chowder_items", force: :cascade do |t|

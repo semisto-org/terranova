@@ -429,6 +429,7 @@ export default function DesignIndex({ initialProjectId }) {
   const [economicsFilters, setEconomicsFilters] = useState({ from: '', to: '', design_project_id: '' })
 
   const [searchResults, setSearchResults] = useState([])
+  const [bucketData, setBucketData] = useState(null)
   const [academyTrainingOptions, setAcademyTrainingOptions] = useState([])
 
   const [projectModalOpen, setProjectModalOpen] = useState(false)
@@ -458,6 +459,16 @@ export default function DesignIndex({ initialProjectId }) {
     const payload = await apiRequest(`/api/v1/design/${projectId}`)
     setProjectDetail(payload)
     setSearchResults([])
+    setBucketData(null)
+  }, [])
+
+  const loadBucket = useCallback(async (projectId) => {
+    try {
+      const payload = await apiRequest(`/api/v1/projects/design-project/${projectId}/bucket`)
+      setBucketData(payload)
+    } catch {
+      setBucketData(null)
+    }
   }, [])
 
   const loadAcademyTrainingOptions = useCallback(async () => {
@@ -1086,8 +1097,26 @@ export default function DesignIndex({ initialProjectId }) {
           action: () => runMutation(() => apiRequest(`/api/v1/design/tasks/${id}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
         })
       },
+      loadBucket: () => loadBucket(currentProjectId),
+      createBucketTransaction: async (data) => {
+        await runMutation(() => apiRequest(`/api/v1/projects/design-project/${currentProjectId}/bucket`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }), { refreshDashboard: false, refreshProjectId: null })
+        loadBucket(currentProjectId)
+      },
+      deleteBucketTransaction: (id) => {
+        setDeleteConfirm({
+          title: 'Supprimer ce mouvement ?',
+          message: 'Ce mouvement du bucket sera supprimé définitivement.',
+          action: async () => {
+            await runMutation(() => apiRequest(`/api/v1/bucket/${id}`, { method: 'DELETE' }), { refreshDashboard: false, refreshProjectId: null })
+            loadBucket(currentProjectId)
+          },
+        })
+      },
     }
-  }, [currentProjectId, editProject, projectDetail, runMutation, loadProject])
+  }, [currentProjectId, editProject, projectDetail, runMutation, loadProject, loadBucket])
 
   useEffect(() => {
     if (activeSection !== 'reporting') return
@@ -1098,6 +1127,11 @@ export default function DesignIndex({ initialProjectId }) {
     if (activeSection !== 'economics') return
     loadEconomics(economicsFilters)
   }, [activeSection, economicsFilters, loadEconomics])
+
+  useEffect(() => {
+    if (!projectDetail?.project?.id) return
+    loadBucket(projectDetail.project.id)
+  }, [projectDetail?.project?.id, loadBucket])
 
   const projectDetailActions = useMemo(() => {
     if (!detailActions) return null
@@ -1165,6 +1199,8 @@ export default function DesignIndex({ initialProjectId }) {
       onUpdateDesignTask: detailActions.updateDesignTask || noop,
       onToggleDesignTask: detailActions.toggleDesignTask || noop,
       onDeleteDesignTask: detailActions.deleteDesignTask || noop,
+      onCreateBucketTransaction: detailActions.createBucketTransaction || noop,
+      onDeleteBucketTransaction: detailActions.deleteBucketTransaction || noop,
     }
   }, [deleteProject, detailActions])
 
@@ -1177,7 +1213,7 @@ export default function DesignIndex({ initialProjectId }) {
       {projectDetail ? (
         projectDetailActions && (
           <ProjectDetailView
-            detail={projectDetail}
+            detail={{ ...projectDetail, bucket: bucketData }}
             busy={busy}
             actions={projectDetailActions}
             searchResults={searchResults}

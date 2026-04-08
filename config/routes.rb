@@ -132,6 +132,15 @@ Rails.application.routes.draw do
       patch "project-memberships/:id", to: "project_memberships#update"
       delete "project-memberships/:id", to: "project_memberships#destroy"
 
+      # Bucket transactions (polymorphic, works for any project type)
+      get    "projects/:type/:id/bucket", to: "bucket#index"
+      post   "projects/:type/:id/bucket", to: "bucket#create"
+      delete "bucket/:id",                to: "bucket#destroy"
+
+      # Billing config (global)
+      get   "billing-config", to: "billing_config#show"
+      patch "billing-config", to: "billing_config#update"
+
       post "nova/chat", to: "nova#chat"
 
       get "search/global", to: "search#global"
@@ -346,6 +355,7 @@ Rails.application.routes.draw do
       get "design", to: "design_studio#index"
       get "design/reporting", to: "design_studio#reporting"
       get "design_studio/reporting", to: "design_studio#reporting"
+      get "design/billing-overview", to: "design_studio#billing_overview"
       get "design/:project_id", to: "design_studio#show"
       post "design", to: "design_studio#create"
       patch "design/:project_id", to: "design_studio#update"
