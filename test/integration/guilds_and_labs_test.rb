@@ -2,7 +2,7 @@ require 'test_helper'
 
 class GuildsAndLabsTest < ActionDispatch::IntegrationTest
   setup do
-    [LabMembership, Lab, GuildMembership, Guild].each(&:delete_all)
+    [LabMembership, Lab, ProjectMembership, Guild].each(&:delete_all)
 
     @member = Member.first || Member.create!(
       first_name: 'Alice',
@@ -103,15 +103,15 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     assert_equal 2, guild.documents.count
   end
 
-  test 'guild can have task lists with actions' do
+  test 'guild can have task lists with tasks' do
     guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
 
-    list = TaskList.create!(name: 'Sprint 1', guild: guild)
-    action = Action.create!(name: 'Write newsletter', task_list: list, guild: guild, status: 'todo')
+    list = TaskList.create!(name: 'Sprint 1', taskable: guild)
+    task = Task.create!(name: 'Write newsletter', task_list: list, status: 'pending')
 
-    assert_equal 1, guild.task_lists.count
-    assert_equal guild, list.guild
-    assert_equal guild, action.guild
+    assert_equal 1, guild.unified_task_lists.count
+    assert_equal guild, list.taskable
+    assert_equal list, task.task_list
   end
 
   test 'knowledge sections can be scoped to a guild' do
@@ -218,7 +218,7 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
   test 'GET /api/v1/guilds returns all guilds with details' do
     guild = Guild.create!(name: 'Communication', color: 'blue', guild_type: 'network')
     member = Member.first || Member.create!(first_name: 'Test', last_name: 'User', email: 'api-test@test.com', status: 'active', joined_at: Date.today, member_kind: 'human', membership_type: 'effective')
-    GuildMembership.create!(guild: guild, member: member)
+    ProjectMembership.create!(projectable: guild, member: member, role: "member")
 
     get '/api/v1/guilds', as: :json
     assert_response :success

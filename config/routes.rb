@@ -113,6 +113,25 @@ Rails.application.routes.draw do
 
       get "health", to: "health#show"
 
+      # Unified task management (polymorphic, works for any project type)
+      get "projects/:type/:id/task-lists", to: "tasks#list_task_lists"
+      post "projects/:type/:id/task-lists", to: "tasks#create_task_list"
+      patch "task-lists/:id", to: "tasks#update_task_list"
+      delete "task-lists/:id", to: "tasks#destroy_task_list"
+      patch "task-lists/:id/reorder", to: "tasks#reorder_task_list"
+      post "task-lists/:task_list_id/tasks", to: "tasks#create_task"
+      patch "tasks/:id", to: "tasks#update_task"
+      patch "tasks/:id/toggle", to: "tasks#toggle_task"
+      delete "tasks/:id", to: "tasks#destroy_task"
+      patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
+      get "my-tasks", to: "tasks#my_tasks"
+
+      # Unified project memberships
+      get "projects/:type/:id/members", to: "project_memberships#index"
+      post "projects/:type/:id/members", to: "project_memberships#create"
+      patch "project-memberships/:id", to: "project_memberships#update"
+      delete "project-memberships/:id", to: "project_memberships#destroy"
+
       post "nova/chat", to: "nova#chat"
 
       get "search/global", to: "search#global"

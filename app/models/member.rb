@@ -7,9 +7,6 @@ class Member < ApplicationRecord
 
   has_many :member_roles, dependent: :destroy
 
-  has_many :guild_memberships, dependent: :destroy
-  has_many :guilds, through: :guild_memberships
-
   has_many :lab_memberships, dependent: :destroy
   has_many :labs, through: :lab_memberships
 
@@ -19,6 +16,9 @@ class Member < ApplicationRecord
   has_many :authored_pitches, class_name: "Pitch", foreign_key: :author_id, dependent: :nullify
 
   has_many :placed_bets, class_name: "Bet", foreign_key: :placed_by_id, dependent: :nullify
+
+  has_many :project_memberships, dependent: :destroy
+  has_many :assigned_tasks, class_name: "Task", foreign_key: :assignee_id, dependent: :nullify
 
   MEMBER_KINDS = %w[human ai].freeze
   MEMBERSHIP_TYPES = %w[effective adherent non_member].freeze
@@ -60,6 +60,6 @@ class Member < ApplicationRecord
   end
 
   def guild_ids_list
-    guild_memberships.pluck(:guild_id)
+    project_memberships.where(projectable_type: "Guild").pluck(:projectable_id)
   end
 end

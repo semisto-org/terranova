@@ -149,7 +149,7 @@ module Api
           member.save!
           member.avatar_image.attach(params[:avatar_image]) if params[:avatar_image].present?
           Array(member_params[:roles]).each { |role| member.member_roles.create!(role: role) }
-          Array(member_params[:guild_ids]).each { |guild_id| GuildMembership.create!(member_id: member.id, guild_id: guild_id) }
+          Array(member_params[:guild_ids]).each { |guild_id| ProjectMembership.create!(member_id: member.id, projectable_type: "Guild", projectable_id: guild_id, role: "member") }
           Wallet.create!(member: member)
         end
 
@@ -172,8 +172,8 @@ module Api
           end
 
           if member_params.key?(:guild_ids)
-            @member.guild_memberships.delete_all
-            Array(member_params[:guild_ids]).each { |guild_id| GuildMembership.create!(member_id: @member.id, guild_id: guild_id) }
+            @member.project_memberships.where(projectable_type: "Guild").delete_all
+            Array(member_params[:guild_ids]).each { |guild_id| ProjectMembership.create!(member_id: @member.id, projectable_type: "Guild", projectable_id: guild_id, role: "member") }
           end
         end
 
@@ -652,7 +652,7 @@ module Api
       # ── Projects ──
 
       def list_projects
-        projects = PoleProject.includes(:actions, :task_lists).order(:name)
+        projects = PoleProject.includes(:actions, :unified_task_lists).order(:name)
         render json: { items: projects.map { |p| serialize_project_summary(p) } }
       end
 
@@ -717,13 +717,13 @@ module Api
       def reorder_project_task_lists
         ids = params.require(:ordered_ids)
         ids.each_with_index do |id, index|
-          @pole_project.task_lists.where(id: id).update_all(position: index)
+          @pole_project.unified_task_lists.where(id: id).update_all(position: index)
         end
         head :no_content
       end
 
       def create_project_task_list
-        task_list = @pole_project.task_lists.new(task_list_params)
+        task_list = @pole_project.unified_task_lists.new(task_list_params)
         if task_list.save
           render json: serialize_project_task_list(task_list), status: :created
         else
@@ -789,24 +789,18 @@ module Api
 
       def my_tasks
         member = current_member
-        name_variants = [
-          member.first_name,
-          "#{member.first_name} #{member.last_name}".strip
-        ].reject(&:blank?)
 
-        lab_actions = Action.includes(:pole_project, :task_list)
-          .where(assignee_name: name_variants)
-          .where.not(status: "Terminé")
-          .order(Arel.sql("due_date ASC NULLS LAST"), created_at: :desc)
-
-        design_tasks = Design::Task.includes(task_list: :project)
+        tasks = Task.includes(task_list: :taskable)
           .where(assignee_id: member.id)
-          .where(status: "pending")
+          .where.not(status: "completed")
           .order(Arel.sql("due_date ASC NULLS LAST"), created_at: :desc)
+
+        lab_tasks = tasks.select { |t| %w[PoleProject Guild Academy::Training].include?(t.task_list.taskable_type) }
+        design_tasks = tasks.select { |t| t.task_list.taskable_type == "Design::Project" }
 
         render json: {
-          labActions: lab_actions.map { |a| serialize_my_action(a) },
-          designTasks: design_tasks.map { |t| serialize_my_design_task(t) }
+          labActions: lab_tasks.map { |t| serialize_unified_my_action(t) },
+          designTasks: design_tasks.map { |t| serialize_unified_my_design_task(t) }
         }
       end
 
@@ -1018,7 +1012,7 @@ module Api
       end
 
       def project_params
-        params.permit(:name, :status, :lead_name, :needs_reclassification, :description, :pole, :notes, team_names: [])
+        params.permit(:name, :status, :needs_reclassification, :description, :pole, :notes)
       end
 
       def task_list_params
@@ -1185,7 +1179,7 @@ module Api
       end
 
       def serialize_members
-        Member.includes(:member_roles, :guild_memberships, :wallet).order(:id).map { |member| serialize_member(member) }
+        Member.includes(:member_roles, :project_memberships, :wallet).order(:id).map { |member| serialize_member(member) }
       end
 
       def serialize_member(member)
@@ -1202,20 +1196,20 @@ module Api
           memberKind: member.member_kind,
           membershipType: member.membership_type,
           walletId: member.wallet&.id&.to_s,
-          guildIds: member.guild_memberships.map { |gm| gm.guild_id.to_s },
+          guildIds: member.guild_ids_list.map(&:to_s),
           slackUserId: member.slack_user_id,
           lastActivityAt: member.last_activity_at&.iso8601
         }
       end
 
       def serialize_guilds
-        Guild.includes(:guild_memberships).order(:id).map do |guild|
+        Guild.includes(:project_memberships).order(:id).map do |guild|
           {
             id: guild.id.to_s,
             name: guild.name,
             description: guild.description,
             leaderId: guild.leader_id&.to_s,
-            memberIds: guild.guild_memberships.map { |gm| gm.member_id.to_s },
+            memberIds: guild.project_memberships.where(role: "member").map { |pm| pm.member_id.to_s },
             color: guild.color
           }
         end
@@ -1506,8 +1500,8 @@ module Api
           description: p.description,
           pole: p.pole,
           status: p.status,
-          leadName: p.lead_name,
-          teamNames: p.team_names || [],
+          leadName: p.project_memberships.find_by(role: "lead")&.member&.then { |m| "#{m.first_name} #{m.last_name}".strip },
+          teamNames: p.project_memberships.where(role: "member").includes(:member).map { |pm| "#{pm.member.first_name} #{pm.member.last_name}".strip },
           needsReclassification: p.needs_reclassification,
           totalActions: actions.size,
           completedActions: actions.count { |a| a.status == "Terminé" },
@@ -1520,7 +1514,7 @@ module Api
         serialize_project_summary(p).merge(
           notes: p.notes,
           documents: p.documents.order(created_at: :desc).map { |d| serialize_document(d) },
-          taskLists: p.task_lists.order(:position).includes(:actions).map { |tl| serialize_project_task_list(tl) },
+          taskLists: p.unified_task_lists.order(:position).includes(:actions).map { |tl| serialize_project_task_list(tl) },
           unlistedActions: p.actions.where(task_list_id: nil).order(:created_at).map { |a| serialize_project_action(a) },
           events: p.events.includes(:event_type).order(:start_date).map { |e| serialize_event(e) }
         )
@@ -1581,6 +1575,40 @@ module Api
           assigneeName: t.assignee_name,
           projectId: project.id.to_s,
           projectName: project.name,
+          taskListName: t.task_list.name,
+          createdAt: t.created_at.iso8601
+        }
+      end
+
+      def serialize_unified_my_action(t)
+        taskable = t.task_list.taskable
+        {
+          id: t.id.to_s,
+          name: t.name,
+          status: t.status == "completed" ? "Terminé" : t.status == "in_progress" ? "En cours" : "En attente",
+          dueDate: t.due_date&.iso8601,
+          timeMinutes: t.time_minutes,
+          assigneeName: t.assignee_name,
+          tags: t.tags || [],
+          priority: t.priority,
+          completed: t.status == "completed",
+          taskListId: t.task_list_id.to_s,
+          createdAt: t.created_at.iso8601,
+          projectId: taskable&.id&.to_s,
+          projectName: taskable&.project_name
+        }
+      end
+
+      def serialize_unified_my_design_task(t)
+        taskable = t.task_list.taskable
+        {
+          id: t.id.to_s,
+          name: t.name,
+          status: t.status,
+          dueDate: t.due_date&.iso8601,
+          assigneeName: t.assignee_name,
+          projectId: taskable&.id&.to_s,
+          projectName: taskable&.project_name,
           taskListName: t.task_list.name,
           createdAt: t.created_at.iso8601
         }

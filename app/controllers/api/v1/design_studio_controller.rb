@@ -45,7 +45,7 @@ module Api
       def index
         projects = Design::Project.includes(:team_members).order(updated_at: :desc)
         templates = Design::ProjectTemplate.order(:name)
-        task_counts = Design::Task.joins(:task_list).where(design_task_lists: { project_id: projects.select(:id) }).group("design_task_lists.project_id").count
+        task_counts = Task.joins(:task_list).where(task_lists: { taskable_type: "Design::Project", taskable_id: projects.select(:id) }).group("task_lists.taskable_id").count
 
         render json: {
           projects: projects.map { |project| serialize_project(project, task_count: task_counts[project.id] || 0).merge(teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) }) },
@@ -93,7 +93,7 @@ module Api
 
       def destroy
         project = find_project
-        task_count = Design::Task.joins(:task_list).where(design_task_lists: { project_id: project.id }).count
+        task_count = Task.joins(:task_list).where(task_lists: { taskable_type: "Design::Project", taskable_id: project.id }).count
 
         if task_count > 0
           render json: { error: "Impossible de supprimer ce projet : il reste #{task_count} tâche#{'s' if task_count > 1}. Supprimez d'abord toutes les tâches." }, status: :unprocessable_entity
@@ -586,7 +586,7 @@ module Api
 
       def create_design_task_list
         project = find_project
-        task_list = project.task_lists.new(params.permit(:name, :position))
+        task_list = project.unified_task_lists.new(params.permit(:name, :position))
         if task_list.save
           render json: serialize_design_task_list(task_list), status: :created
         else
@@ -595,7 +595,7 @@ module Api
       end
 
       def update_design_task_list
-        task_list = Design::TaskList.find(params.require(:id))
+        task_list = TaskList.find(params.require(:id))
         if task_list.update(params.permit(:name, :position))
           render json: serialize_design_task_list(task_list)
         else
@@ -604,12 +604,12 @@ module Api
       end
 
       def destroy_design_task_list
-        Design::TaskList.find(params.require(:id)).destroy!
+        TaskList.find(params.require(:id)).destroy!
         head :no_content
       end
 
       def create_design_task
-        task_list = Design::TaskList.find(params.require(:task_list_id))
+        task_list = TaskList.find(params.require(:task_list_id))
         task = task_list.tasks.new(design_task_params)
         if task.save
           render json: serialize_design_task(task), status: :created
@@ -619,7 +619,7 @@ module Api
       end
 
       def update_design_task
-        task = Design::Task.find(params.require(:id))
+        task = Task.find(params.require(:id))
         if task.update(design_task_params)
           render json: serialize_design_task(task)
         else
@@ -628,14 +628,14 @@ module Api
       end
 
       def toggle_design_task
-        task = Design::Task.find(params.require(:id))
+        task = Task.find(params.require(:id))
         new_status = task.status == "completed" ? "pending" : "completed"
         task.update!(status: new_status)
         render json: serialize_design_task(task)
       end
 
       def destroy_design_task
-        Design::Task.find(params.require(:id)).destroy!
+        Task.find(params.require(:id)).destroy!
         head :no_content
       end
 
@@ -787,7 +787,7 @@ module Api
           clientContributions: serialize_client_contribution(ensure_client_contribution(project)),
           harvestCalendar: serialize_harvest_calendar(ensure_harvest_calendar(project)),
           maintenanceCalendar: serialize_maintenance_calendar(ensure_maintenance_calendar(project)),
-          taskLists: project.task_lists.includes(:tasks).order(:position).map { |tl| serialize_design_task_list(tl) }
+          taskLists: project.unified_task_lists.includes(:tasks).order(:position).map { |tl| serialize_design_task_list(tl) }
         }
       end
 
@@ -1237,7 +1237,7 @@ module Api
           },
           templateId: project.template_id&.to_s,
           googlePhotosUrl: project.google_photos_url.presence,
-          taskCount: task_count || Design::Task.joins(:task_list).where(design_task_lists: { project_id: project.id }).count,
+          taskCount: task_count || Task.joins(:task_list).where(task_lists: { taskable_type: "Design::Project", taskable_id: project.id }).count,
           createdAt: project.created_at.iso8601,
           updatedAt: project.updated_at.iso8601
         }
@@ -1522,7 +1522,7 @@ module Api
       end
 
       def design_task_params
-        params.permit(:name, :status, :due_date, :assignee_id, :assignee_name, :notes, :position)
+        params.permit(:name, :status, :due_date, :assignee_id, :assignee_name, :description, :position)
       end
 
       def serialize_design_task_list(tl)
@@ -1530,7 +1530,7 @@ module Api
           id: tl.id.to_s,
           name: tl.name,
           position: tl.position,
-          projectId: tl.project_id.to_s,
+          projectId: tl.taskable_id.to_s,
           tasks: tl.tasks.order(:position, :created_at).map { |t| serialize_design_task(t) }
         }
       end
@@ -1543,7 +1543,7 @@ module Api
           dueDate: t.due_date&.iso8601,
           assigneeId: t.assignee_id&.to_s,
           assigneeName: t.assignee_name,
-          notes: t.notes,
+          notes: t.description,
           position: t.position,
           completed: t.status == "completed",
           taskListId: t.task_list_id.to_s,

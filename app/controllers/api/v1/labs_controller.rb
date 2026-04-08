@@ -82,7 +82,7 @@ module Api
               name: g.name,
               color: g.color,
               icon: g.icon,
-              memberCount: g.guild_memberships.count
+              memberCount: g.project_memberships.where(role: "member").count
             }
           end
         )
