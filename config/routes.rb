@@ -209,6 +209,23 @@ Rails.application.routes.draw do
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
 
+      # Bank integration (CODA import + GoCardless)
+      post "bank/connect", to: "bank#connect"
+      post "bank/callback", to: "bank#callback"
+      post "bank/connections", to: "bank#create_connection"
+      get "bank/connections", to: "bank#list_connections"
+      delete "bank/connections/:id", to: "bank#destroy_connection"
+      post "bank/connections/:id/upload_coda", to: "bank#upload_coda"
+      post "bank/sync", to: "bank#sync"
+      get "bank/transactions", to: "bank#list_transactions"
+      get "bank/transactions/:id/candidates", to: "bank#candidates"
+      patch "bank/transactions/:id/ignore", to: "bank#ignore_transaction"
+      patch "bank/transactions/:id/unignore", to: "bank#unignore_transaction"
+      post "bank/reconciliations", to: "bank#create_reconciliation"
+      post "bank/reconciliations/auto", to: "bank#auto_reconcile"
+      delete "bank/reconciliations/:id", to: "bank#destroy_reconciliation"
+      get "bank/summary", to: "bank#summary"
+
       get "lab/projects", to: "lab_management#list_projects"
       get "lab/projects/:id", to: "lab_management#show_project"
       post "lab/projects", to: "lab_management#create_project"
