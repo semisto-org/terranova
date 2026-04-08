@@ -3,7 +3,7 @@
 class CreateBankReconciliations < ActiveRecord::Migration[8.1]
   def change
     create_table :bank_reconciliations do |t|
-      t.references :bank_transaction, null: false, foreign_key: true
+      t.references :bank_transaction, null: false, foreign_key: true, index: false
       t.string :reconcilable_type, null: false
       t.bigint :reconcilable_id, null: false
       t.string :confidence, null: false, default: "manual"
