@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Wallet,
 } from 'lucide-react'
 import { apiRequest } from '../../lib/api'
 import { TabLayout, TabItem } from './shared/TabLayout'
@@ -38,7 +39,9 @@ import {
   MeetingsTab,
   CoGestionTab,
   TasksTab,
+  BucketTab,
 } from './tabs'
+import type { BucketData } from './tabs/BucketTab'
 import type { ProjectPhase } from './shared/PhaseIndicator'
 import type { ProjectStatus } from './shared/StatusIndicator'
 import type { TeamRole } from '../types'
@@ -160,6 +163,7 @@ export interface ProjectDetailPayload {
   } | null
   harvestCalendar: { months: Array<{ month: number; name: string; harvests?: unknown[] }> } | null
   maintenanceCalendar: { months: Array<{ month: number; name: string; tasks?: unknown[] }> } | null
+  bucket: BucketData | null
 }
 
 export interface ProjectDetailActions {
@@ -244,6 +248,8 @@ export interface ProjectDetailActions {
   onToggleDesignTask: (id: string) => void
   onDeleteDesignTask: (id: string) => void
   onSearch: (query: string) => void
+  onCreateBucketTransaction: (data: { kind: string; amount: number; description: string; date: string; member_id?: string }) => void
+  onDeleteBucketTransaction: (id: string) => void
 }
 
 const DETAIL_TABS: TabItem[] = [
@@ -253,6 +259,7 @@ const DETAIL_TABS: TabItem[] = [
   { id: 'planting-plan', label: 'Plan', icon: <MapPin className="w-4 h-4" /> },
   { id: 'timesheets', label: 'Timesheets', icon: <Clock className="w-4 h-4" /> },
   { id: 'expenses', label: 'Dépenses', icon: <Euro className="w-4 h-4" /> },
+  { id: 'bucket', label: 'Bucket', icon: <Wallet className="w-4 h-4" /> },
   { id: 'quotes', label: 'Offre', icon: <FileText className="w-4 h-4" /> },
   { id: 'documents', label: 'Documents', icon: <FileStack className="w-4 h-4" /> },
   { id: 'album', label: 'Album', icon: <ImageIcon className="w-4 h-4" /> },
@@ -463,6 +470,14 @@ export function ProjectDetailView({
                 onEdit={a.onEditExpense}
                 onApprove={a.onApproveExpense}
                 onDelete={a.onDeleteExpense}
+              />
+            )}
+            {activeTab === 'bucket' && (
+              <BucketTab
+                bucket={detail.bucket}
+                teamMembers={detail.teamMembers.map(m => ({ id: m.id, memberName: m.memberName }))}
+                onCreateTransaction={a.onCreateBucketTransaction}
+                onDeleteTransaction={a.onDeleteBucketTransaction}
               />
             )}
             {activeTab === 'site-analysis' && (

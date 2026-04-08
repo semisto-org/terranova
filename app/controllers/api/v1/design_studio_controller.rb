@@ -58,6 +58,69 @@ module Api
         render json: DesignReportingService.new(reporting_filters).call
       end
 
+      def billing_overview
+        config = BillingConfig.instance
+        projects = Design::Project.includes(:bucket_transactions, :timesheets, :expenses)
+          .where(deleted_at: nil)
+          .order(updated_at: :desc)
+
+        project_summaries = projects.map do |project|
+          txns = project.bucket_transactions.where(deleted_at: nil)
+          credits = txns.where(kind: "credit").sum(:amount).to_f
+          debits = txns.where(kind: "debit").sum(:amount).to_f
+          hours_billed = project.hours_billed.to_f
+          theoretical_revenue = hours_billed * config.hourly_rate.to_f
+          theoretical_asbl = theoretical_revenue * config.asbl_support_rate.to_f
+
+          {
+            projectId: project.id.to_s,
+            projectName: project.name,
+            clientName: project.client_name,
+            phase: project.phase,
+            hoursBilled: hours_billed,
+            theoreticalRevenue: theoretical_revenue,
+            theoreticalAsbl: theoretical_asbl,
+            bucketCredits: credits,
+            bucketDebits: debits,
+            bucketBalance: credits - debits
+          }
+        end
+
+        total_theoretical_revenue = project_summaries.sum { |p| p[:theoreticalRevenue] }
+        total_theoretical_asbl = project_summaries.sum { |p| p[:theoreticalAsbl] }
+        total_credits = project_summaries.sum { |p| p[:bucketCredits] }
+        total_debits = project_summaries.sum { |p| p[:bucketDebits] }
+
+        general_expenses = Expense.where(deleted_at: nil)
+          .where("poles @> ARRAY[?]::varchar[]", "design")
+          .where(design_project_id: nil)
+          .sum(:total_incl_vat).to_f
+
+        total_design_revenue = Revenue.where(deleted_at: nil)
+          .where("design_project_id IS NOT NULL OR pole = ?", "design_studio")
+          .sum(:amount).to_f
+
+        actual_overhead_rate = total_design_revenue > 0 ? (general_expenses / total_design_revenue).round(4) : 0.0
+
+        render json: {
+          config: {
+            hourlyRate: config.hourly_rate.to_f,
+            asblSupportRate: config.asbl_support_rate.to_f
+          },
+          totals: {
+            theoreticalRevenue: total_theoretical_revenue,
+            theoreticalAsbl: total_theoretical_asbl,
+            bucketCredits: total_credits,
+            bucketDebits: total_debits,
+            bucketBalance: total_credits - total_debits,
+            generalExpenses: general_expenses,
+            designRevenue: total_design_revenue,
+            actualOverheadRate: actual_overhead_rate
+          },
+          projects: project_summaries
+        }
+      end
+
       def show
         project = find_project
         palette = ensure_palette(project)

@@ -8,6 +8,7 @@ module Projectable
     has_many :tasks, through: :unified_task_lists
     has_many :project_memberships, as: :projectable, dependent: :destroy
     has_many :project_members, through: :project_memberships, source: :member
+    has_many :bucket_transactions, as: :projectable, dependent: :destroy
   end
 
   def project_name
