@@ -3,7 +3,11 @@
 module BankSync
   class GocardlessClient
     BASE_URL = "https://bankaccountdata.gocardless.com/api/v2"
-    TRIODOS_BE_INSTITUTION_ID = "TRIODOS_TRIOBEBB"
+
+    SUPPORTED_INSTITUTIONS = {
+      "TRIODOS_TRIOBEBB" => { name: "Triodos", country: "BE" },
+      "VDK_VDSPBE22" => { name: "VDK", country: "BE" }
+    }.freeze
 
     class ApiError < StandardError
       attr_reader :status, :body
@@ -21,10 +25,14 @@ module BankSync
       raise ApiError, "GoCardless credentials not configured" if @secret_id.blank? || @secret_key.blank?
     end
 
-    # Step 1: Create an end-user agreement for Triodos BE (90 days, 730 days history)
-    def create_agreement(max_historical_days: 730)
+    def self.institution_name(institution_id)
+      SUPPORTED_INSTITUTIONS.dig(institution_id, :name) || institution_id
+    end
+
+    # Step 1: Create an end-user agreement (90 days, up to 730 days history)
+    def create_agreement(institution_id:, max_historical_days: 730)
       post("/agreements/enduser/", {
-        institution_id: TRIODOS_BE_INSTITUTION_ID,
+        institution_id: institution_id,
         max_historical_days: max_historical_days,
         access_valid_for_days: 90,
         access_scope: ["balances", "details", "transactions"]
@@ -32,10 +40,10 @@ module BankSync
     end
 
     # Step 2: Create a requisition (bank connection link)
-    def create_requisition(redirect_url:, agreement_id:, reference: nil)
+    def create_requisition(institution_id:, redirect_url:, agreement_id:, reference: nil)
       post("/requisitions/", {
         redirect: redirect_url,
-        institution_id: TRIODOS_BE_INSTITUTION_ID,
+        institution_id: institution_id,
         agreement: agreement_id,
         reference: reference || SecureRandom.hex(16)
       })

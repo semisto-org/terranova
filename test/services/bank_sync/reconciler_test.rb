@@ -156,4 +156,129 @@ class BankSync::ReconcilerTest < ActiveSupport::TestCase
     # The already-matched expense should not appear
     assert candidates.none? { |c| c[:record].id == expense.id }
   end
+
+  test "nursery-scoped connection only matches nursery expenses" do
+    nursery_connection = BankConnection.create!(
+      provider: "gocardless",
+      bank_name: "VDK",
+      status: "linked",
+      accounting_scope: "nursery",
+      connected_by: @admin
+    )
+
+    tx = BankTransaction.create!(
+      bank_connection: nursery_connection,
+      provider_transaction_id: "tx_scope_001",
+      date: Date.new(2026, 3, 15),
+      amount: -100.00
+    )
+
+    # Nursery expense — should match
+    nursery_expense = Expense.create!(
+      name: "Plants vivaces",
+      supplier: "Fournisseur",
+      status: "paid",
+      expense_type: "services_and_goods",
+      invoice_date: Date.new(2026, 3, 15),
+      total_incl_vat: 100.00,
+      amount_excl_vat: 82.64,
+      poles: ["nursery"]
+    )
+
+    # Lab expense — should NOT match
+    Expense.create!(
+      name: "Fournitures bureau",
+      supplier: "Fournisseur",
+      status: "paid",
+      expense_type: "services_and_goods",
+      invoice_date: Date.new(2026, 3, 15),
+      total_incl_vat: 100.00,
+      amount_excl_vat: 82.64,
+      poles: ["lab"]
+    )
+
+    reconciler = BankSync::Reconciler.new
+    candidates = reconciler.find_candidates(tx)
+
+    assert_equal 1, candidates.size
+    assert_equal nursery_expense.id, candidates.first[:record].id
+  end
+
+  test "general-scoped connection matches all expenses regardless of pole" do
+    tx = BankTransaction.create!(
+      bank_connection: @connection, # general scope
+      provider_transaction_id: "tx_scope_gen_001",
+      date: Date.new(2026, 3, 15),
+      amount: -100.00
+    )
+
+    Expense.create!(
+      name: "Lab expense",
+      supplier: "Sup",
+      status: "paid",
+      expense_type: "services_and_goods",
+      invoice_date: Date.new(2026, 3, 15),
+      total_incl_vat: 100.00,
+      amount_excl_vat: 82.64,
+      poles: ["lab"]
+    )
+
+    Expense.create!(
+      name: "Nursery expense",
+      supplier: "Sup",
+      status: "paid",
+      expense_type: "services_and_goods",
+      invoice_date: Date.new(2026, 3, 15),
+      total_incl_vat: 100.00,
+      amount_excl_vat: 82.64,
+      poles: ["nursery"]
+    )
+
+    reconciler = BankSync::Reconciler.new
+    candidates = reconciler.find_candidates(tx)
+
+    # General scope should return both expenses
+    assert_equal 2, candidates.size
+  end
+
+  test "nursery-scoped connection only matches nursery revenues" do
+    nursery_connection = BankConnection.create!(
+      provider: "gocardless",
+      bank_name: "VDK",
+      status: "linked",
+      accounting_scope: "nursery",
+      connected_by: @admin
+    )
+
+    tx = BankTransaction.create!(
+      bank_connection: nursery_connection,
+      provider_transaction_id: "tx_scope_rev_001",
+      date: Date.new(2026, 3, 15),
+      amount: 500.00
+    )
+
+    contact = Contact.find_or_create_by!(name: "Client", contact_type: "organization")
+
+    # Nursery revenue — should match
+    nursery_rev = Revenue.create!(
+      amount: 500.00, amount_excl_vat: 413.22,
+      date: Date.new(2026, 3, 15), contact: contact,
+      status: "confirmed", label: "Vente plants",
+      pole: "nursery"
+    )
+
+    # Academy revenue — should NOT match
+    Revenue.create!(
+      amount: 500.00, amount_excl_vat: 413.22,
+      date: Date.new(2026, 3, 15), contact: contact,
+      status: "confirmed", label: "Formation",
+      pole: "academy"
+    )
+
+    reconciler = BankSync::Reconciler.new
+    candidates = reconciler.find_candidates(tx)
+
+    assert_equal 1, candidates.size
+    assert_equal nursery_rev.id, candidates.first[:record].id
+  end
 end

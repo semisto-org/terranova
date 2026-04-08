@@ -145,7 +145,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     assert_equal "unmatched", JSON.parse(response.body)["status"]
   end
 
-  test "bank summary returns connection status" do
+  test "bank summary returns per-account data" do
     BankTransaction.create!(
       bank_connection: @connection,
       provider_transaction_id: "tx_sum_001",
@@ -165,10 +165,13 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     body = JSON.parse(response.body)
-    assert body["connected"]
-    assert_equal 1, body["unmatchedCount"]
-    assert_equal 1, body["matchedCount"]
-    assert_equal "BE12 5230 8000 1234", body["iban"]
+    assert_equal 1, body["accounts"].size
+    assert_equal "BE12 5230 8000 1234", body["accounts"][0]["iban"]
+    assert_equal "general", body["accounts"][0]["scope"]
+    assert_equal 1, body["accounts"][0]["unmatchedCount"]
+    assert_equal 1, body["accounts"][0]["matchedCount"]
+    assert_equal 1, body["totals"]["unmatchedCount"]
+    assert_equal 1, body["totals"]["matchedCount"]
   end
 
   test "candidates endpoint returns matching expenses for debit" do
@@ -228,5 +231,88 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       bank_transaction_id: tx.id, reconcilable_type: "Expense", reconcilable_id: expense2.id
     }, as: :json
     assert_response :unprocessable_entity
+  end
+
+  # --- Multi-account tests ---
+
+  test "summary returns multiple accounts with totals" do
+    vdk_connection = BankConnection.create!(
+      provider: "gocardless",
+      provider_requisition_id: "req_vdk_123",
+      provider_account_id: "acc_vdk_123",
+      institution_id: "VDK_VDSPBE22",
+      bank_name: "VDK",
+      iban: "BE98 6511 0000 5678",
+      status: "linked",
+      accounting_scope: "nursery",
+      consent_expires_at: 60.days.from_now,
+      connected_by: @admin
+    )
+
+    BankTransaction.create!(bank_connection: @connection, provider_transaction_id: "tx_ma_001", date: Date.current, amount: -50.00, status: "unmatched")
+    BankTransaction.create!(bank_connection: @connection, provider_transaction_id: "tx_ma_002", date: Date.current, amount: 100.00, status: "matched")
+    BankTransaction.create!(bank_connection: vdk_connection, provider_transaction_id: "tx_ma_003", date: Date.current, amount: -30.00, status: "unmatched")
+
+    get "/api/v1/bank/summary", as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal 2, body["accounts"].size
+
+    triodos = body["accounts"].find { |a| a["bankName"] == "Triodos" }
+    vdk = body["accounts"].find { |a| a["bankName"] == "VDK" }
+
+    assert_equal "general", triodos["scope"]
+    assert_equal 1, triodos["unmatchedCount"]
+    assert_equal 1, triodos["matchedCount"]
+
+    assert_equal "nursery", vdk["scope"]
+    assert_equal 1, vdk["unmatchedCount"]
+    assert_equal 0, vdk["matchedCount"]
+
+    assert_equal 2, body["totals"]["unmatchedCount"]
+    assert_equal 1, body["totals"]["matchedCount"]
+  end
+
+  test "transactions filtered by connection_id" do
+    vdk_connection = BankConnection.create!(
+      provider: "gocardless",
+      provider_account_id: "acc_vdk_filter",
+      bank_name: "VDK",
+      status: "linked",
+      accounting_scope: "nursery",
+      consent_expires_at: 60.days.from_now,
+      connected_by: @admin
+    )
+
+    BankTransaction.create!(bank_connection: @connection, provider_transaction_id: "tx_filt_001", date: Date.current, amount: -100.00)
+    BankTransaction.create!(bank_connection: vdk_connection, provider_transaction_id: "tx_filt_002", date: Date.current, amount: -200.00)
+
+    # All transactions
+    get "/api/v1/bank/transactions", as: :json
+    assert_equal 2, JSON.parse(response.body)["items"].size
+
+    # Only Triodos
+    get "/api/v1/bank/transactions", params: { connection_id: @connection.id }, as: :json
+    items = JSON.parse(response.body)["items"]
+    assert_equal 1, items.size
+    assert_equal @connection.id.to_s, items[0]["connectionId"]
+
+    # Only VDK
+    get "/api/v1/bank/transactions", params: { connection_id: vdk_connection.id }, as: :json
+    items = JSON.parse(response.body)["items"]
+    assert_equal 1, items.size
+    assert_equal "VDK", items[0]["bankName"]
+  end
+
+  test "connection serialization includes accountingScope and institutionId" do
+    @connection.update!(institution_id: "TRIODOS_TRIOBEBB", accounting_scope: "general")
+
+    get "/api/v1/bank/connections", as: :json
+    assert_response :success
+
+    conn = JSON.parse(response.body)["items"][0]
+    assert_equal "general", conn["accountingScope"]
+    assert_equal "TRIODOS_TRIOBEBB", conn["institutionId"]
   end
 end

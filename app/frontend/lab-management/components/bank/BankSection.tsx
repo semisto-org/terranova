@@ -4,10 +4,11 @@ import { ConnectionStatus } from './ConnectionStatus'
 import { TransactionList } from './TransactionList'
 import { ReconciliationPanel } from './ReconciliationPanel'
 
-export interface BankSummary {
-  connected: boolean
-  connectionId: string | null
+export interface AccountSummary {
+  connectionId: string
+  bankName: string
   iban: string | null
+  scope: string
   balance: number | null
   unmatchedCount: number
   matchedCount: number
@@ -16,8 +17,15 @@ export interface BankSummary {
   consentExpiringSoon: boolean
 }
 
+export interface BankSummaryResponse {
+  accounts: AccountSummary[]
+  totals: { unmatchedCount: number; matchedCount: number }
+}
+
 export interface BankTransaction {
   id: string
+  connectionId: string
+  bankName: string
   date: string
   bookingDate: string | null
   amount: number
@@ -40,9 +48,11 @@ export interface BankTransaction {
 export interface BankConnection {
   id: string
   provider: string
+  institutionId: string | null
   bankName: string
   iban: string | null
   status: string
+  accountingScope: string
   consentExpiresAt: string | null
   consentExpiringSoon: boolean
   lastSyncedAt: string | null
@@ -50,16 +60,22 @@ export interface BankConnection {
   createdAt: string
 }
 
+export const SCOPE_LABELS: Record<string, string> = {
+  general: 'Général',
+  nursery: 'Pépinière',
+}
+
 type SubView = 'overview' | 'transactions' | 'reconcile'
 
 export function BankSection() {
   const [subView, setSubView] = useState<SubView>('overview')
-  const [summary, setSummary] = useState<BankSummary | null>(null)
+  const [summary, setSummary] = useState<BankSummaryResponse | null>(null)
   const [connections, setConnections] = useState<BankConnection[]>([])
   const [transactions, setTransactions] = useState<BankTransaction[]>([])
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
   const [filters, setFilters] = useState<{ status?: string; dateFrom?: string; dateTo?: string; search?: string }>({})
 
   const loadSummary = useCallback(async () => {
@@ -74,6 +90,7 @@ export function BankSection() {
 
   const loadTransactions = useCallback(async () => {
     const params = new URLSearchParams()
+    if (activeConnectionId) params.set('connection_id', activeConnectionId)
     if (filters.status) params.set('status', filters.status)
     if (filters.dateFrom) params.set('date_from', filters.dateFrom)
     if (filters.dateTo) params.set('date_to', filters.dateTo)
@@ -81,21 +98,21 @@ export function BankSection() {
     const qs = params.toString()
     const data = await apiRequest(`/api/v1/bank/transactions${qs ? `?${qs}` : ''}`)
     setTransactions(data.items)
-  }, [filters])
+  }, [filters, activeConnectionId])
 
   useEffect(() => {
     Promise.all([loadSummary(), loadConnections()]).finally(() => setLoading(false))
   }, [loadSummary, loadConnections])
 
   useEffect(() => {
-    if (summary?.connected) loadTransactions()
-  }, [summary?.connected, loadTransactions])
+    if (summary && summary.accounts.length > 0) loadTransactions()
+  }, [summary?.accounts?.length, loadTransactions])
 
-  const handleConnect = async () => {
+  const handleConnect = async (institutionId: string, accountingScope: string) => {
     const redirectUrl = `${window.location.origin}/lab?section=bank&bank_callback=1`
     const data = await apiRequest('/api/v1/bank/connect', {
       method: 'POST',
-      body: JSON.stringify({ redirect_url: redirectUrl }),
+      body: JSON.stringify({ redirect_url: redirectUrl, institution_id: institutionId, accounting_scope: accountingScope }),
     })
     if (data.link) window.location.href = data.link
   }
@@ -114,7 +131,6 @@ export function BankSection() {
     const ref = params.get('ref')
     if (params.get('bank_callback') === '1' && ref) {
       handleCallback(ref)
-      // Clean URL
       const url = new URL(window.location.href)
       url.searchParams.delete('bank_callback')
       url.searchParams.delete('ref')
@@ -122,16 +138,26 @@ export function BankSection() {
     }
   }, [handleCallback])
 
-  const handleSync = async () => {
-    if (!summary?.connectionId) return
+  const handleSync = async (connectionId?: string) => {
+    const targetId = connectionId || activeConnectionId
+    if (!targetId && (!summary || summary.accounts.length === 0)) return
     setSyncing(true)
     try {
-      const result = await apiRequest('/api/v1/bank/sync', {
-        method: 'POST',
-        body: JSON.stringify({ connection_id: summary.connectionId }),
-      })
+      if (targetId) {
+        await apiRequest('/api/v1/bank/sync', {
+          method: 'POST',
+          body: JSON.stringify({ connection_id: targetId }),
+        })
+      } else {
+        // Sync all connections
+        for (const account of summary!.accounts) {
+          await apiRequest('/api/v1/bank/sync', {
+            method: 'POST',
+            body: JSON.stringify({ connection_id: account.connectionId }),
+          })
+        }
+      }
       await Promise.all([loadSummary(), loadTransactions()])
-      return result
     } finally {
       setSyncing(false)
     }
@@ -143,7 +169,12 @@ export function BankSection() {
   }
 
   const handleAutoReconcile = async () => {
-    const result = await apiRequest('/api/v1/bank/reconciliations/auto', { method: 'POST' })
+    const body: Record<string, string> = {}
+    if (activeConnectionId) body.connection_id = activeConnectionId
+    const result = await apiRequest('/api/v1/bank/reconciliations/auto', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
     await Promise.all([loadSummary(), loadTransactions()])
     return result
   }
@@ -187,13 +218,15 @@ export function BankSection() {
     return <div className="flex items-center justify-center py-20 text-stone-400">Chargement...</div>
   }
 
+  const totalUnmatched = summary?.totals?.unmatchedCount ?? 0
+
   return (
     <div className="space-y-6">
       {/* Sub-navigation */}
       <div className="flex gap-1 border-b border-stone-200">
         {([
-          { id: 'overview' as const, label: 'Connexion' },
-          { id: 'transactions' as const, label: 'Transactions', count: summary?.unmatchedCount },
+          { id: 'overview' as const, label: 'Connexions' },
+          { id: 'transactions' as const, label: 'Transactions', count: totalUnmatched },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -235,9 +268,12 @@ export function BankSection() {
           onUnignore={handleUnignore}
           onUnreconcile={handleUnreconcile}
           onAutoReconcile={handleAutoReconcile}
-          onSync={handleSync}
+          onSync={() => handleSync()}
           syncing={syncing}
           summary={summary}
+          connections={connections}
+          activeConnectionId={activeConnectionId}
+          onConnectionChange={setActiveConnectionId}
         />
       )}
 

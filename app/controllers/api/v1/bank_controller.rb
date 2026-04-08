@@ -9,14 +9,25 @@ module Api
       before_action :set_reconciliation, only: [:destroy_reconciliation]
 
       # POST /api/v1/bank/connect
-      # Initiates GoCardless bank connection flow
+      # Initiates GoCardless bank connection flow for a specific institution
       def connect
+        institution_id = params.require(:institution_id)
+        accounting_scope = params[:accounting_scope] || "general"
+
+        unless BankSync::GocardlessClient::SUPPORTED_INSTITUTIONS.key?(institution_id)
+          return render json: { error: "Institution non supportée: #{institution_id}" }, status: :unprocessable_entity
+        end
+
         client = BankSync::GocardlessClient.new
 
-        agreement = client.create_agreement
+        agreement = client.create_agreement(institution_id: institution_id)
+        # Encode institution_id and scope in the reference for retrieval in callback
+        reference = "#{institution_id}|#{accounting_scope}|#{SecureRandom.hex(8)}"
         requisition = client.create_requisition(
+          institution_id: institution_id,
           redirect_url: params.require(:redirect_url),
-          agreement_id: agreement["id"]
+          agreement_id: agreement["id"],
+          reference: reference
         )
 
         render json: {
@@ -39,6 +50,13 @@ module Api
           return render json: { error: "Requisition not linked. Status: #{requisition['status']}" }, status: :unprocessable_entity
         end
 
+        # Extract institution_id and scope from the reference
+        reference = requisition["reference"] || ""
+        parts = reference.split("|")
+        institution_id = parts[0]
+        accounting_scope = parts[1].presence || "general"
+        bank_name = BankSync::GocardlessClient.institution_name(institution_id)
+
         account_ids = requisition["accounts"] || []
         connections = account_ids.map do |account_id|
           details = client.get_account_details(account_id)
@@ -47,9 +65,11 @@ module Api
           BankConnection.find_or_create_by!(provider_account_id: account_id) do |conn|
             conn.provider = "gocardless"
             conn.provider_requisition_id = requisition_id
-            conn.bank_name = "Triodos"
+            conn.institution_id = institution_id
+            conn.bank_name = bank_name
             conn.iban = account_info["iban"]
             conn.status = "linked"
+            conn.accounting_scope = accounting_scope
             conn.consent_expires_at = 90.days.from_now
             conn.connected_by = current_member
           end
@@ -219,38 +239,57 @@ module Api
 
       # GET /api/v1/bank/summary
       def summary
-        connection = BankConnection.active.first
+        connections = BankConnection.active.includes(:connected_by)
 
-        unless connection
+        if connections.empty?
           return render json: {
-            connected: false,
-            balance: nil,
-            unmatchedCount: 0,
-            lastSyncedAt: nil
+            accounts: [],
+            totals: { unmatchedCount: 0, matchedCount: 0 }
           }
         end
 
-        unmatched_count = BankTransaction.where(bank_connection: connection, status: "unmatched").count
-        matched_count = BankTransaction.where(bank_connection: connection, status: "matched").count
-
-        begin
-          client = BankSync::GocardlessClient.new
-          balances_data = client.get_balances(connection.provider_account_id)
-          balance = balances_data.dig("balances", 0, "balanceAmount", "amount")&.to_f
+        client = begin
+          BankSync::GocardlessClient.new
         rescue BankSync::GocardlessClient::ApiError
+          nil
+        end
+
+        total_unmatched = 0
+        total_matched = 0
+
+        accounts = connections.map do |conn|
+          unmatched = BankTransaction.where(bank_connection: conn, status: "unmatched").count
+          matched = BankTransaction.where(bank_connection: conn, status: "matched").count
+          total_unmatched += unmatched
+          total_matched += matched
+
           balance = nil
+          if client && conn.provider_account_id.present?
+            begin
+              balances_data = client.get_balances(conn.provider_account_id)
+              balance = balances_data.dig("balances", 0, "balanceAmount", "amount")&.to_f
+            rescue BankSync::GocardlessClient::ApiError
+              # skip
+            end
+          end
+
+          {
+            connectionId: conn.id.to_s,
+            bankName: conn.bank_name,
+            iban: conn.iban,
+            scope: conn.accounting_scope,
+            balance: balance,
+            unmatchedCount: unmatched,
+            matchedCount: matched,
+            lastSyncedAt: conn.last_synced_at&.iso8601,
+            consentExpiresAt: conn.consent_expires_at&.iso8601,
+            consentExpiringSoon: conn.consent_expiring_soon?
+          }
         end
 
         render json: {
-          connected: true,
-          connectionId: connection.id.to_s,
-          iban: connection.iban,
-          balance: balance,
-          unmatchedCount: unmatched_count,
-          matchedCount: matched_count,
-          lastSyncedAt: connection.last_synced_at&.iso8601,
-          consentExpiresAt: connection.consent_expires_at&.iso8601,
-          consentExpiringSoon: connection.consent_expiring_soon?
+          accounts: accounts,
+          totals: { unmatchedCount: total_unmatched, matchedCount: total_matched }
         }
       end
 
@@ -278,9 +317,11 @@ module Api
         {
           id: conn.id.to_s,
           provider: conn.provider,
+          institutionId: conn.institution_id,
           bankName: conn.bank_name,
           iban: conn.iban,
           status: conn.status,
+          accountingScope: conn.accounting_scope,
           consentExpiresAt: conn.consent_expires_at&.iso8601,
           consentExpiringSoon: conn.consent_expiring_soon?,
           lastSyncedAt: conn.last_synced_at&.iso8601,
@@ -291,8 +332,11 @@ module Api
 
       def serialize_transaction(tx)
         rec = tx.bank_reconciliation
+        conn = tx.bank_connection
         {
           id: tx.id.to_s,
+          connectionId: conn.id.to_s,
+          bankName: conn.bank_name,
           date: tx.date.iso8601,
           bookingDate: tx.booking_date&.iso8601,
           amount: tx.amount.to_f,

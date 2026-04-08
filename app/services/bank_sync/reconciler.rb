@@ -59,8 +59,14 @@ module BankSync
         .where(status: %w[ready_for_payment paid])
         .where("total_incl_vat BETWEEN ? AND ?", abs_amount - AMOUNT_TOLERANCE, abs_amount + AMOUNT_TOLERANCE)
         .where(invoice_date: (date - DATE_TOLERANCE_DAYS.days)..(date + DATE_TOLERANCE_DAYS.days))
-        .limit(limit * 2)
 
+      # Scope-aware filtering: restrict to matching poles when connection has a scope
+      scope_poles = transaction.bank_connection.scope_poles
+      if scope_poles
+        expenses = expenses.where("poles && ARRAY[?]::varchar[]", scope_poles)
+      end
+
+      expenses = expenses.limit(limit * 2)
       score_and_sort(expenses, transaction, :expense).first(limit)
     end
 
@@ -74,8 +80,14 @@ module BankSync
         .where(status: %w[confirmed received])
         .where("amount BETWEEN ? AND ?", amount - AMOUNT_TOLERANCE, amount + AMOUNT_TOLERANCE)
         .where(date: (date - DATE_TOLERANCE_DAYS.days)..(date + DATE_TOLERANCE_DAYS.days))
-        .limit(limit * 2)
 
+      # Scope-aware filtering: restrict to matching poles when connection has a scope
+      scope_poles = transaction.bank_connection.scope_poles
+      if scope_poles
+        revenues = revenues.where(pole: scope_poles)
+      end
+
+      revenues = revenues.limit(limit * 2)
       score_and_sort(revenues, transaction, :revenue).first(limit)
     end
 

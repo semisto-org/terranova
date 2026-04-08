@@ -1,5 +1,6 @@
 import { ArrowDownLeft, ArrowUpRight, Check, Eye, EyeOff, RefreshCw, Search, Wand2, X } from 'lucide-react'
-import type { BankSummary, BankTransaction } from './BankSection'
+import type { BankConnection, BankSummaryResponse, BankTransaction } from './BankSection'
+import { SCOPE_LABELS } from './BankSection'
 
 interface TransactionListProps {
   transactions: BankTransaction[]
@@ -12,7 +13,10 @@ interface TransactionListProps {
   onAutoReconcile: () => Promise<unknown>
   onSync: () => Promise<unknown>
   syncing: boolean
-  summary: BankSummary | null
+  summary: BankSummaryResponse | null
+  connections: BankConnection[]
+  activeConnectionId: string | null
+  onConnectionChange: (id: string | null) => void
 }
 
 const fmtMoney = (v: number) =>
@@ -24,6 +28,9 @@ const STATUS_BADGES: Record<string, { label: string; bg: string; text: string }>
   matched: { label: 'Rapprochée', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
   ignored: { label: 'Ignorée', bg: 'bg-stone-50 border-stone-200', text: 'text-stone-500' },
 }
+
+// Short bank initial for badge
+const bankInitial = (name: string) => name.charAt(0).toUpperCase()
 
 export function TransactionList({
   transactions,
@@ -37,13 +44,11 @@ export function TransactionList({
   onSync,
   syncing,
   summary,
+  connections,
+  activeConnectionId,
+  onConnectionChange,
 }: TransactionListProps) {
-  const handleAutoReconcile = async () => {
-    const result = (await onAutoReconcile()) as { autoMatched?: number; suggested?: number } | undefined
-    if (result?.autoMatched || result?.suggested) {
-      // Results refreshed via parent
-    }
-  }
+  const hasMultipleConnections = connections.filter((c) => c.status === 'linked').length > 1
 
   return (
     <div className="space-y-4">
@@ -59,6 +64,22 @@ export function TransactionList({
             className="w-full pl-9 pr-3 py-2 text-sm border border-stone-300 rounded-lg bg-white"
           />
         </div>
+        {hasMultipleConnections && (
+          <select
+            value={activeConnectionId || ''}
+            onChange={(e) => onConnectionChange(e.target.value || null)}
+            className="px-3 py-2 text-sm border border-stone-300 rounded-lg bg-white"
+          >
+            <option value="">Tous les comptes</option>
+            {connections
+              .filter((c) => c.status === 'linked')
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.bankName} ({SCOPE_LABELS[c.accountingScope] || c.accountingScope})
+                </option>
+              ))}
+          </select>
+        )}
         <select
           value={filters.status || ''}
           onChange={(e) => onFiltersChange({ ...filters, status: e.target.value || undefined })}
@@ -83,14 +104,14 @@ export function TransactionList({
         />
         <div className="ml-auto flex items-center gap-2">
           <button
-            onClick={handleAutoReconcile}
+            onClick={() => onAutoReconcile()}
             className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#5B5781] border border-[#5B5781] rounded-lg hover:bg-[#5B5781]/5 transition-colors"
           >
             <Wand2 className="w-4 h-4" />
             Réconciliation auto
           </button>
           <button
-            onClick={onSync}
+            onClick={() => onSync()}
             disabled={syncing}
             className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50"
             style={{ backgroundColor: '#5B5781' }}
@@ -108,6 +129,9 @@ export function TransactionList({
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50/60">
                 <th className="text-left px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Date</th>
+                {hasMultipleConnections && (
+                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Cpte</th>
+                )}
                 <th className="text-left px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Contrepartie</th>
                 <th className="text-left px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Communication</th>
                 <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Montant</th>
@@ -118,8 +142,8 @@ export function TransactionList({
             <tbody className="divide-y divide-stone-100">
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-stone-400">
-                    {summary?.connected ? 'Aucune transaction trouvée.' : 'Connectez votre compte pour voir les transactions.'}
+                  <td colSpan={hasMultipleConnections ? 7 : 6} className="text-center py-12 text-stone-400">
+                    {summary && summary.accounts.length > 0 ? 'Aucune transaction trouvée.' : 'Connectez un compte pour voir les transactions.'}
                   </td>
                 </tr>
               )}
@@ -128,6 +152,17 @@ export function TransactionList({
                 return (
                   <tr key={tx.id} className="hover:bg-stone-50/50 transition-colors">
                     <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{fmtDate(tx.date)}</td>
+                    {hasMultipleConnections && (
+                      <td className="px-2 py-3 text-center">
+                        <span
+                          className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold text-white"
+                          style={{ backgroundColor: tx.bankName === 'Triodos' ? '#00684A' : '#1a5276' }}
+                          title={tx.bankName}
+                        >
+                          {bankInitial(tx.bankName)}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {tx.amount < 0 ? (

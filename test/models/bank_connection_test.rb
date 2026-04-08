@@ -44,4 +44,32 @@ class BankConnectionTest < ActiveSupport::TestCase
     conn.consent_expires_at = 1.day.from_now
     assert_not conn.consent_expired?
   end
+
+  test "validates accounting_scope" do
+    conn = BankConnection.new(
+      provider: "gocardless", bank_name: "Test",
+      status: "linked", connected_by: @admin,
+      accounting_scope: "invalid"
+    )
+    assert_not conn.valid?
+    assert conn.errors[:accounting_scope].any?
+  end
+
+  test "scope_poles returns nil for general scope" do
+    conn = BankConnection.new(accounting_scope: "general")
+    assert_nil conn.scope_poles
+  end
+
+  test "scope_poles returns nursery array for nursery scope" do
+    conn = BankConnection.new(accounting_scope: "nursery")
+    assert_equal %w[nursery], conn.scope_poles
+  end
+
+  test "default accounting_scope is general" do
+    conn = BankConnection.new(
+      provider: "gocardless", bank_name: "Test",
+      status: "linked", connected_by: @admin
+    )
+    assert_equal "general", conn.accounting_scope
+  end
 end
