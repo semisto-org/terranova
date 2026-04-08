@@ -305,6 +305,134 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     assert_equal "VDK", items[0]["bankName"]
   end
 
+  # --- CODA import tests ---
+
+  test "create manual CODA connection" do
+    post "/api/v1/bank/connections", params: {
+      bank_name: "VDK",
+      iban: "BE98 6511 0000 5678",
+      accounting_scope: "nursery"
+    }, as: :json
+    assert_response :created
+
+    body = JSON.parse(response.body)
+    assert_equal "VDK", body["bankName"]
+    assert_equal "coda_import", body["provider"]
+    assert_equal "nursery", body["accountingScope"]
+    assert_equal "BE98 6511 0000 5678", body["iban"]
+    assert_equal "linked", body["status"]
+  end
+
+  test "create connection defaults to general scope" do
+    post "/api/v1/bank/connections", params: {
+      bank_name: "Triodos",
+      iban: "BE52 5230 8000 1234"
+    }, as: :json
+    assert_response :created
+
+    body = JSON.parse(response.body)
+    assert_equal "general", body["accountingScope"]
+  end
+
+  test "create connection requires bank_name" do
+    post "/api/v1/bank/connections", params: { iban: "BE52 5230 8000 1234" }, as: :json
+    assert_response :bad_request
+  end
+
+  test "upload CODA file imports transactions" do
+    coda_connection = BankConnection.create!(
+      provider: "coda_import",
+      bank_name: "Triodos",
+      iban: "BE52523080001234",
+      status: "linked",
+      accounting_scope: "general",
+      connected_by: @admin
+    )
+
+    coda_content = build_test_coda
+    file = Rack::Test::UploadedFile.new(
+      StringIO.new(coda_content),
+      "text/plain",
+      false,
+      original_filename: "test.cod"
+    )
+
+    post "/api/v1/bank/connections/#{coda_connection.id}/upload_coda",
+      params: { file: file }
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert body["imported"] >= 1
+    assert_equal 0, body["skipped"]
+    assert_not_nil body["lastSyncedAt"]
+
+    assert coda_connection.bank_transactions.count >= 1
+  end
+
+  test "upload CODA file deduplicates on re-upload" do
+    coda_connection = BankConnection.create!(
+      provider: "coda_import",
+      bank_name: "Triodos",
+      iban: "BE52523080001234",
+      status: "linked",
+      accounting_scope: "general",
+      connected_by: @admin
+    )
+
+    coda_content = build_test_coda
+
+    # First upload
+    file1 = Rack::Test::UploadedFile.new(
+      StringIO.new(coda_content), "text/plain", false, original_filename: "test.cod"
+    )
+    post "/api/v1/bank/connections/#{coda_connection.id}/upload_coda", params: { file: file1 }
+    assert_response :success
+    first_body = JSON.parse(response.body)
+    assert first_body["imported"] >= 1
+
+    # Second upload of same file
+    file2 = Rack::Test::UploadedFile.new(
+      StringIO.new(coda_content), "text/plain", false, original_filename: "test.cod"
+    )
+    post "/api/v1/bank/connections/#{coda_connection.id}/upload_coda", params: { file: file2 }
+    assert_response :success
+    second_body = JSON.parse(response.body)
+    assert_equal 0, second_body["imported"]
+    assert second_body["skipped"] >= 1
+  end
+
+  test "upload invalid CODA file returns error" do
+    coda_connection = BankConnection.create!(
+      provider: "coda_import",
+      bank_name: "Triodos",
+      status: "linked",
+      connected_by: @admin
+    )
+
+    file = Rack::Test::UploadedFile.new(
+      StringIO.new("This is not a CODA file"), "text/plain", false, original_filename: "bad.cod"
+    )
+    post "/api/v1/bank/connections/#{coda_connection.id}/upload_coda", params: { file: file }
+    assert_response :unprocessable_entity
+
+    body = JSON.parse(response.body)
+    assert body["error"].include?("CODA")
+  end
+
+  test "delete CODA connection does not call GoCardless API" do
+    coda_connection = BankConnection.create!(
+      provider: "coda_import",
+      bank_name: "VDK",
+      status: "linked",
+      accounting_scope: "nursery",
+      connected_by: @admin
+    )
+
+    delete "/api/v1/bank/connections/#{coda_connection.id}", as: :json
+    assert_response :no_content
+    assert_nil BankConnection.find_by(id: coda_connection.id)
+  end
+
   test "connection serialization includes accountingScope and institutionId" do
     @connection.update!(institution_id: "TRIODOS_TRIOBEBB", accounting_scope: "general")
 
@@ -314,5 +442,20 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     conn = JSON.parse(response.body)["items"][0]
     assert_equal "general", conn["accountingScope"]
     assert_equal "TRIODOS_TRIOBEBB", conn["institutionId"]
+  end
+
+  private
+
+  def build_test_coda
+    lines = [
+      "0000018032600105        00000000   Semisto ASBL              BBRUBEBB   00932942  00000                                         2",
+      "10000BE52523080001234 EUR0000000012345670260301          Semisto ASBL              000                                        0",
+      "2100010000BANKREF00000000000001000000000001500000260315008010000101123456781234500012                                   260315 0",
+      "2200010000                                                          VDSPBE22   BE98651100005678          00000000000000000     0",
+      "2300010000Pépinière du Soleil                   Communication libre test                         0 00000000000150000260315     0",
+      "8000BE52523080001234 EUR0000000013845670260315                                                                                0",
+      "9               000003000000000015000000000000000001500000                                                                    2"
+    ]
+    lines.map { |l| l.ljust(128) }.join("\n")
   end
 end

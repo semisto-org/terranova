@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Check, Eye, EyeOff, RefreshCw, Search, Wand2, X } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Check, Eye, EyeOff, Search, Wand2, X } from 'lucide-react'
 import type { BankConnection, BankSummaryResponse, BankTransaction } from './BankSection'
 import { SCOPE_LABELS } from './BankSection'
 
@@ -11,8 +11,6 @@ interface TransactionListProps {
   onUnignore: (id: string) => void
   onUnreconcile: (reconciliationId: string) => void
   onAutoReconcile: () => Promise<unknown>
-  onSync: () => Promise<unknown>
-  syncing: boolean
   summary: BankSummaryResponse | null
   connections: BankConnection[]
   activeConnectionId: string | null
@@ -41,8 +39,6 @@ export function TransactionList({
   onUnignore,
   onUnreconcile,
   onAutoReconcile,
-  onSync,
-  syncing,
   summary,
   connections,
   activeConnectionId,
@@ -109,15 +105,6 @@ export function TransactionList({
           >
             <Wand2 className="w-4 h-4" />
             Réconciliation auto
-          </button>
-          <button
-            onClick={() => onSync()}
-            disabled={syncing}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50"
-            style={{ backgroundColor: '#5B5781' }}
-          >
-            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Sync...' : 'Sync'}
           </button>
         </div>
       </div>

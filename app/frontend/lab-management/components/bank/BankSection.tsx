@@ -74,7 +74,6 @@ export function BankSection() {
   const [transactions, setTransactions] = useState<BankTransaction[]>([])
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null)
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState(false)
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
   const [filters, setFilters] = useState<{ status?: string; dateFrom?: string; dateTo?: string; search?: string }>({})
 
@@ -108,59 +107,23 @@ export function BankSection() {
     if (summary && summary.accounts.length > 0) loadTransactions()
   }, [summary?.accounts?.length, loadTransactions])
 
-  const handleConnect = async (institutionId: string, accountingScope: string) => {
-    const redirectUrl = `${window.location.origin}/lab?section=bank&bank_callback=1`
-    const data = await apiRequest('/api/v1/bank/connect', {
+  const handleCreateConnection = async (bankName: string, iban: string, accountingScope: string) => {
+    await apiRequest('/api/v1/bank/connections', {
       method: 'POST',
-      body: JSON.stringify({ redirect_url: redirectUrl, institution_id: institutionId, accounting_scope: accountingScope }),
-    })
-    if (data.link) window.location.href = data.link
-  }
-
-  const handleCallback = useCallback(async (requisitionId: string) => {
-    await apiRequest('/api/v1/bank/callback', {
-      method: 'POST',
-      body: JSON.stringify({ requisition_id: requisitionId }),
+      body: JSON.stringify({ bank_name: bankName, iban, accounting_scope: accountingScope }),
     })
     await Promise.all([loadSummary(), loadConnections()])
-  }, [loadSummary, loadConnections])
+  }
 
-  // Handle OAuth callback
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const ref = params.get('ref')
-    if (params.get('bank_callback') === '1' && ref) {
-      handleCallback(ref)
-      const url = new URL(window.location.href)
-      url.searchParams.delete('bank_callback')
-      url.searchParams.delete('ref')
-      window.history.replaceState({}, '', url.toString())
-    }
-  }, [handleCallback])
-
-  const handleSync = async (connectionId?: string) => {
-    const targetId = connectionId || activeConnectionId
-    if (!targetId && (!summary || summary.accounts.length === 0)) return
-    setSyncing(true)
-    try {
-      if (targetId) {
-        await apiRequest('/api/v1/bank/sync', {
-          method: 'POST',
-          body: JSON.stringify({ connection_id: targetId }),
-        })
-      } else {
-        // Sync all connections
-        for (const account of summary!.accounts) {
-          await apiRequest('/api/v1/bank/sync', {
-            method: 'POST',
-            body: JSON.stringify({ connection_id: account.connectionId }),
-          })
-        }
-      }
-      await Promise.all([loadSummary(), loadTransactions()])
-    } finally {
-      setSyncing(false)
-    }
+  const handleUploadCoda = async (connectionId: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const result = await apiRequest(`/api/v1/bank/connections/${connectionId}/upload_coda`, {
+      method: 'POST',
+      body: formData,
+    })
+    await Promise.all([loadSummary(), loadTransactions()])
+    return result
   }
 
   const handleDisconnect = async (connectionId: string) => {
@@ -251,10 +214,9 @@ export function BankSection() {
         <ConnectionStatus
           summary={summary}
           connections={connections}
-          syncing={syncing}
-          onConnect={handleConnect}
+          onCreateConnection={handleCreateConnection}
+          onUploadCoda={handleUploadCoda}
           onDisconnect={handleDisconnect}
-          onSync={handleSync}
         />
       )}
 
@@ -268,8 +230,6 @@ export function BankSection() {
           onUnignore={handleUnignore}
           onUnreconcile={handleUnreconcile}
           onAutoReconcile={handleAutoReconcile}
-          onSync={() => handleSync()}
-          syncing={syncing}
           summary={summary}
           connections={connections}
           activeConnectionId={activeConnectionId}

@@ -189,11 +189,13 @@ Rails.application.routes.draw do
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
 
-      # Bank integration (Triodos via GoCardless)
+      # Bank integration (CODA import + GoCardless)
       post "bank/connect", to: "bank#connect"
       post "bank/callback", to: "bank#callback"
+      post "bank/connections", to: "bank#create_connection"
       get "bank/connections", to: "bank#list_connections"
       delete "bank/connections/:id", to: "bank#destroy_connection"
+      post "bank/connections/:id/upload_coda", to: "bank#upload_coda"
       post "bank/sync", to: "bank#sync"
       get "bank/transactions", to: "bank#list_transactions"
       get "bank/transactions/:id/candidates", to: "bank#candidates"

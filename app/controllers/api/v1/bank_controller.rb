@@ -80,6 +80,45 @@ module Api
         render json: { error: e.message }, status: :bad_gateway
       end
 
+      # POST /api/v1/bank/connections
+      # Create a manual bank connection (for CODA import)
+      def create_connection
+        connection = BankConnection.new(
+          provider: "coda_import",
+          bank_name: params.require(:bank_name),
+          iban: params[:iban],
+          status: "linked",
+          accounting_scope: params[:accounting_scope] || "general",
+          connected_by: current_member
+        )
+
+        if connection.save
+          render json: serialize_connection(connection), status: :created
+        else
+          render json: { error: connection.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/bank/connections/:id/upload_coda
+      # Upload a CODA file to import transactions
+      def upload_coda
+        connection = BankConnection.find(params.require(:id))
+        file = params.require(:file)
+
+        content = file.read
+        importer = BankSync::CodaImporter.new(connection)
+        result = importer.import(content)
+
+        render json: {
+          imported: result[:imported],
+          skipped: result[:skipped],
+          total: result[:movements_total],
+          lastSyncedAt: connection.reload.last_synced_at&.iso8601
+        }
+      rescue BankSync::CodaParser::ParseError => e
+        render json: { error: "Erreur de parsing CODA : #{e.message}" }, status: :unprocessable_entity
+      end
+
       # GET /api/v1/bank/connections
       def list_connections
         connections = BankConnection.includes(:connected_by).order(created_at: :desc)
@@ -88,11 +127,13 @@ module Api
 
       # DELETE /api/v1/bank/connections/:id
       def destroy_connection
-        begin
-          client = BankSync::GocardlessClient.new
-          client.delete_requisition(@connection.provider_requisition_id) if @connection.provider_requisition_id.present?
-        rescue BankSync::GocardlessClient::ApiError
-          # Continue even if remote deletion fails
+        if @connection.provider == "gocardless" && @connection.provider_requisition_id.present?
+          begin
+            client = BankSync::GocardlessClient.new
+            client.delete_requisition(@connection.provider_requisition_id)
+          rescue BankSync::GocardlessClient::ApiError
+            # Continue even if remote deletion fails
+          end
         end
 
         @connection.destroy!
@@ -248,12 +289,6 @@ module Api
           }
         end
 
-        client = begin
-          BankSync::GocardlessClient.new
-        rescue BankSync::GocardlessClient::ApiError
-          nil
-        end
-
         total_unmatched = 0
         total_matched = 0
 
@@ -263,22 +298,12 @@ module Api
           total_unmatched += unmatched
           total_matched += matched
 
-          balance = nil
-          if client && conn.provider_account_id.present?
-            begin
-              balances_data = client.get_balances(conn.provider_account_id)
-              balance = balances_data.dig("balances", 0, "balanceAmount", "amount")&.to_f
-            rescue BankSync::GocardlessClient::ApiError
-              # skip
-            end
-          end
-
           {
             connectionId: conn.id.to_s,
             bankName: conn.bank_name,
             iban: conn.iban,
             scope: conn.accounting_scope,
-            balance: balance,
+            balance: nil,
             unmatchedCount: unmatched,
             matchedCount: matched,
             lastSyncedAt: conn.last_synced_at&.iso8601,

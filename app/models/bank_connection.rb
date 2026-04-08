@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class BankConnection < ApplicationRecord
-  PROVIDERS = %w[gocardless].freeze
+  PROVIDERS = %w[gocardless coda_import].freeze
   STATUSES = %w[linked expired suspended].freeze
   ACCOUNTING_SCOPES = %w[general nursery].freeze
 
