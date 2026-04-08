@@ -33,6 +33,14 @@ export default defineConfig(({ mode }) => ({
     outDir: '../../public/vite',
     rollupOptions: {
       input: path.resolve(frontendRoot, 'entrypoints/application.jsx'),
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', '@inertiajs/react'],
+          editor: ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-link'],
+          dnd: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          maps: ['leaflet', 'react-leaflet'],
+        },
+      },
     },
   },
   resolve: {
