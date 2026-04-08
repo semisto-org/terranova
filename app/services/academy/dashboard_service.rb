@@ -145,19 +145,19 @@ module Academy
 
     def expense_updates
       expenses = Expense
-        .where.not(training_id: nil)
+        .where(projectable_type: "Academy::Training")
         .where("expenses.updated_at >= ?", 14.days.ago)
         .where(deleted_at: nil)
-        .joins("INNER JOIN academy_trainings ON academy_trainings.id = expenses.training_id")
-        .includes(:training)
+        .joins("INNER JOIN academy_trainings ON academy_trainings.id = expenses.projectable_id AND expenses.projectable_type = 'Academy::Training'")
+        .includes(:projectable)
         .order(updated_at: :desc)
         .limit(10)
 
       expenses.map do |expense|
         {
           expenseId: expense.id.to_s,
-          trainingTitle: expense.training&.title,
-          trainingId: expense.training_id.to_s,
+          trainingTitle: expense.projectable&.project_name,
+          trainingId: expense.projectable_id.to_s,
           supplier: expense.supplier_display_name,
           category: expense.category,
           status: expense.status,
@@ -191,7 +191,7 @@ module Academy
       pending_total = pending_payments.joins(:training).sum("academy_trainings.price").to_f
 
       unpaid_expenses = Expense
-        .where(training_id: active_training_ids, deleted_at: nil)
+        .where(projectable_type: "Academy::Training", projectable_id: active_training_ids, deleted_at: nil)
         .where.not(status: "paid")
 
       unpaid_count = unpaid_expenses.count

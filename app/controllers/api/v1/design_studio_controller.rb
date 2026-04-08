@@ -93,11 +93,11 @@ module Api
 
         general_expenses = Expense.where(deleted_at: nil)
           .where("poles @> ARRAY[?]::varchar[]", "design")
-          .where(design_project_id: nil)
+          .where(projectable_type: nil)
           .sum(:total_incl_vat).to_f
 
         total_design_revenue = Revenue.where(deleted_at: nil)
-          .where("design_project_id IS NOT NULL OR pole = ?", "design_studio")
+          .where("projectable_type = 'Design::Project' OR pole = ?", "design_studio")
           .sum(:amount).to_f
 
         actual_overhead_rate = total_design_revenue > 0 ? (general_expenses / total_design_revenue).round(4) : 0.0
@@ -268,16 +268,16 @@ module Api
         item = Expense.find(params.require(:expense_id))
         item.update!(expense_params)
         item.document.attach(params[:document]) if params[:document].present?
-        project = item.design_project
-        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat))
+        project = item.projectable
+        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat)) if project.is_a?(Design::Project)
         render json: serialize_expense(item.reload)
       end
 
       def destroy_expense
         item = Expense.find(params.require(:expense_id))
-        project = item.design_project
+        project = item.projectable
         item.soft_delete!
-        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat))
+        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat)) if project.is_a?(Design::Project)
         head :no_content
       end
 
@@ -899,7 +899,7 @@ module Api
           :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
           :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
           :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
-          :name, :notes, :training_id, :design_project_id,
+          :name, :notes, :projectable_type, :projectable_id,
           poles: []
         )
       end
@@ -1388,8 +1388,9 @@ module Api
         doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
         {
           id: item.id.to_s,
-          trainingId: item.training_id&.to_s,
-          designProjectId: item.design_project_id&.to_s,
+          projectableType: item.projectable_type,
+          projectableId: item.projectable_id&.to_s,
+          projectName: item.projectable&.project_name,
           supplier: item.supplier_display_name,
           supplierContactId: item.supplier_contact_id&.to_s,
           status: item.status,

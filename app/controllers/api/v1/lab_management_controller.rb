@@ -577,14 +577,15 @@ module Api
       end
 
       def list_expenses
-        scope = Expense.includes(:design_project, :training)
+        scope = Expense.includes(:projectable)
 
         scope = scope.where(status: params[:status]) if params[:status].present?
         scope = scope.where(expense_type: params[:expense_type]) if params[:expense_type].present?
         scope = scope.where(billing_zone: params[:billing_zone]) if params[:billing_zone].present?
         scope = scope.where("? = ANY(poles)", params[:pole]) if params[:pole].present?
-        scope = scope.where(training_id: params[:training_id]) if params[:training_id].present?
-        scope = scope.where(design_project_id: params[:design_project_id]) if params[:design_project_id].present?
+        if params[:projectable_type].present? && params[:projectable_id].present?
+          scope = scope.where(projectable_type: params[:projectable_type], projectable_id: params[:projectable_id])
+        end
 
         render json: { items: scope.order(invoice_date: :desc).map { |e| serialize_expense(e) } }
       end
@@ -617,7 +618,7 @@ module Api
       end
 
       def list_revenues
-        scope = Revenue.includes(:contact, :training, :design_project)
+        scope = Revenue.includes(:contact, :projectable)
 
         scope = scope.where(status: params[:status]) if params[:status].present?
         scope = scope.where(pole: params[:pole]) if params[:pole].present?
@@ -907,7 +908,7 @@ module Api
       end
 
       def timesheet_params
-        params.permit(:member_id, :member_name, :date, :hours, :description, :phase, :mode, :billed, :travel_km, :design_project_id, :training_id, :pole_project_id, :event_id)
+        params.permit(:member_id, :member_name, :date, :hours, :description, :phase, :mode, :billed, :travel_km, :projectable_type, :projectable_id, :event_id)
       end
 
       def normalized_timesheet_params
@@ -1041,7 +1042,7 @@ module Api
 
       def revenue_params
         params.permit(
-          :amount, :description, :date, :contact_id, :pole, :training_id, :design_project_id,
+          :amount, :description, :date, :contact_id, :pole, :projectable_type, :projectable_id,
           :revenue_type, :status, :notes, :label, :amount_excl_vat, :vat_6, :vat_21,
           :payment_method, :category, :vat_rate, :vat_exemption, :invoice_url, :paid_at
         )
@@ -1053,7 +1054,7 @@ module Api
           :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
           :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
           :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
-          :name, :notes, :training_id, :design_project_id,
+          :name, :notes, :projectable_type, :projectable_id,
           poles: []
         )
       end
@@ -1113,8 +1114,9 @@ module Api
           contactId: r.contact_id&.to_s,
           contactName: r.contact&.name,
           pole: r.pole,
-          trainingId: r.training_id&.to_s,
-          designProjectId: r.design_project_id&.to_s,
+          projectableType: r.projectable_type,
+          projectableId: r.projectable_id&.to_s,
+          projectName: r.projectable&.try(:project_name) || r.projectable&.try(:name),
           revenueType: r.revenue_type,
           status: r.status,
           notes: r.notes,
@@ -1162,8 +1164,9 @@ module Api
           name: item.name,
           notes: item.notes,
           poles: item.poles || [],
-          trainingId: item.training_id&.to_s,
-          designProjectId: item.design_project_id&.to_s,
+          projectableType: item.projectable_type,
+          projectableId: item.projectable_id&.to_s,
+          projectName: item.projectable&.try(:project_name) || item.projectable&.try(:name),
           documentUrl: doc_url,
           documentFilename: item.document.attached? ? item.document.filename.to_s : nil,
           createdAt: item.created_at.iso8601,
@@ -1485,9 +1488,9 @@ module Api
           invoiced: timesheet.billed,
           travelKm: timesheet.travel_km,
           kilometers: timesheet.travel_km,
-          designProjectId: timesheet.design_project_id,
-          trainingId: timesheet.training_id,
-          poleProjectId: timesheet.pole_project_id,
+          projectableType: timesheet.projectable_type,
+          projectableId: timesheet.projectable_id&.to_s,
+          projectName: timesheet.projectable&.try(:project_name) || timesheet.projectable&.try(:name),
           eventId: timesheet.event_id
         }
       end

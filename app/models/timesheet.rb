@@ -3,9 +3,7 @@
 class Timesheet < ApplicationRecord
   MODES = %w[billed semos].freeze
 
-  belongs_to :design_project, class_name: "Design::Project", optional: true
-  belongs_to :training, class_name: "Academy::Training", optional: true
-  belongs_to :pole_project, optional: true
+  belongs_to :projectable, polymorphic: true, optional: true
   belongs_to :event, optional: true
   belongs_to :service_type, class_name: "TimesheetServiceType", optional: true
 

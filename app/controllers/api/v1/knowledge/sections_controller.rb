@@ -5,10 +5,12 @@ module Api
     module Knowledge
       class SectionsController < BaseController
         def index
-          sections = if params[:guild_id].present?
-                       KnowledgeSection.where(guild_id: params[:guild_id]).ordered
+          sections = if params[:projectable_type].present? && params[:projectable_id].present?
+                       KnowledgeSection.where(projectable_type: params[:projectable_type], projectable_id: params[:projectable_id]).ordered
+                     elsif params[:guild_id].present?
+                       KnowledgeSection.where(projectable_type: "Guild", projectable_id: params[:guild_id]).ordered
                      else
-                       KnowledgeSection.where(guild_id: nil).ordered
+                       KnowledgeSection.where(projectable_type: nil).ordered
                      end
           render json: { sections: sections.map(&:as_json_brief) }
         end
@@ -46,7 +48,7 @@ module Api
         private
 
         def section_params
-          params.permit(:name, :description, :position, :guild_id)
+          params.permit(:name, :description, :position, :projectable_type, :projectable_id)
         end
       end
     end

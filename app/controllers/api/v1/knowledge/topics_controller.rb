@@ -14,10 +14,12 @@ module Api
                    end
 
           topics = topics.by_section(params[:section_id])
-          if params[:guild_id].present?
+          if params[:projectable_type].present? && params[:projectable_id].present?
+            topics = topics.joins(:section).where(knowledge_sections: { projectable_type: params[:projectable_type], projectable_id: params[:projectable_id] })
+          elsif params[:guild_id].present?
             topics = topics.for_guild(params[:guild_id])
           else
-            topics = topics.left_joins(:section).where(knowledge_sections: { guild_id: nil }).or(
+            topics = topics.left_joins(:section).where(knowledge_sections: { projectable_type: nil }).or(
               topics.left_joins(:section).where(section_id: nil)
             )
           end

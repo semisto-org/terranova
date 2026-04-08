@@ -507,7 +507,7 @@ module Api
         end
 
         training_ids = trainings.map(&:id)
-        expenses_by_category = Expense.where(training_id: training_ids).where.not(category: nil).group(:category).sum(:amount_excl_vat).transform_values(&:to_f)
+        expenses_by_category = Expense.where(projectable_type: 'Academy::Training', projectable_id: training_ids).where.not(category: nil).group(:category).sum(:amount_excl_vat).transform_values(&:to_f)
 
         fill_rates = trainings.filter_map do |t|
           cap = t.total_capacity
@@ -579,7 +579,7 @@ module Api
         registrations = Academy::TrainingRegistration.order(registered_at: :desc)
         attendances = Academy::TrainingAttendance.where(registration_id: Academy::TrainingRegistration.select(:id)).order(updated_at: :desc)
         documents = Academy::TrainingDocument.order(uploaded_at: :desc)
-        expenses = Expense.where.not(training_id: nil).order(invoice_date: :desc)
+        expenses = Expense.where(projectable_type: 'Academy::Training').order(invoice_date: :desc)
         idea_notes = Academy::IdeaNote.order(created_at: :desc)
         members = Member.order(:first_name, :last_name)
         team = Contact.joins(:contact_tags)
@@ -708,7 +708,7 @@ module Api
           :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
           :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
           :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
-          :name, :notes, :training_id, :design_project_id,
+          :name, :notes, :projectable_type, :projectable_id,
           poles: []
         )
       end
@@ -893,8 +893,8 @@ module Api
         doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
         {
           id: item.id.to_s,
-          trainingId: item.training_id&.to_s,
-          designProjectId: item.design_project_id&.to_s,
+          projectableType: item.projectable_type,
+          projectableId: item.projectable_id&.to_s,
           supplier: item.supplier_display_name,
           supplierContactId: item.supplier_contact_id&.to_s,
           status: item.status,

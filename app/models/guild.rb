@@ -8,7 +8,6 @@ class Guild < ApplicationRecord
   belongs_to :lab, optional: true
 
   has_many :documents, class_name: "GuildDocument", dependent: :destroy
-  has_many :knowledge_sections, class_name: "KnowledgeSection", dependent: :nullify
   has_many :credentials, dependent: :destroy
 
   validates :name, :color, presence: true

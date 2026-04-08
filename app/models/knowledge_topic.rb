@@ -6,9 +6,9 @@ class KnowledgeTopic < ApplicationRecord
   belongs_to :section, class_name: "KnowledgeSection", optional: true
   belongs_to :creator, class_name: "Member", foreign_key: :created_by_id, optional: true
 
-  delegate :guild, to: :section, allow_nil: true
+  delegate :projectable, to: :section, allow_nil: true
 
-  scope :for_guild, ->(guild_id) { joins(:section).where(knowledge_sections: { guild_id: guild_id }) }
+  scope :for_guild, ->(guild_id) { joins(:section).where(knowledge_sections: { projectable_type: "Guild", projectable_id: guild_id }) }
 
   has_many :topic_editors, class_name: "KnowledgeTopicEditor", foreign_key: :topic_id, dependent: :destroy
   has_many :editors, through: :topic_editors, source: :user

@@ -77,6 +77,8 @@ Rails.application.routes.draw do
   get "design", to: "app#design"
   get "design/:project_id", to: "app#design_project"
   get "client/design/:project_id", to: "app#design_client_portal"
+  get "projects", to: "app#projects"
+  get "projects/:type/:id", to: "app#projects"
   get "plants", to: "app#plants"
   get "plants/*path", to: "app#plants"
   get "guilds", to: "app#guilds"
@@ -136,6 +138,34 @@ Rails.application.routes.draw do
       get    "projects/:type/:id/bucket", to: "bucket#index"
       post   "projects/:type/:id/bucket", to: "bucket#create"
       delete "bucket/:id",                to: "bucket#destroy"
+
+      # Unified project listing & detail
+      get "projects",           to: "projects#index"
+      get "projects/:type/:id", to: "projects#show"
+
+      # Unified project-scoped resources
+      get    "projects/:type/:id/expenses",            to: "projects#list_expenses"
+      post   "projects/:type/:id/expenses",            to: "projects#create_expense"
+      patch  "projects/expenses/:id",                  to: "projects#update_expense"
+      delete "projects/expenses/:id",                  to: "projects#destroy_expense"
+
+      get    "projects/:type/:id/revenues",            to: "projects#list_revenues"
+      post   "projects/:type/:id/revenues",            to: "projects#create_revenue"
+      patch  "projects/revenues/:id",                  to: "projects#update_revenue"
+      delete "projects/revenues/:id",                  to: "projects#destroy_revenue"
+
+      get    "projects/:type/:id/timesheets",          to: "projects#list_timesheets"
+      post   "projects/:type/:id/timesheets",          to: "projects#create_timesheet"
+      patch  "projects/timesheets/:id",                to: "projects#update_timesheet"
+      delete "projects/timesheets/:id",                to: "projects#destroy_timesheet"
+
+      get    "projects/:type/:id/events",              to: "projects#list_events"
+      post   "projects/:type/:id/events",              to: "projects#create_event"
+      patch  "projects/events/:id",                    to: "projects#update_event"
+      delete "projects/events/:id",                    to: "projects#destroy_event"
+
+      get    "projects/:type/:id/knowledge-sections",  to: "projects#list_knowledge_sections"
+      post   "projects/:type/:id/knowledge-sections",  to: "projects#create_knowledge_section"
 
       # Billing config (global)
       get   "billing-config", to: "billing_config#show"

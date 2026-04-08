@@ -23,6 +23,14 @@ class AppController < ApplicationController
     }
   end
 
+  def projects
+    render inertia: "Projects/Index", props: {
+      milestone: "Projects",
+      initialType: params[:type],
+      initialId: params[:id]
+    }
+  end
+
   def plants
     render inertia: "Plants/Index", props: {
       milestone: "Plant Database",

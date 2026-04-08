@@ -59,8 +59,7 @@ class Expense < ApplicationRecord
   ].freeze
 
   belongs_to :supplier_contact, class_name: "Contact", optional: true
-  belongs_to :design_project, class_name: "Design::Project", optional: true
-  belongs_to :training, class_name: "Academy::Training", optional: true
+  belongs_to :projectable, polymorphic: true, optional: true
 
   has_one :bank_reconciliation, as: :reconcilable, class_name: "BankReconciliation", dependent: :nullify
   has_one_attached :document
@@ -99,4 +98,5 @@ class Expense < ApplicationRecord
 
     errors.add(:base, "Fournisseur requis : sélectionnez un contact ou saisissez un nom")
   end
+
 end

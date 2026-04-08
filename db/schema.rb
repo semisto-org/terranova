@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -970,7 +970,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
-    t.bigint "pole_project_id"
+    t.bigint "projectable_id"
+    t.string "projectable_type"
     t.datetime "start_date", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
@@ -978,7 +979,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.index ["deleted_at"], name: "index_events_on_deleted_at"
     t.index ["event_type_id"], name: "index_events_on_event_type_id"
     t.index ["notion_id"], name: "index_events_on_notion_id", unique: true
-    t.index ["pole_project_id"], name: "index_events_on_pole_project_id"
+    t.index ["projectable_type", "projectable_id"], name: "index_events_on_projectable"
   end
 
   create_table "expenses", force: :cascade do |t|
@@ -988,7 +989,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.string "category"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
-    t.bigint "design_project_id"
     t.decimal "eu_vat_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.string "eu_vat_rate"
     t.string "expense_type", null: false
@@ -1002,6 +1002,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.date "payment_date"
     t.string "payment_type"
     t.string "poles", default: [], array: true
+    t.bigint "projectable_id"
+    t.string "projectable_type"
     t.string "rebilling_status"
     t.boolean "reimbursed", default: false, null: false
     t.date "reimbursement_date"
@@ -1009,19 +1011,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.string "supplier"
     t.bigint "supplier_contact_id"
     t.decimal "total_incl_vat", precision: 12, scale: 2, default: "0.0", null: false
-    t.bigint "training_id"
     t.datetime "updated_at", null: false
     t.decimal "vat_12", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "vat_21", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
     t.string "vat_rate"
     t.index ["deleted_at"], name: "index_expenses_on_deleted_at"
-    t.index ["design_project_id", "invoice_date"], name: "idx_expenses_design_project_invoice_date"
-    t.index ["design_project_id"], name: "index_expenses_on_design_project_id"
     t.index ["invoice_date"], name: "index_expenses_on_invoice_date"
     t.index ["notion_id"], name: "index_expenses_on_notion_id", unique: true
+    t.index ["projectable_type", "projectable_id"], name: "index_expenses_on_projectable"
     t.index ["supplier_contact_id"], name: "index_expenses_on_supplier_contact_id"
-    t.index ["training_id"], name: "index_expenses_on_training_id"
   end
 
   create_table "guild_documents", force: :cascade do |t|
@@ -1099,13 +1098,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.text "description"
-    t.bigint "guild_id"
     t.string "name", null: false
     t.integer "position", default: 0
+    t.bigint "projectable_id"
+    t.string "projectable_type"
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_knowledge_sections_on_created_by_id"
-    t.index ["guild_id", "name"], name: "index_knowledge_sections_on_guild_id_and_name", unique: true
-    t.index ["guild_id"], name: "index_knowledge_sections_on_guild_id"
+    t.index ["projectable_type", "projectable_id", "name"], name: "index_knowledge_sections_on_projectable_and_name", unique: true
+    t.index ["projectable_type", "projectable_id"], name: "index_knowledge_sections_on_projectable"
   end
 
   create_table "knowledge_topic_editors", force: :cascade do |t|
@@ -1835,7 +1835,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.date "date"
     t.datetime "deleted_at"
     t.text "description", default: "", null: false
-    t.bigint "design_project_id"
     t.string "invoice_url", default: "", null: false
     t.string "label", default: "", null: false
     t.text "notes", default: "", null: false
@@ -1845,9 +1844,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.date "paid_at"
     t.string "payment_method", default: "", null: false
     t.string "pole"
+    t.bigint "projectable_id"
+    t.string "projectable_type"
     t.string "revenue_type", default: "", null: false
     t.string "status", default: "draft", null: false
-    t.bigint "training_id"
     t.datetime "updated_at", null: false
     t.decimal "vat_21", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
@@ -1856,11 +1856,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.index ["contact_id"], name: "index_revenues_on_contact_id"
     t.index ["date"], name: "index_revenues_on_date"
     t.index ["deleted_at"], name: "index_revenues_on_deleted_at"
-    t.index ["design_project_id", "date"], name: "idx_revenues_design_project_date"
-    t.index ["design_project_id"], name: "index_revenues_on_design_project_id"
     t.index ["notion_id"], name: "index_revenues_on_notion_id", unique: true
     t.index ["pole"], name: "index_revenues_on_pole"
-    t.index ["training_id"], name: "index_revenues_on_training_id"
+    t.index ["projectable_type", "projectable_id"], name: "index_revenues_on_projectable"
   end
 
   create_table "scope_tasks", force: :cascade do |t|
@@ -2070,7 +2068,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.datetime "created_at", null: false
     t.date "date", null: false
     t.text "description"
-    t.bigint "design_project_id"
     t.string "details", default: "", null: false
     t.bigint "event_id"
     t.decimal "hours", precision: 5, scale: 2, default: "0.0"
@@ -2081,20 +2078,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
     t.string "notion_id"
     t.datetime "notion_updated_at"
     t.string "phase"
-    t.bigint "pole_project_id"
+    t.bigint "projectable_id"
+    t.string "projectable_type"
     t.bigint "service_type_id"
-    t.bigint "training_id"
     t.integer "travel_km", default: 0
     t.datetime "updated_at", null: false
     t.index ["date"], name: "index_timesheets_on_date"
-    t.index ["design_project_id", "date"], name: "idx_timesheets_design_project_date"
-    t.index ["design_project_id"], name: "index_timesheets_on_design_project_id"
     t.index ["event_id"], name: "index_timesheets_on_event_id"
     t.index ["member_id"], name: "index_timesheets_on_member_id"
     t.index ["notion_id"], name: "index_timesheets_on_notion_id", unique: true
-    t.index ["pole_project_id"], name: "index_timesheets_on_pole_project_id"
+    t.index ["projectable_type", "projectable_id"], name: "index_timesheets_on_projectable"
     t.index ["service_type_id"], name: "index_timesheets_on_service_type_id"
-    t.index ["training_id"], name: "index_timesheets_on_training_id"
   end
 
   create_table "wallets", force: :cascade do |t|
@@ -2182,10 +2176,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
   add_foreign_key "events", "event_types"
-  add_foreign_key "events", "pole_projects"
-  add_foreign_key "expenses", "academy_trainings", column: "training_id"
   add_foreign_key "expenses", "contacts", column: "supplier_contact_id"
-  add_foreign_key "expenses", "design_projects"
   add_foreign_key "guild_documents", "guilds"
   add_foreign_key "guild_documents", "members", column: "uploaded_by_id"
   add_foreign_key "guilds", "labs"
@@ -2196,7 +2187,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
   add_foreign_key "knowledge_bookmarks", "members", column: "user_id"
   add_foreign_key "knowledge_comments", "knowledge_topics", column: "topic_id"
   add_foreign_key "knowledge_comments", "members", column: "user_id"
-  add_foreign_key "knowledge_sections", "guilds"
   add_foreign_key "knowledge_sections", "members", column: "created_by_id"
   add_foreign_key "knowledge_topic_editors", "knowledge_topics", column: "topic_id"
   add_foreign_key "knowledge_topic_editors", "members", column: "user_id"
@@ -2239,9 +2229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
   add_foreign_key "post_its", "design_projects"
   add_foreign_key "post_its", "pole_projects"
   add_foreign_key "project_memberships", "members"
-  add_foreign_key "revenues", "academy_trainings", column: "training_id"
   add_foreign_key "revenues", "contacts"
-  add_foreign_key "revenues", "design_projects"
   add_foreign_key "scope_tasks", "scopes"
   add_foreign_key "scopes", "pitches"
   add_foreign_key "semos_emissions", "members", column: "created_by_id"
@@ -2263,10 +2251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_100000) do
   add_foreign_key "tasks", "members", column: "assignee_id"
   add_foreign_key "tasks", "task_lists"
   add_foreign_key "tasks", "tasks", column: "parent_id"
-  add_foreign_key "timesheets", "academy_trainings", column: "training_id"
-  add_foreign_key "timesheets", "design_projects"
   add_foreign_key "timesheets", "events"
-  add_foreign_key "timesheets", "pole_projects"
   add_foreign_key "timesheets", "timesheet_service_types", column: "service_type_id"
   add_foreign_key "wallets", "members"
 end

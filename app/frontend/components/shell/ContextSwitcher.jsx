@@ -4,6 +4,7 @@ import { Link, usePage, router } from '@inertiajs/react'
 
 const POLES = [
   { id: 'home', label: 'Accueil', path: '/', accent: '#78716C', bg: '#e7e5e4', icon: '/semisto-global.png' },
+  { id: 'projects', label: 'Projets', path: '/projects', accent: '#234766', bg: '#c9d1d9' },
   { id: 'design', label: 'Design Studio', path: '/design', accent: '#AFBD00', bg: '#e1e6d8', icon: '/icons/design.png' },
   { id: 'academy', label: 'Academy', path: '/academy', accent: '#B01A19', bg: '#eac7b8', icon: '/icons/academy.png' },
   { id: 'nursery', label: 'Pépinière-école', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },

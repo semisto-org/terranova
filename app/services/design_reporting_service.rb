@@ -78,13 +78,13 @@ class DesignReportingService
       .yield_self { |s| parsed_to.present? ? s.where('date <= ?', parsed_to) : s }
 
     scope = if filters[:project_id].present?
-      scope.where(design_project_id: filters[:project_id])
+      scope.where(projectable_type: 'Design::Project', projectable_id: filters[:project_id])
     else
-      scope.where('design_project_id IS NOT NULL OR pole = ?', 'design_studio')
+      scope.where("projectable_type = 'Design::Project' OR pole = ?", 'design_studio')
     end
 
     if filters[:client_id].present?
-      scope = scope.joins('INNER JOIN design_projects ON design_projects.id = revenues.design_project_id')
+      scope = scope.joins("INNER JOIN design_projects ON design_projects.id = revenues.projectable_id AND revenues.projectable_type = 'Design::Project'")
         .where('design_projects.client_id = ?', filters[:client_id])
     end
 
@@ -97,13 +97,13 @@ class DesignReportingService
       .yield_self { |s| parsed_to.present? ? s.where('invoice_date <= ?', parsed_to) : s }
 
     scope = if filters[:project_id].present?
-      scope.where(design_project_id: filters[:project_id])
+      scope.where(projectable_type: 'Design::Project', projectable_id: filters[:project_id])
     else
-      scope.where('design_project_id IS NOT NULL OR poles @> ARRAY[?]::varchar[]', 'design')
+      scope.where("projectable_type = 'Design::Project' OR poles @> ARRAY[?]::varchar[]", 'design')
     end
 
     if filters[:client_id].present?
-      scope = scope.joins('INNER JOIN design_projects ON design_projects.id = expenses.design_project_id')
+      scope = scope.joins("INNER JOIN design_projects ON design_projects.id = expenses.projectable_id AND expenses.projectable_type = 'Design::Project'")
         .where('design_projects.client_id = ?', filters[:client_id])
     end
 
@@ -116,15 +116,15 @@ class DesignReportingService
       .yield_self { |s| parsed_to.present? ? s.where('date <= ?', parsed_to) : s }
 
     scope = if filters[:project_id].present?
-      scope.where(design_project_id: filters[:project_id])
+      scope.where(projectable_type: 'Design::Project', projectable_id: filters[:project_id])
     else
-      scope.where.not(design_project_id: nil)
+      scope.where(projectable_type: 'Design::Project')
     end
 
     scope = scope.where(member_id: filters[:member_id]) if filters[:member_id].present?
 
     if filters[:client_id].present?
-      scope = scope.joins('INNER JOIN design_projects ON design_projects.id = timesheets.design_project_id')
+      scope = scope.joins("INNER JOIN design_projects ON design_projects.id = timesheets.projectable_id AND timesheets.projectable_type = 'Design::Project'")
         .where('design_projects.client_id = ?', filters[:client_id])
     end
 
@@ -175,9 +175,9 @@ class DesignReportingService
   end
 
   def grouped_project_rows
-    revenue_map = filtered_revenues.where.not(design_project_id: nil).group(:design_project_id).sum(:amount)
-    expense_map = filtered_expenses.where.not(design_project_id: nil).group(:design_project_id).sum(:total_incl_vat)
-    hours_map = filtered_timesheets.where.not(design_project_id: nil).group(:design_project_id).sum(:hours)
+    revenue_map = filtered_revenues.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:amount)
+    expense_map = filtered_expenses.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:total_incl_vat)
+    hours_map = filtered_timesheets.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:hours)
 
     ids = (revenue_map.keys + expense_map.keys + hours_map.keys).uniq
     projects = Design::Project.where(id: ids).index_by(&:id)
@@ -230,12 +230,12 @@ class DesignReportingService
 
   def grouped_member_rows
     rows = filtered_timesheets.group(:member_id, :member_name).sum(:hours)
-    revenue_by_project = filtered_revenues.where.not(design_project_id: nil).group(:design_project_id).sum(:amount)
-    expense_by_project = filtered_expenses.where.not(design_project_id: nil).group(:design_project_id).sum(:total_incl_vat)
+    revenue_by_project = filtered_revenues.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:amount)
+    expense_by_project = filtered_expenses.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:total_incl_vat)
 
     rows.map do |(member_id, member_name), hours_value|
       member_timesheets = filtered_timesheets.where(member_id: member_id)
-      project_ids = member_timesheets.where.not(design_project_id: nil).distinct.pluck(:design_project_id)
+      project_ids = member_timesheets.where(projectable_type: 'Design::Project').distinct.pluck(:projectable_id)
       revenues = project_ids.sum { |id| revenue_by_project[id].to_f }
       expenses = project_ids.sum { |id| expense_by_project[id].to_f }
       hours = hours_value.to_f
@@ -257,11 +257,11 @@ class DesignReportingService
 
   def data_quality(revenues, expenses, timesheets)
     {
-      orphan_revenues_count: revenues.where(design_project_id: nil).count,
-      orphan_expenses_count: expenses.where(design_project_id: nil).count,
-      orphan_timesheets_count: timesheets.where(design_project_id: nil).count,
-      fallback_revenues_count: revenues.where(design_project_id: nil, pole: 'design_studio').count,
-      fallback_expenses_count: expenses.where(design_project_id: nil).where('poles @> ARRAY[?]::varchar[]', 'design').count
+      orphan_revenues_count: revenues.where.not(projectable_type: 'Design::Project').count,
+      orphan_expenses_count: expenses.where.not(projectable_type: 'Design::Project').count,
+      orphan_timesheets_count: timesheets.where.not(projectable_type: 'Design::Project').count,
+      fallback_revenues_count: revenues.where.not(projectable_type: 'Design::Project').where(pole: 'design_studio').count,
+      fallback_expenses_count: expenses.where.not(projectable_type: 'Design::Project').where('poles @> ARRAY[?]::varchar[]', 'design').count
     }
   end
 

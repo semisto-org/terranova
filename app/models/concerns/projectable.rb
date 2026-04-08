@@ -9,6 +9,11 @@ module Projectable
     has_many :project_memberships, as: :projectable, dependent: :destroy
     has_many :project_members, through: :project_memberships, source: :member
     has_many :bucket_transactions, as: :projectable, dependent: :destroy
+    has_many :expenses, as: :projectable, dependent: :destroy
+    has_many :revenues, as: :projectable, dependent: :destroy
+    has_many :timesheets, as: :projectable, dependent: :nullify
+    has_many :events, as: :projectable, dependent: :nullify
+    has_many :knowledge_sections, as: :projectable, dependent: :nullify
   end
 
   def project_name

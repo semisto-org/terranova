@@ -2,7 +2,7 @@ class Event < ApplicationRecord
   include SoftDeletable
   belongs_to :cycle, optional: true
   belongs_to :event_type
-  belongs_to :pole_project, optional: true
+  belongs_to :projectable, polymorphic: true, optional: true
   has_many :event_attendees, dependent: :destroy
   has_many :attendees, through: :event_attendees, source: :member
   has_one :album, as: :albumable, dependent: :destroy
@@ -11,4 +11,5 @@ class Event < ApplicationRecord
 
   # Delegate for easy access to event type properties
   delegate :label, to: :event_type, prefix: false
+
 end

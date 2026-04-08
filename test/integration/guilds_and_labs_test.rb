@@ -118,10 +118,10 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
     guild_a = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
     guild_b = Guild.create!(name: 'Design', color: 'green', guild_type: 'network')
 
-    KnowledgeSection.where(guild_id: [guild_a.id, guild_b.id]).delete_all
+    KnowledgeSection.where(projectable_type: "Guild", projectable_id: [guild_a.id, guild_b.id]).delete_all
 
-    section_a = KnowledgeSection.create!(name: 'Ressources', guild: guild_a)
-    section_b = KnowledgeSection.create!(name: 'Ressources', guild: guild_b)
+    section_a = KnowledgeSection.create!(name: 'Ressources', projectable: guild_a)
+    section_b = KnowledgeSection.create!(name: 'Ressources', projectable: guild_b)
 
     # Same name, different guilds: both valid
     assert section_a.valid?
@@ -131,7 +131,7 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
 
   test 'knowledge topic inherits guild from section' do
     guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
-    section = KnowledgeSection.create!(name: 'Wiki', guild: guild)
+    section = KnowledgeSection.create!(name: 'Wiki', projectable: guild)
     topic = KnowledgeTopic.create!(
       title: 'How to post',
       content: 'Steps to post on social media',
@@ -139,15 +139,15 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
       section: section
     )
 
-    assert_equal guild, topic.guild
+    assert_equal guild, topic.projectable
   end
 
   test 'knowledge topics for_guild scope works' do
     guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
-    section = KnowledgeSection.create!(name: 'Wiki', guild: guild)
+    section = KnowledgeSection.create!(name: 'Wiki', projectable: guild)
     KnowledgeTopic.create!(title: 'Guild Topic', content: 'content', status: 'published', section: section)
 
-    global_section = KnowledgeSection.find_or_create_by!(name: 'Global Section Test', guild_id: nil)
+    global_section = KnowledgeSection.find_or_create_by!(name: 'Global Section Test', projectable_type: nil)
     KnowledgeTopic.create!(title: 'Global Topic', content: 'content', status: 'published', section: global_section)
 
     assert_equal 1, KnowledgeTopic.for_guild(guild.id).count
@@ -311,8 +311,8 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
 
   test 'GET knowledge sections filters by guild_id param' do
     guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
-    KnowledgeSection.create!(name: 'Guild Section', guild: guild)
-    KnowledgeSection.find_or_create_by!(name: 'Global Section', guild_id: nil)
+    KnowledgeSection.create!(name: 'Guild Section', projectable: guild)
+    KnowledgeSection.find_or_create_by!(name: 'Global Section', projectable_type: nil)
 
     # Without filter: only global sections
     get '/api/v1/knowledge/sections', as: :json
@@ -329,10 +329,10 @@ class GuildsAndLabsTest < ActionDispatch::IntegrationTest
 
   test 'GET knowledge topics filters by guild_id param' do
     guild = Guild.create!(name: 'Comm', color: 'blue', guild_type: 'network')
-    section = KnowledgeSection.create!(name: 'Wiki', guild: guild)
+    section = KnowledgeSection.create!(name: 'Wiki', projectable: guild)
     KnowledgeTopic.create!(title: 'Guild Topic', content: 'c', status: 'published', section: section)
 
-    global_section = KnowledgeSection.find_or_create_by!(name: 'Global Test', guild_id: nil)
+    global_section = KnowledgeSection.find_or_create_by!(name: 'Global Test', projectable_type: nil)
     KnowledgeTopic.create!(title: 'Global Topic', content: 'c', status: 'published', section: global_section)
 
     # Without filter: only global topics

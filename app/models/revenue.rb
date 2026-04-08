@@ -9,8 +9,7 @@ class Revenue < ApplicationRecord
   has_one :bank_reconciliation, as: :reconcilable, class_name: "BankReconciliation", dependent: :nullify
 
   belongs_to :contact, optional: true
-  belongs_to :training, class_name: "Academy::Training", optional: true
-  belongs_to :design_project, class_name: "Design::Project", optional: true
+  belongs_to :projectable, polymorphic: true, optional: true
 
   validates :amount, numericality: { greater_than_or_equal_to: 0 }
   validates :pole, inclusion: { in: POLES }, allow_blank: true
