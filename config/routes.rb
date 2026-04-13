@@ -583,6 +583,7 @@ Rails.application.routes.draw do
       get    "strategy/deliberations/:id",           to: "strategy/deliberations#show"
       post   "strategy/deliberations",               to: "strategy/deliberations#create"
       patch  "strategy/deliberations/:id",           to: "strategy/deliberations#update"
+      delete "strategy/deliberations/:id",           to: "strategy/deliberations#destroy"
       patch  "strategy/deliberations/:id/publish",   to: "strategy/deliberations#publish"
       patch  "strategy/deliberations/:id/cancel",    to: "strategy/deliberations#cancel"
       patch  "strategy/deliberations/:id/decide",    to: "strategy/deliberations#decide"

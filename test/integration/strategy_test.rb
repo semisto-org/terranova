@@ -322,16 +322,33 @@ class StrategyTest < ActionDispatch::IntegrationTest
     assert_equal 'Open remark',  payload['open'][0]['content']
   end
 
-  test 'deliberation destroy route no longer exists' do
+  test 'destroy allowed for author on draft, forbidden otherwise' do
     author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
-    login_as(author)
+    other  = ensure_member(email: "other@test.local",  membership_type: "effective")
 
+    login_as(author)
     post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
     delib_id = JSON.parse(response.body)['deliberation']['id']
 
-    assert_raises(ActionController::RoutingError) do
-      delete "/api/v1/strategy/deliberations/#{delib_id}", as: :json
-    end
+    # Non-author gets 403
+    login_as(other)
+    delete "/api/v1/strategy/deliberations/#{delib_id}", as: :json
+    assert_response :forbidden
+
+    # Author destroys draft successfully
+    login_as(author)
+    delete "/api/v1/strategy/deliberations/#{delib_id}", as: :json
+    assert_response :no_content
+
+    # Published deliberation cannot be destroyed (only cancelled)
+    post '/api/v1/strategy/deliberations', params: { title: 'Published' }, as: :json
+    published_id = JSON.parse(response.body)['deliberation']['id']
+    post "/api/v1/strategy/deliberations/#{published_id}/proposals",
+      params: { content: '<p>proposition</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{published_id}/publish", as: :json
+
+    delete "/api/v1/strategy/deliberations/#{published_id}", as: :json
+    assert_response :unprocessable_entity
   end
 
   # ─── Frameworks ───

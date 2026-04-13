@@ -6,7 +6,7 @@ import { apiRequest } from '../../lib/api'
 import {
   BookOpen, Plus, Search, Pin, Edit3, Trash2, ChevronLeft, X,
   MessageCircle, FileText, Target, ExternalLink, Paperclip,
-  Send, Check, XCircle, ChevronDown, ChevronRight
+  Send, Check, XCircle, PenLine, Clock, Vote, CheckCircle2, ChevronDown, ChevronRight
 } from 'lucide-react'
 import SimpleEditor from '../../components/SimpleEditor'
 
@@ -21,7 +21,6 @@ const RESOURCE_TYPES = [
 ]
 
 const DELIB_STATUSES = [
-  { value: '',                label: 'Toutes' },
   { value: 'draft',           label: 'Brouillons' },
   { value: 'open',            label: 'Discussion' },
   { value: 'voting',          label: 'Vote en cours' },
@@ -46,6 +45,15 @@ const DELIB_STATUS_LABELS = {
   outcome_pending: 'Décision à rédiger',
   decided:         'Décidée',
   cancelled:       'Annulée',
+}
+
+const DELIB_STATUS_ICONS = {
+  draft:           { icon: FileText,       color: 'text-stone-400' },
+  open:            { icon: MessageCircle,  color: 'text-blue-500' },
+  voting:          { icon: Vote,           color: 'text-amber-500' },
+  outcome_pending: { icon: PenLine,        color: 'text-purple-500' },
+  decided:         { icon: CheckCircle2,   color: 'text-green-500' },
+  cancelled:       { icon: XCircle,        color: 'text-stone-400' },
 }
 
 const PHASE_SECTION_LABELS = {
@@ -88,11 +96,15 @@ function phaseCountdownLabel(delib) {
     const discussionEnd = new Date(delib.openedAt)
     discussionEnd.setDate(discussionEnd.getDate() + 15)
     const n = daysRemaining(discussionEnd.toISOString())
-    return n !== null ? `Discussion : ${n} j restants` : null
+    if (n === null) return null
+    if (n === 0) return 'Dernier jour pour discuter cette proposition'
+    return `Il reste ${n} jour${n > 1 ? 's' : ''} pour discuter cette proposition`
   }
   if (delib.status === 'voting' && delib.votingDeadline) {
     const n = daysRemaining(delib.votingDeadline)
-    return n !== null ? `Vote : ${n} j restants` : null
+    if (n === null) return null
+    if (n === 0) return 'Dernier jour pour voter'
+    return `Il reste ${n} jour${n > 1 ? 's' : ''} pour voter`
   }
   return null
 }
@@ -453,33 +465,36 @@ function DeliberationsList({ onSelect, onNew, authMemberId }) {
         onClick={() => onSelect(d.id)}
         className={`text-left rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer ${d.status === 'decided' ? 'bg-green-50 border border-green-300 hover:border-green-400' : 'bg-white border border-stone-200 hover:border-blue-300'}`}
       >
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-3">
+          {(() => {
+            const si = DELIB_STATUS_ICONS[d.status]
+            const StatusIcon = si?.icon
+            return StatusIcon ? <StatusIcon className={`w-5 h-5 mt-0.5 shrink-0 ${si.color}`} /> : null
+          })()}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-stone-900 truncate">{d.title}</h3>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${DELIB_STATUS_COLORS[d.status]}`}>
-                {DELIB_STATUS_LABELS[d.status]}
+              <span className="text-[10px] text-stone-400 shrink-0">
+                {new Date(d.openedAt || d.createdAt).toLocaleDateString('fr-BE')}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-stone-400 flex-wrap">
-              <span>{d.proposalCount} proposition{d.proposalCount !== 1 ? 's' : ''}</span>
-              {d.reactionsSummary && (
-                <>
-                  <span className="text-green-600">v {d.reactionsSummary.consent}</span>
-                  <span className="text-red-600">x {d.reactionsSummary.objection}</span>
-                </>
-              )}
-              <span>{d.commentCount} commentaire{d.commentCount !== 1 ? 's' : ''}</span>
-              {countdown && <span className="text-amber-600 font-medium">{countdown}</span>}
-            </div>
+            {d.status !== 'draft' && (
+              <div className="flex items-center gap-3 text-[11px] text-stone-400 flex-wrap">
+                {d.reactionsSummary && d.status !== 'open' && (
+                  <>
+                    <span className="text-green-600">v {d.reactionsSummary.consent}</span>
+                    <span className="text-red-600">x {d.reactionsSummary.objection}</span>
+                  </>
+                )}
+                <span>{d.commentCount} commentaire{d.commentCount !== 1 ? 's' : ''}</span>
+                {countdown && <span className="text-amber-600 font-medium">{countdown}</span>}
+              </div>
+            )}
           </div>
-          <span className="text-[10px] text-stone-400 shrink-0">
-            {new Date(d.createdAt).toLocaleDateString('fr-BE')}
-          </span>
         </div>
         {d.creatorName && (
-          <div className="flex items-center gap-1.5 mt-2.5 text-xs text-stone-500">
-            <span>Sujet amene par</span>
+          <div className="flex items-center gap-1.5 mt-2.5 ml-8 text-xs text-stone-500">
+            <span>Sujet amené par</span>
             {d.creatorAvatar ? (
               <img src={d.creatorAvatar} alt="" className="w-4 h-4 rounded-full object-cover" />
             ) : (
@@ -529,7 +544,7 @@ function DeliberationsList({ onSelect, onNew, authMemberId }) {
           {myDrafts.length > 0 && (
             <div className="space-y-2">
               <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
-                Mes brouillons — visibles uniquement par vous
+                Ces brouillons de délibérations, en cours de préparation, sont visibles uniquement par toi.
               </div>
               <div className="grid gap-3">{myDrafts.map(renderCard)}</div>
             </div>
@@ -550,40 +565,105 @@ const PHASES = [
   { id: 'outcome_pending', label: 'Décision' },
 ]
 
-function PhaseBar({ delib }) {
+function PhaseBar({ delib, authMemberId, onPublish }) {
   const currentIdx = PHASES.findIndex(p => p.id === delib.status)
   const countdown = phaseCountdownLabel(delib)
   const isTerminal = delib.status === 'decided' || delib.status === 'cancelled'
+  const showDraftPublish =
+    delib.status === 'draft' &&
+    authMemberId != null &&
+    String(delib.createdById) === String(authMemberId)
+
+  const visiblePhases = delib.status === 'draft' ? PHASES : PHASES.filter(p => p.id !== 'draft')
 
   return (
-    <div className="bg-white border border-stone-200 rounded-xl p-4">
-      <div className="flex items-center gap-2">
-        {PHASES.map((phase, idx) => {
-          const reached = currentIdx >= idx && !isTerminal
-          const active = currentIdx === idx && !isTerminal
-          const pillClass = active
-            ? 'bg-blue-100 text-blue-800 border border-blue-400'
-            : reached
-              ? 'bg-stone-100 text-stone-700'
-              : 'bg-stone-50 text-stone-400'
-          return (
-            <React.Fragment key={phase.id}>
-              <div className={`flex-1 text-center py-2 rounded-lg text-xs font-medium transition-colors ${pillClass}`}>
-                {phase.label}
-              </div>
-              {idx < PHASES.length - 1 && <span className="text-stone-300">→</span>}
-            </React.Fragment>
-          )
-        })}
+    <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-center gap-2">
+          {visiblePhases.map((phase, idx) => {
+            const phaseIdx = PHASES.findIndex(p => p.id === phase.id)
+            const reached = currentIdx >= phaseIdx && !isTerminal
+            const active = currentIdx === phaseIdx && !isTerminal
+            const pillClass = active
+              ? 'bg-blue-100 text-blue-800 border border-blue-400'
+              : reached
+                ? 'bg-stone-100 text-stone-700'
+                : 'bg-stone-50 text-stone-400'
+            return (
+              <React.Fragment key={phase.id}>
+                <div className={`flex-1 text-center py-2 rounded-lg text-xs font-medium transition-colors ${pillClass}`}>
+                  {phase.label}
+                </div>
+                {idx < visiblePhases.length - 1 && <span className="text-stone-300 shrink-0" aria-hidden>→</span>}
+              </React.Fragment>
+            )
+          })}
+        </div>
       </div>
+
       {countdown && !isTerminal && (
-        <div className="mt-2 text-center text-xs text-amber-700 font-medium">{countdown}</div>
+        <div className="flex border-t border-blue-200/80 bg-blue-50/50">
+          <div className="w-1 shrink-0 bg-blue-500" aria-hidden />
+          <div className="flex min-w-0 flex-1 flex-col gap-1 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500 shrink-0" />
+              <p className="text-sm font-medium text-blue-900">{countdown}</p>
+            </div>
+            {delib.status === 'open' && (
+              <p className="text-xs text-blue-800/70 leading-relaxed">
+                Lorsqu'une proposition est publiée par son/sa porteur·se, elle peut être discutée pendant 15 jours. Durant cette période, le/la porteur·se met à jour la proposition sur base des nouvelles informations, des remarques ou des idées partagées dans les commentaires.
+              </p>
+            )}
+            {delib.status === 'voting' && (
+              <p className="text-xs text-blue-800/70 leading-relaxed">
+                Après une période de discussion de 15 jours permettant au/à la porteur·se d'amender sa proposition, la phase de vote permet aux membres de marquer leur consentement avec la proposition ou de poser une objection motivée. Lorsqu'une objection est posée, la durée de vote est prolongée de 7 jours.
+              </p>
+            )}
+          </div>
+        </div>
       )}
+
       {delib.status === 'decided' && (
-        <div className="mt-2 text-center text-xs text-green-700 font-medium">Décidée</div>
+        <div className="flex border-t border-green-200/80 bg-green-50/60">
+          <div className="w-1 shrink-0 bg-green-500" aria-hidden />
+          <div className="flex items-center gap-2 px-4 py-3">
+            <Check className="w-4 h-4 text-green-600 shrink-0" />
+            <p className="text-sm font-medium text-green-900">Délibération décidée</p>
+          </div>
+        </div>
       )}
+
       {delib.status === 'cancelled' && (
-        <div className="mt-2 text-center text-xs text-stone-500 font-medium">Annulée</div>
+        <div className="flex border-t border-stone-200/80 bg-stone-50/80">
+          <div className="w-1 shrink-0 bg-stone-400" aria-hidden />
+          <div className="flex items-center gap-2 px-4 py-3">
+            <XCircle className="w-4 h-4 text-stone-400 shrink-0" />
+            <p className="text-sm font-medium text-stone-500">Délibération annulée</p>
+          </div>
+        </div>
+      )}
+
+      {showDraftPublish && typeof onPublish === 'function' && (
+        <div className="flex border-t border-amber-200/80 bg-amber-50/55">
+          <div className="w-1 shrink-0 bg-amber-400" aria-hidden />
+          <div className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-amber-950">Brouillon - visible uniquement par toi.</p>
+              {!delib.proposals?.length && (
+                <p className="mt-1 text-xs text-amber-800/85">Rédige une proposition pour pouvoir publier. Tu pourras amender ta proposition pendant toute la durée de la discussion.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={onPublish}
+              disabled={!delib.proposals?.length}
+              className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+              style={{ backgroundColor: ACCENT }}
+            >
+              Publier la délibération
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -602,18 +682,28 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
   const [showVersionsFor, setShowVersionsFor] = useState(null)
   const [editingProposalId, setEditingProposalId] = useState(null)
   const [editingProposalContent, setEditingProposalContent] = useState('')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async ({ preserveScroll = false } = {}) => {
+    const scrollY = preserveScroll ? window.scrollY : null
+    setLoading(prev => preserveScroll ? prev : true)
     const data = await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}`)
     if (data) setDelib(data.deliberation)
-    setLoading(false)
+    if (!preserveScroll) setLoading(false)
+    if (scrollY != null) requestAnimationFrame(() => window.scrollTo(0, scrollY))
   }, [deliberationId])
 
   useEffect(() => { load() }, [load])
 
-  const handleCancel = async () => {
-    if (!confirm('Annuler cette délibération ? Cette action est irréversible.')) return
+  const handleDeleteConfirm = async () => {
+    setConfirmingDelete(false)
+    await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}`, { method: 'DELETE' })
+    onBack()
+  }
+
+  const handleCancelConfirm = async () => {
+    setConfirmingCancel(false)
     await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}/cancel`, { method: 'PATCH' })
     load()
   }
@@ -656,7 +746,7 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
       body: JSON.stringify({ content: newComment })
     })
     setNewComment('')
-    load()
+    load({ preserveScroll: true })
   }
 
   const handleDecide = async (e) => {
@@ -691,7 +781,7 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
       <button onClick={onBack} className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 transition-colors">
         <ChevronLeft className="w-4 h-4" /> Retour
       </button>
-      <PhaseBar delib={delib} />
+      <PhaseBar delib={delib} authMemberId={authMemberId} onPublish={handlePublish} />
 
       {/* Header */}
       <div className="bg-white border border-stone-200 rounded-xl p-6">
@@ -710,21 +800,42 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
                 <Edit3 className="w-4 h-4" />
               </button>
             )}
-            {delib.status !== 'decided' && String(delib.createdById) === String(authMemberId) && (
-              <button onClick={handleCancel} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-red-600 transition-colors" title="Annuler la délibération">
+            {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && (
+              <button onClick={() => setConfirmingDelete(true)} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-red-600 transition-colors" title="Supprimer le brouillon">
                 <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+            {delib.status !== 'draft' && delib.status !== 'decided' && delib.status !== 'cancelled' && String(delib.createdById) === String(authMemberId) && (
+              <button onClick={() => setConfirmingCancel(true)} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-red-600 transition-colors" title="Annuler la délibération">
+                <XCircle className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-stone-400 mb-4 pb-4 border-b border-stone-100">
-          {delib.creatorName && <span>Par {delib.creatorName}</span>}
+        <div className="flex items-center gap-3 text-sm text-stone-500 mb-4 pb-4 border-b border-stone-100">
+          {delib.creatorName && (
+            <span className="flex items-center gap-2">
+              {delib.creatorAvatar ? (
+                <img src={delib.creatorAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+              ) : (
+                <span className="w-6 h-6 rounded-full bg-stone-300 flex items-center justify-center text-[10px] text-white font-medium shrink-0">{delib.creatorName.charAt(0)}</span>
+              )}
+              <span>Par {delib.creatorName}</span>
+            </span>
+          )}
           <span>{new Date(delib.createdAt).toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
         </div>
 
-        {delib.context && (
-          <div className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: delib.context }} />
+        {delib.context && delib.context.replace(/<[^>]*>/g, '').trim() ? (
+          <div>
+            <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Contexte</h3>
+            <div className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: delib.context }} />
+          </div>
+        ) : delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && (
+          <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50/50 px-4 py-3">
+            <p className="text-xs text-stone-400">Aucun contexte renseigné. <button type="button" onClick={() => onEdit(delib)} className="text-blue-600 hover:underline">Modifie la délibération</button> pour ajouter du contexte et aider les membres à comprendre le sujet.</p>
+          </div>
         )}
       </div>
 
@@ -741,56 +852,49 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
         </div>
       )}
 
-      {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && (
-        <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="text-sm text-amber-800">
-              Brouillon — visible uniquement par vous.
-              {!delib.proposals?.length && <span className="block text-xs text-amber-600 mt-1">Ajoutez une proposition pour pouvoir publier.</span>}
-            </div>
-            <button
-              onClick={handlePublish}
-              disabled={!delib.proposals?.length}
-              className="px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: ACCENT }}
-            >
-              Publier la délibération
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Proposals */}
       <div className="bg-white border border-stone-200 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Propositions ({delib.proposals?.length || 0})</h3>
-          {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && !delib.proposals?.length && (
-            <button onClick={() => setShowProposalForm(true)}
-              className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-colors" style={{ color: ACCENT }}>
-              <Plus className="w-3.5 h-3.5" /> Ajouter
-            </button>
-          )}
+          <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
+            {(delib.proposals?.length || 0) <= 1
+              ? 'Proposition'
+              : `Propositions (${delib.proposals.length})`}
+          </h3>
         </div>
+
+        {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && !delib.proposals?.length && !showProposalForm && (
+          <div className="flex flex-col items-center py-6">
+            <button onClick={() => setShowProposalForm(true)}
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:opacity-90"
+              style={{ backgroundColor: ACCENT }}>
+              <PenLine className="w-4 h-4" /> Rédiger ma proposition
+            </button>
+            <p className="mt-4 max-w-lg text-center text-sm leading-relaxed text-stone-500">
+              Le processus de consentement vise à déterminer si une proposition est sans danger et non si elle est parfaite. La proposition est adoptée pour autant qu'aucune objection valable n'est soulevée. En cas d'objection, notre collectif s'efforce de la résoudre. Et comme les membres peuvent modifier leur vote au fur et à mesure de l'évolution de la proposition, les objections deviennent un outil d'amélioration plutôt qu'un obstacle.
+            </p>
+          </div>
+        )}
 
         {(delib.proposals || []).map(p => (
           <div key={p.id} className="mb-4 pb-4 border-b border-stone-100 last:border-0 last:mb-0 last:pb-0">
-            <div className="flex items-start gap-3 mb-2">
-              <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
-                {p.authorAvatar ? <img src={p.authorAvatar} className="w-7 h-7 rounded-full" alt="" /> : p.authorName?.[0]}
+            <div className="mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-stone-400">
+                  Dernière mise à jour le {new Date(p.lastVersionAt || p.updatedAt || p.createdAt).toLocaleString('fr-BE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                  })}
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-stone-700">{p.authorName}</span>
-                  <span className="text-[10px] text-stone-400">{new Date(p.createdAt).toLocaleString('fr-BE')}</span>
-                </div>
-                <div className="text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: p.content }} />
-                <div className="flex items-center gap-3 mt-1">
+              <div className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: p.content }} />
+              <div className="flex items-center gap-3 mt-2">
                   {(delib.status === 'draft' || delib.status === 'open') && String(delib.createdById) === String(authMemberId) && (
                     <button
+                      type="button"
                       onClick={() => { setEditingProposalId(p.id); setEditingProposalContent(p.content) }}
-                      className="text-[11px] text-amber-600 hover:underline"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-950 shadow-sm transition-colors hover:bg-amber-100"
                     >
-                      Amender la proposition
+                      <Edit3 className="h-3.5 w-3.5 shrink-0" />
+                      Amender ma proposition
                     </button>
                   )}
                   {p.versionsCount > 1 && (
@@ -798,40 +902,81 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
                       onClick={(e) => { e.stopPropagation(); setShowVersionsFor(p.id) }}
                       className="text-[11px] text-blue-600 hover:underline"
                     >
-                      Voir l\'historique des {p.versionsCount} versions
+                      Voir l'historique ({p.versionsCount} {p.versionsCount === 1 ? 'version' : 'versions'})
                     </button>
                   )}
                 </div>
-              </div>
             </div>
 
-            {/* Reaction counts */}
-            <div className="flex items-center gap-3 ml-10 mb-2">
-              {Object.entries(p.reactionCounts || {}).filter(([, c]) => c > 0).map(([pos, count]) => (
-                <span key={pos} className={`text-[11px] ${pos === 'consent' ? 'text-green-600' : pos === 'objection' ? 'text-red-600' : pos === 'amendment' ? 'text-amber-600' : 'text-stone-400'}`}>
-                  {REACTION_CONFIG.find(r => r.position === pos)?.label} ({count})
-                </span>
-              ))}
-            </div>
-
-            {/* Existing reactions detail */}
-            {(p.reactions || []).length > 0 && (
-              <div className="ml-10 space-y-1 mb-2">
-                {p.reactions.map(r => (
-                  <div key={r.id} className="flex items-center gap-2 text-[11px]">
-                    <span className={`${r.position === 'consent' ? 'text-green-600' : r.position === 'objection' ? 'text-red-600' : r.position === 'amendment' ? 'text-amber-600' : 'text-stone-400'}`}>
-                      {REACTION_CONFIG.find(rc => rc.position === r.position)?.label}
-                    </span>
-                    <span className="text-stone-500">— {r.memberName}</span>
-                    {r.rationale && <span className="text-stone-400 italic">: {r.rationale}</span>}
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Reactions display */}
+            {(() => {
+              const reactions = p.reactions || []
+              const consents = reactions.filter(r => r.position === 'consent')
+              const objections = reactions.filter(r => r.position === 'objection')
+              if (!consents.length && !objections.length) return null
+              return (
+                <div className="mt-4 rounded-lg border border-stone-100 overflow-hidden">
+                  {consents.length > 0 && (
+                    <div className="px-4 py-3 bg-green-50/40">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span className="text-xs font-semibold text-green-800 uppercase tracking-wider">
+                          {consents.length} consentement{consents.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {consents.map(r => (
+                          <div key={r.id} className="flex items-start gap-2">
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-green-100/80 border border-green-200/60 px-2.5 py-1 shrink-0">
+                              {r.memberAvatar ? (
+                                <img src={r.memberAvatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                              ) : (
+                                <span className="w-4 h-4 rounded-full bg-green-300 flex items-center justify-center text-[8px] text-white font-bold">{r.memberName?.[0]}</span>
+                              )}
+                              <span className="text-xs font-medium text-green-800">{r.memberName}</span>
+                            </div>
+                            {r.rationale && (
+                              <span className="text-sm text-green-900/70 pt-0.5">{r.rationale}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {objections.length > 0 && (
+                    <div className={`px-4 py-3 bg-red-50/40 ${consents.length > 0 ? 'border-t border-stone-100' : ''}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className="w-4 h-4 text-red-400" />
+                        <span className="text-xs font-semibold text-red-800 uppercase tracking-wider">
+                          {objections.length} objection{objections.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {objections.map(r => (
+                          <div key={r.id} className="rounded-lg bg-red-100/50 border border-red-200/40 px-3 py-2">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              {r.memberAvatar ? (
+                                <img src={r.memberAvatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                              ) : (
+                                <span className="w-4 h-4 rounded-full bg-red-300 flex items-center justify-center text-[8px] text-white font-bold">{r.memberName?.[0]}</span>
+                              )}
+                              <span className="text-xs font-semibold text-red-800">{r.memberName}</span>
+                            </div>
+                            {r.rationale && (
+                              <p className="text-sm text-red-900/80 leading-relaxed pl-5.5">{r.rationale}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Reaction buttons — voting phase only */}
             {delib.status === 'voting' && (
-              <div className="ml-10">
+              <div>
                 {reactionForm?.proposalId === p.id ? (
                   <ReactionFormInline
                     position={reactionForm.position}
@@ -840,13 +985,20 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
                     onCancel={() => setReactionForm(null)}
                   />
                 ) : (
-                  <div className="flex gap-1.5">
-                    {REACTION_CONFIG.map(rc => (
-                      <button key={rc.position} onClick={() => setReactionForm({ proposalId: p.id, position: rc.position })}
-                        className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-stone-200 transition-colors ${rc.color}`}>
-                        <rc.icon className="w-3 h-3" /> {rc.label}
-                      </button>
-                    ))}
+                  <div className="flex gap-3">
+                    {REACTION_CONFIG.map(rc => {
+                      const isConsent = rc.position === 'consent'
+                      return (
+                        <button key={rc.position} onClick={() => setReactionForm({ proposalId: p.id, position: rc.position })}
+                          className={`flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg border-2 transition-all ${
+                            isConsent
+                              ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400'
+                              : 'border-red-200 bg-red-50/50 text-red-600 hover:bg-red-100 hover:border-red-300'
+                          }`}>
+                          <rc.icon className="w-4 h-4" /> {rc.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
                 {reactionForm?.proposalId === p.id && reactionForm.position === 'objection' && (
@@ -901,67 +1053,122 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
       )}
 
       {/* Comments grouped by phase */}
-      <div className="bg-white border border-stone-200 rounded-xl p-5">
-        <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <MessageCircle className="w-3.5 h-3.5" /> Discussion ({delib.commentCount || 0})
-        </h3>
+      {delib.status !== 'draft' && <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
+        <div className="px-5 pt-5 pb-3 border-b border-stone-100">
+          <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" />
+            {(delib.commentCount || 0) === 0
+              ? 'Discussion'
+              : `Discussion (${delib.commentCount})`}
+          </h3>
+        </div>
 
-        {(() => {
-          const byPhase = delib.commentsByPhase || {}
-          const phases = ['draft', 'open', 'voting', 'outcome_pending', 'decided', 'cancelled']
-          const hasAny = phases.some(p => (byPhase[p] || []).length > 0)
-          if (!hasAny) {
-            return <p className="text-sm text-stone-400 mb-3">Aucun commentaire pour le moment.</p>
-          }
-          return phases.map(phase => {
-            const phaseComments = byPhase[phase] || []
-            if (!phaseComments.length) return null
-            return (
-              <div key={phase} className="mb-5 last:mb-0">
-                <div className="text-[10px] uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-1 mb-3">
-                  {PHASE_SECTION_LABELS[phase]}
-                </div>
-                <div className="space-y-3">
-                  {phaseComments.map(c => (
-                    <div key={c.id} className="flex gap-3">
-                      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
-                        {c.authorAvatar ? <img src={c.authorAvatar} className="w-7 h-7 rounded-full" alt="" /> : c.authorName?.[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-stone-700">{c.authorName}</span>
-                          <span className="text-[10px] text-stone-400">{new Date(c.createdAt).toLocaleString('fr-BE')}</span>
+        <div className="px-5 py-4">
+          {(() => {
+            const byPhase = delib.commentsByPhase || {}
+            const phases = ['draft', 'open', 'voting', 'outcome_pending', 'decided', 'cancelled']
+            const hasAny = phases.some(p => (byPhase[p] || []).length > 0)
+            if (!hasAny) {
+              return <p className="text-sm text-stone-400 py-3">Aucun commentaire pour le moment.</p>
+            }
+            return phases.map(phase => {
+              const phaseComments = byPhase[phase] || []
+              if (!phaseComments.length) return null
+              return (
+                <div key={phase} className="mb-6 last:mb-0">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stone-500">
+                      {PHASE_SECTION_LABELS[phase]}
+                    </span>
+                    <div className="h-px flex-1 bg-stone-100" />
+                  </div>
+                  <div className="space-y-2.5">
+                    {phaseComments.map(c => (
+                      <div key={c.id} className="flex gap-3 group">
+                        <div className="w-7 h-7 mt-0.5 rounded-full bg-stone-100 text-stone-600 text-[10px] font-bold flex items-center justify-center shrink-0 ring-2 ring-white">
+                          {c.authorAvatar ? <img src={c.authorAvatar} className="w-7 h-7 rounded-full object-cover" alt="" /> : c.authorName?.[0]}
                         </div>
-                        <p className="text-sm text-stone-600 mt-0.5">{c.content}</p>
+                        <div className="flex-1 min-w-0 rounded-lg bg-stone-50 px-3.5 py-2.5">
+                          <div className="flex items-baseline gap-2 mb-0.5">
+                            <span className="text-xs font-semibold text-stone-800">{c.authorName}</span>
+                            <span className="text-[10px] text-stone-400">
+                              {new Date(c.createdAt).toLocaleString('fr-BE', {
+                                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-stone-700 leading-relaxed">{c.content}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )
-          })
-        })()}
+              )
+            })
+          })()}
+        </div>
 
         {delib.status !== 'cancelled' && delib.status !== 'decided' && (
-          <form onSubmit={handleAddComment} className="flex gap-2 mt-4 pt-4 border-t border-stone-100">
-            <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
-              placeholder="Ajouter un commentaire..."
-              className="flex-1 px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
-            <button type="submit" disabled={!newComment.trim()} className="p-2 rounded-lg text-white disabled:opacity-50 transition-colors hover:opacity-90" style={{ backgroundColor: ACCENT }}>
+          <form onSubmit={handleAddComment} className="flex items-end gap-2 border-t border-stone-100 px-5 py-3 bg-stone-50/50">
+            <textarea
+              rows={2}
+              value={newComment}
+              onChange={e => setNewComment(e.target.value)}
+              placeholder="Commente la proposition..."
+              className="flex-1 resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 placeholder:text-stone-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            />
+            <button
+              type="submit"
+              disabled={!newComment.trim()}
+              className="shrink-0 rounded-lg p-2 text-white disabled:opacity-40 transition-colors hover:opacity-90"
+              style={{ backgroundColor: ACCENT }}
+            >
               <Send className="w-4 h-4" />
             </button>
           </form>
         )}
-      </div>
+      </div>}
 
       {showVersionsFor && (
         <ProposalVersionsPanel proposalId={showVersionsFor} onClose={() => setShowVersionsFor(null)} />
       )}
 
+      {confirmingDelete && (
+        <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center z-50">
+          <div className="w-full max-w-sm bg-white rounded-xl p-6 shadow-xl">
+            <h2 className="text-sm font-semibold text-stone-900 mb-2">Supprimer ce brouillon ?</h2>
+            <p className="text-sm text-stone-500 mb-5">Cette action est définitive. La délibération et son contenu seront supprimés.</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmingDelete(false)}
+                className="px-4 py-2 text-sm text-stone-600 hover:bg-stone-100 rounded-lg transition-colors">Annuler</button>
+              <button type="button" onClick={handleDeleteConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmingCancel && (
+        <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center z-50">
+          <div className="w-full max-w-md bg-white rounded-xl p-6 shadow-xl">
+            <h2 className="text-sm font-semibold text-stone-900 mb-2">Annuler cette délibération ?</h2>
+            <p className="text-sm text-stone-500 mb-5">
+              Cette action est irréversible. La délibération sera définitivement clôturée : les votes déjà exprimés, les commentaires et la proposition resteront visibles mais ne pourront plus être modifiés. Aucune décision ne sera prise.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmingCancel(false)}
+                className="px-4 py-2 text-sm text-stone-600 hover:bg-stone-100 rounded-lg transition-colors">Revenir</button>
+              <button type="button" onClick={handleCancelConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Annuler la délibération</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editingProposalId && (
         <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center z-50">
           <div className="w-full max-w-xl bg-white rounded-xl p-6 shadow-xl">
-            <h2 className="text-sm font-semibold text-stone-900 mb-3">Amender la proposition</h2>
+            <h2 className="text-sm font-semibold text-stone-900 mb-3">Amender ma proposition</h2>
             <form onSubmit={handleAmendProposal}>
               <SimpleEditor
                 content={editingProposalContent}
@@ -991,18 +1198,18 @@ function ReactionFormInline({ position, requireRationale, onSubmit, onCancel }) 
   const canSubmit = requireRationale ? rationale.trim().length > 0 : true
 
   return (
-    <div className="flex items-center gap-2 mt-1">
-      <span className={`text-xs font-medium ${config.color.split(' ')[0]}`}>{config.label} :</span>
+    <div className="flex items-center gap-2.5 mt-2">
+      <span className={`text-sm font-medium ${config.color.split(' ')[0]}`}>{config.label} :</span>
       <input type="text" value={rationale} onChange={e => setRationale(e.target.value)}
         placeholder={requireRationale ? 'Argumentaire obligatoire' : 'Argumentaire (optionnel)...'}
-        className="flex-1 px-2 py-1 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+        className="flex-1 px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         onKeyDown={e => { if (e.key === 'Enter' && canSubmit) { e.preventDefault(); onSubmit(rationale) } }} />
       <button onClick={() => canSubmit && onSubmit(rationale)} disabled={!canSubmit}
-        className="text-xs px-2 py-1 rounded-lg text-white hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: ACCENT }}>
+        className="text-sm font-medium px-4 py-2 rounded-lg text-white hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: ACCENT }}>
         OK
       </button>
-      <button onClick={onCancel} className="text-xs text-stone-400 hover:text-stone-600">
-        <X className="w-3 h-3" />
+      <button onClick={onCancel} className="text-stone-400 hover:text-stone-600 p-1">
+        <X className="w-4 h-4" />
       </button>
     </div>
   )
@@ -1036,7 +1243,11 @@ function ProposalVersionsPanel({ proposalId, onClose }) {
             <div key={v.id} className="border border-stone-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-stone-700">v{v.version}</span>
-                <span className="text-[10px] text-stone-400">{new Date(v.createdAt).toLocaleString('fr-BE')}</span>
+                <span className="text-[10px] text-stone-400">
+                  {new Date(v.createdAt).toLocaleString('fr-BE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                  })}
+                </span>
               </div>
               <div
                 className="prose prose-stone prose-sm max-w-none text-sm text-stone-700"
@@ -1069,23 +1280,18 @@ function DeliberationForm({ deliberation, onSave, onCancel }) {
       body: JSON.stringify(form)
     })
     setSaving(false)
-    if (data?.deliberation) onSave()
+    if (data?.deliberation) onSave(data.deliberation)
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-stone-900">
-          {deliberation?.id ? 'Modifier la délibération' : 'Nouvelle délibération'}
-        </h2>
-        <button type="button" onClick={onCancel} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+      <h2 className="text-lg font-semibold text-stone-900">
+        {deliberation?.id ? 'Modifier la délibération' : 'Nouvelle délibération'}
+      </h2>
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div>
-          <label className="block text-xs font-medium text-stone-600 mb-1">Titre *</label>
+          <label className="block text-xs font-medium text-stone-600 mb-1">Sujet *</label>
           <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             className="w-full px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
             placeholder="Sujet de la délibération" />
@@ -1672,9 +1878,14 @@ export default function StrategyIndex() {
   const { auth } = usePage().props
   const authMemberId = auth?.member?.id
   const [activeSection, setActiveSection] = useUrlState('tab', 'ressources')
-  const [view, setView] = useState('list') // list, detail, form
-  const [selectedId, setSelectedId] = useState(null)
+  const [selectedIdStr, setSelectedIdUrl] = useUrlState('id', '')
+  const selectedId = selectedIdStr || null
   const [editingItem, setEditingItem] = useState(null)
+  const view = editingItem ? 'form' : selectedId ? 'detail' : 'list'
+
+  const setSelectedId = useCallback((id) => {
+    setSelectedIdUrl(id != null ? String(id) : '')
+  }, [setSelectedIdUrl])
 
   useShellNav({
     sections: [
@@ -1686,17 +1897,36 @@ export default function StrategyIndex() {
     activeSection,
     onSectionChange: (id) => {
       setActiveSection(id)
-      setView('list')
       setSelectedId(null)
       setEditingItem(null)
     },
   })
 
-  const handleSelect = (id) => { setSelectedId(id); setView('detail'); setEditingItem(null) }
-  const handleBack = () => { setView('list'); setSelectedId(null); setEditingItem(null) }
-  const handleNew = () => { setView('form'); setEditingItem(null); setSelectedId(null) }
-  const handleEdit = (item) => { setEditingItem(item); setView('form'); setSelectedId(null) }
-  const handleSaved = () => { setView('list'); setEditingItem(null); setSelectedId(null) }
+  const handleSelect = (id) => { setSelectedId(id); setEditingItem(null) }
+  const handleBack = () => { setSelectedId(null); setEditingItem(null) }
+  const handleNew = () => { setEditingItem({}); setSelectedId(null) }
+  const handleEdit = (item) => { setEditingItem(item); setSelectedId(null) }
+  const handleSaved = () => { setEditingItem(null); setSelectedId(null) }
+
+  const handleDeliberationSaved = (saved) => {
+    const id = saved?.id
+    if (id != null) {
+      setSelectedId(id)
+      setEditingItem(null)
+    } else {
+      handleSaved()
+    }
+  }
+
+  const handleDeliberationCancel = () => {
+    const id = editingItem?.id
+    if (id != null) {
+      setSelectedId(id)
+      setEditingItem(null)
+    } else {
+      handleBack()
+    }
+  }
 
   const sectionIcons = { ressources: BookOpen, deliberations: MessageCircle, cadres: FileText, axes: Target }
   const sectionTitles = { ressources: 'Ressources', deliberations: 'Délibérations', cadres: 'Cadres de gouvernance', axes: 'Axes stratégiques' }
@@ -1728,7 +1958,7 @@ export default function StrategyIndex() {
 
       {/* Délibérations */}
       {activeSection === 'deliberations' && (
-        view === 'form' ? <DeliberationForm deliberation={editingItem} onSave={handleSaved} onCancel={handleBack} /> :
+        view === 'form' ? <DeliberationForm deliberation={editingItem} onSave={handleDeliberationSaved} onCancel={handleDeliberationCancel} /> :
         view === 'detail' ? <DeliberationDetail deliberationId={selectedId} onBack={handleBack} onEdit={handleEdit} authMemberId={authMemberId} /> :
         <DeliberationsList onSelect={handleSelect} onNew={handleNew} authMemberId={authMemberId} />
       )}

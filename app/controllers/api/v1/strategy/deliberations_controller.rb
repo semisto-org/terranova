@@ -54,6 +54,17 @@ module Api
           render json: { deliberation: deliberation.as_json_full }
         end
 
+        def destroy
+          deliberation = ::Strategy::Deliberation.find(params[:id])
+          return forbid("Seul l'auteur peut supprimer") unless owner?(deliberation)
+          unless deliberation.status == "draft"
+            return render json: { error: "Seul un brouillon peut être supprimé" }, status: :unprocessable_entity
+          end
+
+          deliberation.destroy!
+          head :no_content
+        end
+
         def cancel
           deliberation = ::Strategy::Deliberation.find(params[:id])
           return forbid("Seul l'auteur peut annuler") unless owner?(deliberation)

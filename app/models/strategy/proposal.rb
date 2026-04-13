@@ -33,6 +33,7 @@ module Strategy
         authorAvatar: author&.avatar_url,
         version: version,
         versionsCount: versions.count,
+        lastVersionAt: versions.order(version: :desc).limit(1).pick(:created_at)&.iso8601,
         reactionCounts: reaction_counts,
         createdAt: created_at&.iso8601,
         updatedAt: updated_at&.iso8601
