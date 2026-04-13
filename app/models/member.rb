@@ -46,6 +46,10 @@ class Member < ApplicationRecord
     membership_type == "non_member"
   end
 
+  def can_access_strategy?
+    effective?
+  end
+
   # Returns the avatar URL: ActiveStorage attachment first, then fallback to the legacy string column
   def avatar_url
     if avatar_image.attached?

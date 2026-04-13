@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_13_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1935,6 +1935,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.bigint "deliberation_id", null: false
+    t.string "phase_at_creation", null: false
     t.datetime "updated_at", null: false
     t.index ["author_id"], name: "index_strategy_deliberation_comments_on_author_id"
     t.index ["deliberation_id"], name: "index_strategy_deliberation_comments_on_deliberation_id"
@@ -1945,11 +1946,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.datetime "decided_at"
-    t.string "decision_mode", default: "consent"
+    t.datetime "opened_at"
     t.text "outcome"
-    t.string "status", default: "open", null: false
+    t.string "status", default: "draft", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.datetime "voting_deadline"
+    t.datetime "voting_started_at"
     t.index ["created_by_id"], name: "index_strategy_deliberations_on_created_by_id"
     t.index ["status"], name: "index_strategy_deliberations_on_status"
   end
@@ -1983,15 +1986,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
     t.index ["axis_id"], name: "index_strategy_key_results_on_axis_id"
   end
 
+  create_table "strategy_proposal_versions", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.bigint "proposal_id", null: false
+    t.integer "version", null: false
+    t.index ["proposal_id", "version"], name: "index_strategy_proposal_versions_unique", unique: true
+    t.index ["proposal_id"], name: "index_strategy_proposal_versions_on_proposal_id"
+  end
+
   create_table "strategy_proposals", force: :cascade do |t|
     t.bigint "author_id"
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.bigint "deliberation_id", null: false
-    t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.integer "version", default: 1, null: false
     t.index ["author_id"], name: "index_strategy_proposals_on_author_id"
-    t.index ["deliberation_id"], name: "index_strategy_proposals_on_deliberation_id"
+    t.index ["deliberation_id"], name: "index_strategy_proposals_on_deliberation_id_unique", unique: true
   end
 
   create_table "strategy_reactions", force: :cascade do |t|
@@ -2243,6 +2255,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
   add_foreign_key "strategy_frameworks", "members", column: "created_by_id"
   add_foreign_key "strategy_frameworks", "strategy_deliberations", column: "deliberation_id"
   add_foreign_key "strategy_key_results", "strategy_axes", column: "axis_id"
+  add_foreign_key "strategy_proposal_versions", "strategy_proposals", column: "proposal_id", on_delete: :cascade
   add_foreign_key "strategy_proposals", "members", column: "author_id"
   add_foreign_key "strategy_proposals", "strategy_deliberations", column: "deliberation_id"
   add_foreign_key "strategy_reactions", "members"

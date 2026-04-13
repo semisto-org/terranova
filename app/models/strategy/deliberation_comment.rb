@@ -9,6 +9,8 @@ module Strategy
 
     validates :content, presence: true
 
+    before_create :set_phase_at_creation
+
     scope :ordered, -> { order(created_at: :asc) }
 
     def as_json_brief
@@ -21,6 +23,16 @@ module Strategy
         content: content,
         createdAt: created_at&.iso8601
       }
+    end
+
+    private
+
+    def set_phase_at_creation
+      # If phase_at_creation was explicitly set, keep it; otherwise use deliberation's status
+      # Since there's no DB default, if it's not in changed_attributes, it's nil and wasn't set
+      unless changed_attributes.key?("phase_at_creation")
+        self.phase_at_creation = deliberation&.status || "draft"
+      end
     end
   end
 end

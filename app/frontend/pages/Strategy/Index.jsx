@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { usePage } from '@inertiajs/react'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   BookOpen, Plus, Search, Pin, Edit3, Trash2, ChevronLeft, X,
   MessageCircle, FileText, Target, ExternalLink, Paperclip,
-  Send, Check, XCircle, MinusCircle, PenLine, ChevronDown, ChevronRight
+  Send, Check, XCircle, ChevronDown, ChevronRight
 } from 'lucide-react'
 import SimpleEditor from '../../components/SimpleEditor'
 
@@ -20,21 +21,41 @@ const RESOURCE_TYPES = [
 ]
 
 const DELIB_STATUSES = [
-  { value: '', label: 'Toutes' },
-  { value: 'open', label: 'Ouvertes' },
-  { value: 'in_progress', label: 'En cours' },
-  { value: 'decided', label: 'Décidées' },
-  { value: 'archived', label: 'Archivées' },
+  { value: '',                label: 'Toutes' },
+  { value: 'draft',           label: 'Brouillons' },
+  { value: 'open',            label: 'Discussion' },
+  { value: 'voting',          label: 'Vote en cours' },
+  { value: 'outcome_pending', label: 'Décision à rédiger' },
+  { value: 'decided',         label: 'Décidées' },
+  { value: 'cancelled',       label: 'Annulées' },
 ]
 
 const DELIB_STATUS_COLORS = {
-  open: 'bg-blue-50 text-blue-700',
-  in_progress: 'bg-amber-50 text-amber-700',
-  decided: 'bg-green-50 text-green-700',
-  archived: 'bg-stone-100 text-stone-500',
+  draft:           'bg-stone-100 text-stone-600',
+  open:            'bg-blue-50 text-blue-700',
+  voting:          'bg-amber-50 text-amber-700',
+  outcome_pending: 'bg-purple-50 text-purple-700',
+  decided:         'bg-green-50 text-green-700',
+  cancelled:       'bg-stone-100 text-stone-500',
 }
 
-const DELIB_STATUS_LABELS = { open: 'Ouverte', in_progress: 'En cours', decided: 'Décidée', archived: 'Archivée' }
+const DELIB_STATUS_LABELS = {
+  draft:           'Brouillon',
+  open:            'Discussion',
+  voting:          'Vote en cours',
+  outcome_pending: 'Décision à rédiger',
+  decided:         'Décidée',
+  cancelled:       'Annulée',
+}
+
+const PHASE_SECTION_LABELS = {
+  draft:           'Commentaires pendant la préparation',
+  open:            'Commentaires pendant la discussion',
+  voting:          'Commentaires pendant le vote',
+  outcome_pending: 'Commentaires pendant la rédaction de décision',
+  decided:         'Commentaires après la décision',
+  cancelled:       'Commentaires avant annulation',
+}
 
 const FRAMEWORK_TYPES = [
   { value: 'charter', label: 'Charte' },
@@ -55,16 +76,33 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+function daysRemaining(deadlineIso) {
+  if (!deadlineIso) return null
+  const diffMs = new Date(deadlineIso).getTime() - Date.now()
+  if (diffMs <= 0) return 0
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+}
+
+function phaseCountdownLabel(delib) {
+  if (delib.status === 'open' && delib.openedAt) {
+    const discussionEnd = new Date(delib.openedAt)
+    discussionEnd.setDate(discussionEnd.getDate() + 15)
+    const n = daysRemaining(discussionEnd.toISOString())
+    return n !== null ? `Discussion : ${n} j restants` : null
+  }
+  if (delib.status === 'voting' && delib.votingDeadline) {
+    const n = daysRemaining(delib.votingDeadline)
+    return n !== null ? `Vote : ${n} j restants` : null
+  }
+  return null
+}
+
 const KR_STATUS_COLORS = { on_track: 'bg-green-500', at_risk: 'bg-amber-500', behind: 'bg-red-500', achieved: 'bg-blue-500' }
 const KR_STATUS_LABELS = { on_track: 'En bonne voie', at_risk: 'À risque', behind: 'En retard', achieved: 'Atteint' }
 
-const DECISION_MODE_LABELS = { consent: 'Consentement', vote: 'Vote', advisory: 'Consultatif' }
-
 const REACTION_CONFIG = [
-  { position: 'consent', label: 'Consentement', icon: Check, color: 'text-green-600 hover:bg-green-50' },
-  { position: 'objection', label: 'Objection', icon: XCircle, color: 'text-red-600 hover:bg-red-50' },
-  { position: 'abstain', label: 'Abstention', icon: MinusCircle, color: 'text-stone-500 hover:bg-stone-50' },
-  { position: 'amendment', label: 'Amendement', icon: PenLine, color: 'text-amber-600 hover:bg-amber-50' },
+  { position: 'consent',   label: 'Consentement', icon: Check,   color: 'text-green-600 hover:bg-green-50' },
+  { position: 'objection', label: 'Objection',    icon: XCircle, color: 'text-red-600 hover:bg-red-50' },
 ]
 
 // ─── Resources List ───
@@ -386,11 +424,11 @@ function ResourceForm({ resource, onSave, onCancel }) {
 }
 
 // ─── Deliberations List ───
-function DeliberationsList({ onSelect, onNew }) {
+function DeliberationsList({ onSelect, onNew, authMemberId }) {
   const [deliberations, setDeliberations] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStatus, setFilterStatus] = useState('open')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -404,19 +442,69 @@ function DeliberationsList({ onSelect, onNew }) {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const myDrafts = deliberations.filter(d => d.status === 'draft' && String(d.createdById) === String(authMemberId))
+  const otherDelibs = deliberations.filter(d => !(d.status === 'draft' && String(d.createdById) === String(authMemberId)))
+
+  const renderCard = (d) => {
+    const countdown = phaseCountdownLabel(d)
+    return (
+      <button
+        key={d.id}
+        onClick={() => onSelect(d.id)}
+        className={`text-left rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer ${d.status === 'decided' ? 'bg-green-50 border border-green-300 hover:border-green-400' : 'bg-white border border-stone-200 hover:border-blue-300'}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1.5">
+              <h3 className="text-sm font-semibold text-stone-900 truncate">{d.title}</h3>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${DELIB_STATUS_COLORS[d.status]}`}>
+                {DELIB_STATUS_LABELS[d.status]}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-stone-400 flex-wrap">
+              <span>{d.proposalCount} proposition{d.proposalCount !== 1 ? 's' : ''}</span>
+              {d.reactionsSummary && (
+                <>
+                  <span className="text-green-600">v {d.reactionsSummary.consent}</span>
+                  <span className="text-red-600">x {d.reactionsSummary.objection}</span>
+                </>
+              )}
+              <span>{d.commentCount} commentaire{d.commentCount !== 1 ? 's' : ''}</span>
+              {countdown && <span className="text-amber-600 font-medium">{countdown}</span>}
+            </div>
+          </div>
+          <span className="text-[10px] text-stone-400 shrink-0">
+            {new Date(d.createdAt).toLocaleDateString('fr-BE')}
+          </span>
+        </div>
+        {d.creatorName && (
+          <div className="flex items-center gap-1.5 mt-2.5 text-xs text-stone-500">
+            <span>Sujet amene par</span>
+            {d.creatorAvatar ? (
+              <img src={d.creatorAvatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+            ) : (
+              <span className="w-4 h-4 rounded-full bg-stone-300 flex items-center justify-center text-[8px] text-white font-medium">{d.creatorName.charAt(0)}</span>
+            )}
+            <span className="font-medium text-stone-600">{d.creatorName}</span>
+          </div>
+        )}
+      </button>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-          <input type="text" placeholder="Rechercher une délibération..." value={search}
+          <input type="text" placeholder="Rechercher une delibération..." value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
+            className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
         </div>
         <button onClick={onNew}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors hover:opacity-90"
           style={{ backgroundColor: ACCENT }}>
-          <Plus className="w-4 h-4" /> Nouvelle délibération
+          <Plus className="w-4 h-4" /> Nouvelle delibération
         </button>
       </div>
 
@@ -434,47 +522,75 @@ function DeliberationsList({ onSelect, onNew }) {
       ) : deliberations.length === 0 ? (
         <div className="py-12 text-center text-stone-400 text-sm">
           <MessageCircle className="w-8 h-8 mx-auto mb-2 text-stone-300" />
-          Aucune délibération trouvée
+          Aucune delibération trouvée
         </div>
       ) : (
-        <div className="grid gap-3">
-          {deliberations.map(d => (
-            <button key={d.id} onClick={() => onSelect(d.id)}
-              className="text-left bg-white border border-stone-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <h3 className="text-sm font-semibold text-stone-900 truncate">{d.title}</h3>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${DELIB_STATUS_COLORS[d.status]}`}>
-                      {DELIB_STATUS_LABELS[d.status]}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-[11px] text-stone-400">
-                    <span>{d.proposalCount} proposition{d.proposalCount !== 1 ? 's' : ''}</span>
-                    {d.reactionsSummary && (
-                      <>
-                        <span className="text-green-600">✓ {d.reactionsSummary.consent}</span>
-                        <span className="text-red-600">✗ {d.reactionsSummary.objection}</span>
-                      </>
-                    )}
-                    <span>{d.commentCount} commentaire{d.commentCount !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <span className="text-[10px] text-stone-400 shrink-0">
-                  {new Date(d.createdAt).toLocaleDateString('fr-BE')}
-                </span>
+        <div className="space-y-4">
+          {myDrafts.length > 0 && (
+            <div className="space-y-2">
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+                Mes brouillons — visibles uniquement par vous
               </div>
-              {d.creatorName && <p className="text-[10px] text-stone-400 mt-2">Par {d.creatorName}</p>}
-            </button>
-          ))}
+              <div className="grid gap-3">{myDrafts.map(renderCard)}</div>
+            </div>
+          )}
+          {otherDelibs.length > 0 && (
+            <div className="grid gap-3">{otherDelibs.map(renderCard)}</div>
+          )}
         </div>
       )}
     </div>
   )
 }
 
+const PHASES = [
+  { id: 'draft',           label: 'Brouillon' },
+  { id: 'open',            label: 'Discussion' },
+  { id: 'voting',          label: 'Vote' },
+  { id: 'outcome_pending', label: 'Décision' },
+]
+
+function PhaseBar({ delib }) {
+  const currentIdx = PHASES.findIndex(p => p.id === delib.status)
+  const countdown = phaseCountdownLabel(delib)
+  const isTerminal = delib.status === 'decided' || delib.status === 'cancelled'
+
+  return (
+    <div className="bg-white border border-stone-200 rounded-xl p-4">
+      <div className="flex items-center gap-2">
+        {PHASES.map((phase, idx) => {
+          const reached = currentIdx >= idx && !isTerminal
+          const active = currentIdx === idx && !isTerminal
+          const pillClass = active
+            ? 'bg-blue-100 text-blue-800 border border-blue-400'
+            : reached
+              ? 'bg-stone-100 text-stone-700'
+              : 'bg-stone-50 text-stone-400'
+          return (
+            <React.Fragment key={phase.id}>
+              <div className={`flex-1 text-center py-2 rounded-lg text-xs font-medium transition-colors ${pillClass}`}>
+                {phase.label}
+              </div>
+              {idx < PHASES.length - 1 && <span className="text-stone-300">→</span>}
+            </React.Fragment>
+          )
+        })}
+      </div>
+      {countdown && !isTerminal && (
+        <div className="mt-2 text-center text-xs text-amber-700 font-medium">{countdown}</div>
+      )}
+      {delib.status === 'decided' && (
+        <div className="mt-2 text-center text-xs text-green-700 font-medium">Décidée</div>
+      )}
+      {delib.status === 'cancelled' && (
+        <div className="mt-2 text-center text-xs text-stone-500 font-medium">Annulée</div>
+      )}
+    </div>
+  )
+}
+
 // ─── Deliberation Detail ───
-function DeliberationDetail({ deliberationId, onBack, onEdit }) {
+function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
   const [delib, setDelib] = useState(null)
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
@@ -483,6 +599,9 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
   const [showDecideForm, setShowDecideForm] = useState(false)
   const [outcomeText, setOutcomeText] = useState('')
   const [reactionForm, setReactionForm] = useState(null) // { proposalId, position }
+  const [showVersionsFor, setShowVersionsFor] = useState(null)
+  const [editingProposalId, setEditingProposalId] = useState(null)
+  const [editingProposalContent, setEditingProposalContent] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -493,10 +612,16 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
 
   useEffect(() => { load() }, [load])
 
-  const handleDelete = async () => {
-    if (!confirm('Supprimer cette délibération ?')) return
-    await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}`, { method: 'DELETE' })
-    onBack()
+  const handleCancel = async () => {
+    if (!confirm('Annuler cette délibération ? Cette action est irréversible.')) return
+    await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}/cancel`, { method: 'PATCH' })
+    load()
+  }
+
+  const handlePublish = async () => {
+    if (!confirm('Publier cette délibération ? Elle deviendra visible par tous les membres effectifs et le compteur de discussion démarrera.')) return
+    await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}/publish`, { method: 'PATCH' })
+    load()
   }
 
   const handleAddProposal = async (e) => {
@@ -545,6 +670,19 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
     load()
   }
 
+  const handleAmendProposal = async (e) => {
+    e.preventDefault()
+    if (!editingProposalContent.trim()) return
+    await apiRequest(`/api/v1/strategy/proposals/${editingProposalId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editingProposalContent })
+    })
+    setEditingProposalId(null)
+    setEditingProposalContent('')
+    load()
+  }
+
   if (loading) return <div className="py-12 text-center text-stone-400 text-sm">Chargement...</div>
   if (!delib) return <div className="py-12 text-center text-stone-400 text-sm">Délibération introuvable</div>
 
@@ -553,6 +691,7 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
       <button onClick={onBack} className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 transition-colors">
         <ChevronLeft className="w-4 h-4" /> Retour
       </button>
+      <PhaseBar delib={delib} />
 
       {/* Header */}
       <div className="bg-white border border-stone-200 rounded-xl p-6">
@@ -562,19 +701,20 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
               <span className={`text-xs px-2 py-0.5 rounded-full ${DELIB_STATUS_COLORS[delib.status]}`}>
                 {DELIB_STATUS_LABELS[delib.status]}
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                {DECISION_MODE_LABELS[delib.decisionMode]}
-              </span>
             </div>
             <h1 className="text-xl font-bold text-stone-900">{delib.title}</h1>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={() => onEdit(delib)} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors" title="Modifier">
-              <Edit3 className="w-4 h-4" />
-            </button>
-            <button onClick={handleDelete} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-red-600 transition-colors" title="Supprimer">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && (
+              <button onClick={() => onEdit(delib)} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors" title="Modifier">
+                <Edit3 className="w-4 h-4" />
+              </button>
+            )}
+            {delib.status !== 'decided' && String(delib.createdById) === String(authMemberId) && (
+              <button onClick={handleCancel} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-red-600 transition-colors" title="Annuler la délibération">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -601,11 +741,30 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
         </div>
       )}
 
+      {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && (
+        <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-amber-800">
+              Brouillon — visible uniquement par vous.
+              {!delib.proposals?.length && <span className="block text-xs text-amber-600 mt-1">Ajoutez une proposition pour pouvoir publier.</span>}
+            </div>
+            <button
+              onClick={handlePublish}
+              disabled={!delib.proposals?.length}
+              className="px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: ACCENT }}
+            >
+              Publier la délibération
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Proposals */}
       <div className="bg-white border border-stone-200 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Propositions ({delib.proposals?.length || 0})</h3>
-          {delib.status !== 'decided' && delib.status !== 'archived' && (
+          {delib.status === 'draft' && String(delib.createdById) === String(authMemberId) && !delib.proposals?.length && (
             <button onClick={() => setShowProposalForm(true)}
               className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-colors" style={{ color: ACCENT }}>
               <Plus className="w-3.5 h-3.5" /> Ajouter
@@ -625,6 +784,24 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
                   <span className="text-[10px] text-stone-400">{new Date(p.createdAt).toLocaleString('fr-BE')}</span>
                 </div>
                 <div className="text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: p.content }} />
+                <div className="flex items-center gap-3 mt-1">
+                  {(delib.status === 'draft' || delib.status === 'open') && String(delib.createdById) === String(authMemberId) && (
+                    <button
+                      onClick={() => { setEditingProposalId(p.id); setEditingProposalContent(p.content) }}
+                      className="text-[11px] text-amber-600 hover:underline"
+                    >
+                      Amender la proposition
+                    </button>
+                  )}
+                  {p.versionsCount > 1 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowVersionsFor(p.id) }}
+                      className="text-[11px] text-blue-600 hover:underline"
+                    >
+                      Voir l\'historique des {p.versionsCount} versions
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -652,12 +829,13 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
               </div>
             )}
 
-            {/* Reaction buttons */}
-            {delib.status !== 'decided' && delib.status !== 'archived' && (
+            {/* Reaction buttons — voting phase only */}
+            {delib.status === 'voting' && (
               <div className="ml-10">
                 {reactionForm?.proposalId === p.id ? (
                   <ReactionFormInline
                     position={reactionForm.position}
+                    requireRationale={reactionForm.position === 'objection'}
                     onSubmit={(rationale) => handleReaction(p.id, reactionForm.position, rationale)}
                     onCancel={() => setReactionForm(null)}
                   />
@@ -670,6 +848,11 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
                       </button>
                     ))}
                   </div>
+                )}
+                {reactionForm?.proposalId === p.id && reactionForm.position === 'objection' && (
+                  <p className="text-[10px] text-red-600 mt-1">
+                    Poser une objection rallonge la phase de vote de 7 jours.
+                  </p>
                 )}
               </div>
             )}
@@ -696,8 +879,8 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
         )}
       </div>
 
-      {/* Decide button */}
-      {delib.status !== 'decided' && delib.status !== 'archived' && (
+      {/* Decide button — outcome_pending phase, author only */}
+      {delib.status === 'outcome_pending' && String(delib.createdById) === String(authMemberId) && (
         <div className="bg-white border border-stone-200 rounded-xl p-5">
           {showDecideForm ? (
             <form onSubmit={handleDecide}>
@@ -711,66 +894,158 @@ function DeliberationDetail({ deliberationId, onBack, onEdit }) {
           ) : (
             <button onClick={() => setShowDecideForm(true)}
               className="flex items-center gap-1.5 text-sm font-medium text-green-700 hover:text-green-800 transition-colors">
-              <Check className="w-4 h-4" /> Marquer comme décidée
+              <Check className="w-4 h-4" /> Rédiger la décision
             </button>
           )}
         </div>
       )}
 
-      {/* Comments */}
+      {/* Comments grouped by phase */}
       <div className="bg-white border border-stone-200 rounded-xl p-5">
         <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <MessageCircle className="w-3.5 h-3.5" /> Discussion ({delib.comments?.length || 0})
+          <MessageCircle className="w-3.5 h-3.5" /> Discussion ({delib.commentCount || 0})
         </h3>
-        {(delib.comments || []).length === 0 ? (
-          <p className="text-sm text-stone-400 mb-3">Aucun commentaire pour le moment.</p>
-        ) : (
-          <div className="space-y-3 mb-4">
-            {delib.comments.map(c => (
-              <div key={c.id} className="flex gap-3">
-                <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
-                  {c.authorAvatar ? <img src={c.authorAvatar} className="w-7 h-7 rounded-full" alt="" /> : c.authorName?.[0]}
+
+        {(() => {
+          const byPhase = delib.commentsByPhase || {}
+          const phases = ['draft', 'open', 'voting', 'outcome_pending', 'decided', 'cancelled']
+          const hasAny = phases.some(p => (byPhase[p] || []).length > 0)
+          if (!hasAny) {
+            return <p className="text-sm text-stone-400 mb-3">Aucun commentaire pour le moment.</p>
+          }
+          return phases.map(phase => {
+            const phaseComments = byPhase[phase] || []
+            if (!phaseComments.length) return null
+            return (
+              <div key={phase} className="mb-5 last:mb-0">
+                <div className="text-[10px] uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-1 mb-3">
+                  {PHASE_SECTION_LABELS[phase]}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-stone-700">{c.authorName}</span>
-                    <span className="text-[10px] text-stone-400">{new Date(c.createdAt).toLocaleString('fr-BE')}</span>
-                  </div>
-                  <p className="text-sm text-stone-600 mt-0.5">{c.content}</p>
+                <div className="space-y-3">
+                  {phaseComments.map(c => (
+                    <div key={c.id} className="flex gap-3">
+                      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {c.authorAvatar ? <img src={c.authorAvatar} className="w-7 h-7 rounded-full" alt="" /> : c.authorName?.[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-stone-700">{c.authorName}</span>
+                          <span className="text-[10px] text-stone-400">{new Date(c.createdAt).toLocaleString('fr-BE')}</span>
+                        </div>
+                        <p className="text-sm text-stone-600 mt-0.5">{c.content}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            )
+          })
+        })()}
+
+        {delib.status !== 'cancelled' && delib.status !== 'decided' && (
+          <form onSubmit={handleAddComment} className="flex gap-2 mt-4 pt-4 border-t border-stone-100">
+            <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
+              placeholder="Ajouter un commentaire..."
+              className="flex-1 px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
+            <button type="submit" disabled={!newComment.trim()} className="p-2 rounded-lg text-white disabled:opacity-50 transition-colors hover:opacity-90" style={{ backgroundColor: ACCENT }}>
+              <Send className="w-4 h-4" />
+            </button>
+          </form>
         )}
-        <form onSubmit={handleAddComment} className="flex gap-2">
-          <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
-            placeholder="Ajouter un commentaire..."
-            className="flex-1 px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
-          <button type="submit" disabled={!newComment.trim()} className="p-2 rounded-lg text-white disabled:opacity-50 transition-colors hover:opacity-90" style={{ backgroundColor: ACCENT }}>
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
       </div>
+
+      {showVersionsFor && (
+        <ProposalVersionsPanel proposalId={showVersionsFor} onClose={() => setShowVersionsFor(null)} />
+      )}
+
+      {editingProposalId && (
+        <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center z-50">
+          <div className="w-full max-w-xl bg-white rounded-xl p-6 shadow-xl">
+            <h2 className="text-sm font-semibold text-stone-900 mb-3">Amender la proposition</h2>
+            <form onSubmit={handleAmendProposal}>
+              <SimpleEditor
+                content={editingProposalContent}
+                onUpdate={setEditingProposalContent}
+                placeholder="Nouvelle version de la proposition..."
+                minHeight="200px"
+              />
+              <div className="flex justify-end gap-2 mt-3">
+                <button type="button" onClick={() => { setEditingProposalId(null); setEditingProposalContent('') }}
+                  className="px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-100 rounded-lg">Annuler</button>
+                <button type="submit" disabled={!editingProposalContent.trim()}
+                  className="px-3 py-1.5 text-xs font-medium text-white rounded-lg disabled:opacity-50 hover:opacity-90"
+                  style={{ backgroundColor: ACCENT }}>Enregistrer la nouvelle version</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ─── Reaction Form Inline ───
-function ReactionFormInline({ position, onSubmit, onCancel }) {
+function ReactionFormInline({ position, requireRationale, onSubmit, onCancel }) {
   const [rationale, setRationale] = useState('')
   const config = REACTION_CONFIG.find(r => r.position === position)
+  const canSubmit = requireRationale ? rationale.trim().length > 0 : true
 
   return (
     <div className="flex items-center gap-2 mt-1">
       <span className={`text-xs font-medium ${config.color.split(' ')[0]}`}>{config.label} :</span>
       <input type="text" value={rationale} onChange={e => setRationale(e.target.value)}
-        placeholder="Argumentaire (optionnel)..."
+        placeholder={requireRationale ? 'Argumentaire obligatoire' : 'Argumentaire (optionnel)...'}
         className="flex-1 px-2 py-1 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onSubmit(rationale) } }} />
-      <button onClick={() => onSubmit(rationale)} className="text-xs px-2 py-1 rounded-lg text-white hover:opacity-90" style={{ backgroundColor: ACCENT }}>OK</button>
+        onKeyDown={e => { if (e.key === 'Enter' && canSubmit) { e.preventDefault(); onSubmit(rationale) } }} />
+      <button onClick={() => canSubmit && onSubmit(rationale)} disabled={!canSubmit}
+        className="text-xs px-2 py-1 rounded-lg text-white hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: ACCENT }}>
+        OK
+      </button>
       <button onClick={onCancel} className="text-xs text-stone-400 hover:text-stone-600">
         <X className="w-3 h-3" />
       </button>
+    </div>
+  )
+}
+
+function ProposalVersionsPanel({ proposalId, onClose }) {
+  const [versions, setVersions] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const data = await apiRequest(`/api/v1/strategy/proposals/${proposalId}/versions`)
+      if (data) setVersions(data.versions || [])
+      setLoading(false)
+    }
+    load()
+  }, [proposalId])
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-start justify-end z-50" onClick={onClose}>
+      <div className="w-full max-w-lg h-full bg-white border-l border-stone-200 overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-stone-200 px-5 py-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-stone-900">Historique des versions</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-stone-100"><X className="w-4 h-4 text-stone-500" /></button>
+        </div>
+        <div className="px-5 py-4 space-y-5">
+          {loading && <p className="text-sm text-stone-400">Chargement...</p>}
+          {!loading && versions.length === 0 && <p className="text-sm text-stone-400">Aucune version.</p>}
+          {!loading && versions.map(v => (
+            <div key={v.id} className="border border-stone-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-stone-700">v{v.version}</span>
+                <span className="text-[10px] text-stone-400">{new Date(v.createdAt).toLocaleString('fr-BE')}</span>
+              </div>
+              <div
+                className="prose prose-stone prose-sm max-w-none text-sm text-stone-700"
+                dangerouslySetInnerHTML={{ __html: v.content }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -780,8 +1055,6 @@ function DeliberationForm({ deliberation, onSave, onCancel }) {
   const [form, setForm] = useState({
     title: deliberation?.title || '',
     context: deliberation?.context || '',
-    decision_mode: deliberation?.decisionMode || 'consent',
-    status: deliberation?.status || 'open',
   })
   const [saving, setSaving] = useState(false)
 
@@ -822,27 +1095,6 @@ function DeliberationForm({ deliberation, onSave, onCancel }) {
           <label className="block text-xs font-medium text-stone-600 mb-1">Contexte</label>
           <SimpleEditor content={form.context} onUpdate={(html) => setForm(f => ({ ...f, context: html }))}
             placeholder="Pourquoi cette délibération est-elle nécessaire ?" minHeight="150px" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Mode de décision</label>
-            <select value={form.decision_mode} onChange={e => setForm(f => ({ ...f, decision_mode: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-              <option value="consent">Consentement</option>
-              <option value="vote">Vote</option>
-              <option value="advisory">Consultatif</option>
-            </select>
-          </div>
-          {deliberation?.id && (
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Statut</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                {DELIB_STATUSES.filter(s => s.value).map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1417,6 +1669,8 @@ function AxisForm({ axis, onSave, onCancel }) {
 
 // ─── Main Page ───
 export default function StrategyIndex() {
+  const { auth } = usePage().props
+  const authMemberId = auth?.member?.id
   const [activeSection, setActiveSection] = useUrlState('tab', 'ressources')
   const [view, setView] = useState('list') // list, detail, form
   const [selectedId, setSelectedId] = useState(null)
@@ -1475,8 +1729,8 @@ export default function StrategyIndex() {
       {/* Délibérations */}
       {activeSection === 'deliberations' && (
         view === 'form' ? <DeliberationForm deliberation={editingItem} onSave={handleSaved} onCancel={handleBack} /> :
-        view === 'detail' ? <DeliberationDetail deliberationId={selectedId} onBack={handleBack} onEdit={handleEdit} /> :
-        <DeliberationsList onSelect={handleSelect} onNew={handleNew} />
+        view === 'detail' ? <DeliberationDetail deliberationId={selectedId} onBack={handleBack} onEdit={handleEdit} authMemberId={authMemberId} /> :
+        <DeliberationsList onSelect={handleSelect} onNew={handleNew} authMemberId={authMemberId} />
       )}
 
       {/* Cadres */}

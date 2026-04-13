@@ -1,6 +1,7 @@
 class AppController < ApplicationController
   before_action :require_authentication, except: [:design_client_portal, :academy_registration]
   before_action :verify_client_portal_token!, only: [:design_client_portal]
+  before_action :require_effective_for_strategy, only: [:strategy]
 
   def index
     render inertia: "Home/Index", props: {
@@ -211,5 +212,10 @@ class AppController < ApplicationController
     unless project
       render plain: "Lien invalide.", status: :unauthorized
     end
+  end
+
+  def require_effective_for_strategy
+    return if current_member&.can_access_strategy?
+    redirect_to root_path, alert: "Accès réservé aux membres effectifs"
   end
 end

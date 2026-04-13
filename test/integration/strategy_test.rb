@@ -8,10 +8,31 @@ class StrategyTest < ActionDispatch::IntegrationTest
       Strategy::Framework,
       Strategy::DeliberationComment,
       Strategy::Reaction,
+      Strategy::ProposalVersion,
       Strategy::Proposal,
       Strategy::Deliberation,
       Strategy::Resource
     ].each(&:delete_all)
+  end
+
+  teardown do
+    Thread.current[:test_member] = nil
+  end
+
+  def ensure_member(email:, membership_type:, admin: false)
+    Member.find_or_create_by!(email: email) do |m|
+      m.first_name = "Test"
+      m.last_name  = "User"
+      m.status     = "active"
+      m.joined_at  = Date.today
+      m.password   = "terranova2026"
+      m.membership_type = membership_type
+      m.is_admin   = admin
+    end.tap { |m| m.update!(membership_type: membership_type, is_admin: admin) }
+  end
+
+  def login_as(member)
+    Thread.current[:test_member] = member
   end
 
   # ─── Resources ───
@@ -92,118 +113,240 @@ class StrategyTest < ActionDispatch::IntegrationTest
 
   # ─── Deliberations ───
 
-  test 'deliberation with proposals reactions and comments' do
-    # Create deliberation
-    post '/api/v1/strategy/deliberations', params: {
-      title: 'Protocole de membrane financière',
-      context: '<p>Définir les seuils de décision locale vs réseau.</p>',
-      decision_mode: 'consent'
-    }, as: :json
+  test 'effective member can create draft deliberation' do
+    effective = ensure_member(email: "effective@test.local", membership_type: "effective", admin: true)
+    login_as(effective)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
     assert_response :created
     body = JSON.parse(response.body)
-    delib_id = body['deliberation']['id']
-    assert_equal 'open', body['deliberation']['status']
-    assert_equal 'consent', body['deliberation']['decisionMode']
+    assert_equal 'draft', body['deliberation']['status']
+    assert_nil body['deliberation']['openedAt']
+  end
 
-    # List
+  test 'adherent member receives 403 on deliberations index' do
+    adherent = ensure_member(email: "adherent@test.local", membership_type: "adherent")
+    login_as(adherent)
+
     get '/api/v1/strategy/deliberations', as: :json
+    assert_response :forbidden
+  end
+
+  test 'non_member receives 403 on deliberations create' do
+    non_member = ensure_member(email: "non@test.local", membership_type: "non_member")
+    login_as(non_member)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Test' }, as: :json
+    assert_response :forbidden
+  end
+
+  test 'draft is visible only to its author' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    other  = ensure_member(email: "other@test.local",  membership_type: "effective")
+
+    login_as(author)
+    post '/api/v1/strategy/deliberations', params: { title: 'Mon brouillon' }, as: :json
+    my_id = JSON.parse(response.body)['deliberation']['id']
+
+    login_as(other)
+    get '/api/v1/strategy/deliberations', as: :json
+    ids = JSON.parse(response.body)['deliberations'].map { |d| d['id'] }
+    assert_not_includes ids, my_id
+
+    get "/api/v1/strategy/deliberations/#{my_id}", as: :json
+    assert_response :not_found
+  end
+
+  test 'publish requires a proposal' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :unprocessable_entity
+  end
+
+  test 'full phase progression: draft to decided' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    voter  = ensure_member(email: "voter@test.local",  membership_type: "effective")
+
+    login_as(author)
+    post '/api/v1/strategy/deliberations', params: { title: 'Protocole de membrane' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>Seuil local 5000 euros</p>' }, as: :json
+    assert_response :created
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
     assert_response :success
-    body = JSON.parse(response.body)
-    assert_equal 1, body['deliberations'].size
+    assert_equal 'open', JSON.parse(response.body)['deliberation']['status']
 
-    # Filter by status
-    get '/api/v1/strategy/deliberations?status=decided', as: :json
-    body = JSON.parse(response.body)
-    assert_equal 0, body['deliberations'].size
-
-    # Show
+    ::Strategy::Deliberation.find(delib_id).update!(opened_at: 16.days.ago)
+    Rails.application.load_tasks if Rake::Task.tasks.empty?
+    Rake::Task["strategy:advance_deliberations"].reenable
+    Rake::Task["strategy:advance_deliberations"].invoke
     get "/api/v1/strategy/deliberations/#{delib_id}", as: :json
-    assert_response :success
-    body = JSON.parse(response.body)
-    assert_equal 0, body['deliberation']['proposals'].size
+    assert_equal 'voting', JSON.parse(response.body)['deliberation']['status']
 
-    # Add proposal
-    post "/api/v1/strategy/deliberations/#{delib_id}/proposals", params: {
-      content: '<p>Seuil local: 5000€/trimestre. Au-delà: validation réseau.</p>'
-    }, as: :json
+    proposal_id = JSON.parse(response.body)['deliberation']['proposals'][0]['id']
+    login_as(voter)
+    post "/api/v1/strategy/proposals/#{proposal_id}/reactions",
+      params: { position: 'objection', rationale: 'Seuil trop bas pour IDF' }, as: :json
     assert_response :created
-    proposal_id = JSON.parse(response.body)['proposal']['id']
 
-    # Add reaction
-    post "/api/v1/strategy/proposals/#{proposal_id}/reactions", params: {
-      position: 'consent',
-      rationale: 'Le seuil est raisonnable pour les petits Labs.'
-    }, as: :json
-    assert_response :created
-    body = JSON.parse(response.body)
-    assert_equal 'consent', body['reaction']['position']
+    delib_row = ::Strategy::Deliberation.find(delib_id)
+    assert delib_row.voting_deadline > Time.current + 6.days
 
-    # Update reaction (same member, should update not duplicate)
-    post "/api/v1/strategy/proposals/#{proposal_id}/reactions", params: {
-      position: 'objection',
-      rationale: 'Finalement 5000€ est trop bas pour IDF.'
-    }, as: :json
-    assert_response :created
-    body = JSON.parse(response.body)
-    assert_equal 'objection', body['reaction']['position']
-
-    # Show deliberation with proposals and reactions
+    delib_row.update!(voting_deadline: 1.minute.ago)
+    Rake::Task["strategy:advance_deliberations"].reenable
+    Rake::Task["strategy:advance_deliberations"].invoke
     get "/api/v1/strategy/deliberations/#{delib_id}", as: :json
-    body = JSON.parse(response.body)
-    assert_equal 1, body['deliberation']['proposals'].size
-    assert_equal 1, body['deliberation']['proposals'][0]['reactions'].size
-    assert_equal 'objection', body['deliberation']['proposals'][0]['reactions'][0]['position']
+    assert_equal 'outcome_pending', JSON.parse(response.body)['deliberation']['status']
 
-    # Add comment
-    post "/api/v1/strategy/deliberations/#{delib_id}/comments", params: {
-      content: 'Peut-être adapter le seuil par pays ?'
-    }, as: :json
-    assert_response :created
-
-    # List comments
-    get "/api/v1/strategy/deliberations/#{delib_id}/comments", as: :json
-    assert_response :success
-    body = JSON.parse(response.body)
-    assert_equal 1, body['comments'].size
-
-    # Decide
-    patch "/api/v1/strategy/deliberations/#{delib_id}/decide", params: {
-      outcome: '<p>Seuil fixé à 5000€ avec exception pour IDF (7500€).</p>'
-    }, as: :json
+    login_as(author)
+    patch "/api/v1/strategy/deliberations/#{delib_id}/decide",
+      params: { outcome: '<p>Seuil adopte a 5000 euros avec exception IDF.</p>' }, as: :json
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal 'decided', body['deliberation']['status']
     assert body['deliberation']['decidedAt'].present?
+  end
 
-    # Update
-    patch "/api/v1/strategy/deliberations/#{delib_id}", params: {
-      title: 'Protocole de membrane financière (v2)'
-    }, as: :json
+  test 'update deliberation title allowed in draft, forbidden in open' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'v1' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}", params: { title: 'v2' }, as: :json
     assert_response :success
 
-    # Delete comment
-    get "/api/v1/strategy/deliberations/#{delib_id}/comments", as: :json
-    comment_id = JSON.parse(response.body)['comments'][0]['id']
-    delete "/api/v1/strategy/deliberation-comments/#{comment_id}", as: :json
-    assert_response :no_content
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>proposition</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
 
-    # Delete deliberation
-    delete "/api/v1/strategy/deliberations/#{delib_id}", as: :json
-    assert_response :no_content
+    patch "/api/v1/strategy/deliberations/#{delib_id}", params: { title: 'v3' }, as: :json
+    assert_response :forbidden
+  end
+
+  test 'update_proposal allowed in draft and open, creates versions' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+    proposal_id = JSON.parse(response.body)['proposal']['id']
+
+    patch "/api/v1/strategy/proposals/#{proposal_id}",
+      params: { content: '<p>v2</p>' }, as: :json
+    assert_response :success
+    assert_equal 2, JSON.parse(response.body)['proposal']['version']
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    patch "/api/v1/strategy/proposals/#{proposal_id}",
+      params: { content: '<p>v3</p>' }, as: :json
+    assert_response :success
+    assert_equal 3, JSON.parse(response.body)['proposal']['version']
+
+    get "/api/v1/strategy/proposals/#{proposal_id}/versions", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal [1, 2, 3], body['versions'].map { |v| v['version'] }
+  end
+
+  test 'update_proposal forbidden for non-author' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    other  = ensure_member(email: "other@test.local",  membership_type: "effective")
+
+    login_as(author)
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+    proposal_id = JSON.parse(response.body)['proposal']['id']
+
+    login_as(other)
+    patch "/api/v1/strategy/proposals/#{proposal_id}",
+      params: { content: '<p>hijack</p>' }, as: :json
+    assert_response :forbidden
+  end
+
+  test 'cancel works in any non-decided phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}/cancel", as: :json
+    assert_response :success
+    assert_equal 'cancelled', JSON.parse(response.body)['deliberation']['status']
+  end
+
+  test 'cancel rejected when deliberation is decided' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    delib = Strategy::Deliberation.create!(title: 'Already decided', created_by_id: author.id, status: 'decided')
+    patch "/api/v1/strategy/deliberations/#{delib.id}/cancel", as: :json
+    assert_response :unprocessable_entity
+  end
+
+  test 'comments grouped by phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    post "/api/v1/strategy/deliberations/#{delib_id}/comments", params: { content: 'Draft remark' }, as: :json
+
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    post "/api/v1/strategy/deliberations/#{delib_id}/comments", params: { content: 'Open remark' }, as: :json
+
+    get "/api/v1/strategy/deliberations/#{delib_id}/comments", as: :json
+    assert_response :success
+    payload = JSON.parse(response.body)['commentsByPhase']
+    assert_equal 1, payload['draft'].size
+    assert_equal 1, payload['open'].size
+    assert_equal 'Draft remark', payload['draft'][0]['content']
+    assert_equal 'Open remark',  payload['open'][0]['content']
+  end
+
+  test 'deliberation destroy route no longer exists' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    assert_raises(ActionController::RoutingError) do
+      delete "/api/v1/strategy/deliberations/#{delib_id}", as: :json
+    end
   end
 
   # ─── Frameworks ───
 
   test 'frameworks CRUD with deliberation link' do
     # Create a decided deliberation first
-    post '/api/v1/strategy/deliberations', params: {
-      title: 'Charte des valeurs',
-      decision_mode: 'consent'
-    }, as: :json
-    delib_id = JSON.parse(response.body)['deliberation']['id']
+    author = ensure_member(email: "framework-author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    delib = Strategy::Deliberation.create!(title: 'Charte des valeurs', created_by_id: author.id, status: 'outcome_pending')
+    delib_id = delib.id
     patch "/api/v1/strategy/deliberations/#{delib_id}/decide", params: {
       outcome: 'Valeurs adoptées.'
     }, as: :json
+    assert_response :success
 
     # Create framework
     post '/api/v1/strategy/frameworks', params: {

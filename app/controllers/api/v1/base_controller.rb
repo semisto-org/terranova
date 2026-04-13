@@ -13,7 +13,7 @@ module Api
       def test_member
         return nil unless Rails.env.test?
 
-        Member.find_by(is_admin: true) || Member.first
+        Thread.current[:test_member] || Member.find_by(is_admin: true) || Member.first
       end
 
       def authenticate_via_api_key

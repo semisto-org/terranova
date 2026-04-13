@@ -154,18 +154,20 @@ export default function ContextSwitcher() {
               <span className="w-5 h-5 rounded flex items-center justify-center bg-teal-600 text-white text-[10px] font-bold shrink-0">K</span>
               Base de connaissances
             </Link>
-            <Link
-              href="/strategy"
-              onClick={() => setOpen(false)}
-              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
-                currentPole.id === 'strategy'
-                  ? 'bg-stone-50 text-stone-900 font-medium'
-                  : 'text-stone-700 hover:bg-stone-50'
-              }`}
-            >
-              <span className="w-5 h-5 rounded flex items-center justify-center bg-blue-600 text-white text-[10px] font-bold shrink-0">S</span>
-              Stratego
-            </Link>
+            {auth?.member?.membershipType === 'effective' && (
+              <Link
+                href="/strategy"
+                onClick={() => setOpen(false)}
+                className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
+                  currentPole.id === 'strategy'
+                    ? 'bg-stone-50 text-stone-900 font-medium'
+                    : 'text-stone-700 hover:bg-stone-50'
+                }`}
+              >
+                <span className="w-5 h-5 rounded flex items-center justify-center bg-blue-600 text-white text-[10px] font-bold shrink-0">S</span>
+                Stratego
+              </Link>
+            )}
             <Link
               href="/marketplace"
               onClick={() => setOpen(false)}
