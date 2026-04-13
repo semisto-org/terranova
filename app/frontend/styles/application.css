@@ -1,6 +1,26 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* TipTap lists: collapse <li><p> margins and tighten list spacing */
+.prose :where(li > p) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.prose :where(li) {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+/* Ensure TipTap lists always show bullets/numbers */
+.prose :where(ul) {
+  list-style-type: disc;
+  padding-left: 1.5em;
+}
+.prose :where(ol) {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+}
+
 /* Design Tokens */
 
 :root {
