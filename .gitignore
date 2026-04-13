@@ -31,3 +31,6 @@ Thumbs.db
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 .a5c/
+
+# Worktrees
+.worktrees/
