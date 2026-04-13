@@ -13,13 +13,16 @@ import {
   ImpactDashboard,
 } from '../../lab-management/components'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
+import DeliberationsSection from '../../strategy/components/DeliberationsSection'
+import FrameworksSection from '../../strategy/components/FrameworksSection'
 
 const SECTION_TABS = [
   { id: 'calendar', label: 'Tableau de bord' },
   { id: 'projects', label: 'Projets' },
-  { id: 'shapeup', label: 'Shape Up' },
   { id: 'semos', label: 'Semos' },
   { id: 'impact', label: 'Impact' },
+  { id: 'deliberations', label: 'Délibérations' },
+  { id: 'cadres', label: 'Cadres' },
 ]
 
 const APPETITES = ['2-weeks', '3-weeks', '6-weeks']
@@ -589,6 +592,10 @@ export default function HomeIndex() {
       {tab === 'impact' && (
         <ImpactDashboard />
       )}
+
+      {tab === 'deliberations' && <DeliberationsSection />}
+
+      {tab === 'cadres' && <FrameworksSection />}
 
       {formModal && (
         <FormModal
