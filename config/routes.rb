@@ -284,6 +284,15 @@ Rails.application.routes.draw do
       delete "bank/reconciliations/:id", to: "bank#destroy_reconciliation"
       get "bank/summary", to: "bank#summary"
 
+      # Notes de frais (expense notes — outgoing reimbursement notes) and emitting organizations
+      resources :expense_notes do
+        member do
+          patch :update_status
+          get :pdf
+        end
+      end
+      resources :organizations
+
       get "lab/projects", to: "lab_management#list_projects"
       get "lab/projects/:id", to: "lab_management#show_project"
       post "lab/projects", to: "lab_management#create_project"

@@ -26,3 +26,5 @@ gem "sentry-rails"
 gem "stripe", "~> 18.3"
 gem 'down', '~> 5.0'
 gem "faraday", "~> 2.9"
+gem "prawn", "~> 2.5"
+gem "prawn-table", "~> 0.2"

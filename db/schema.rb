@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_042616) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -982,6 +982,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_160000) do
     t.index ["projectable_type", "projectable_id"], name: "index_events_on_projectable"
   end
 
+  create_table "expense_note_lines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "expense_note_id", null: false
+    t.string "label", null: false
+    t.integer "line_total_cents", default: 0, null: false
+    t.integer "position", default: 0, null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
+    t.integer "unit_amount_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["expense_note_id"], name: "index_expense_note_lines_on_expense_note_id"
+  end
+
+  create_table "expense_notes", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.date "note_date", null: false
+    t.text "notes"
+    t.string "number", null: false
+    t.bigint "organization_id", null: false
+    t.string "status", default: "draft", null: false
+    t.string "subject", null: false
+    t.integer "total_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_expense_notes_on_contact_id"
+    t.index ["deleted_at"], name: "index_expense_notes_on_deleted_at"
+    t.index ["number"], name: "index_expense_notes_on_number", unique: true
+    t.index ["organization_id"], name: "index_expense_notes_on_organization_id"
+    t.index ["status"], name: "index_expense_notes_on_status"
+  end
+
   create_table "expenses", force: :cascade do |t|
     t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
     t.boolean "billable_to_client", default: false, null: false
@@ -1499,6 +1530,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_160000) do
     t.datetime "updated_at", null: false
     t.string "vehicle_info", default: "", null: false
     t.index ["order_id"], name: "index_nursery_transfers_on_order_id"
+  end
+
+  create_table "organizations", force: :cascade do |t|
+    t.text "address"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "iban"
+    t.boolean "is_default", default: false, null: false
+    t.string "legal_form"
+    t.string "name", null: false
+    t.string "phone"
+    t.string "registration_number"
+    t.datetime "updated_at", null: false
+    t.index ["is_default"], name: "index_organizations_on_is_default"
   end
 
   create_table "pitches", force: :cascade do |t|
@@ -2188,6 +2234,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_160000) do
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
   add_foreign_key "events", "event_types"
+  add_foreign_key "expense_note_lines", "expense_notes"
+  add_foreign_key "expense_notes", "contacts"
+  add_foreign_key "expense_notes", "organizations"
   add_foreign_key "expenses", "contacts", column: "supplier_contact_id"
   add_foreign_key "guild_documents", "guilds"
   add_foreign_key "guild_documents", "members", column: "uploaded_by_id"

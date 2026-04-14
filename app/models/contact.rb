@@ -10,6 +10,7 @@ class Contact < ApplicationRecord
   has_many :people, class_name: "Contact", foreign_key: :organization_id, dependent: :nullify
   has_many :contact_tags, dependent: :destroy
   has_many :expenses_as_supplier, class_name: "Expense", foreign_key: :supplier_contact_id, dependent: :nullify
+  has_many :expense_notes, dependent: :restrict_with_error
   has_many :training_registrations, class_name: "Academy::TrainingRegistration", dependent: :nullify
 
   validates :contact_type, inclusion: { in: CONTACT_TYPES }

@@ -16,6 +16,10 @@ import {
   ContactDetail,
   ContactForm,
   BankSection,
+  ExpenseNoteList,
+  ExpenseNoteForm,
+  OrganizationList,
+  OrganizationForm,
 } from '../../lab-management/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import { RevenueFormModal } from '../../components/shared/RevenueFormModal'
@@ -30,6 +34,8 @@ const SECTION_TABS = [
   { id: 'contacts', label: 'Contacts' },
   { id: 'albums', label: 'Albums' },
   { id: 'bank', label: 'Banque' },
+  { id: 'expense_notes', label: 'Notes de frais' },
+  { id: 'organizations', label: 'Structures' },
 ]
 
 export default function AdminSettings({ currentMemberId: initialMemberId }) {
@@ -54,6 +60,11 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   const [contactDetailModal, setContactDetailModal] = useState(null)
   const [contactFormModal, setContactFormModal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [expenseNotes, setExpenseNotes] = useState([])
+  const [expenseNotesLoading, setExpenseNotesLoading] = useState(false)
+  const [expenseNoteFormModal, setExpenseNoteFormModal] = useState(null)
+  const [organizations, setOrganizations] = useState([])
+  const [organizationFormModal, setOrganizationFormModal] = useState(null)
 
   const loadOverview = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true)
@@ -103,6 +114,35 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   useEffect(() => {
     if (tab === 'revenues') loadRevenues()
   }, [tab, loadRevenues])
+
+  const loadExpenseNotes = useCallback(async () => {
+    setExpenseNotesLoading(true)
+    try {
+      const res = await apiRequest('/api/v1/expense_notes')
+      setExpenseNotes(res.items || [])
+    } catch {
+      setExpenseNotes([])
+    } finally {
+      setExpenseNotesLoading(false)
+    }
+  }, [])
+
+  const loadOrganizations = useCallback(async () => {
+    try {
+      const res = await apiRequest('/api/v1/organizations')
+      setOrganizations(res.items || [])
+    } catch {
+      setOrganizations([])
+    }
+  }, [])
+
+  useEffect(() => {
+    if (tab === 'expense_notes') {
+      loadExpenseNotes()
+      loadOrganizations()
+    }
+    if (tab === 'organizations') loadOrganizations()
+  }, [tab, loadExpenseNotes, loadOrganizations])
 
   useEffect(() => {
     let cancelled = false
@@ -560,6 +600,63 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
 
       {tab === 'bank' && <BankSection />}
 
+      {tab === 'expense_notes' && (
+        <ExpenseNoteList
+          notes={expenseNotes}
+          loading={expenseNotesLoading}
+          onCreate={() => setExpenseNoteFormModal({ note: null })}
+          onOpen={async (id) => {
+            try {
+              const note = await apiRequest(`/api/v1/expense_notes/${id}`)
+              setExpenseNoteFormModal({ note })
+            } catch (err) {
+              setError(err.message)
+            }
+          }}
+          onDelete={(id) => {
+            const note = expenseNotes.find((n) => n.id === id)
+            setDeleteConfirm({
+              title: 'Supprimer cette note de frais ?',
+              message: `La note ${note?.number || ''} sera supprimée définitivement.`,
+              action: async () => {
+                try {
+                  await apiRequest(`/api/v1/expense_notes/${id}`, { method: 'DELETE' })
+                  await loadExpenseNotes()
+                } catch (err) {
+                  setError(err.message)
+                }
+              },
+            })
+          }}
+        />
+      )}
+
+      {tab === 'organizations' && (
+        <OrganizationList
+          organizations={organizations}
+          onCreate={() => setOrganizationFormModal({ organization: null })}
+          onEdit={(id) => {
+            const org = organizations.find((o) => o.id === id)
+            setOrganizationFormModal({ organization: org || null })
+          }}
+          onDelete={(id) => {
+            const org = organizations.find((o) => o.id === id)
+            setDeleteConfirm({
+              title: 'Supprimer cette structure ?',
+              message: `La structure « ${org?.name || ''} » sera supprimée (ou archivée si elle est rattachée à des notes).`,
+              action: async () => {
+                try {
+                  await apiRequest(`/api/v1/organizations/${id}`, { method: 'DELETE' })
+                  await loadOrganizations()
+                } catch (err) {
+                  setError(err.message)
+                }
+              },
+            })
+          }}
+        />
+      )}
+
       {detailModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.42)' }} onClick={() => setDetailModal(null)}>
           <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-white rounded-xl border border-stone-200 shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -776,6 +873,158 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             setContactDetailModal(null)
             callbacks.onEditContact(contactDetailModal.contact.id)
           }}
+        />
+      )}
+
+      {expenseNoteFormModal && (
+        <ExpenseNoteForm
+          initialValues={
+            expenseNoteFormModal.note
+              ? {
+                  id: expenseNoteFormModal.note.id,
+                  number: expenseNoteFormModal.note.number,
+                  subject: expenseNoteFormModal.note.subject,
+                  noteDate: expenseNoteFormModal.note.noteDate,
+                  status: expenseNoteFormModal.note.status,
+                  contactId: expenseNoteFormModal.note.contactId,
+                  organizationId: expenseNoteFormModal.note.organizationId,
+                  notes: expenseNoteFormModal.note.notes || '',
+                  lines: (expenseNoteFormModal.note.lines || []).map((l) => ({
+                    id: l.id,
+                    label: l.label,
+                    quantity: l.quantity,
+                    unitAmountCents: l.unitAmountCents,
+                    position: l.position,
+                  })),
+                }
+              : undefined
+          }
+          contacts={contacts.map((c) => ({ id: c.id, name: c.name }))}
+          organizations={organizations.map((o) => ({ id: o.id, name: o.name, isDefault: o.isDefault }))}
+          busy={busy}
+          onSave={async (values) => {
+            setBusy(true)
+            setError(null)
+            try {
+              const payload = {
+                expense_note: {
+                  subject: values.subject,
+                  note_date: values.noteDate,
+                  contact_id: values.contactId,
+                  organization_id: values.organizationId,
+                  notes: values.notes,
+                  lines_attributes: values.lines.map((l, idx) => ({
+                    id: l.id,
+                    label: l.label,
+                    quantity: l.quantity,
+                    unit_amount_cents: l.unitAmountCents,
+                    position: idx,
+                    _destroy: l._destroy ? '1' : undefined,
+                  })),
+                },
+              }
+              if (values.id) {
+                const updated = await apiRequest(`/api/v1/expense_notes/${values.id}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify(payload),
+                })
+                setExpenseNoteFormModal({ note: updated })
+              } else {
+                await apiRequest('/api/v1/expense_notes', {
+                  method: 'POST',
+                  body: JSON.stringify(payload),
+                })
+                setExpenseNoteFormModal(null)
+              }
+              await loadExpenseNotes()
+            } catch (err) {
+              setError(err.message)
+              throw err
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onTransition={async (status) => {
+            if (!expenseNoteFormModal.note?.id) return
+            setBusy(true)
+            try {
+              const updated = await apiRequest(`/api/v1/expense_notes/${expenseNoteFormModal.note.id}/update_status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status }),
+              })
+              setExpenseNoteFormModal({ note: updated })
+              await loadExpenseNotes()
+            } catch (err) {
+              setError(err.message)
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onDownloadPdf={() => {
+            if (!expenseNoteFormModal.note?.id) return
+            window.open(`/api/v1/expense_notes/${expenseNoteFormModal.note.id}/pdf?download=1`, '_blank')
+          }}
+          onCancel={() => setExpenseNoteFormModal(null)}
+        />
+      )}
+
+      {organizationFormModal && (
+        <OrganizationForm
+          organization={organizationFormModal.organization}
+          busy={busy}
+          onSave={async (values) => {
+            setBusy(true)
+            setError(null)
+            try {
+              const orgId = organizationFormModal.organization?.id
+              const url = orgId ? `/api/v1/organizations/${orgId}` : '/api/v1/organizations'
+              const method = orgId ? 'PATCH' : 'POST'
+              const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+
+              if (values.logoFile || values.removeLogo) {
+                const body = new FormData()
+                body.append('organization[name]', values.name)
+                body.append('organization[legal_form]', values.legalForm || '')
+                body.append('organization[registration_number]', values.registrationNumber || '')
+                body.append('organization[address]', values.address || '')
+                body.append('organization[iban]', values.iban || '')
+                body.append('organization[email]', values.email || '')
+                body.append('organization[phone]', values.phone || '')
+                body.append('organization[is_default]', String(values.isDefault))
+                if (values.logoFile) body.append('logo', values.logoFile)
+                if (values.removeLogo) body.append('remove_logo', 'true')
+                const resp = await fetch(url, { method, headers: { 'X-CSRF-Token': csrfToken }, body })
+                if (!resp.ok) {
+                  const d = await resp.json().catch(() => ({}))
+                  throw new Error(d.error || `${resp.status} ${resp.statusText}`)
+                }
+              } else {
+                await apiRequest(url, {
+                  method,
+                  body: JSON.stringify({
+                    organization: {
+                      name: values.name,
+                      legal_form: values.legalForm,
+                      registration_number: values.registrationNumber,
+                      address: values.address,
+                      iban: values.iban,
+                      email: values.email,
+                      phone: values.phone,
+                      is_default: values.isDefault,
+                    },
+                  }),
+                })
+              }
+              setOrganizationFormModal(null)
+              await loadOrganizations()
+            } catch (err) {
+              setError(err.message)
+              throw err
+            } finally {
+              setBusy(false)
+            }
+          }}
+          onCancel={() => setOrganizationFormModal(null)}
         />
       )}
 
