@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, Plus, Send, Trash2, ExternalLink } from 'lucide-react'
 import type { Quote } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
+import { apiRequest } from '../../../lib/api'
 
 interface QuotesTabProps {
   projectId: string
@@ -37,6 +38,23 @@ export function QuotesTab({
     unit_price: 0,
   })
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(null)
+  const [portalUrl, setPortalUrl] = useState<string | null>(null)
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const handleOpenClientPortal = async () => {
+    if (portalUrl) {
+      window.open(portalUrl, '_blank', 'noreferrer')
+      return
+    }
+    setPortalLoading(true)
+    try {
+      const data = await apiRequest(`/api/v1/design/${projectId}/client-portal-link`, { method: 'POST' })
+      setPortalUrl(data.url)
+      window.open(data.url, '_blank', 'noreferrer')
+    } finally {
+      setPortalLoading(false)
+    }
+  }
 
   const statusLabel: Record<string, string> = {
     draft: 'Brouillon',
@@ -57,15 +75,15 @@ export function QuotesTab({
           <Plus className="w-4 h-4" />
           Nouveau devis
         </button>
-        <a
-          href={`/client/design/${projectId}`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+        <button
+          type="button"
+          onClick={handleOpenClientPortal}
+          disabled={portalLoading}
+          className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
         >
           <ExternalLink className="w-4 h-4" />
-          Ouvrir portail client
-        </a>
+          {portalLoading ? 'Génération…' : 'Ouvrir portail client'}
+        </button>
       </div>
 
       {quotes.length === 0 ? (
