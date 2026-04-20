@@ -567,7 +567,14 @@ module Api
 
       def create_document
         project = find_project
-        item = project.documents.create!(project_document_params.merge(uploaded_at: Time.current))
+        item = project.documents.build(
+          project_document_params.except(:file).merge(uploaded_at: Time.current)
+        )
+        if params[:file].present?
+          item.file.attach(params[:file])
+          item.size = params[:file].size if item.size.to_i.zero?
+        end
+        item.save!
 
         render json: serialize_document(item), status: :created
       end
@@ -990,7 +997,7 @@ module Api
       end
 
       def project_document_params
-        params.permit(:category, :name, :url, :size, :uploaded_by)
+        params.permit(:category, :name, :url, :size, :uploaded_by, :file)
       end
 
       def media_item_params
@@ -1543,13 +1550,21 @@ module Api
       end
 
       def serialize_document(item)
+        download_url = if item.file.attached?
+          Rails.application.routes.url_helpers.rails_blob_url(item.file, only_path: true)
+        else
+          item.url
+        end
+        size = item.file.attached? ? item.file.byte_size : item.size
+        filename = item.file.attached? ? item.file.filename.to_s : nil
         {
           id: item.id.to_s,
           projectId: item.project_id.to_s,
           category: item.category,
           name: item.name,
-          url: item.url,
-          size: item.size,
+          url: download_url,
+          filename: filename,
+          size: size,
           uploadedAt: item.uploaded_at.iso8601,
           uploadedBy: item.uploaded_by
         }

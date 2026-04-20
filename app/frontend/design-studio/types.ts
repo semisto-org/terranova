@@ -325,7 +325,8 @@ export interface ProjectDocument {
   projectId: string
   category: string
   name: string
-  url: string
+  url: string | null
+  filename?: string | null
   size: number
   uploadedAt: string
   uploadedBy: string

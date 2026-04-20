@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_042616) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -681,7 +681,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_042616) do
     t.datetime "updated_at", null: false
     t.datetime "uploaded_at", null: false
     t.string "uploaded_by", default: "team", null: false
-    t.string "url", null: false
+    t.string "url"
     t.index ["deleted_at"], name: "index_design_project_documents_on_deleted_at"
     t.index ["name"], name: "idx_design_project_documents_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["notion_id"], name: "index_design_project_documents_on_notion_id", unique: true

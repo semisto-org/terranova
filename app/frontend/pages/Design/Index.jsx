@@ -1024,7 +1024,13 @@ export default function DesignIndex({ initialProjectId }) {
           action: () => runMutation(() => apiRequest(`/api/v1/design/quote-lines/${lineId}`, { method: 'DELETE' }), { refreshProjectId: currentProjectId }),
         })
       },
-      addDocument: (values) => runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/documents`, { method: 'POST', body: JSON.stringify(values) }), { refreshProjectId: currentProjectId }),
+      addDocument: (values) => {
+        const formData = new FormData()
+        formData.append('category', values.category)
+        formData.append('name', values.name)
+        if (values.file) formData.append('file', values.file)
+        return runMutation(() => apiRequest(`/api/v1/design/${currentProjectId}/documents`, { method: 'POST', body: formData }), { refreshProjectId: currentProjectId })
+      },
       deleteDocument: (documentId) => {
         const doc = projectDetail?.documents?.find((d) => d.id === documentId)
         setDeleteConfirm({
@@ -1101,6 +1107,13 @@ export default function DesignIndex({ initialProjectId }) {
       createBucketTransaction: async (data) => {
         await runMutation(() => apiRequest(`/api/v1/projects/design-project/${currentProjectId}/bucket`, {
           method: 'POST',
+          body: JSON.stringify(data),
+        }), { refreshDashboard: false, refreshProjectId: null })
+        loadBucket(currentProjectId)
+      },
+      updateBucketTransaction: async (id, data) => {
+        await runMutation(() => apiRequest(`/api/v1/bucket/${id}`, {
+          method: 'PATCH',
           body: JSON.stringify(data),
         }), { refreshDashboard: false, refreshProjectId: null })
         loadBucket(currentProjectId)
@@ -1200,6 +1213,7 @@ export default function DesignIndex({ initialProjectId }) {
       onToggleDesignTask: detailActions.toggleDesignTask || noop,
       onDeleteDesignTask: detailActions.deleteDesignTask || noop,
       onCreateBucketTransaction: detailActions.createBucketTransaction || noop,
+      onUpdateBucketTransaction: detailActions.updateBucketTransaction || noop,
       onDeleteBucketTransaction: detailActions.deleteBucketTransaction || noop,
     }
   }, [deleteProject, detailActions])
