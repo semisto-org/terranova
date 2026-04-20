@@ -78,6 +78,7 @@ export interface ProjectDetailPayload {
   }
   teamMembers: Array<{
     id: string
+    memberId: string
     memberName: string
     memberEmail: string
     memberAvatar?: string
@@ -249,6 +250,7 @@ export interface ProjectDetailActions {
   onDeleteDesignTask: (id: string) => void
   onSearch: (query: string) => void
   onCreateBucketTransaction: (data: { kind: string; amount: number; description: string; date: string; member_id?: string }) => void
+  onUpdateBucketTransaction: (id: string, data: { kind: string; amount: number; description: string; date: string; member_id?: string | null }) => void
   onDeleteBucketTransaction: (id: string) => void
 }
 
@@ -475,8 +477,9 @@ export function ProjectDetailView({
             {activeTab === 'bucket' && (
               <BucketTab
                 bucket={detail.bucket}
-                teamMembers={detail.teamMembers.map(m => ({ id: m.id, memberName: m.memberName }))}
+                teamMembers={detail.teamMembers.map(m => ({ id: m.memberId, memberName: m.memberName }))}
                 onCreateTransaction={a.onCreateBucketTransaction}
+                onUpdateTransaction={a.onUpdateBucketTransaction}
                 onDeleteTransaction={a.onDeleteBucketTransaction}
               />
             )}

@@ -4,8 +4,8 @@ module Api
   module V1
     class BucketController < BaseController
       before_action :set_projectable, only: [:index, :create]
-      before_action :set_transaction, only: [:destroy]
-      before_action :require_admin, only: [:create, :destroy]
+      before_action :set_transaction, only: [:update, :destroy]
+      before_action :require_admin, only: [:create, :update, :destroy]
 
       # GET /api/v1/projects/:type/:id/bucket
       def index
@@ -36,6 +36,29 @@ module Api
           render json: serialize_transaction(txn), status: :created
         else
           render json: { errors: txn.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/bucket/:id
+      def update
+        attrs = transaction_params.to_h
+
+        if attrs.key?("member_id")
+          member_id = attrs["member_id"].presence
+          if member_id
+            member = Member.find(member_id)
+            attrs["member_id"] = member.id
+            attrs["member_name"] = "#{member.first_name} #{member.last_name}".strip
+          else
+            attrs["member_id"] = nil
+            attrs["member_name"] = nil
+          end
+        end
+
+        if @transaction.update(attrs)
+          render json: serialize_transaction(@transaction)
+        else
+          render json: { errors: @transaction.errors.full_messages }, status: :unprocessable_entity
         end
       end
 

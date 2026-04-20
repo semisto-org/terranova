@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/api'
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  Pencil,
   Trash2,
   X,
   Loader2,
@@ -141,6 +142,7 @@ export function BucketSection({
   const [error, setError] = useState<string | null>(null)
 
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formKind, setFormKind] = useState<'credit' | 'debit'>('credit')
   const [formAmount, setFormAmount] = useState('')
   const [formDescription, setFormDescription] = useState('')
@@ -164,6 +166,7 @@ export function BucketSection({
   }, [load])
 
   const openForm = (kind: 'credit' | 'debit') => {
+    setEditingId(null)
     setFormKind(kind)
     setFormAmount('')
     setFormDescription(kind === 'credit' ? 'Facturation client' : '')
@@ -172,23 +175,51 @@ export function BucketSection({
     setShowForm(true)
   }
 
+  const openEdit = (txn: BucketTransaction) => {
+    setEditingId(txn.id)
+    setFormKind(txn.kind)
+    setFormAmount(txn.amount.toString())
+    setFormDescription(txn.description)
+    setFormDate(txn.date.slice(0, 10))
+    setFormMemberId(txn.memberId ?? '')
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const amount = parseFloat(formAmount)
     if (!amount || amount <= 0) return
     setError(null)
     try {
-      await apiRequest(`/api/v1/projects/${projectType}/${projectId}/bucket`, {
-        method: 'POST',
-        body: JSON.stringify({
-          kind: formKind,
-          amount,
-          description: formDescription,
-          date: formDate,
-          ...(formKind === 'debit' && formMemberId ? { member_id: formMemberId } : {}),
-        }),
-      })
-      setShowForm(false)
+      if (editingId) {
+        await apiRequest(`/api/v1/bucket/${editingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            kind: formKind,
+            amount,
+            description: formDescription,
+            date: formDate,
+            member_id: formKind === 'debit' ? (formMemberId || null) : null,
+          }),
+        })
+      } else {
+        await apiRequest(`/api/v1/projects/${projectType}/${projectId}/bucket`, {
+          method: 'POST',
+          body: JSON.stringify({
+            kind: formKind,
+            amount,
+            description: formDescription,
+            date: formDate,
+            ...(formKind === 'debit' && formMemberId ? { member_id: formMemberId } : {}),
+          }),
+        })
+      }
+      closeForm()
       await load()
     } catch (err: any) {
       setError(err.message)
@@ -303,9 +334,11 @@ export function BucketSection({
         <div className="rounded-2xl border border-stone-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-stone-900">
-              {formKind === 'credit' ? 'Remplir le bucket' : 'Vider le bucket'}
+              {editingId
+                ? (formKind === 'credit' ? 'Modifier le crédit' : 'Modifier le paiement')
+                : (formKind === 'credit' ? 'Remplir le bucket' : 'Vider le bucket')}
             </h3>
-            <button type="button" onClick={() => setShowForm(false)} className="p-1 text-stone-400 hover:text-stone-600">
+            <button type="button" onClick={closeForm} className="p-1 text-stone-400 hover:text-stone-600">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -366,7 +399,7 @@ export function BucketSection({
             <div className="sm:col-span-2 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={closeForm}
                 className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
               >
                 Annuler
@@ -376,7 +409,9 @@ export function BucketSection({
                 className="rounded-xl px-4 py-2 text-sm font-medium text-white transition-colors"
                 style={{ backgroundColor: accentColor }}
               >
-                {formKind === 'credit' ? 'Ajouter le crédit' : 'Enregistrer le paiement'}
+                {editingId
+                  ? 'Enregistrer les modifications'
+                  : (formKind === 'credit' ? 'Ajouter le crédit' : 'Enregistrer le paiement')}
               </button>
             </div>
           </form>
@@ -403,7 +438,7 @@ export function BucketSection({
                   <th className="px-4 py-3 font-semibold text-stone-600">Membre</th>
                   <th className="px-4 py-3 font-semibold text-stone-600 text-right">Montant</th>
                   <th className="px-4 py-3 font-semibold text-stone-600">Enregistré par</th>
-                  {isAdmin && <th className="px-4 py-3 w-12" />}
+                  {isAdmin && <th className="px-4 py-3 w-20" />}
                 </tr>
               </thead>
               <tbody>
@@ -442,14 +477,25 @@ export function BucketSection({
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(txn.id)}
-                          className="p-1.5 text-stone-500 hover:text-red-600 rounded-lg transition-colors"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(txn)}
+                            className="p-1.5 text-stone-500 rounded-lg transition-colors hover:bg-stone-100"
+                            style={{ color: undefined }}
+                            title="Modifier"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(txn.id)}
+                            className="p-1.5 text-stone-500 hover:text-red-600 rounded-lg transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { usePage } from '@inertiajs/react'
-import { ArrowDownCircle, ArrowUpCircle, Trash2, X, Lock } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Pencil, Trash2, X, Lock } from 'lucide-react'
 import { EmptyState } from '../shared/EmptyState'
 
 const ACCENT = '#AFBD00'
@@ -102,6 +102,13 @@ interface BucketTabProps {
     date: string
     member_id?: string
   }) => void
+  onUpdateTransaction: (id: string, data: {
+    kind: string
+    amount: number
+    description: string
+    date: string
+    member_id?: string | null
+  }) => void
   onDeleteTransaction: (id: string) => void
 }
 
@@ -109,11 +116,13 @@ export function BucketTab({
   bucket,
   teamMembers,
   onCreateTransaction,
+  onUpdateTransaction,
   onDeleteTransaction,
 }: BucketTabProps) {
   const { auth } = usePage<{ auth: { member: { isAdmin: boolean } | null } }>().props
   const isAdmin = auth?.member?.isAdmin ?? false
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formKind, setFormKind] = useState<'credit' | 'debit'>('credit')
   const [formAmount, setFormAmount] = useState('')
   const [formDescription, setFormDescription] = useState('')
@@ -123,6 +132,7 @@ export function BucketTab({
   const data = bucket ?? { transactions: [], totalCredits: 0, totalDebits: 0, balance: 0 }
 
   const openForm = (kind: 'credit' | 'debit') => {
+    setEditingId(null)
     setFormKind(kind)
     setFormAmount('')
     setFormDescription(kind === 'credit' ? 'Facturation client' : '')
@@ -131,18 +141,44 @@ export function BucketTab({
     setShowForm(true)
   }
 
+  const openEdit = (txn: BucketTransaction) => {
+    setEditingId(txn.id)
+    setFormKind(txn.kind)
+    setFormAmount(txn.amount.toString())
+    setFormDescription(txn.description)
+    setFormDate(txn.date.slice(0, 10))
+    setFormMemberId(txn.memberId ?? '')
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const amount = parseFloat(formAmount)
     if (!amount || amount <= 0) return
-    onCreateTransaction({
-      kind: formKind,
-      amount,
-      description: formDescription,
-      date: formDate,
-      ...(formKind === 'debit' && formMemberId ? { member_id: formMemberId } : {}),
-    })
-    setShowForm(false)
+    const memberIdValue = formKind === 'debit' ? (formMemberId || null) : null
+    if (editingId) {
+      onUpdateTransaction(editingId, {
+        kind: formKind,
+        amount,
+        description: formDescription,
+        date: formDate,
+        member_id: memberIdValue,
+      })
+    } else {
+      onCreateTransaction({
+        kind: formKind,
+        amount,
+        description: formDescription,
+        date: formDate,
+        ...(formKind === 'debit' && formMemberId ? { member_id: formMemberId } : {}),
+      })
+    }
+    closeForm()
   }
 
   const formatDate = (dateStr: string) =>
@@ -230,9 +266,11 @@ export function BucketTab({
         <div className="rounded-2xl border border-stone-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-stone-900">
-              {formKind === 'credit' ? 'Nouveau crédit (facturation client)' : 'Nouveau paiement (versement designer)'}
+              {editingId
+                ? (formKind === 'credit' ? 'Modifier le crédit' : 'Modifier le paiement')
+                : (formKind === 'credit' ? 'Nouveau crédit (facturation client)' : 'Nouveau paiement (versement designer)')}
             </h3>
-            <button type="button" onClick={() => setShowForm(false)} className="p-1 text-stone-400 hover:text-stone-600">
+            <button type="button" onClick={closeForm} className="p-1 text-stone-400 hover:text-stone-600">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -290,7 +328,7 @@ export function BucketTab({
             <div className="sm:col-span-2 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={closeForm}
                 className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
               >
                 Annuler
@@ -299,7 +337,9 @@ export function BucketTab({
                 type="submit"
                 className="rounded-xl bg-[#AFBD00] px-4 py-2 text-sm font-medium text-stone-900 hover:bg-[#9BAA00] transition-colors"
               >
-                {formKind === 'credit' ? 'Ajouter le crédit' : 'Enregistrer le paiement'}
+                {editingId
+                  ? 'Enregistrer les modifications'
+                  : (formKind === 'credit' ? 'Ajouter le crédit' : 'Enregistrer le paiement')}
               </button>
             </div>
           </form>
@@ -324,7 +364,7 @@ export function BucketTab({
                   <th className="px-4 py-3 font-semibold text-stone-600">Designer</th>
                   <th className="px-4 py-3 font-semibold text-stone-600 text-right">Montant</th>
                   <th className="px-4 py-3 font-semibold text-stone-600">Enregistré par</th>
-                  {isAdmin && <th className="px-4 py-3 w-12" />}
+                  {isAdmin && <th className="px-4 py-3 w-20" />}
                 </tr>
               </thead>
               <tbody>
@@ -360,18 +400,28 @@ export function BucketTab({
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
-                              onDeleteTransaction(txn.id)
-                            }
-                          }}
-                          className="p-1.5 text-stone-500 hover:text-red-600 rounded-lg transition-colors"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(txn)}
+                            className="p-1.5 text-stone-500 hover:text-[#5B5781] rounded-lg transition-colors"
+                            title="Modifier"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
+                                onDeleteTransaction(txn.id)
+                              }
+                            }}
+                            className="p-1.5 text-stone-500 hover:text-red-600 rounded-lg transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>

@@ -137,6 +137,7 @@ Rails.application.routes.draw do
       # Bucket transactions (polymorphic, works for any project type)
       get    "projects/:type/:id/bucket", to: "bucket#index"
       post   "projects/:type/:id/bucket", to: "bucket#create"
+      patch  "bucket/:id",                to: "bucket#update"
       delete "bucket/:id",                to: "bucket#destroy"
 
       # Unified project listing & detail
