@@ -99,6 +99,7 @@ export function BankSection() {
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
   const [filters, setFilters] = useState<{ status?: string; dateFrom?: string; dateTo?: string; search?: string }>({})
   const [organizations, setOrganizations] = useState<OrganizationSummary[]>([])
+  const [contactOptions, setContactOptions] = useState<{ value: string; label: string }[]>([])
 
   const loadSummary = useCallback(async () => {
     const data = await apiRequest('/api/v1/bank/summary')
@@ -119,6 +120,17 @@ export function BankSection() {
     }
   }, [])
 
+  const loadContacts = useCallback(async () => {
+    try {
+      const data = await apiRequest('/api/v1/lab/contacts')
+      setContactOptions(
+        (data.items || []).map((c: { id: string; name: string }) => ({ value: c.id, label: c.name })),
+      )
+    } catch {
+      setContactOptions([])
+    }
+  }, [])
+
   const loadTransactions = useCallback(async () => {
     const params = new URLSearchParams()
     if (activeConnectionId) params.set('connection_id', activeConnectionId)
@@ -132,8 +144,8 @@ export function BankSection() {
   }, [filters, activeConnectionId])
 
   useEffect(() => {
-    Promise.all([loadSummary(), loadConnections(), loadOrganizations()]).finally(() => setLoading(false))
-  }, [loadSummary, loadConnections, loadOrganizations])
+    Promise.all([loadSummary(), loadConnections(), loadOrganizations(), loadContacts()]).finally(() => setLoading(false))
+  }, [loadSummary, loadConnections, loadOrganizations, loadContacts])
 
   useEffect(() => {
     if (summary && summary.accounts.length > 0) loadTransactions()
@@ -442,6 +454,7 @@ export function BankSection() {
       {creationTarget === 'revenue' && selectedTransaction && defaultRevenueInitial && (
         <RevenueFormModal
           revenue={defaultRevenueInitial}
+          contacts={contactOptions}
           organizations={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
           defaultOrganizationId={selectedTransaction.organizationId || null}
           onSave={handleCreateRevenueFromTransaction}

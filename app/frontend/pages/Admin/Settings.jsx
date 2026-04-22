@@ -403,6 +403,14 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             ? { category: changes.category || '' }
             : {}),
         ...(changes.poles ? { poles: changes.poles } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'reimbursed')
+          ? { reimbursed: changes.reimbursed }
+          : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'reimbursementDate')
+          ? { reimbursement_date: changes.reimbursementDate }
+          : Object.prototype.hasOwnProperty.call(changes, 'reimbursement_date')
+            ? { reimbursement_date: changes.reimbursement_date }
+            : {}),
       }
       if (!Object.keys(payload).length) return
       await runAndRefresh(async () => {

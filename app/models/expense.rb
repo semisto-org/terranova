@@ -60,6 +60,15 @@ class Expense < ApplicationRecord
   end
 
   before_validation :set_supplier_from_contact, if: :supplier_contact_id_changed?
+  before_save :recompute_total_incl_vat_if_zero
+
+  # Safety net: ensure TTC = HT + VAT even if an older code path forgets to set it.
+  def recompute_total_incl_vat_if_zero
+    return if total_incl_vat.to_d.positive?
+    return unless amount_excl_vat.to_d.positive?
+
+    self.total_incl_vat = amount_excl_vat.to_d + vat_6.to_d + vat_12.to_d + vat_21.to_d
+  end
 
   validates :status, :expense_type, presence: true
   validates :invoice_date, presence: true, unless: :planned?

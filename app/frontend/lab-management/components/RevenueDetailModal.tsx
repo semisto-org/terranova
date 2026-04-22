@@ -1,4 +1,4 @@
-import { X, Edit, ExternalLink } from 'lucide-react'
+import { Edit, ExternalLink, Landmark, X } from 'lucide-react'
 import type { RevenueItem } from './RevenueList'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -180,6 +180,58 @@ export function RevenueDetailModal({ revenue, onClose, onEdit }: RevenueDetailMo
               </dd>
             </div>
           )}
+
+          {/* Linked bank transactions */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Landmark className="w-3.5 h-3.5 text-stone-400" />
+              <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+                Transactions bancaires liées
+              </h3>
+              {(revenue.bankTransactions?.length ?? 0) > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-stone-100 text-stone-600">
+                  {revenue.bankTransactions!.length}
+                </span>
+              )}
+            </div>
+            {(revenue.bankTransactions ?? []).length === 0 ? (
+              <div className="rounded-lg border border-dashed border-stone-200 p-3 text-xs text-stone-500">
+                Aucune transaction bancaire rapprochée à cette recette.
+              </div>
+            ) : (
+              <ul className="space-y-1.5">
+                {(revenue.bankTransactions ?? []).map((tx) => (
+                  <li
+                    key={tx.reconciliationId}
+                    className={`rounded-lg border px-3 py-2 text-sm flex items-center gap-3 ${
+                      tx.confidence === 'auto' ? 'bg-emerald-50/40 border-emerald-200/60' : 'bg-white border-stone-200'
+                    }`}
+                  >
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-stone-100 text-stone-500 inline-flex items-center justify-center">
+                      <Landmark className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-[11px] text-stone-500">
+                        <span className="font-medium text-stone-600">{tx.bankName || tx.provider || '—'}</span>
+                        <span>·</span>
+                        <span className="font-mono">{formatDate(tx.date)}</span>
+                        {tx.confidence === 'auto' && (
+                          <span className="text-emerald-700 text-[10px] uppercase tracking-wider font-semibold">auto</span>
+                        )}
+                      </div>
+                      <div className="text-stone-900 truncate">{tx.counterpartName || tx.remittanceInfo || '—'}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-semibold text-stone-900 text-sm">{formatCurrency(Math.abs(tx.allocatedAmount))}</div>
+                      {Math.abs(tx.allocatedAmount) !== Math.abs(tx.amount) && (
+                        <div className="text-[10px] text-stone-400 font-mono">sur {formatCurrency(Math.abs(tx.amount))}</div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

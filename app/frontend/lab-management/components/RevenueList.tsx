@@ -8,6 +8,7 @@ import {
   Edit3,
   FileText,
   Filter,
+  Landmark,
   Plus,
   Search,
   Sparkles,
@@ -16,6 +17,20 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react'
+
+export interface RevenueLinkedBankTransaction {
+  reconciliationId: string
+  transactionId: string
+  connectionId: string
+  bankName: string | null
+  provider: string | null
+  date: string | null
+  amount: number
+  allocatedAmount: number
+  counterpartName: string | null
+  remittanceInfo: string | null
+  confidence: string
+}
 
 export interface RevenueItem {
   id: string
@@ -40,6 +55,9 @@ export interface RevenueItem {
   vatExemption: boolean
   invoiceUrl: string | null
   paidAt: string | null
+  reconciledAmount?: number
+  fullyReconciled?: boolean
+  bankTransactions?: RevenueLinkedBankTransaction[]
   createdAt: string
   updatedAt: string
 }
@@ -609,7 +627,35 @@ export function RevenueList({
                       <td
                         className={`px-3 ${rowPad} ${fontSize} text-right font-mono tabular-nums font-semibold whitespace-nowrap text-stone-900`}
                       >
-                        {fmtMoney(r.amount)}
+                        <span className="inline-flex items-center gap-1.5 justify-end">
+                          {(() => {
+                            const linkedCount = r.bankTransactions?.length || 0
+                            const isFully = Boolean(r.fullyReconciled) && linkedCount > 0
+                            const isPartial = linkedCount > 0 && !isFully
+                            if (isFully) {
+                              return (
+                                <span
+                                  title={`Rapprochée · ${linkedCount} transaction${linkedCount > 1 ? 's' : ''} bancaire${linkedCount > 1 ? 's' : ''}`}
+                                  className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-600"
+                                >
+                                  <Landmark className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                </span>
+                              )
+                            }
+                            if (isPartial) {
+                              return (
+                                <span
+                                  title={`Partiellement rapprochée · ${linkedCount} transaction${linkedCount > 1 ? 's' : ''} liée${linkedCount > 1 ? 's' : ''}`}
+                                  className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-500/15 text-sky-700"
+                                >
+                                  <Landmark className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                </span>
+                              )
+                            }
+                            return null
+                          })()}
+                          {fmtMoney(r.amount)}
+                        </span>
                       </td>
                       <td className="px-3 pr-4 text-right" onClick={(ev) => ev.stopPropagation()}>
                         <div className="inline-flex items-center gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity">

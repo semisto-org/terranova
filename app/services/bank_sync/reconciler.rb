@@ -3,7 +3,7 @@
 module BankSync
   class Reconciler
     AMOUNT_TOLERANCE = 0.01
-    DATE_TOLERANCE_DAYS = 5
+    DATE_TOLERANCE_DAYS = 30
 
     attr_reader :auto_matched, :suggested
 
@@ -113,6 +113,9 @@ module BankSync
       end
 
       # Date proximity (0-30 points)
+      # Suppliers typically get paid within 30 days of the invoice date, so we
+      # accept the full window. Scoring is front-loaded (close matches rank highest)
+      # to avoid false positives on identical amounts appearing weeks apart.
       record_date = type == :expense ? record.invoice_date : record.date
       if record_date.present?
         day_diff = (transaction.date - record_date).abs
@@ -121,7 +124,11 @@ module BankSync
         elsif day_diff <= 1
           score += 25
         elsif day_diff <= 3
+          score += 20
+        elsif day_diff <= 7
           score += 15
+        elsif day_diff <= 14
+          score += 10
         elsif day_diff <= DATE_TOLERANCE_DAYS
           score += 5
         end

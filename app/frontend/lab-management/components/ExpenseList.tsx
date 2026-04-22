@@ -10,6 +10,7 @@ import {
   Edit3,
   FileText,
   Filter,
+  Landmark,
   Lock,
   Plus,
   Search,
@@ -17,6 +18,20 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+
+export interface LinkedBankTransaction {
+  reconciliationId: string
+  transactionId: string
+  connectionId: string
+  bankName: string | null
+  provider: string | null
+  date: string | null
+  amount: number
+  allocatedAmount: number
+  counterpartName: string | null
+  remittanceInfo: string | null
+  confidence: string
+}
 
 export interface ExpenseItem {
   id: string
@@ -41,8 +56,13 @@ export interface ExpenseItem {
   designProjectId: string | null
   notes: string
   documentUrl: string | null
+  documentFilename?: string | null
+  paidBy?: string | null
+  reimbursed?: boolean
+  reimbursementDate?: string | null
   reconciledAmount?: number
   fullyReconciled?: boolean
+  bankTransactions?: LinkedBankTransaction[]
   createdAt: string
 }
 
@@ -480,6 +500,8 @@ export function ExpenseList({
                   const isAnomaly = anomalies.has(e.id)
                   const isSelected = selectedIds.includes(e.id)
                   const isReconciled = Boolean(e.fullyReconciled)
+                  const linkedCount = e.bankTransactions?.length || 0
+                  const isPartiallyLinked = linkedCount > 0 && !isReconciled
                   const rowPad = density === 'compact' ? 'py-2' : 'py-3.5'
                   const fontSize = density === 'compact' ? 'text-[13px]' : 'text-sm'
                   const rowBg = isSelected
@@ -577,8 +599,19 @@ export function ExpenseList({
                       }`}>
                         <span className="inline-flex items-center gap-1.5 justify-end">
                           {isReconciled && (
-                            <span title="Rapprochée intégralement" className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-emerald-500/15 text-emerald-600">
-                              <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                            <span
+                              title={`Rapprochée intégralement · ${linkedCount} transaction${linkedCount > 1 ? 's' : ''} bancaire${linkedCount > 1 ? 's' : ''}`}
+                              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-600"
+                            >
+                              <Landmark className="w-2.5 h-2.5" strokeWidth={2.5} />
+                            </span>
+                          )}
+                          {isPartiallyLinked && (
+                            <span
+                              title={`Partiellement rapprochée · ${linkedCount} transaction${linkedCount > 1 ? 's' : ''} liée${linkedCount > 1 ? 's' : ''}`}
+                              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-500/15 text-sky-700"
+                            >
+                              <Landmark className="w-2.5 h-2.5" strokeWidth={2.5} />
                             </span>
                           )}
                           {fmtMoney(e.totalInclVat)}
@@ -642,6 +675,9 @@ export function ExpenseList({
           onPrev={() => drawerIndex > 0 && setDrawerExpenseId(sorted[drawerIndex - 1].id)}
           onNext={() => drawerIndex < sorted.length - 1 && setDrawerExpenseId(sorted[drawerIndex + 1].id)}
           onEdit={() => onEditExpense(drawerExpense)}
+          onMarkReimbursed={onInlineUpdate ? async (id) => {
+            await onInlineUpdate(id, { reimbursed: true, reimbursementDate: new Date().toISOString().slice(0, 10) })
+          } : undefined}
           hasPrev={drawerIndex > 0}
           hasNext={drawerIndex < sorted.length - 1}
         />
@@ -779,6 +815,7 @@ function ExpenseDrawer({
   onPrev,
   onNext,
   onEdit,
+  onMarkReimbursed,
   hasPrev,
   hasNext,
 }: {
@@ -787,6 +824,7 @@ function ExpenseDrawer({
   onPrev: () => void
   onNext: () => void
   onEdit: () => void
+  onMarkReimbursed?: (id: string) => Promise<void> | void
   hasPrev: boolean
   hasNext: boolean
 }) {
@@ -799,6 +837,21 @@ function ExpenseDrawer({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, onPrev, onNext, hasPrev, hasNext])
+
+  const [reimbBusy, setReimbBusy] = useState(false)
+
+  const isMemberAdvance = expense.paymentType === 'reimbursement_michael' || expense.paymentType === 'member'
+  const needsReimbursement = isMemberAdvance && !expense.reimbursed
+
+  // Document rendering classification
+  const docType = (() => {
+    const url = expense.documentUrl
+    if (!url) return null
+    const lower = (expense.documentFilename || url).toLowerCase()
+    if (lower.endsWith('.pdf')) return 'pdf'
+    if (/\.(jpe?g|png|gif|webp|avif|bmp|heic|heif)(\?|$)/.test(lower)) return 'image'
+    return 'other'
+  })()
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm animate-[fadeIn_.15s_ease-out]" onClick={onClose}>
@@ -889,6 +942,123 @@ function ExpenseDrawer({
               </div>
             </div>
           )}
+
+          {/* Linked bank transactions */}
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Landmark className="w-3.5 h-3.5 text-stone-400" />
+              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">
+                Transactions bancaires liées
+              </div>
+              {(expense.bankTransactions?.length ?? 0) > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-stone-100 text-stone-600">
+                  {expense.bankTransactions!.length}
+                </span>
+              )}
+            </div>
+            {(expense.bankTransactions ?? []).length === 0 ? (
+              <div className="rounded-lg border border-dashed border-stone-200 p-3 text-xs text-stone-500">
+                Aucune transaction bancaire rapprochée à cette dépense.
+              </div>
+            ) : (
+              <ul className="space-y-1.5">
+                {(expense.bankTransactions ?? []).map((tx) => (
+                  <li
+                    key={tx.reconciliationId}
+                    className={`rounded-lg border px-3 py-2 text-sm flex items-center gap-3 ${
+                      tx.confidence === 'auto' ? 'bg-emerald-50/40 border-emerald-200/60' : 'bg-white border-stone-200'
+                    }`}
+                  >
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-stone-100 text-stone-500 inline-flex items-center justify-center">
+                      <Landmark className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-[11px] text-stone-500">
+                        <span className="font-medium text-stone-600">{tx.bankName || tx.provider || '—'}</span>
+                        <span>·</span>
+                        <span className="font-mono">{fmtDate(tx.date)}</span>
+                        {tx.confidence === 'auto' && (
+                          <span className="text-emerald-700 text-[10px] uppercase tracking-wider font-semibold">auto</span>
+                        )}
+                      </div>
+                      <div className="text-stone-900 truncate">{tx.counterpartName || tx.remittanceInfo || '—'}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-semibold text-stone-900 text-sm">{fmtMoney(Math.abs(tx.allocatedAmount))}</div>
+                      {Math.abs(tx.allocatedAmount) !== Math.abs(tx.amount) && (
+                        <div className="text-[10px] text-stone-400 font-mono">sur {fmtMoney(Math.abs(tx.amount))}</div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Document preview */}
+          {expense.documentUrl && (
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="w-3.5 h-3.5 text-stone-400" />
+                <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">
+                  Document
+                </div>
+                {expense.documentFilename && (
+                  <span className="text-[11px] text-stone-500 font-mono truncate">{expense.documentFilename}</span>
+                )}
+                <a
+                  href={expense.documentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-auto text-[11px] font-medium text-[#5B5781] hover:underline"
+                >
+                  Ouvrir
+                </a>
+              </div>
+              {docType === 'pdf' && (
+                <div className="rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
+                  <object
+                    data={`${expense.documentUrl}#toolbar=0&navpanes=0`}
+                    type="application/pdf"
+                    className="w-full h-[600px] block"
+                  >
+                    <div className="p-6 text-sm text-stone-500 text-center">
+                      Impossible d'afficher le PDF.{' '}
+                      <a href={expense.documentUrl} target="_blank" rel="noreferrer" className="text-[#5B5781] underline">
+                        Cliquez pour l'ouvrir.
+                      </a>
+                    </div>
+                  </object>
+                </div>
+              )}
+              {docType === 'image' && (
+                <a href={expense.documentUrl} target="_blank" rel="noreferrer" className="block rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
+                  <img
+                    src={expense.documentUrl}
+                    alt={expense.documentFilename || 'Document'}
+                    className="w-full h-auto block"
+                  />
+                </a>
+              )}
+              {docType === 'other' && (
+                <a
+                  href={expense.documentUrl}
+                  download={expense.documentFilename || undefined}
+                  className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white p-3 hover:border-stone-300 transition-colors"
+                >
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-stone-100 inline-flex items-center justify-center text-stone-500">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-stone-800 truncate">
+                      {expense.documentFilename || 'Télécharger le document'}
+                    </div>
+                    <div className="text-[11px] text-stone-400">Cliquez pour télécharger</div>
+                  </div>
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer actions */}
@@ -911,9 +1081,27 @@ function ExpenseDrawer({
           >
             <ChevronRight className="w-4 h-4" />
           </button>
+          {needsReimbursement && onMarkReimbursed && (
+            <button
+              onClick={async () => {
+                setReimbBusy(true)
+                try {
+                  await onMarkReimbursed(expense.id)
+                } finally {
+                  setReimbBusy(false)
+                }
+              }}
+              disabled={reimbBusy}
+              className="ml-auto inline-flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700 px-5 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+              title={`Marquer comme remboursée${expense.paidBy ? ` (payée par ${expense.paidBy})` : ''}`}
+            >
+              <Check className="w-4 h-4" />
+              {reimbBusy ? 'Enregistrement…' : 'Marquer remboursée'}
+            </button>
+          )}
           <button
             onClick={onEdit}
-            className="ml-auto inline-flex items-center gap-2 rounded-full bg-stone-900 hover:bg-[#5B5781] text-white px-5 py-2 text-sm font-medium transition-colors"
+            className={`${needsReimbursement ? '' : 'ml-auto'} inline-flex items-center gap-2 rounded-full bg-stone-900 hover:bg-[#5B5781] text-white px-5 py-2 text-sm font-medium transition-colors`}
           >
             <Edit3 className="w-4 h-4" />
             Modifier

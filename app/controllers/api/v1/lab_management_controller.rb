@@ -1259,6 +1259,9 @@ module Api
           organizationId: r.organization_id&.to_s,
           organizationName: r.organization&.name,
           vatSubject: r.organization&.vat_subject,
+          reconciledAmount: r.reconciled_amount.to_f,
+          fullyReconciled: r.fully_reconciled?,
+          bankTransactions: serialize_linked_bank_transactions(r),
           createdAt: r.created_at.iso8601,
           updatedAt: r.updated_at.iso8601
         }
@@ -1316,9 +1319,32 @@ module Api
           end,
           reconciledAmount: item.reconciled_amount.to_f,
           fullyReconciled: item.fully_reconciled?,
+          bankTransactions: serialize_linked_bank_transactions(item),
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
+      end
+
+      # Returns a lightweight summary of bank_transactions that reconcile this
+      # expense/revenue, for display in the detail drawer and list icons.
+      def serialize_linked_bank_transactions(record)
+        record.bank_reconciliations.includes(bank_transaction: :bank_connection).map do |r|
+          tx = r.bank_transaction
+          next unless tx
+          {
+            reconciliationId: r.id.to_s,
+            transactionId: tx.id.to_s,
+            connectionId: tx.bank_connection_id.to_s,
+            bankName: tx.bank_connection&.bank_name,
+            provider: tx.bank_connection&.provider,
+            date: tx.date&.iso8601,
+            amount: tx.amount.to_f,
+            allocatedAmount: r.amount.to_f,
+            counterpartName: tx.counterpart_name,
+            remittanceInfo: tx.remittance_info,
+            confidence: r.confidence
+          }
+        end.compact
       end
 
       def replace_event_attendees(event, attendee_ids)

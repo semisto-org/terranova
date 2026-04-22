@@ -466,17 +466,19 @@ export function RevenueFormModal({ revenue, contacts = [], organizations = [], d
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="Méthode de paiement">
-                    <input
-                      type="text"
-                      list="revenue-payment-methods"
-                      value={form.payment_method}
-                      onChange={(e) => update('payment_method', e.target.value)}
-                      placeholder="Virement, Carte, Cash…"
-                      className={inputBase}
-                    />
-                    <datalist id="revenue-payment-methods">
-                      {PAYMENT_METHOD_OPTIONS.map((m) => <option key={m} value={m} />)}
-                    </datalist>
+                    <div className="relative">
+                      <select
+                        value={form.payment_method}
+                        onChange={(e) => update('payment_method', e.target.value)}
+                        className={selectBase}
+                      >
+                        <option value="">— Sélectionner —</option>
+                        {PAYMENT_METHOD_OPTIONS.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                    </div>
                   </Field>
                   <Field label="Date de paiement">
                     <input
