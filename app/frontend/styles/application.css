@@ -109,6 +109,17 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+/* Drawer / Modal — generic right-slide panel */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 /* Auth Pages — Login / ForgotPassword / ResetPassword */
 @keyframes auth-fade-up {
   from { opacity: 0; transform: translateY(14px); }

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sync production Active Storage files to local development
+# Usage: bin/sync-production-storage
+
+SSH_HOST="deploy@HATCHBOXED"
+REMOTE_STORAGE="/home/deploy/terranova/shared/storage/"
+LOCAL_STORAGE="$(cd "$(dirname "$0")/.." && pwd)/storage/"
+
+echo "==> Syncing storage from $SSH_HOST:$REMOTE_STORAGE"
+echo "    to $LOCAL_STORAGE"
+mkdir -p "$LOCAL_STORAGE"
+rsync -az --progress --delete "$SSH_HOST:$REMOTE_STORAGE" "$LOCAL_STORAGE"
+
+echo "==> Done! Local storage is now a mirror of production."

@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { Building2, Check, ChevronsUpDown, GraduationCap, Globe2, Layers, Palette, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
 import SimpleEditor from '../SimpleEditor'
+import { apiRequest } from '@/lib/api'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)]'
@@ -72,51 +74,16 @@ const POLE_OPTIONS = [
   { value: 'design', label: 'Studio' },
   { value: 'nursery', label: 'Nursery' },
 ]
+const POLE_COLOR = {
+  academy: { fg: '#B01A19', bg: '#f5dad3' },
+  design: { fg: '#6F7900', bg: '#eef0e0' },
+  nursery: { fg: '#B36F00', bg: '#fdf0d6' },
+  lab: { fg: '#5B5781', bg: '#e8e5ed' },
+}
 
 const CONTACT_TYPE_OPTIONS = [
   { value: 'person', label: 'Personne' },
   { value: 'organization', label: 'Organisation' },
-]
-
-const EXPENSE_CATEGORY_OPTIONS = [
-  'Assurances',
-  'Autres dépenses',
-  'Bibliothèque',
-  'Charges sociales',
-  'Communication',
-  'Contributions et adhésions',
-  'Déplacements',
-  'Entretien et réparations',
-  'Événements',
-  'Fournitures',
-  'Frais bancaires',
-  'Frais de formation',
-  'Frais généraux',
-  'Frais juridiques et comptables',
-  'Hébergement et restauration',
-  'In/out',
-  'Indemnités et avantages',
-  'Laboratoire',
-  'Licences et abonnements',
-  'Loyer',
-  'Matériel et équipements',
-  'Matériel plantations',
-  'Plants',
-  'Prestations',
-  'Projets',
-  'Projets innovants',
-  'Publicité et promotion',
-  'Relations publiques',
-  'Rémunération des bénévoles',
-  'Réserves',
-  'Salaires',
-  'Site web et médias sociaux',
-  'Sponsoring',
-  'Stock pour shop',
-  'Subventions et aides',
-  'Télécommunications',
-  'Transport et logistique',
-  'Visites et conférences',
 ]
 
 function toIsoDate(d) {
@@ -132,6 +99,9 @@ export function ExpenseFormModal({
   trainingOptions = [],
   designProjectOptions = [],
   contactOptions: contactOptionsProp = [],
+  categoryOptions = [],
+  organizationOptions = [],
+  defaultOrganizationId = null,
   fetchContacts,
   onCreateContact,
   showTrainingLink = true,
@@ -142,7 +112,6 @@ export function ExpenseFormModal({
   accentColor = '#B01A19',
 }) {
   const isEdit = Boolean(expense)
-  const supplierRef = useRef(null)
 
   const today = toIsoDate(new Date())
   const [contactList, setContactList] = useState(contactOptionsProp)
@@ -153,7 +122,61 @@ export function ExpenseFormModal({
   const [creatingContact, setCreatingContact] = useState(false)
   const [status, setStatus] = useState(expense?.status ?? 'processing')
   const [invoiceDate, setInvoiceDate] = useState(toIsoDate(expense?.invoiceDate ?? expense?.invoice_date) ?? today)
-  const [category, setCategory] = useState(expense?.category ?? '')
+  const [categoryId, setCategoryId] = useState(
+    expense?.categoryId ?? expense?.category_id ?? expense?.expense_category_id ?? ''
+  )
+  const [fetchedCategories, setFetchedCategories] = useState([])
+  const [fetchedTrainings, setFetchedTrainings] = useState([])
+  const [fetchedDesignProjects, setFetchedDesignProjects] = useState([])
+  const effectiveCategoryOptions = categoryOptions.length > 0 ? categoryOptions : fetchedCategories
+  const effectiveTrainingOptions = trainingOptions.length > 0 ? trainingOptions : fetchedTrainings
+  const effectiveDesignProjectOptions = designProjectOptions.length > 0 ? designProjectOptions : fetchedDesignProjects
+
+  // Fetch trainings and design projects in parallel when not provided by parent
+  // (e.g. when the modal is opened from the Bank view, Academy, Design Studio…).
+  useEffect(() => {
+    if (!showTrainingLink || trainingOptions.length > 0) return
+    let cancelled = false
+    apiRequest('/api/v1/academy')
+      .then((payload) => {
+        if (cancelled) return
+        setFetchedTrainings((payload?.trainings || []).map((t) => ({ value: t.id, label: t.title })))
+      })
+      .catch(() => { /* silently fall back to empty list */ })
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line -- run once on mount
+
+  useEffect(() => {
+    if (!showDesignProjectLink || designProjectOptions.length > 0) return
+    let cancelled = false
+    apiRequest('/api/v1/design')
+      .then((payload) => {
+        if (cancelled) return
+        setFetchedDesignProjects((payload?.projects || []).map((p) => ({ value: p.id, label: p.name })))
+      })
+      .catch(() => { /* silently fall back to empty list */ })
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line -- run once on mount
+
+  useEffect(() => {
+    // Fetch once on mount when parent doesn't supply categories. We intentionally
+    // don't depend on `categoryOptions` since it's often a freshly-created array on
+    // each parent render, which would cause an infinite refetch loop.
+    if (categoryOptions.length > 0) return
+    let cancelled = false
+    apiRequest('/api/v1/lab/expense-categories')
+      .then((response) => {
+        if (cancelled) return
+        setFetchedCategories((response?.items || []).map((c) => ({ id: c.id, label: c.label })))
+      })
+      .catch(() => {
+        /* If the fetch fails, the select simply shows no options; form still submits. */
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run once
+  }, [])
   const [expenseType, setExpenseType] = useState(expense?.expenseType ?? expense?.expense_type ?? 'services_and_goods')
   const [billingZone, setBillingZone] = useState(expense?.billingZone ?? expense?.billing_zone ?? '')
   const [paymentDate, setPaymentDate] = useState(toIsoDate(expense?.paymentDate ?? expense?.payment_date) ?? '')
@@ -166,6 +189,34 @@ export function ExpenseFormModal({
   const [totalInclVat, setTotalInclVat] = useState(expense ? Number(expense.totalInclVat ?? expense.total_incl_vat ?? 0) : 0)
   const [euVatRate, setEuVatRate] = useState(expense?.euVatRate ?? expense?.eu_vat_rate ?? '')
   const [euVatAmount, setEuVatAmount] = useState(expense ? Number(expense.euVatAmount ?? expense.eu_vat_amount ?? 0) : 0)
+  // Manual override: user opens the per-rate breakdown table (for invoices with multiple VAT rates).
+  // Auto-detected as ON when an existing expense has multiple non-zero VAT lines, or when
+  // amount_excl_vat doesn't match the implied (vat × rate) of the single rate.
+  const [manualVatOverride, setManualVatOverride] = useState(() => {
+    if (!expense) return false
+    const v6 = Number(expense.vat6 ?? expense.vat_6 ?? 0)
+    const v12 = Number(expense.vat12 ?? expense.vat_12 ?? 0)
+    const v21 = Number(expense.vat21 ?? expense.vat_21 ?? 0)
+    const nonZeroCount = [v6, v12, v21].filter((x) => x > 0).length
+    return nonZeroCount > 1
+  })
+  // HTVA per rate — only used in manual mode. Initialized from existing data when possible.
+  const initialHtvaSplit = useMemo(() => {
+    if (!expense) return { htva0: 0, htva6: 0, htva12: 0, htva21: 0 }
+    const v6 = Number(expense.vat6 ?? expense.vat_6 ?? 0)
+    const v12 = Number(expense.vat12 ?? expense.vat_12 ?? 0)
+    const v21 = Number(expense.vat21 ?? expense.vat_21 ?? 0)
+    const totalHtva = Number(expense.amountExclVat ?? expense.amount_excl_vat ?? 0)
+    const htva6 = +(v6 / 0.06).toFixed(2)
+    const htva12 = +(v12 / 0.12).toFixed(2)
+    const htva21 = +(v21 / 0.21).toFixed(2)
+    const htva0 = +(totalHtva - htva6 - htva12 - htva21).toFixed(2)
+    return { htva0: Math.max(0, htva0), htva6, htva12, htva21 }
+  }, [expense])
+  const [htva0, setHtva0] = useState(initialHtvaSplit.htva0)
+  const [htva6, setHtva6] = useState(initialHtvaSplit.htva6)
+  const [htva12, setHtva12] = useState(initialHtvaSplit.htva12)
+  const [htva21, setHtva21] = useState(initialHtvaSplit.htva21)
   const [paidBy, setPaidBy] = useState(expense?.paidBy ?? expense?.paid_by ?? '')
   const [reimbursed, setReimbursed] = useState(expense?.reimbursed ?? false)
   const [reimbursementDate, setReimbursementDate] = useState(toIsoDate(expense?.reimbursementDate ?? expense?.reimbursement_date) ?? '')
@@ -179,6 +230,27 @@ export function ExpenseFormModal({
   )
   const [trainingId, setTrainingId] = useState(expense?.trainingId ?? expense?.training_id ?? defaultTrainingId ?? '')
   const [designProjectId, setDesignProjectId] = useState(expense?.designProjectId ?? expense?.design_project_id ?? defaultDesignProjectId ?? '')
+  const [organizationId, setOrganizationId] = useState(
+    expense?.organizationId ?? expense?.organization_id ?? defaultOrganizationId ?? organizationOptions[0]?.value ?? ''
+  )
+
+  // If organizationOptions arrive async after mount and we have no selection yet,
+  // pick the default or the first option.
+  useEffect(() => {
+    if (organizationId) return
+    if (organizationOptions.length === 0) return
+    setOrganizationId(defaultOrganizationId || organizationOptions[0].value)
+  }, [organizationOptions, defaultOrganizationId, organizationId])
+  const existingAllocations = expense?.projectAllocations ?? expense?.project_allocations ?? []
+  const [projectAllocations, setProjectAllocations] = useState(
+    existingAllocations.map((a) => ({
+      projectable_type: a.projectableType ?? a.projectable_type ?? '',
+      projectable_id: String(a.projectableId ?? a.projectable_id ?? ''),
+      amount: String(a.amount ?? 0),
+      notes: a.notes ?? '',
+    }))
+  )
+  const [multiProject, setMultiProject] = useState(existingAllocations.length > 0)
   const [documentFile, setDocumentFile] = useState(null)
   const [isDragOverDocument, setIsDragOverDocument] = useState(false)
   const [error, setError] = useState(null)
@@ -207,13 +279,6 @@ export function ExpenseFormModal({
   }, []) // eslint-disable-line -- intentional: run once when modal opens
 
   useEffect(() => {
-    if (supplierRef.current && !showNewContactForm) {
-      const t = setTimeout(() => supplierRef.current?.focus(), 100)
-      return () => clearTimeout(t)
-    }
-  }, [showNewContactForm])
-
-  useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
         if (showNewContactForm) setShowNewContactForm(false)
@@ -223,6 +288,81 @@ export function ExpenseFormModal({
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onCancel, showNewContactForm])
+
+  // Auto-derive VAT split + total from HTVA × rate (skipped when user opens manual override).
+  useEffect(() => {
+    if (manualVatOverride) return
+    const pct = vatRate === '6' ? 6 : vatRate === '12' ? 12 : vatRate === '21' ? 21 : 0
+    const vatAmount = pct > 0 ? +(amountExclVat * (pct / 100)).toFixed(2) : 0
+    setVat6(pct === 6 ? vatAmount : 0)
+    setVat12(pct === 12 ? vatAmount : 0)
+    setVat21(pct === 21 ? vatAmount : 0)
+    setTotalInclVat(+(amountExclVat + vatAmount).toFixed(2))
+  }, [amountExclVat, vatRate, manualVatOverride])
+
+  // Manual mode: sync the per-rate HTVA breakdown into the persisted fields.
+  useEffect(() => {
+    if (!manualVatOverride) return
+    const v6 = +(htva6 * 0.06).toFixed(2)
+    const v12 = +(htva12 * 0.12).toFixed(2)
+    const v21 = +(htva21 * 0.21).toFixed(2)
+    const totalHtva = +(htva0 + htva6 + htva12 + htva21).toFixed(2)
+    setVat6(v6)
+    setVat12(v12)
+    setVat21(v21)
+    setAmountExclVat(totalHtva)
+    setTotalInclVat(+(totalHtva + v6 + v12 + v21).toFixed(2))
+  }, [manualVatOverride, htva0, htva6, htva12, htva21])
+
+  // Reset EU VAT amounts whenever billing zone is set to Belgium (not applicable).
+  useEffect(() => {
+    if (billingZone === 'belgium' || billingZone === '') {
+      if (euVatRate) setEuVatRate('')
+      if (euVatAmount) setEuVatAmount(0)
+    }
+  }, [billingZone]) // eslint-disable-line -- intentional: only react to zone changes
+
+  // Project groups for the combobox: Academy trainings + Design Studio projects.
+  const projectGroups = useMemo(() => {
+    const groups = []
+    if (showTrainingLink && effectiveTrainingOptions.length > 0) {
+      groups.push({
+        type: 'Academy::Training',
+        label: 'Academy',
+        sublabel: 'Activités & formations',
+        icon: 'graduation',
+        color: '#B01A19',
+        bg: '#f5dad3',
+        items: effectiveTrainingOptions,
+      })
+    }
+    if (showDesignProjectLink && effectiveDesignProjectOptions.length > 0) {
+      groups.push({
+        type: 'Design::Project',
+        label: 'Design Studio',
+        sublabel: 'Projets de design',
+        icon: 'palette',
+        color: '#6F7900',
+        bg: '#eef0e0',
+        items: effectiveDesignProjectOptions,
+      })
+    }
+    return groups
+  }, [showTrainingLink, showDesignProjectLink, effectiveTrainingOptions, effectiveDesignProjectOptions])
+
+  // Whether at least one project is linked (single or multi mode).
+  // Drives the visibility of the "Refacturation client" section.
+  const hasProjectLink = multiProject
+    ? projectAllocations.some((a) => a.projectable_type && a.projectable_id)
+    : Boolean(trainingId || designProjectId)
+
+  // Auto-uncheck "billable to client" when no project is linked (avoid stale state).
+  useEffect(() => {
+    if (!hasProjectLink && billableToClient) {
+      setBillableToClient(false)
+      setRebillingStatus('')
+    }
+  }, [hasProjectLink]) // eslint-disable-line -- only react to link state
 
   const togglePole = (pole) => {
     setPoles((prev) => (prev.includes(pole) ? prev.filter((p) => p !== pole) : [...prev, pole]))
@@ -263,12 +403,25 @@ export function ExpenseFormModal({
       return
     }
     try {
+      if (multiProject) {
+        const cleaned = projectAllocations
+          .filter((a) => a.projectable_type && a.projectable_id && parseFloat(a.amount) > 0)
+        if (cleaned.length === 0) {
+          setError('Ajoutez au moins une allocation projet, ou désactivez le mode multi-projets')
+          return
+        }
+        const total = cleaned.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0)
+        if (Math.abs(total - (totalInclVat || 0)) > 0.01) {
+          setError(`La somme des allocations (${total.toFixed(2)} €) doit correspondre au total de la dépense (${(totalInclVat || 0).toFixed(2)} €)`)
+          return
+        }
+      }
       await onSubmit({
         ...(expense?.id && { id: expense.id }),
         supplier_contact_id: supplierContactId || undefined,
         status,
         invoice_date: status === 'planned' ? (invoiceDate || null) : invoiceDate,
-        category: category.trim() || undefined,
+        expense_category_id: categoryId || null,
         expense_type: expenseType,
         billing_zone: billingZone || undefined,
         payment_date: paymentDate || undefined,
@@ -289,8 +442,19 @@ export function ExpenseFormModal({
         name: name.trim() || '',
         notes: notes || '',
         poles: poles.length ? poles : [],
-        training_id: trainingId || undefined,
-        design_project_id: designProjectId || undefined,
+        training_id: multiProject ? undefined : (trainingId || undefined),
+        design_project_id: multiProject ? undefined : (designProjectId || undefined),
+        organization_id: organizationId || undefined,
+        project_allocations: multiProject
+          ? projectAllocations
+              .filter((a) => a.projectable_type && a.projectable_id && parseFloat(a.amount) > 0)
+              .map((a) => ({
+                projectable_type: a.projectable_type,
+                projectable_id: a.projectable_id,
+                amount: parseFloat(a.amount) || 0,
+                notes: a.notes || '',
+              }))
+          : [],
         document: documentFile,
       })
     } catch (err) {
@@ -400,54 +564,24 @@ export function ExpenseFormModal({
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <select
-                          ref={supplierRef}
-                          value={supplierContactId}
-                          onChange={(e) => {
-                            const v = e.target.value
-                            if (v === '__new__') {
-                              setShowNewContactForm(true)
-                              setSupplierContactId('')
-                            } else {
-                              setSupplierContactId(v)
-                            }
-                          }}
-                          className={selectBase}
-                          style={selectChevronStyle}
-                        >
-                          <option value="">—</option>
-                          {onCreateContact && (
-                            <>
-                              <option value="__new__" style={{ fontWeight: '600', color: '#B01A19' }}>
-                                ✨ Créer un nouveau fournisseur
-                              </option>
-                              <option disabled>──────────</option>
-                            </>
-                          )}
-                          {contactList.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name} ({c.contactType === 'organization' ? 'Organisation' : 'Personne'})
-                            </option>
-                          ))}
-                        </select>
-                      </>
+                      <SupplierCombobox
+                        contacts={contactList}
+                        value={supplierContactId}
+                        onChange={setSupplierContactId}
+                        onCreateNew={onCreateContact ? () => { setShowNewContactForm(true); setSupplierContactId('') } : null}
+                        accent={accent}
+                      />
                     )}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-stone-600 mb-1">Catégorie</label>
-                      <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className={selectBase}
-                        style={selectChevronStyle}
-                      >
-                        <option value="">—</option>
-                        {EXPENSE_CATEGORY_OPTIONS.map((label) => (
-                          <option key={label} value={label}>{label}</option>
-                        ))}
-                      </select>
+                      <CategoryCombobox
+                        categories={effectiveCategoryOptions}
+                        value={categoryId}
+                        onChange={setCategoryId}
+                        accent={accent}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-stone-600 mb-1">Type *</label>
@@ -491,21 +625,90 @@ export function ExpenseFormModal({
                 <section>
                   <h4 className="text-sm font-semibold text-stone-700 mb-3">Pôles concernés</h4>
                   <div className="flex flex-wrap gap-2">
-                    {POLE_OPTIONS.map((o) => (
-                      <label key={o.value} className="inline-flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={poles.includes(o.value)}
-                          onChange={() => togglePole(o.value)}
-                          className="rounded border-stone-300"
-                        />
-                        <span className="text-sm text-stone-700">{o.label}</span>
-                      </label>
-                    ))}
+                    {POLE_OPTIONS.map((o) => {
+                      const checked = poles.includes(o.value)
+                      const colors = POLE_COLOR[o.value] || { fg: '#5B5781', bg: '#e8e5ed' }
+                      return (
+                        <button
+                          key={o.value}
+                          type="button"
+                          onClick={() => togglePole(o.value)}
+                          aria-pressed={checked}
+                          className={`group relative inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-medium border transition-all duration-150 ${
+                            checked
+                              ? 'border-transparent shadow-sm'
+                              : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50'
+                          }`}
+                          style={checked ? { backgroundColor: colors.bg, color: colors.fg, borderColor: colors.fg } : undefined}
+                        >
+                          <span
+                            className={`inline-flex items-center justify-center w-4 h-4 rounded-full border transition-all ${
+                              checked ? 'border-transparent' : 'border-stone-300 group-hover:border-stone-400'
+                            }`}
+                            style={checked ? { backgroundColor: colors.fg } : undefined}
+                          >
+                            {checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                          </span>
+                          {o.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </section>
               )}
 
+              {organizationOptions.length > 0 && (
+                <section>
+                  <h4 className="text-sm font-semibold text-stone-700 mb-1">Structure *</h4>
+                  <p className="text-xs text-stone-500 mb-3">Détermine le régime TVA applicable à cette dépense.</p>
+                  <div className={`grid gap-2 ${organizationOptions.length === 2 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                    {organizationOptions.map((o) => {
+                      const checked = organizationId === o.value
+                      return (
+                        <label
+                          key={o.value}
+                          className={`relative flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+                            checked
+                              ? 'border-[var(--expense-accent,#B01A19)] bg-[var(--expense-accent,#B01A19)]/5 shadow-sm'
+                              : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="organization"
+                            value={o.value}
+                            checked={checked}
+                            onChange={() => setOrganizationId(o.value)}
+                            className="sr-only"
+                          />
+                          <span
+                            className={`shrink-0 mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full border-2 transition-all ${
+                              checked ? 'border-[var(--expense-accent,#B01A19)]' : 'border-stone-300'
+                            }`}
+                          >
+                            {checked && <span className="w-2 h-2 rounded-full bg-[var(--expense-accent,#B01A19)]" />}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Building2 className={`w-3.5 h-3.5 shrink-0 ${checked ? 'text-[var(--expense-accent,#B01A19)]' : 'text-stone-400'}`} />
+                              <span className={`text-sm font-medium ${checked ? 'text-stone-900' : 'text-stone-700'}`}>
+                                {o.label}
+                              </span>
+                            </div>
+                            {o.vatSubject === false && (
+                              <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">
+                                Franchise TVA
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* FACTURATION — date + zone */}
               <section>
                 <h4 className="text-sm font-semibold text-stone-700 mb-3">Facturation</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -522,109 +725,219 @@ export function ExpenseFormModal({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-stone-600 mb-1">Zone de facturation</label>
-                    <select
-                      value={billingZone}
-                      onChange={(e) => setBillingZone(e.target.value)}
-                      className={selectBase}
-                      style={selectChevronStyle}
-                    >
-                      <option value="">—</option>
-                      {BILLING_ZONE_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
+                    <div className="flex gap-1 rounded-xl bg-stone-100 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setBillingZone('belgium')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          billingZone === 'belgium' || billingZone === ''
+                            ? 'bg-white text-stone-900 shadow-sm'
+                            : 'text-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        🇧🇪 Belgique
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBillingZone('intra_eu')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          billingZone === 'intra_eu' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        🇪🇺 Intra UE
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBillingZone('extra_eu')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          billingZone === 'extra_eu' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        🌍 Hors UE
+                      </button>
+                    </div>
                   </div>
                 </div>
               </section>
 
+              {/* MONTANTS — hero zone with auto-derivation */}
               <section>
                 <h4 className="text-sm font-semibold text-stone-700 mb-3">Montants</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">Montant HTVA (€)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={amountExclVat || ''}
-                      onChange={(e) => setAmountExclVat(Number(e.target.value) || 0)}
-                      className={inputBase}
-                    />
+                <div className="rounded-xl border border-stone-200 bg-gradient-to-br from-stone-50/60 to-white px-5 py-4">
+                  <div className="flex items-end gap-4 flex-wrap">
+                    <div className="flex-1 min-w-[180px]">
+                      <label className="block text-xs text-stone-500 mb-1.5">Montant HTVA</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={amountExclVat || ''}
+                          onChange={(e) => setAmountExclVat(Number(e.target.value) || 0)}
+                          placeholder="0,00"
+                          className="font-mono tabular-nums text-2xl font-semibold text-stone-900 w-full pl-4 pr-10 py-2 rounded-lg bg-white border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/25 focus:border-[var(--expense-accent,#B01A19)] transition-all"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-stone-400 text-xl">€</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-stone-500 mb-1.5">TVA</label>
+                      <div className="flex gap-1 rounded-lg bg-stone-100 p-1">
+                        {VAT_RATE_OPTIONS.map((opt) => {
+                          const active = vatRate === opt.value
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setVatRate(opt.value)}
+                              className={`px-2 py-1.5 rounded-md text-xs font-mono font-medium transition-all ${
+                                active ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">Taux TVA</label>
-                    <select value={vatRate} onChange={(e) => setVatRate(e.target.value)} className={selectBase} style={selectChevronStyle}>
-                      <option value="">—</option>
-                      {VAT_RATE_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
+
+                  {/* Readout — derived TVA + Total TVAC */}
+                  {!manualVatOverride && (
+                    <div className="mt-4 pt-4 border-t border-dashed border-stone-200 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
+                      {(vatRate === '6' || vatRate === '12' || vatRate === '21') ? (
+                        <>
+                          <span className="text-stone-500">
+                            TVA {vatRate}% :{' '}
+                            <span className="font-mono tabular-nums text-stone-700">
+                              {(amountExclVat * (Number(vatRate) / 100)).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                            </span>
+                          </span>
+                          <span className="text-stone-300">·</span>
+                        </>
+                      ) : vatRate === '0' || vatRate === 'na' || vatRate === 'intracom' ? (
+                        <>
+                          <span className="text-stone-500">
+                            {vatRate === 'intracom' ? 'TVA Intracommunautaire (autoliquidation)' : 'Sans TVA'}
+                          </span>
+                          <span className="text-stone-300">·</span>
+                        </>
+                      ) : null}
+                      <span className="ml-auto text-stone-500">
+                        Total TVAC{' '}
+                        <span className="font-mono tabular-nums text-lg font-semibold" style={{ color: accent }}>
+                          {totalInclVat.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Manual override toggle */}
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setManualVatOverride((v) => !v)}
+                      className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 transition-colors"
+                    >
+                      <Sliders className="w-3 h-3" />
+                      {manualVatOverride ? 'Mode auto' : 'Saisir les taux TVA séparément (facture multi-taux)'}
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA 6% (€)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={vat6 || ''}
-                      onChange={(e) => setVat6(Number(e.target.value) || 0)}
-                      className={inputBase}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA 12% (€)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={vat12 || ''}
-                      onChange={(e) => setVat12(Number(e.target.value) || 0)}
-                      className={inputBase}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA 21% (€)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={vat21 || ''}
-                      onChange={(e) => setVat21(Number(e.target.value) || 0)}
-                      className={inputBase}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">Total TVAC (€)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={totalInclVat || ''}
-                      onChange={(e) => setTotalInclVat(Number(e.target.value) || 0)}
-                      className={inputBase}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">Taux TVA UE</label>
-                    <select value={euVatRate} onChange={(e) => setEuVatRate(e.target.value)} className={selectBase} style={selectChevronStyle}>
-                      <option value="">—</option>
-                      {EU_VAT_RATE_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">TVA UE (€)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={euVatAmount || ''}
-                      onChange={(e) => setEuVatAmount(Number(e.target.value) || 0)}
-                      className={inputBase}
-                    />
-                  </div>
+
+                  {/* Manual VAT inputs — only when override is on */}
+                  {manualVatOverride && (
+                    <div className="mt-4 pt-4 border-t border-stone-200">
+                      <div className="text-[11px] uppercase tracking-[0.14em] text-stone-500 font-medium mb-2.5">
+                        Répartition par taux (recopiez la facture)
+                      </div>
+                      <div className="rounded-lg border border-stone-200 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-stone-50/80 border-b border-stone-200">
+                              <th className="text-left px-3 py-2 text-[10px] font-semibold text-stone-500 uppercase tracking-wider w-20">&nbsp;</th>
+                              <th className="text-right px-3 py-2 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">0%</th>
+                              <th className="text-right px-3 py-2 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">6%</th>
+                              <th className="text-right px-3 py-2 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">12%</th>
+                              <th className="text-right px-3 py-2 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">21%</th>
+                              <th className="text-right px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: accent }}>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100 bg-white">
+                            <tr>
+                              <td className="px-3 py-2 text-[11px] font-medium text-stone-500 uppercase tracking-wider">HTVA</td>
+                              <td className="px-1 py-1.5"><BreakdownCell value={htva0} onChange={setHtva0} /></td>
+                              <td className="px-1 py-1.5"><BreakdownCell value={htva6} onChange={setHtva6} /></td>
+                              <td className="px-1 py-1.5"><BreakdownCell value={htva12} onChange={setHtva12} /></td>
+                              <td className="px-1 py-1.5"><BreakdownCell value={htva21} onChange={setHtva21} /></td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-stone-700">
+                                {fmtMoney(amountExclVat)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-3 py-2 text-[11px] font-medium text-stone-500 uppercase tracking-wider">TVA</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums text-xs text-stone-400">{fmtMoney(0)}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(vat6)}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(vat12)}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(vat21)}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-stone-700">
+                                {fmtMoney(vat6 + vat12 + vat21)}
+                              </td>
+                            </tr>
+                            <tr style={{ backgroundColor: `${accent}0D` }}>
+                              <td className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: accent }}>TVAC</td>
+                              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(htva0)}</td>
+                              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(htva6 + vat6)}</td>
+                              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(htva12 + vat12)}</td>
+                              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-xs text-stone-700">{fmtMoney(htva21 + vat21)}</td>
+                              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-base font-semibold" style={{ color: accent }}>
+                                {fmtMoney(totalInclVat)}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="mt-2 text-[11px] text-stone-400">
+                        Saisissez le montant HTVA par taux — la TVA et le TVAC sont calculés automatiquement.
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                {/* TVA UE — révélée uniquement pour Intra UE / Hors UE */}
+                {(billingZone === 'intra_eu' || billingZone === 'extra_eu') && (
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/40 px-5 py-4 animate-[fadeIn_.15s_ease-out]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Globe2 className="w-4 h-4 text-amber-700" />
+                      <h5 className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                        TVA {billingZone === 'intra_eu' ? 'Intracommunautaire' : 'Hors UE'}
+                      </h5>
+                      <span className="text-[11px] text-amber-700/70">— autoliquidation à déclarer</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1.5">Taux TVA UE</label>
+                        <select value={euVatRate} onChange={(e) => setEuVatRate(e.target.value)} className={selectBase} style={selectChevronStyle}>
+                          <option value="">—</option>
+                          {EU_VAT_RATE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1.5">Montant TVA UE (€)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={euVatAmount || ''}
+                          onChange={(e) => setEuVatAmount(Number(e.target.value) || 0)}
+                          className={inputBase}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section>
@@ -697,35 +1010,144 @@ export function ExpenseFormModal({
 
               {(showTrainingLink || showDesignProjectLink) && (
                 <section>
-                  <h4 className="text-sm font-semibold text-stone-700 mb-3">Liens</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {showTrainingLink && (
-                      <div>
-                        <label className="block text-sm font-medium text-stone-600 mb-1">Activité concernée</label>
-                        <select
-                          value={trainingId}
-                          onChange={(e) => setTrainingId(e.target.value)}
-                          className={selectBase}
-                          style={selectChevronStyle}
-                        >
-                          <option value="">—</option>
-                          {trainingOptions.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                        </select>
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <h4 className="text-sm font-semibold text-stone-700">Liens</h4>
+                    <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-stone-600">
+                      <input
+                        type="checkbox"
+                        checked={multiProject}
+                        onChange={(e) => setMultiProject(e.target.checked)}
+                        className="rounded border-stone-300"
+                      />
+                      Dépense liée à plusieurs projets
+                    </label>
+                  </div>
+
+                  {!multiProject && (
+                    <div>
+                      <label className="block text-sm font-medium text-stone-600 mb-1">Projet concerné</label>
+                      <ProjectCombobox
+                        groups={projectGroups}
+                        value={
+                          trainingId
+                            ? { type: 'Academy::Training', id: trainingId }
+                            : designProjectId
+                              ? { type: 'Design::Project', id: designProjectId }
+                              : null
+                        }
+                        onChange={(sel) => {
+                          if (!sel) {
+                            setTrainingId('')
+                            setDesignProjectId('')
+                          } else if (sel.type === 'Academy::Training') {
+                            setTrainingId(sel.id)
+                            setDesignProjectId('')
+                          } else if (sel.type === 'Design::Project') {
+                            setDesignProjectId(sel.id)
+                            setTrainingId('')
+                          }
+                        }}
+                        accent={accent}
+                        placeholder="Sélectionnez un projet (optionnel — sinon dépense globale)"
+                      />
+                    </div>
+                  )}
+
+                  {multiProject && (
+                    <div className="space-y-2">
+                      {projectAllocations.map((alloc, idx) => {
+                        return (
+                          <div key={idx} className="bg-stone-50/80 border border-stone-200 rounded-lg p-3 relative">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-stone-400">
+                                Allocation #{idx + 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setProjectAllocations((prev) => prev.filter((_, i) => i !== idx))}
+                                className="ml-auto p-1 text-stone-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
+                                title="Retirer cette allocation"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <ProjectCombobox
+                                  groups={projectGroups}
+                                  value={alloc.projectable_type && alloc.projectable_id
+                                    ? { type: alloc.projectable_type, id: alloc.projectable_id }
+                                    : null}
+                                  onChange={(sel) => {
+                                    setProjectAllocations((prev) => prev.map((a, i) => i === idx
+                                      ? { ...a, projectable_type: sel?.type || '', projectable_id: sel?.id || '' }
+                                      : a))
+                                  }}
+                                  accent={accent}
+                                  placeholder="Sélectionner un projet"
+                                />
+                              </div>
+                              <div className="w-36 shrink-0">
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0,00"
+                                    value={alloc.amount}
+                                    onChange={(e) => setProjectAllocations((prev) => prev.map((a, i) => i === idx ? { ...a, amount: e.target.value } : a))}
+                                    className={`${inputBase} pr-7 font-mono tabular-nums text-right`}
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">€</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setProjectAllocations((prev) => [...prev, { projectable_type: '', projectable_id: '', amount: '', notes: '' }])}
+                        className="w-full py-2 text-sm font-medium text-stone-500 border border-dashed border-stone-300 rounded-lg hover:bg-stone-50 hover:text-stone-700 transition-colors"
+                      >
+                        + Ajouter un projet
+                      </button>
+                      <div className="text-xs text-stone-500 flex items-center justify-between px-1">
+                        <span>
+                          Total alloué :{' '}
+                          <span className="font-mono text-stone-700">
+                            {projectAllocations.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0).toFixed(2)} €
+                          </span>
+                        </span>
+                        <span>
+                          Doit correspondre à{' '}
+                          <span className="font-mono text-stone-700">{(totalInclVat || 0).toFixed(2)} €</span>
+                        </span>
                       </div>
-                    )}
-                    {showDesignProjectLink && (
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {hasProjectLink && (
+                <section>
+                  <h4 className="text-sm font-semibold text-stone-700 mb-3">Refacturation client</h4>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={billableToClient}
+                        onChange={(e) => setBillableToClient(e.target.checked)}
+                        className="rounded border-stone-300 accent-[var(--expense-accent,#B01A19)]"
+                      />
+                      <span className="text-sm text-stone-700">À facturer au client</span>
+                    </label>
+                    {billableToClient && (
                       <div>
-                        <label className="block text-sm font-medium text-stone-600 mb-1">Projet design concerné</label>
-                        <select
-                          value={designProjectId}
-                          onChange={(e) => setDesignProjectId(e.target.value)}
-                          className={selectBase}
-                          style={selectChevronStyle}
-                        >
+                        <label className="block text-sm font-medium text-stone-600 mb-1">Statut de refacturation</label>
+                        <select value={rebillingStatus} onChange={(e) => setRebillingStatus(e.target.value)} className={selectBase} style={selectChevronStyle}>
                           <option value="">—</option>
-                          {designProjectOptions.map((o) => (
+                          {REBILLING_STATUS_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
                         </select>
@@ -734,32 +1156,6 @@ export function ExpenseFormModal({
                   </div>
                 </section>
               )}
-
-              <section>
-                <h4 className="text-sm font-semibold text-stone-700 mb-3">Refacturation client</h4>
-                <div className="flex flex-wrap items-center gap-4">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={billableToClient}
-                      onChange={(e) => setBillableToClient(e.target.checked)}
-                      className="rounded border-stone-300"
-                    />
-                    <span className="text-sm text-stone-700">A facturer au client</span>
-                  </label>
-                  {billableToClient && (
-                    <div>
-                      <label className="block text-sm font-medium text-stone-600 mb-1">Statut de refacturation</label>
-                      <select value={rebillingStatus} onChange={(e) => setRebillingStatus(e.target.value)} className={selectBase} style={selectChevronStyle}>
-                        <option value="">—</option>
-                        {REBILLING_STATUS_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              </section>
 
               <section>
                 <h4 className="text-sm font-semibold text-stone-700 mb-3">Document</h4>
@@ -844,5 +1240,574 @@ export function ExpenseFormModal({
         </div>
       </div>
     </>
+  )
+}
+
+const fmtMoney = (value) => `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+
+function BreakdownCell({ value, onChange }) {
+  return (
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      value={value || ''}
+      onChange={(e) => onChange(Number(e.target.value) || 0)}
+      placeholder="0,00"
+      className="w-full px-2 py-1.5 rounded-md border border-stone-200 bg-white font-mono tabular-nums text-sm text-right placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/25 focus:border-[var(--expense-accent,#B01A19)]"
+    />
+  )
+}
+
+function CategoryCombobox({ categories, value, onChange, accent }) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [highlight, setHighlight] = useState(0)
+  const wrapperRef = useRef(null)
+  const inputRef = useRef(null)
+  const listRef = useRef(null)
+
+  const selected = useMemo(() => categories.find((c) => String(c.id) === String(value)), [categories, value])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return q ? categories.filter((c) => (c.label || '').toLowerCase().includes(q)) : categories
+  }, [categories, query])
+
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+
+  useEffect(() => { setHighlight(0) }, [query])
+
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => inputRef.current?.focus(), 0)
+      return () => clearTimeout(t)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !listRef.current) return
+    const el = listRef.current.children[highlight]
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [highlight, open])
+
+  const handleSelect = (id) => {
+    onChange(id)
+    setOpen(false)
+    setQuery('')
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlight((h) => Math.min(h + 1, filtered.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlight((h) => Math.max(h - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (filtered[highlight]) handleSelect(filtered[highlight].id)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setOpen(false)
+    }
+  }
+
+  if (categories.length === 0) {
+    return (
+      <input type="text" value="" disabled placeholder="Catégories en cours de chargement…" className={`${inputBase} bg-stone-50 text-stone-400`} />
+    )
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full pl-4 pr-10 py-2.5 rounded-xl bg-stone-50 border text-stone-900 text-left transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/25 ${
+          open ? 'border-[var(--expense-accent,#B01A19)]' : 'border-stone-200 hover:border-stone-300'
+        }`}
+      >
+        {selected ? (
+          <span className="flex items-center gap-2 truncate">
+            <Tag className="w-3.5 h-3.5 shrink-0 text-stone-400" />
+            <span className="truncate">{selected.label}</span>
+          </span>
+        ) : (
+          <span className="text-stone-400 truncate block">— Choisir une catégorie</span>
+        )}
+        <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-1.5 w-full rounded-xl bg-white border border-stone-200 shadow-2xl overflow-hidden">
+          <div className="relative border-b border-stone-100">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Rechercher une catégorie…"
+              className="w-full pl-9 pr-3 py-2.5 text-sm bg-transparent outline-none placeholder:text-stone-400"
+            />
+          </div>
+
+          <ul ref={listRef} className="max-h-72 overflow-y-auto py-1">
+            {value && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleSelect('')}
+                  className="w-full text-left px-3 py-1.5 text-xs text-stone-500 hover:bg-stone-50 italic"
+                >
+                  Aucune catégorie (effacer)
+                </button>
+              </li>
+            )}
+            {filtered.length === 0 ? (
+              <li className="px-3 py-6 text-center text-sm text-stone-400">
+                Aucune catégorie trouvée pour « {query} »
+              </li>
+            ) : (
+              filtered.map((c, i) => {
+                const isSelected = String(c.id) === String(value)
+                const isHighlighted = i === highlight
+                return (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHighlight(i)}
+                      onClick={() => handleSelect(c.id)}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
+                        isSelected ? 'font-medium' : 'text-stone-800'
+                      } ${!isHighlighted && !isSelected ? 'hover:bg-stone-50' : ''}`}
+                      style={{
+                        backgroundColor: isHighlighted ? `${accent}1A` : undefined,
+                        color: isSelected ? accent : undefined,
+                      }}
+                    >
+                      <span className="flex-1 truncate">{c.label}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectCombobox({ groups, value, onChange, accent, placeholder }) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [highlight, setHighlight] = useState(0)
+  const wrapperRef = useRef(null)
+  const inputRef = useRef(null)
+  const listRef = useRef(null)
+
+  // Flatten all items keeping their group context
+  const flatItems = useMemo(() => {
+    const arr = []
+    groups.forEach((g) => {
+      g.items.forEach((item) => arr.push({ ...item, groupType: g.type, groupLabel: g.label, groupColor: g.color, groupBg: g.bg, groupIcon: g.icon }))
+    })
+    return arr
+  }, [groups])
+
+  const selected = useMemo(
+    () => value ? flatItems.find((it) => it.groupType === value.type && String(it.value) === String(value.id)) : null,
+    [flatItems, value],
+  )
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return q
+      ? flatItems.filter((it) => (it.label || '').toLowerCase().includes(q))
+      : flatItems
+  }, [flatItems, query])
+
+  // Group the filtered items by groupType for display
+  const filteredGroups = useMemo(() => {
+    const map = new Map()
+    filtered.forEach((it) => {
+      if (!map.has(it.groupType)) {
+        map.set(it.groupType, { type: it.groupType, label: it.groupLabel, color: it.groupColor, bg: it.groupBg, icon: it.groupIcon, items: [] })
+      }
+      map.get(it.groupType).items.push(it)
+    })
+    return Array.from(map.values())
+  }, [filtered])
+
+  // Outside click closes
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+
+  useEffect(() => { setHighlight(0) }, [query])
+
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => inputRef.current?.focus(), 0)
+      return () => clearTimeout(t)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !listRef.current) return
+    const el = listRef.current.querySelector(`[data-idx="${highlight}"]`)
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [highlight, open])
+
+  const handleSelect = (item) => {
+    onChange({ type: item.groupType, id: String(item.value) })
+    setOpen(false)
+    setQuery('')
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlight((h) => Math.min(h + 1, filtered.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlight((h) => Math.max(h - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (filtered[highlight]) handleSelect(filtered[highlight])
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setOpen(false)
+    }
+  }
+
+  // Render group icon
+  const renderIcon = (name, className) => {
+    if (name === 'graduation') return <GraduationCap className={className} />
+    if (name === 'palette') return <Palette className={className} />
+    return <Layers className={className} />
+  }
+
+  if (groups.length === 0) {
+    return (
+      <input
+        type="text"
+        value=""
+        disabled
+        placeholder="Aucun projet disponible"
+        className={`${inputBase} bg-stone-50 text-stone-400`}
+      />
+    )
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full pl-4 pr-10 py-2.5 rounded-xl bg-stone-50 border text-stone-900 text-left transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/25 ${
+          open ? 'border-[var(--expense-accent,#B01A19)]' : 'border-stone-200 hover:border-stone-300'
+        }`}
+      >
+        {selected ? (
+          <span className="flex items-center gap-2 truncate">
+            <span
+              className="inline-flex items-center justify-center w-5 h-5 rounded shrink-0"
+              style={{ color: selected.groupColor, backgroundColor: selected.groupBg }}
+            >
+              {renderIcon(selected.groupIcon, 'w-3 h-3')}
+            </span>
+            <span className="truncate">{selected.label}</span>
+            <span className="text-xs text-stone-400 ml-auto shrink-0">{selected.groupLabel}</span>
+          </span>
+        ) : (
+          <span className="text-stone-400 truncate block">{placeholder || 'Sélectionner un projet…'}</span>
+        )}
+        <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-1.5 w-full rounded-xl bg-white border border-stone-200 shadow-2xl overflow-hidden">
+          <div className="relative border-b border-stone-100">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Rechercher un projet…"
+              className="w-full pl-9 pr-3 py-2.5 text-sm bg-transparent outline-none placeholder:text-stone-400"
+            />
+          </div>
+
+          <div ref={listRef} className="max-h-80 overflow-y-auto py-1">
+            {value && (
+              <button
+                type="button"
+                onClick={() => { onChange(null); setOpen(false); setQuery('') }}
+                className="w-full text-left px-3 py-1.5 text-xs text-stone-500 hover:bg-stone-50 italic border-b border-stone-100 mb-1"
+              >
+                Aucun projet (effacer la sélection)
+              </button>
+            )}
+
+            {filtered.length === 0 ? (
+              <div className="px-3 py-6 text-center text-sm text-stone-400">
+                Aucun projet trouvé pour « {query} »
+              </div>
+            ) : (
+              filteredGroups.map((group) => {
+                // Find the absolute index of each item in `filtered` for highlight tracking
+                return (
+                  <div key={group.type} className="mb-1">
+                    <div className="px-3 py-1.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold sticky top-0 bg-white"
+                      style={{ color: group.color }}
+                    >
+                      <span
+                        className="inline-flex items-center justify-center w-4 h-4 rounded"
+                        style={{ backgroundColor: group.bg }}
+                      >
+                        {renderIcon(group.icon, 'w-2.5 h-2.5')}
+                      </span>
+                      {group.label}
+                      <span className="ml-auto text-stone-400 font-normal normal-case tracking-normal">
+                        {group.items.length}
+                      </span>
+                    </div>
+                    <ul>
+                      {group.items.map((it) => {
+                        const absIdx = filtered.findIndex((f) => f.groupType === it.groupType && f.value === it.value)
+                        const isSelected = value && value.type === it.groupType && String(value.id) === String(it.value)
+                        const isHighlighted = absIdx === highlight
+                        return (
+                          <li key={`${it.groupType}:${it.value}`}>
+                            <button
+                              type="button"
+                              data-idx={absIdx}
+                              onMouseEnter={() => setHighlight(absIdx)}
+                              onClick={() => handleSelect(it)}
+                              className={`w-full text-left pl-9 pr-3 py-2 text-sm flex items-center gap-2 transition-colors ${
+                                isSelected ? 'font-medium' : 'text-stone-800'
+                              } ${!isHighlighted && !isSelected ? 'hover:bg-stone-50' : ''}`}
+                              style={{
+                                backgroundColor: isHighlighted ? `${group.color}1A` : undefined,
+                                color: isSelected ? group.color : undefined,
+                              }}
+                            >
+                              <span className="flex-1 truncate">{it.label}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SupplierCombobox({ contacts, value, onChange, onCreateNew, accent }) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [highlight, setHighlight] = useState(0)
+  const wrapperRef = useRef(null)
+  const inputRef = useRef(null)
+  const listRef = useRef(null)
+
+  const selected = useMemo(() => contacts.find((c) => c.id === value), [contacts, value])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const list = q
+      ? contacts.filter((c) => (c.name || '').toLowerCase().includes(q))
+      : contacts
+    return list.slice(0, 50)
+  }, [contacts, query])
+
+  // Outside click closes the dropdown
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+
+  useEffect(() => { setHighlight(0) }, [query])
+
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => inputRef.current?.focus(), 0)
+      return () => clearTimeout(t)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !listRef.current) return
+    const el = listRef.current.children[highlight]
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [highlight, open])
+
+  const handleSelect = (id) => {
+    onChange(id)
+    setOpen(false)
+    setQuery('')
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlight((h) => Math.min(h + 1, filtered.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlight((h) => Math.max(h - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (filtered[highlight]) handleSelect(filtered[highlight].id)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setOpen(false)
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full pl-4 pr-10 py-2.5 rounded-xl bg-stone-50 border text-stone-900 text-left transition-all duration-200 focus:outline-none focus:ring-2 cursor-pointer ${
+          open
+            ? 'border-[var(--expense-accent,#B01A19)] ring-2'
+            : 'border-stone-200 hover:border-stone-300'
+        }`}
+        style={open ? { '--ring-color': `${accent}26` } : undefined}
+      >
+        {selected ? (
+          <span className="block truncate">
+            {selected.name}
+            <span className="text-stone-400 ml-1">
+              ({selected.contactType === 'organization' ? 'Organisation' : 'Personne'})
+            </span>
+          </span>
+        ) : (
+          <span className="text-stone-400">Sélectionnez un fournisseur…</span>
+        )}
+        <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-1.5 w-full rounded-xl bg-white border border-stone-200 shadow-2xl overflow-hidden">
+          <div className="relative border-b border-stone-100">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Rechercher un fournisseur…"
+              className="w-full pl-9 pr-3 py-2.5 text-sm bg-transparent outline-none placeholder:text-stone-400"
+            />
+          </div>
+
+          <ul ref={listRef} className="max-h-64 overflow-y-auto py-1">
+            {onCreateNew && (
+              <li className="border-b border-stone-100 mb-1">
+                <button
+                  type="button"
+                  onClick={() => { setOpen(false); onCreateNew() }}
+                  className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:bg-stone-50 font-medium"
+                  style={{ color: accent }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  Créer un nouveau fournisseur
+                  {query.trim() && (
+                    <span className="ml-auto text-xs text-stone-400 truncate font-normal">
+                      « {query.trim()} »
+                    </span>
+                  )}
+                </button>
+              </li>
+            )}
+            {value && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleSelect('')}
+                  className="w-full text-left px-3 py-1.5 text-xs text-stone-500 hover:bg-stone-50 italic"
+                >
+                  Aucun fournisseur (effacer)
+                </button>
+              </li>
+            )}
+            {filtered.length === 0 ? (
+              <li className="px-3 py-6 text-center text-sm text-stone-400">
+                Aucun fournisseur trouvé pour « {query} »
+              </li>
+            ) : (
+              filtered.map((c, i) => {
+                const isSelected = c.id === value
+                const isHighlighted = i === highlight
+                const accentColor = `${accent}1A` // 10% alpha hex
+                return (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHighlight(i)}
+                      onClick={() => handleSelect(c.id)}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
+                        isSelected ? 'font-medium' : 'text-stone-800'
+                      } ${!isHighlighted && !isSelected ? 'hover:bg-stone-50' : ''}`}
+                      style={{
+                        backgroundColor: isHighlighted ? accentColor : undefined,
+                        color: isSelected ? accent : undefined,
+                      }}
+                    >
+                      <span className="flex-1 truncate">
+                        {c.name}
+                        <span className="text-stone-400 ml-1 font-normal">
+                          ({c.contactType === 'organization' ? 'Organisation' : 'Personne'})
+                        </span>
+                      </span>
+                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+
+          {filtered.length === 50 && contacts.length > 50 && (
+            <div className="px-3 py-1.5 text-[10px] text-stone-400 border-t border-stone-100 bg-stone-50/50">
+              50 premiers résultats — affinez votre recherche
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

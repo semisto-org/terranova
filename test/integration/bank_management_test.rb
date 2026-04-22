@@ -13,6 +13,12 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       m.last_name = "Test"
       m.password = "password123"
       m.is_admin = true
+      m.joined_at = Date.current
+    end
+
+    @organization = Organization.find_or_create_by!(name: "Semisto Test") do |o|
+      o.is_default = true
+      o.vat_subject = true
     end
 
     @connection = BankConnection.create!(
@@ -22,6 +28,8 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       bank_name: "Triodos",
       iban: "BE12 5230 8000 1234",
       status: "linked",
+      accounting_scope: "general",
+      organization: @organization,
       consent_expires_at: 60.days.from_now,
       last_synced_at: 1.hour.ago,
       connected_by: @admin
@@ -202,7 +210,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     assert body["items"][0]["score"] >= 50
   end
 
-  test "duplicate reconciliation is rejected" do
+  test "second reconciliation over-allocating is rejected" do
     tx = BankTransaction.create!(
       bank_connection: @connection,
       provider_transaction_id: "tx_dup_001",
@@ -215,13 +223,13 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       total_incl_vat: 100.00, amount_excl_vat: 82.64
     )
 
-    # First reconciliation succeeds
+    # First full-amount reconciliation succeeds
     post "/api/v1/bank/reconciliations", params: {
       bank_transaction_id: tx.id, reconcilable_type: "Expense", reconcilable_id: expense.id
     }, as: :json
     assert_response :created
 
-    # Second reconciliation for same transaction fails
+    # Second reconciliation on a fully allocated transaction is rejected
     expense2 = Expense.create!(
       name: "Test2", supplier: "Test2", status: "paid",
       expense_type: "services_and_goods", invoice_date: Date.current,
@@ -231,6 +239,40 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       bank_transaction_id: tx.id, reconcilable_type: "Expense", reconcilable_id: expense2.id
     }, as: :json
     assert_response :unprocessable_entity
+  end
+
+  test "split reconciliation across two expenses succeeds" do
+    tx = BankTransaction.create!(
+      bank_connection: @connection,
+      provider_transaction_id: "tx_split_001",
+      date: Date.current,
+      amount: -100.00
+    )
+    expense_a = Expense.create!(
+      name: "A", supplier: "X", status: "paid",
+      expense_type: "services_and_goods", invoice_date: Date.current,
+      total_incl_vat: 60.00, amount_excl_vat: 49.59
+    )
+    expense_b = Expense.create!(
+      name: "B", supplier: "X", status: "paid",
+      expense_type: "services_and_goods", invoice_date: Date.current,
+      total_incl_vat: 40.00, amount_excl_vat: 33.06
+    )
+
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx.id, reconcilable_type: "Expense", reconcilable_id: expense_a.id, amount: 60.00
+    }, as: :json
+    assert_response :created
+    tx.reload
+    assert_equal "partially_matched", tx.status
+
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx.id, reconcilable_type: "Expense", reconcilable_id: expense_b.id, amount: 40.00
+    }, as: :json
+    assert_response :created
+    tx.reload
+    assert_equal "matched", tx.status
+    assert_equal 2, tx.bank_reconciliations.count
   end
 
   # --- Multi-account tests ---
@@ -246,6 +288,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       status: "linked",
       accounting_scope: "nursery",
       consent_expires_at: 60.days.from_now,
+      organization: @organization,
       connected_by: @admin
     )
 
@@ -282,6 +325,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       status: "linked",
       accounting_scope: "nursery",
       consent_expires_at: 60.days.from_now,
+      organization: @organization,
       connected_by: @admin
     )
 
@@ -346,6 +390,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       iban: "BE52523080001234",
       status: "linked",
       accounting_scope: "general",
+      organization: @organization,
       connected_by: @admin
     )
 
@@ -376,6 +421,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       iban: "BE52523080001234",
       status: "linked",
       accounting_scope: "general",
+      organization: @organization,
       connected_by: @admin
     )
 
@@ -406,6 +452,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       provider: "coda_import",
       bank_name: "Triodos",
       status: "linked",
+      organization: @organization,
       connected_by: @admin
     )
 
@@ -425,6 +472,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
       bank_name: "VDK",
       status: "linked",
       accounting_scope: "nursery",
+      organization: @organization,
       connected_by: @admin
     )
 

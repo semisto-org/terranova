@@ -1,4 +1,4 @@
-import { Building2, Plus, Star, Edit, Trash2 } from 'lucide-react'
+import { Building2, Plus, Star, Edit, Trash2, Scale } from 'lucide-react'
 
 export interface OrganizationItem {
   id: string
@@ -10,6 +10,8 @@ export interface OrganizationItem {
   email: string | null
   phone: string | null
   isDefault: boolean
+  vatSubject: boolean
+  vatRegime: 'subject' | 'exempt'
   logoUrl: string | null
 }
 
@@ -66,12 +68,21 @@ export function OrganizationList({ organizations, onCreate, onEdit, onDelete }: 
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h2 className="text-lg font-bold text-stone-900 tracking-tight truncate">{org.name}</h2>
                         {org.isDefault && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-[#5B5781] bg-[#5B5781]/10">
                             <Star className="w-2.5 h-2.5 fill-current" />
                             Défaut
+                          </span>
+                        )}
+                        {!org.vatSubject && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200"
+                            title="Franchise TVA — ne récupère ni ne déclare la TVA"
+                          >
+                            <Scale className="w-2.5 h-2.5" />
+                            Franchise TVA
                           </span>
                         )}
                       </div>

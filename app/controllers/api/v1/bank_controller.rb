@@ -4,7 +4,7 @@ module Api
   module V1
     class BankController < BaseController
       before_action :require_admin
-      before_action :set_connection, only: [:destroy_connection]
+      before_action :set_connection, only: [:destroy_connection, :update_connection]
       before_action :set_transaction, only: [:ignore_transaction, :unignore_transaction]
       before_action :set_reconciliation, only: [:destroy_reconciliation]
 
@@ -72,6 +72,7 @@ module Api
             conn.accounting_scope = accounting_scope
             conn.consent_expires_at = 90.days.from_now
             conn.connected_by = current_member
+            conn.organization = Organization.default
           end
         end
 
@@ -83,12 +84,20 @@ module Api
       # POST /api/v1/bank/connections
       # Create a manual bank connection (for CODA import)
       def create_connection
+        organization =
+          if params[:organization_id].present?
+            Organization.find(params[:organization_id])
+          else
+            Organization.default
+          end
+
         connection = BankConnection.new(
           provider: "coda_import",
           bank_name: params.require(:bank_name),
           iban: params[:iban],
           status: "linked",
           accounting_scope: params[:accounting_scope] || "general",
+          organization: organization,
           connected_by: current_member
         )
 
@@ -121,8 +130,28 @@ module Api
 
       # GET /api/v1/bank/connections
       def list_connections
-        connections = BankConnection.includes(:connected_by).order(created_at: :desc)
-        render json: { items: connections.map { |c| serialize_connection(c) } }
+        scope = BankConnection.includes(:connected_by).order(created_at: :desc)
+        scope = scope.real_accounts unless params[:include_virtual].to_s == "true"
+        render json: { items: scope.map { |c| serialize_connection(c) } }
+      end
+
+      # PATCH /api/v1/bank/connections/:id
+      def update_connection
+        attrs = {}
+        attrs[:bank_name] = params[:bank_name] if params.key?(:bank_name)
+        attrs[:iban] = params[:iban] if params.key?(:iban)
+        attrs[:accounting_scope] = params[:accounting_scope] if params.key?(:accounting_scope)
+
+        if params.key?(:organization_id)
+          organization = params[:organization_id].present? ? Organization.find(params[:organization_id]) : nil
+          attrs[:organization] = organization if organization
+        end
+
+        if @connection.update(attrs)
+          render json: serialize_connection(@connection)
+        else
+          render json: { error: @connection.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
       end
 
       # DELETE /api/v1/bank/connections/:id
@@ -167,10 +196,13 @@ module Api
 
       # GET /api/v1/bank/transactions
       def list_transactions
-        scope = BankTransaction.includes(:bank_connection, bank_reconciliation: :reconcilable)
+        scope = BankTransaction.includes(:bank_connection, bank_reconciliations: :reconcilable)
 
         scope = scope.where(bank_connection_id: params[:connection_id]) if params[:connection_id].present?
-        scope = scope.where(status: params[:status]) if params[:status].present?
+        if params[:status].present?
+          statuses = params[:status] == "unmatched" ? %w[unmatched partially_matched] : [params[:status]]
+          scope = scope.where(status: statuses)
+        end
         scope = scope.where("date >= ?", params[:date_from].to_date) if params[:date_from].present?
         scope = scope.where("date <= ?", params[:date_to].to_date) if params[:date_to].present?
         scope = scope.where("amount >= ?", params[:amount_min].to_f) if params[:amount_min].present?
@@ -221,6 +253,75 @@ module Api
         }
       end
 
+      # GET /api/v1/bank/transactions/:id/registrations
+      # Search open Academy::TrainingRegistrations to attach a bank transaction to
+      def search_registrations
+        transaction = BankTransaction.find(params.require(:id))
+        return render json: { items: [] } unless transaction.credit?
+
+        query = params[:q].to_s.strip
+        include_paid = params[:include_paid].to_s == "true"
+
+        scope = Academy::TrainingRegistration
+          .includes(:training, :contact)
+          .where.not(payment_status: include_paid ? [] : "paid")
+
+        if query.present?
+          like = "%#{sanitize_sql_like(query)}%"
+          numeric_id = query.to_i if query.match?(/\A\d+\z/)
+          conditions = [
+            "academy_training_registrations.contact_name ILIKE :like",
+            "academy_training_registrations.contact_email ILIKE :like",
+            "academy_trainings.title ILIKE :like"
+          ]
+          conditions << "academy_training_registrations.id = :numeric_id" if numeric_id
+          scope = scope
+            .joins(:training)
+            .where(conditions.join(" OR "), like: like, numeric_id: numeric_id)
+        end
+
+        items = scope.order(registered_at: :desc).limit(20).map do |reg|
+          remaining = (reg.payment_amount.to_f - reg.amount_paid.to_f).round(2)
+          {
+            id: reg.id.to_s,
+            contactName: reg.contact_name,
+            contactEmail: reg.contact_email,
+            trainingId: reg.training_id.to_s,
+            trainingTitle: reg.training&.title,
+            paymentAmount: reg.payment_amount.to_f,
+            amountPaid: reg.amount_paid.to_f,
+            remainingAmount: remaining,
+            paymentStatus: reg.payment_status,
+            registeredAt: reg.registered_at&.iso8601
+          }
+        end
+
+        render json: { items: items }
+      end
+
+      # GET /api/v1/bank/transactions/:id/search_candidates
+      # Free-text search for any Expense/Revenue that can still receive an allocation.
+      # Query params: q (required), type ("expense"/"revenue"), limit (default 20)
+      def search_candidates
+        transaction = BankTransaction.find(params.require(:id))
+        query = params[:q].to_s.strip
+        return render json: { items: [] } if query.blank?
+
+        requested_type = params[:type].presence&.downcase
+        target_type = requested_type || (transaction.debit? ? "expense" : "revenue")
+        limit = [params[:limit].to_i, 0].max
+        limit = 20 if limit.zero?
+
+        items =
+          if target_type == "expense"
+            search_expenses(query, limit)
+          else
+            search_revenues(query, limit)
+          end
+
+        render json: { items: items }
+      end
+
       # POST /api/v1/bank/reconciliations
       def create_reconciliation
         transaction = BankTransaction.find(params.require(:bank_transaction_id))
@@ -232,13 +333,15 @@ module Api
         end
 
         reconcilable = reconcilable_type.constantize.find(reconcilable_id)
+        amount = params[:amount].present? ? params[:amount].to_d : transaction.amount.abs
 
         reconciliation = BankReconciliation.new(
           bank_transaction: transaction,
           reconcilable: reconcilable,
           confidence: "manual",
           matched_by: current_member,
-          notes: params[:notes]
+          notes: params[:notes],
+          amount: amount
         )
 
         if reconciliation.save
@@ -252,6 +355,59 @@ module Api
       def destroy_reconciliation
         @reconciliation.destroy!
         head :no_content
+      end
+
+      # POST /api/v1/bank/reconciliations/from_registration
+      # Creates a Revenue linked to an Academy::TrainingRegistration, then reconciles it to the transaction.
+      def reconcile_registration
+        transaction = BankTransaction.find(params.require(:bank_transaction_id))
+        registration = Academy::TrainingRegistration.find(params.require(:training_registration_id))
+        requested_amount = params[:amount].present? ? params[:amount].to_d : transaction.remaining_amount.to_d
+
+        if requested_amount <= 0
+          return render json: { error: "Montant invalide" }, status: :unprocessable_entity
+        end
+
+        revenue = nil
+        reconciliation = nil
+        ActiveRecord::Base.transaction do
+          revenue = Revenue.create!(
+            amount: requested_amount,
+            amount_excl_vat: requested_amount,
+            label: "Inscription · #{registration.training&.title || 'activité'}",
+            description: "Paiement de #{registration.contact_name}",
+            date: transaction.date,
+            paid_at: transaction.date,
+            status: "received",
+            pole: "academy",
+            payment_method: "transfer",
+            contact: registration.contact,
+            projectable: registration,
+            organization: transaction.bank_connection.organization,
+            vat_rate: transaction.vat_regime == "exempt" ? "exempt" : ""
+          )
+
+          reconciliation = BankReconciliation.create!(
+            bank_transaction: transaction,
+            reconcilable: revenue,
+            confidence: "manual",
+            matched_by: current_member,
+            amount: requested_amount
+          )
+        end
+
+        render json: {
+          revenueId: revenue.id.to_s,
+          reconciliation: serialize_reconciliation(reconciliation.reload),
+          registration: {
+            id: registration.reload.id.to_s,
+            paymentStatus: registration.payment_status,
+            amountPaid: registration.amount_paid.to_f,
+            paymentAmount: registration.payment_amount.to_f
+          }
+        }, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       # POST /api/v1/bank/reconciliations/auto
@@ -278,9 +434,102 @@ module Api
         render json: serialize_transaction(@transaction)
       end
 
+      # POST /api/v1/bank/connections/stripe
+      # Connect a Stripe account using the API key configured via ENV.
+      def create_stripe_connection
+        organization =
+          if params[:organization_id].present?
+            Organization.find(params[:organization_id])
+          else
+            Organization.default
+          end
+
+        # Verify Stripe API key is configured
+        if ENV.fetch("STRIPE_SECRET_KEY", "").blank?
+          return render json: { error: "STRIPE_SECRET_KEY non configuré" }, status: :unprocessable_entity
+        end
+
+        # Avoid duplicates: one Stripe connection per organization for now
+        existing = BankConnection.find_by(provider: "stripe", organization: organization)
+        if existing
+          return render json: serialize_connection(existing)
+        end
+
+        connection = BankConnection.create!(
+          provider: "stripe",
+          bank_name: "Stripe",
+          status: "linked",
+          accounting_scope: "general",
+          organization: organization,
+          connected_by: current_member
+        )
+
+        render json: serialize_connection(connection), status: :created
+      end
+
+      # POST /api/v1/bank/connections/:id/sync_stripe
+      # Pulls Stripe balance transactions into BankTransactions.
+      def sync_stripe
+        connection = BankConnection.find(params.require(:id))
+        unless connection.provider == "stripe"
+          return render json: { error: "Cette connexion n'est pas Stripe" }, status: :unprocessable_entity
+        end
+
+        importer = BankSync::StripeImporter.new(connection)
+        result = importer.import(since: params[:since].presence&.to_time)
+
+        render json: {
+          imported: result[:imported],
+          skipped: result[:skipped],
+          errors: result[:errors],
+          lastSyncedAt: connection.reload.last_synced_at&.iso8601
+        }
+      rescue Stripe::StripeError => e
+        render json: { error: "Erreur Stripe : #{e.message}" }, status: :bad_gateway
+      end
+
+      # POST /api/v1/bank/cash_transfers
+      # Register a physical cash → bank transfer (owner pockets cash and wires
+      # the same amount from a personal account to the organization).
+      def create_cash_transfer
+        organization = Organization.find(params.require(:organization_id))
+        amount = params.require(:amount).to_f
+        date = params[:date].presence&.to_date || Date.current
+        note = params[:note]
+
+        result = Cash::Bookkeeper.record_cash_transfer(
+          organization: organization,
+          amount: amount,
+          date: date,
+          note: note
+        )
+
+        render json: {
+          cashTransaction: serialize_transaction(result[:cash_transaction]),
+          bankTransaction: serialize_transaction(result[:bank_transaction])
+        }, status: :created
+      rescue ArgumentError, RuntimeError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+
+      # GET /api/v1/bank/cash_accounts
+      # Lists cash accounts (one per organization) with balances.
+      def list_cash_accounts
+        items = BankConnection.cash_accounts.includes(:organization).map do |conn|
+          {
+            id: conn.id.to_s,
+            organizationId: conn.organization_id.to_s,
+            organizationName: conn.organization&.name,
+            balance: conn.balance,
+            vatRegime: conn.vat_regime
+          }
+        end
+        render json: { items: items }
+      end
+
       # GET /api/v1/bank/summary
       def summary
-        connections = BankConnection.active.includes(:connected_by)
+        connections = BankConnection.active.real_accounts.includes(:connected_by)
 
         if connections.empty?
           return render json: {
@@ -293,7 +542,7 @@ module Api
         total_matched = 0
 
         accounts = connections.map do |conn|
-          unmatched = BankTransaction.where(bank_connection: conn, status: "unmatched").count
+          unmatched = BankTransaction.where(bank_connection: conn, status: %w[unmatched partially_matched]).count
           matched = BankTransaction.where(bank_connection: conn, status: "matched").count
           total_unmatched += unmatched
           total_matched += matched
@@ -303,7 +552,11 @@ module Api
             bankName: conn.bank_name,
             iban: conn.iban,
             scope: conn.accounting_scope,
-            balance: nil,
+            vatRegime: conn.vat_regime,
+            provider: conn.provider,
+            isVirtual: conn.virtual?,
+            balance: conn.cash? ? conn.balance : nil,
+            organizationName: conn.organization&.name,
             unmatchedCount: unmatched,
             matchedCount: matched,
             lastSyncedAt: conn.last_synced_at&.iso8601,
@@ -342,11 +595,16 @@ module Api
         {
           id: conn.id.to_s,
           provider: conn.provider,
+          isVirtual: conn.virtual?,
           institutionId: conn.institution_id,
           bankName: conn.bank_name,
           iban: conn.iban,
           status: conn.status,
           accountingScope: conn.accounting_scope,
+          vatRegime: conn.vat_regime,
+          organizationId: conn.organization_id.to_s,
+          organizationName: conn.organization&.name,
+          balance: conn.cash? ? conn.balance : nil,
           consentExpiresAt: conn.consent_expires_at&.iso8601,
           consentExpiringSoon: conn.consent_expiring_soon?,
           lastSyncedAt: conn.last_synced_at&.iso8601,
@@ -356,12 +614,17 @@ module Api
       end
 
       def serialize_transaction(tx)
-        rec = tx.bank_reconciliation
+        reconciliations = tx.bank_reconciliations.to_a
         conn = tx.bank_connection
+        allocated = reconciliations.sum { |r| r.amount.to_f }
         {
           id: tx.id.to_s,
           connectionId: conn.id.to_s,
           bankName: conn.bank_name,
+          accountingScope: conn.accounting_scope,
+          vatRegime: conn.vat_regime,
+          organizationId: conn.organization_id.to_s,
+          organizationName: conn.organization&.name,
           date: tx.date.iso8601,
           bookingDate: tx.booking_date&.iso8601,
           amount: tx.amount.to_f,
@@ -372,14 +635,96 @@ module Api
           internalReference: tx.internal_reference,
           category: tx.category,
           status: tx.status,
-          reconciliation: rec ? {
-            id: rec.id.to_s,
-            type: rec.reconcilable_type,
-            recordId: rec.reconcilable_id.to_s,
-            confidence: rec.confidence,
-            notes: rec.notes
-          } : nil
+          allocatedAmount: allocated,
+          remainingAmount: (tx.amount.abs.to_f - allocated).round(2),
+          reconciliations: reconciliations.map { |rec| serialize_transaction_reconciliation(rec) }
         }
+      end
+
+      def serialize_transaction_reconciliation(rec)
+        record = rec.reconcilable
+        label =
+          case rec.reconcilable_type
+          when "Expense" then record&.name.presence || record&.supplier_display_name
+          when "Revenue" then record&.label.presence || record&.description&.truncate(80)
+          end
+        {
+          id: rec.id.to_s,
+          type: rec.reconcilable_type,
+          recordId: rec.reconcilable_id.to_s,
+          label: label,
+          amount: rec.amount.to_f,
+          confidence: rec.confidence,
+          notes: rec.notes
+        }
+      end
+
+      def search_expenses(query, limit)
+        like = "%#{sanitize_sql_like(query)}%"
+        scope = Expense
+          .left_joins(:bank_reconciliations)
+          .left_joins(:supplier_contact)
+
+        numeric_id = query.to_i if query.match?(/\A\d+\z/)
+
+        conditions = [
+          "expenses.name ILIKE :like",
+          "expenses.supplier ILIKE :like",
+          "contacts.name ILIKE :like"
+        ]
+        conditions << "expenses.id = :numeric_id" if numeric_id
+
+        scope = scope
+          .where(conditions.join(" OR "), like: like, numeric_id: numeric_id)
+          .group("expenses.id")
+          .having("ABS(expenses.total_incl_vat - COALESCE(SUM(bank_reconciliations.amount), 0)) > 0.01 OR COUNT(bank_reconciliations.id) = 0")
+          .order("expenses.invoice_date DESC NULLS LAST, expenses.id DESC")
+          .limit(limit)
+
+        scope.to_a.map do |expense|
+          {
+            type: "Expense",
+            id: expense.id.to_s,
+            score: nil,
+            **serialize_candidate(expense, :expense)
+          }
+        end
+      end
+
+      def search_revenues(query, limit)
+        like = "%#{sanitize_sql_like(query)}%"
+        scope = Revenue
+          .left_joins(:bank_reconciliations)
+          .left_joins(:contact)
+
+        numeric_id = query.to_i if query.match?(/\A\d+\z/)
+
+        conditions = [
+          "revenues.label ILIKE :like",
+          "revenues.description ILIKE :like",
+          "contacts.name ILIKE :like"
+        ]
+        conditions << "revenues.id = :numeric_id" if numeric_id
+
+        scope = scope
+          .where(conditions.join(" OR "), like: like, numeric_id: numeric_id)
+          .group("revenues.id")
+          .having("ABS(revenues.amount - COALESCE(SUM(bank_reconciliations.amount), 0)) > 0.01 OR COUNT(bank_reconciliations.id) = 0")
+          .order("revenues.date DESC NULLS LAST, revenues.id DESC")
+          .limit(limit)
+
+        scope.to_a.map do |revenue|
+          {
+            type: "Revenue",
+            id: revenue.id.to_s,
+            score: nil,
+            **serialize_candidate(revenue, :revenue)
+          }
+        end
+      end
+
+      def sanitize_sql_like(value)
+        ActiveRecord::Base.sanitize_sql_like(value)
       end
 
       def serialize_candidate(record, type)
@@ -403,15 +748,23 @@ module Api
       end
 
       def serialize_reconciliation(rec)
+        tx = rec.bank_transaction.reload
         {
           id: rec.id.to_s,
           bankTransactionId: rec.bank_transaction_id.to_s,
           reconcilableType: rec.reconcilable_type,
           reconcilableId: rec.reconcilable_id.to_s,
+          amount: rec.amount.to_f,
           confidence: rec.confidence,
           matchedBy: rec.matched_by ? { id: rec.matched_by.id.to_s, name: "#{rec.matched_by.first_name} #{rec.matched_by.last_name}" } : nil,
           notes: rec.notes,
-          createdAt: rec.created_at.iso8601
+          createdAt: rec.created_at.iso8601,
+          transaction: {
+            id: tx.id.to_s,
+            status: tx.status,
+            allocatedAmount: tx.allocated_amount.to_f,
+            remainingAmount: tx.remaining_amount.to_f
+          }
         }
       end
     end

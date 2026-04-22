@@ -16,53 +16,48 @@ class Expense < ApplicationRecord
   REBILLING_STATUSES = %w[to_invoice invoiced].freeze
   POLES = %w[lab design academy nursery].freeze
 
-  # Notion categories (label as stored)
-  EXPENSE_CATEGORIES = [
-    "Assurances",
-    "Autres dépenses",
-    "Bibliothèque",
-    "Charges sociales",
-    "Communication",
-    "Contributions et adhésions",
-    "Déplacements",
-    "Entretien et réparations",
-    "Événements",
-    "Fournitures",
-    "Frais bancaires",
-    "Frais de formation",
-    "Frais généraux",
-    "Frais juridiques et comptables",
-    "Hébergement et restauration",
-    "In/out",
-    "Indemnités et avantages",
-    "Laboratoire",
-    "Licences et abonnements",
-    "Loyer",
-    "Matériel et équipements",
-    "Matériel plantations",
-    "Plants",
-    "Prestations",
-    "Projets",
-    "Projets innovants",
-    "Publicité et promotion",
-    "Relations publiques",
-    "Rémunération des bénévoles",
-    "Réserves",
-    "Salaires",
-    "Site web et médias sociaux",
-    "Sponsoring",
-    "Stock pour shop",
-    "Subventions et aides",
-    "Télécommunications",
-    "Transport et logistique",
-    "Visites et conférences"
-  ].freeze
-
+  belongs_to :expense_category, optional: true
   belongs_to :supplier_contact, class_name: "Contact", optional: true
   belongs_to :projectable, polymorphic: true, optional: true
+  belongs_to :organization
 
-  has_one :bank_reconciliation, as: :reconcilable, class_name: "BankReconciliation", dependent: :nullify
+  before_validation :assign_default_organization, on: :create
+
+  def assign_default_organization
+    self.organization ||= Organization.default
+  end
+
+  has_many :bank_reconciliations, as: :reconcilable, class_name: "BankReconciliation", dependent: :destroy
+  has_many :project_allocations, class_name: "ExpenseProjectAllocation", dependent: :destroy
   has_one_attached :document
+
+  accepts_nested_attributes_for :project_allocations, allow_destroy: true
+
+  validate :project_allocations_total_matches_expense
+
+  def reconciled_amount
+    bank_reconciliations.sum(:amount)
+  end
+
+  def fully_reconciled?
+    (total_incl_vat - reconciled_amount).abs <= BankReconciliation::AMOUNT_TOLERANCE
+  end
+
+  def multi_project?
+    project_allocations.any?
+  end
+
+  after_save :record_cash_movement!
+  after_destroy :unrecord_cash_movement!
+
+  def record_cash_movement!
+    return unless payment_type == "cash"
+    Cash::Bookkeeper.record_expense(self)
+  end
+
+  def unrecord_cash_movement!
+    Cash::Bookkeeper.unrecord_expense(self)
+  end
 
   before_validation :set_supplier_from_contact, if: :supplier_contact_id_changed?
 
@@ -76,7 +71,6 @@ class Expense < ApplicationRecord
   validates :payment_type, inclusion: { in: PAYMENT_TYPES }, allow_blank: true
   validates :vat_rate, inclusion: { in: VAT_RATES }, allow_blank: true
   validates :eu_vat_rate, inclusion: { in: EU_VAT_RATES }, allow_blank: true
-  validates :category, inclusion: { in: EXPENSE_CATEGORIES }, allow_blank: true
 
   def supplier_display_name
     supplier_contact&.name.presence || supplier.presence || ""
@@ -87,6 +81,20 @@ class Expense < ApplicationRecord
   end
 
   private
+
+  def project_allocations_total_matches_expense
+    return unless project_allocations.any?
+    return if project_allocations.all? { |a| a.marked_for_destruction? }
+
+    live = project_allocations.reject(&:marked_for_destruction?)
+    total = live.sum { |a| a.amount.to_d }
+    if (total - total_incl_vat.to_d).abs > BankReconciliation::AMOUNT_TOLERANCE
+      errors.add(
+        :project_allocations,
+        "La somme des allocations (#{total.round(2)} €) doit correspondre au total de la dépense (#{total_incl_vat.to_d.round(2)} €)"
+      )
+    end
+  end
 
   def set_supplier_from_contact
     self.supplier = supplier_contact&.name if supplier_contact_id.present?

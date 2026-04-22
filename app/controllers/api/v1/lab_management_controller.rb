@@ -11,6 +11,7 @@ module Api
       before_action :set_task, only: [:toggle_task]
       before_action :set_event, only: [:show_event, :update_event, :destroy_event]
       before_action :set_event_type, only: [:update_event_type, :destroy_event_type]
+      before_action :set_expense_category, only: [:update_expense_category, :destroy_expense_category, :reassign_expense_category]
       before_action :set_timesheet_service_type, only: [:update_timesheet_service_type, :destroy_timesheet_service_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
       before_action :set_expense, only: [:update_expense, :destroy_expense]
@@ -429,6 +430,64 @@ module Api
         head :no_content
       end
 
+      def list_expense_categories
+        render json: { items: serialize_expense_categories }
+      end
+
+      def create_expense_category
+        category = ExpenseCategory.new(expense_category_params)
+
+        if category.save
+          render json: serialize_expense_category(category, expense_count: 0), status: :created
+        else
+          render json: { error: category.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def update_expense_category
+        if @expense_category.update(expense_category_params)
+          render json: serialize_expense_category(@expense_category, expense_count: @expense_category.expenses.count)
+        else
+          render json: { error: @expense_category.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_expense_category
+        count = @expense_category.expenses.count
+        if count.positive?
+          render json: { error: "Cette catégorie contient #{count} dépense(s). Déplacez-les avant de supprimer.", expenseCount: count },
+                 status: :conflict
+          return
+        end
+
+        @expense_category.soft_delete!
+        head :no_content
+      end
+
+      def reassign_expense_category
+        target_id = params[:targetId].presence || params[:target_id].presence
+        target = nil
+        if target_id.present?
+          if target_id.to_s == @expense_category.id.to_s
+            render json: { error: "La catégorie cible doit être différente de la catégorie source." }, status: :unprocessable_entity
+            return
+          end
+          target = ExpenseCategory.find_by(id: target_id)
+          unless target
+            render json: { error: "Catégorie cible introuvable." }, status: :not_found
+            return
+          end
+        end
+
+        moved = @expense_category.expenses.update_all(
+          expense_category_id: target&.id,
+          category: target&.label,
+          updated_at: Time.current
+        )
+
+        render json: { movedCount: moved }
+      end
+
       def list_timesheet_service_types
         render json: { items: serialize_timesheet_service_types }
       end
@@ -577,7 +636,7 @@ module Api
       end
 
       def list_expenses
-        scope = Expense.includes(:projectable)
+        scope = Expense.includes(:projectable, :expense_category, :bank_reconciliations)
 
         scope = scope.where(status: params[:status]) if params[:status].present?
         scope = scope.where(expense_type: params[:expense_type]) if params[:expense_type].present?
@@ -595,10 +654,13 @@ module Api
 
         if expense.save
           expense.document.attach(params[:document]) if params[:document].present?
+          sync_expense_project_allocations!(expense)
           render json: serialize_expense(expense.reload), status: :created
         else
           render json: { error: expense.errors.full_messages.to_sentence }, status: :unprocessable_entity
         end
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def update_expense
@@ -606,10 +668,13 @@ module Api
         @expense.document.attach(params[:document]) if params[:document].present?
 
         if @expense.save
+          sync_expense_project_allocations!(@expense)
           render json: serialize_expense(@expense.reload)
         else
           render json: { error: @expense.errors.full_messages.to_sentence }, status: :unprocessable_entity
         end
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def destroy_expense
@@ -933,7 +998,7 @@ module Api
       end
 
       def contact_params
-        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, :newsletter_subscribed, tag_names: [], expertise: [])
+        params.permit(:contact_type, :name, :email, :phone, :address, :organization_type, :notes, :notes_html, :organization_id, :newsletter_subscribed, :iban, tag_names: [], expertise: [])
       end
 
       def set_contact
@@ -962,6 +1027,14 @@ module Api
 
       def set_event_type
         @event_type = EventType.find(params.require(:id))
+      end
+
+      def set_expense_category
+        @expense_category = ExpenseCategory.find(params.require(:id))
+      end
+
+      def expense_category_params
+        params.permit(:label)
       end
 
       def set_timesheet_service_type
@@ -1044,19 +1117,72 @@ module Api
         params.permit(
           :amount, :description, :date, :contact_id, :pole, :projectable_type, :projectable_id,
           :revenue_type, :status, :notes, :label, :amount_excl_vat, :vat_6, :vat_21,
-          :payment_method, :category, :vat_rate, :vat_exemption, :invoice_url, :paid_at
+          :payment_method, :category, :vat_rate, :vat_exemption, :invoice_url, :paid_at,
+          :organization_id
         )
       end
 
       def expense_params
-        params.permit(
-          :supplier, :supplier_contact_id, :status, :invoice_date, :category, :expense_type, :billing_zone,
+        permitted = params.permit(
+          :supplier, :supplier_contact_id, :status, :invoice_date, :category, :category_id, :expense_category_id, :categoryId,
+          :expense_type, :billing_zone,
           :payment_date, :payment_type, :amount_excl_vat, :vat_rate,
           :vat_6, :vat_12, :vat_21, :total_incl_vat, :eu_vat_rate, :eu_vat_amount,
           :paid_by, :reimbursed, :reimbursement_date, :billable_to_client, :rebilling_status,
           :name, :notes, :projectable_type, :projectable_id,
+          :organization_id,
           poles: []
         )
+
+        # Accept either `expense_category_id`, `category_id`, or `categoryId` (camelCase from frontend)
+        # as the canonical link to the ExpenseCategory.
+        category_id = permitted.delete(:expense_category_id).presence ||
+                      permitted.delete(:category_id).presence ||
+                      permitted.delete(:categoryId).presence
+        permitted.delete(:categoryId)
+
+        if category_id.present?
+          category = ExpenseCategory.find_by(id: category_id)
+          permitted[:expense_category_id] = category&.id
+          permitted[:category] = category&.label
+        elsif params.key?(:expense_category_id) || params.key?(:category_id) || params.key?(:categoryId)
+          # Explicit null → clear both
+          permitted[:expense_category_id] = nil
+          permitted[:category] = nil
+        end
+
+        permitted
+      end
+
+      def project_allocations_params
+        return [] unless params[:project_allocations].is_a?(Array)
+
+        params[:project_allocations].map do |alloc|
+          alloc.permit(:projectable_type, :projectable_id, :amount, :notes).to_h
+        end
+      end
+
+      def sync_expense_project_allocations!(expense)
+        return unless params.key?(:project_allocations)
+
+        attrs = project_allocations_params
+        Expense.transaction do
+          expense.project_allocations.destroy_all
+          attrs.each do |a|
+            next if a[:projectable_type].blank? || a[:projectable_id].blank?
+
+            klass = a[:projectable_type].safe_constantize
+            next unless klass && Projectable::PROJECT_TYPE_KEYS.key?(a[:projectable_type])
+
+            record = klass.find(a[:projectable_id])
+            expense.project_allocations.create!(
+              projectable: record,
+              amount: a[:amount].to_d,
+              notes: a[:notes].to_s
+            )
+          end
+          expense.reload
+        end
       end
 
       def serialize_album(album)
@@ -1130,6 +1256,9 @@ module Api
           vatExemption: r.vat_exemption,
           invoiceUrl: r.invoice_url,
           paidAt: r.paid_at&.iso8601,
+          organizationId: r.organization_id&.to_s,
+          organizationName: r.organization&.name,
+          vatSubject: r.organization&.vat_subject,
           createdAt: r.created_at.iso8601,
           updatedAt: r.updated_at.iso8601
         }
@@ -1137,13 +1266,16 @@ module Api
 
       def serialize_expense(item)
         doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, host: request.base_url) : nil
+        category_label = item.expense_category&.label || item.category
         {
           id: item.id.to_s,
           supplier: item.supplier_display_name,
           supplierContactId: item.supplier_contact_id&.to_s,
           status: item.status,
           invoiceDate: item.invoice_date&.iso8601,
-          category: item.category,
+          categoryId: item.expense_category_id&.to_s,
+          categoryLabel: category_label,
+          category: category_label,
           expenseType: item.expense_type,
           billingZone: item.billing_zone,
           paymentDate: item.payment_date&.iso8601,
@@ -1169,6 +1301,21 @@ module Api
           projectName: item.projectable&.try(:project_name) || item.projectable&.try(:name),
           documentUrl: doc_url,
           documentFilename: item.document.attached? ? item.document.filename.to_s : nil,
+          organizationId: item.organization_id&.to_s,
+          organizationName: item.organization&.name,
+          vatSubject: item.organization&.vat_subject,
+          projectAllocations: item.project_allocations.includes(:projectable).map do |a|
+            {
+              id: a.id.to_s,
+              projectableType: a.projectable_type,
+              projectableId: a.projectable_id.to_s,
+              projectName: a.projectable&.try(:project_name) || a.projectable&.try(:name),
+              amount: a.amount.to_f,
+              notes: a.notes.to_s
+            }
+          end,
+          reconciledAmount: item.reconciled_amount.to_f,
+          fullyReconciled: item.fully_reconciled?,
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
@@ -1415,6 +1562,23 @@ module Api
         }
       end
 
+      def serialize_expense_categories
+        rows = ExpenseCategory
+          .ordered
+          .left_outer_joins(:expenses)
+          .group("expense_categories.id")
+          .select("expense_categories.*, COUNT(expenses.id) AS expenses_count")
+        rows.map { |cat| serialize_expense_category(cat, expense_count: cat.expenses_count.to_i) }
+      end
+
+      def serialize_expense_category(cat, expense_count:)
+        {
+          id: cat.id.to_s,
+          label: cat.label,
+          expenseCount: expense_count
+        }
+      end
+
       def serialize_wallets
         Wallet.order(:id).map { |wallet| serialize_wallet(wallet) }
       end
@@ -1630,6 +1794,7 @@ module Api
           phone: contact.phone.to_s,
           address: contact.address.to_s,
           organizationType: contact.organization_type.to_s,
+          iban: contact.iban.to_s,
           notes: contact.notes.to_s,
           notesHtml: contact.notes_html.to_s,
           organizationId: contact.organization_id&.to_s,

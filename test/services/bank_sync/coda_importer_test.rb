@@ -13,6 +13,12 @@ class BankSync::CodaImporterTest < ActiveSupport::TestCase
       m.last_name = "Test"
       m.password = "password123"
       m.is_admin = true
+      m.joined_at = Date.current
+    end
+
+    @organization = Organization.find_or_create_by!(name: "Semisto Test") do |o|
+      o.is_default = true
+      o.vat_subject = true
     end
 
     @connection = BankConnection.create!(
@@ -21,6 +27,7 @@ class BankSync::CodaImporterTest < ActiveSupport::TestCase
       iban: "BE52523080001234",
       status: "linked",
       accounting_scope: "general",
+      organization: @organization,
       connected_by: @admin
     )
   end

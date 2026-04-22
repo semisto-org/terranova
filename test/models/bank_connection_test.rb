@@ -9,6 +9,11 @@ class BankConnectionTest < ActiveSupport::TestCase
       m.last_name = "Test"
       m.password = "password123"
       m.is_admin = true
+      m.joined_at = Date.current
+    end
+    @organization = Organization.find_or_create_by!(name: "Semisto Test") do |o|
+      o.is_default = true
+      o.vat_subject = true
     end
   end
 
@@ -17,6 +22,7 @@ class BankConnectionTest < ActiveSupport::TestCase
       provider: "gocardless",
       bank_name: "Triodos",
       status: "linked",
+      organization: @organization,
       connected_by: @admin
     )
     assert conn.valid?
@@ -49,6 +55,7 @@ class BankConnectionTest < ActiveSupport::TestCase
     conn = BankConnection.new(
       provider: "gocardless", bank_name: "Test",
       status: "linked", connected_by: @admin,
+      organization: @organization,
       accounting_scope: "invalid"
     )
     assert_not conn.valid?
@@ -68,7 +75,8 @@ class BankConnectionTest < ActiveSupport::TestCase
   test "default accounting_scope is general" do
     conn = BankConnection.new(
       provider: "gocardless", bank_name: "Test",
-      status: "linked", connected_by: @admin
+      status: "linked", connected_by: @admin,
+      organization: @organization
     )
     assert_equal "general", conn.accounting_scope
   end

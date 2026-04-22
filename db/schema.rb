@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_22_164147) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -343,23 +343,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
   create_table "bank_connections", force: :cascade do |t|
     t.string "accounting_scope", default: "general", null: false
     t.string "bank_name", null: false
-    t.bigint "connected_by_id", null: false
+    t.bigint "connected_by_id"
     t.datetime "consent_expires_at"
     t.datetime "created_at", null: false
     t.string "iban"
     t.string "institution_id"
+    t.boolean "is_virtual", default: false, null: false
     t.datetime "last_synced_at"
+    t.bigint "organization_id", null: false
     t.string "provider", null: false
     t.string "provider_account_id"
     t.string "provider_requisition_id"
     t.string "status", default: "linked", null: false
     t.datetime "updated_at", null: false
     t.index ["accounting_scope"], name: "index_bank_connections_on_accounting_scope"
+    t.index ["organization_id"], name: "index_bank_connections_on_cash_per_org", unique: true, where: "((provider)::text = 'cash'::text)"
+    t.index ["organization_id"], name: "index_bank_connections_on_organization_id"
+    t.index ["provider"], name: "index_bank_connections_on_provider"
     t.index ["provider_account_id"], name: "index_bank_connections_on_provider_account_id", unique: true, where: "(provider_account_id IS NOT NULL)"
     t.index ["status"], name: "index_bank_connections_on_status"
   end
 
+  create_table "bank_matching_rules", force: :cascade do |t|
+    t.integer "applied_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.datetime "last_applied_at"
+    t.text "notes", default: "", null: false
+    t.bigint "organization_id"
+    t.string "pattern_field", null: false
+    t.string "pattern_value", null: false
+    t.bigint "suggested_expense_category_id"
+    t.string "suggested_expense_type"
+    t.bigint "suggested_supplier_contact_id"
+    t.string "suggested_vat_rate"
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_bank_matching_rules_on_created_by_id"
+    t.index ["organization_id"], name: "index_bank_matching_rules_on_organization_id"
+    t.index ["pattern_field", "pattern_value"], name: "index_bank_matching_rules_on_pattern_field_and_pattern_value"
+    t.index ["suggested_expense_category_id"], name: "index_bank_matching_rules_on_suggested_expense_category_id"
+    t.index ["suggested_supplier_contact_id"], name: "index_bank_matching_rules_on_suggested_supplier_contact_id"
+  end
+
   create_table "bank_reconciliations", force: :cascade do |t|
+    t.decimal "amount", precision: 12, scale: 2, default: "0.0", null: false
     t.bigint "bank_transaction_id", null: false
     t.string "confidence", default: "manual", null: false
     t.datetime "created_at", null: false
@@ -368,7 +395,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.bigint "reconcilable_id", null: false
     t.string "reconcilable_type", null: false
     t.datetime "updated_at", null: false
-    t.index ["bank_transaction_id"], name: "index_bank_reconciliations_on_bank_transaction_id", unique: true
+    t.index ["bank_transaction_id"], name: "index_bank_reconciliations_on_bank_transaction_id"
     t.index ["reconcilable_type", "reconcilable_id"], name: "idx_bank_reconciliations_on_reconcilable"
   end
 
@@ -477,6 +504,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.datetime "deleted_at"
     t.string "email", default: ""
     t.jsonb "expertise", default: [], null: false
+    t.string "iban"
     t.decimal "latitude", precision: 10, scale: 6
     t.string "linkedin_url", default: "", null: false
     t.decimal "longitude", precision: 10, scale: 6
@@ -497,6 +525,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.boolean "visible_in_directory", default: false, null: false
     t.index ["contact_type"], name: "index_contacts_on_contact_type"
     t.index ["deleted_at"], name: "index_contacts_on_deleted_at"
+    t.index ["iban"], name: "index_contacts_on_iban", where: "(iban IS NOT NULL)"
     t.index ["name"], name: "idx_contacts_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["name"], name: "index_contacts_on_name"
     t.index ["notion_id"], name: "index_contacts_on_notion_id", unique: true
@@ -982,6 +1011,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.index ["projectable_type", "projectable_id"], name: "index_events_on_projectable"
   end
 
+  create_table "expense_categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.string "label", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_expense_categories_on_deleted_at"
+    t.index ["label"], name: "index_expense_categories_on_label", unique: true, where: "(deleted_at IS NULL)"
+  end
+
   create_table "expense_note_lines", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "expense_note_id", null: false
@@ -1013,6 +1051,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.index ["status"], name: "index_expense_notes_on_status"
   end
 
+  create_table "expense_project_allocations", force: :cascade do |t|
+    t.decimal "amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.bigint "expense_id", null: false
+    t.text "notes", default: "", null: false
+    t.bigint "projectable_id", null: false
+    t.string "projectable_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expense_id"], name: "index_expense_project_allocations_on_expense_id"
+    t.index ["projectable_type", "projectable_id"], name: "index_expense_project_allocations_on_projectable"
+  end
+
   create_table "expenses", force: :cascade do |t|
     t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
     t.boolean "billable_to_client", default: false, null: false
@@ -1022,6 +1072,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.datetime "deleted_at"
     t.decimal "eu_vat_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.string "eu_vat_rate"
+    t.bigint "expense_category_id"
     t.string "expense_type", null: false
     t.date "invoice_date"
     t.text "name", default: "", null: false
@@ -1029,6 +1080,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
+    t.bigint "organization_id", null: false
     t.string "paid_by"
     t.date "payment_date"
     t.string "payment_type"
@@ -1048,8 +1100,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
     t.string "vat_rate"
     t.index ["deleted_at"], name: "index_expenses_on_deleted_at"
+    t.index ["expense_category_id"], name: "index_expenses_on_expense_category_id"
     t.index ["invoice_date"], name: "index_expenses_on_invoice_date"
     t.index ["notion_id"], name: "index_expenses_on_notion_id", unique: true
+    t.index ["organization_id"], name: "index_expenses_on_organization_id"
     t.index ["projectable_type", "projectable_id"], name: "index_expenses_on_projectable"
     t.index ["supplier_contact_id"], name: "index_expenses_on_supplier_contact_id"
   end
@@ -1544,6 +1598,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.string "phone"
     t.string "registration_number"
     t.datetime "updated_at", null: false
+    t.boolean "vat_subject", default: true, null: false
     t.index ["is_default"], name: "index_organizations_on_is_default"
   end
 
@@ -1887,6 +1942,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
+    t.bigint "organization_id", null: false
     t.date "paid_at"
     t.string "payment_method", default: "", null: false
     t.string "pole"
@@ -1894,6 +1950,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.string "projectable_type"
     t.string "revenue_type", default: "", null: false
     t.string "status", default: "draft", null: false
+    t.string "stripe_payment_intent_id"
     t.datetime "updated_at", null: false
     t.decimal "vat_21", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "vat_6", precision: 12, scale: 2, default: "0.0", null: false
@@ -1903,8 +1960,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.index ["date"], name: "index_revenues_on_date"
     t.index ["deleted_at"], name: "index_revenues_on_deleted_at"
     t.index ["notion_id"], name: "index_revenues_on_notion_id", unique: true
+    t.index ["organization_id"], name: "index_revenues_on_organization_id"
     t.index ["pole"], name: "index_revenues_on_pole"
     t.index ["projectable_type", "projectable_id"], name: "index_revenues_on_projectable"
+    t.index ["stripe_payment_intent_id"], name: "index_revenues_on_stripe_payment_intent_id", unique: true, where: "(stripe_payment_intent_id IS NOT NULL)"
   end
 
   create_table "scope_tasks", force: :cascade do |t|
@@ -1958,6 +2017,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
     t.datetime "updated_at", null: false
     t.index ["from_wallet_id"], name: "index_semos_transactions_on_from_wallet_id"
     t.index ["to_wallet_id"], name: "index_semos_transactions_on_to_wallet_id"
+  end
+
+  create_table "shop_products", force: :cascade do |t|
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.text "description", default: "", null: false
+    t.text "name", null: false
+    t.string "sku"
+    t.integer "stock_quantity", default: 0, null: false
+    t.decimal "unit_price", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.string "vat_rate", default: "6", null: false
+    t.index ["archived_at"], name: "index_shop_products_on_archived_at"
+    t.index ["sku"], name: "index_shop_products_on_sku", unique: true, where: "(sku IS NOT NULL)"
+  end
+
+  create_table "shop_sale_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "quantity", null: false
+    t.bigint "shop_product_id", null: false
+    t.bigint "shop_sale_id", null: false
+    t.decimal "unit_price", precision: 12, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.string "vat_rate", null: false
+    t.index ["shop_product_id"], name: "index_shop_sale_items_on_shop_product_id"
+    t.index ["shop_sale_id"], name: "index_shop_sale_items_on_shop_sale_id"
+  end
+
+  create_table "shop_sales", force: :cascade do |t|
+    t.bigint "contact_id"
+    t.datetime "created_at", null: false
+    t.text "customer_label", default: "", null: false
+    t.text "notes", default: "", null: false
+    t.datetime "notion_created_at"
+    t.string "notion_id"
+    t.datetime "notion_updated_at"
+    t.bigint "organization_id", null: false
+    t.string "payment_method", null: false
+    t.bigint "revenue_id"
+    t.date "sold_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_shop_sales_on_contact_id"
+    t.index ["notion_id"], name: "index_shop_sales_on_notion_id", unique: true, where: "(notion_id IS NOT NULL)"
+    t.index ["organization_id"], name: "index_shop_sales_on_organization_id"
+    t.index ["revenue_id"], name: "index_shop_sales_on_revenue_id"
+    t.index ["sold_at"], name: "index_shop_sales_on_sold_at"
   end
 
   create_table "strategy_axes", force: :cascade do |t|
@@ -2184,6 +2289,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "album_media_items", "albums"
   add_foreign_key "bank_connections", "members", column: "connected_by_id"
+  add_foreign_key "bank_connections", "organizations"
+  add_foreign_key "bank_matching_rules", "contacts", column: "suggested_supplier_contact_id"
+  add_foreign_key "bank_matching_rules", "expense_categories", column: "suggested_expense_category_id"
+  add_foreign_key "bank_matching_rules", "members", column: "created_by_id"
+  add_foreign_key "bank_matching_rules", "organizations"
   add_foreign_key "bank_reconciliations", "bank_transactions"
   add_foreign_key "bank_reconciliations", "members", column: "matched_by_id"
   add_foreign_key "bank_transactions", "bank_connections"
@@ -2237,7 +2347,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
   add_foreign_key "expense_note_lines", "expense_notes"
   add_foreign_key "expense_notes", "contacts"
   add_foreign_key "expense_notes", "organizations"
+  add_foreign_key "expense_project_allocations", "expenses"
   add_foreign_key "expenses", "contacts", column: "supplier_contact_id"
+  add_foreign_key "expenses", "expense_categories"
+  add_foreign_key "expenses", "organizations"
   add_foreign_key "guild_documents", "guilds"
   add_foreign_key "guild_documents", "members", column: "uploaded_by_id"
   add_foreign_key "guilds", "labs"
@@ -2291,12 +2404,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_230740) do
   add_foreign_key "post_its", "pole_projects"
   add_foreign_key "project_memberships", "members"
   add_foreign_key "revenues", "contacts"
+  add_foreign_key "revenues", "organizations"
   add_foreign_key "scope_tasks", "scopes"
   add_foreign_key "scopes", "pitches"
   add_foreign_key "semos_emissions", "members", column: "created_by_id"
   add_foreign_key "semos_emissions", "wallets"
   add_foreign_key "semos_transactions", "wallets", column: "from_wallet_id"
   add_foreign_key "semos_transactions", "wallets", column: "to_wallet_id"
+  add_foreign_key "shop_sale_items", "shop_products"
+  add_foreign_key "shop_sale_items", "shop_sales"
+  add_foreign_key "shop_sales", "contacts"
+  add_foreign_key "shop_sales", "organizations"
+  add_foreign_key "shop_sales", "revenues"
   add_foreign_key "strategy_axes", "members", column: "created_by_id"
   add_foreign_key "strategy_deliberation_comments", "members", column: "author_id"
   add_foreign_key "strategy_deliberation_comments", "strategy_deliberations", column: "deliberation_id"

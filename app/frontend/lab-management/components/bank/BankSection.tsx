@@ -3,6 +3,8 @@ import { apiRequest } from '@/lib/api'
 import { ConnectionStatus } from './ConnectionStatus'
 import { TransactionList } from './TransactionList'
 import { ReconciliationPanel } from './ReconciliationPanel'
+import { ExpenseFormModal } from '../../../components/shared/ExpenseFormModal'
+import { RevenueFormModal } from '../../../components/shared/RevenueFormModal'
 
 export interface AccountSummary {
   connectionId: string
@@ -22,10 +24,24 @@ export interface BankSummaryResponse {
   totals: { unmatchedCount: number; matchedCount: number }
 }
 
+export interface BankReconciliationEntry {
+  id: string
+  type: 'Expense' | 'Revenue'
+  recordId: string
+  label: string | null
+  amount: number
+  confidence: string
+  notes: string | null
+}
+
 export interface BankTransaction {
   id: string
   connectionId: string
   bankName: string
+  accountingScope: string
+  vatRegime: 'subject' | 'exempt'
+  organizationId: string | null
+  organizationName: string | null
   date: string
   bookingDate: string | null
   amount: number
@@ -35,14 +51,10 @@ export interface BankTransaction {
   remittanceInfo: string | null
   internalReference: string | null
   category: string | null
-  status: 'unmatched' | 'matched' | 'ignored'
-  reconciliation: {
-    id: string
-    type: string
-    recordId: string
-    confidence: string
-    notes: string | null
-  } | null
+  status: 'unmatched' | 'matched' | 'ignored' | 'partially_matched'
+  allocatedAmount: number
+  remainingAmount: number
+  reconciliations: BankReconciliationEntry[]
 }
 
 export interface BankConnection {
@@ -53,6 +65,9 @@ export interface BankConnection {
   iban: string | null
   status: string
   accountingScope: string
+  vatRegime: 'subject' | 'exempt'
+  organizationId: string
+  organizationName: string | null
   consentExpiresAt: string | null
   consentExpiringSoon: boolean
   lastSyncedAt: string | null
@@ -67,6 +82,13 @@ export const SCOPE_LABELS: Record<string, string> = {
 
 type SubView = 'overview' | 'transactions' | 'reconcile'
 
+interface OrganizationSummary {
+  id: string
+  name: string
+  vatSubject: boolean
+  isDefault: boolean
+}
+
 export function BankSection() {
   const [subView, setSubView] = useState<SubView>('overview')
   const [summary, setSummary] = useState<BankSummaryResponse | null>(null)
@@ -76,6 +98,7 @@ export function BankSection() {
   const [loading, setLoading] = useState(true)
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
   const [filters, setFilters] = useState<{ status?: string; dateFrom?: string; dateTo?: string; search?: string }>({})
+  const [organizations, setOrganizations] = useState<OrganizationSummary[]>([])
 
   const loadSummary = useCallback(async () => {
     const data = await apiRequest('/api/v1/bank/summary')
@@ -85,6 +108,15 @@ export function BankSection() {
   const loadConnections = useCallback(async () => {
     const data = await apiRequest('/api/v1/bank/connections')
     setConnections(data.items)
+  }, [])
+
+  const loadOrganizations = useCallback(async () => {
+    try {
+      const data = await apiRequest('/api/v1/organizations')
+      setOrganizations(data.items || [])
+    } catch {
+      setOrganizations([])
+    }
   }, [])
 
   const loadTransactions = useCallback(async () => {
@@ -100,17 +132,19 @@ export function BankSection() {
   }, [filters, activeConnectionId])
 
   useEffect(() => {
-    Promise.all([loadSummary(), loadConnections()]).finally(() => setLoading(false))
-  }, [loadSummary, loadConnections])
+    Promise.all([loadSummary(), loadConnections(), loadOrganizations()]).finally(() => setLoading(false))
+  }, [loadSummary, loadConnections, loadOrganizations])
 
   useEffect(() => {
     if (summary && summary.accounts.length > 0) loadTransactions()
   }, [summary?.accounts?.length, loadTransactions])
 
-  const handleCreateConnection = async (bankName: string, iban: string, accountingScope: string) => {
+  const handleCreateConnection = async (bankName: string, iban: string, accountingScope: string, organizationId?: string | null) => {
+    const body: Record<string, unknown> = { bank_name: bankName, iban, accounting_scope: accountingScope }
+    if (organizationId) body.organization_id = organizationId
     await apiRequest('/api/v1/bank/connections', {
       method: 'POST',
-      body: JSON.stringify({ bank_name: bankName, iban, accounting_scope: accountingScope }),
+      body: JSON.stringify(body),
     })
     await Promise.all([loadSummary(), loadConnections()])
   }
@@ -131,7 +165,23 @@ export function BankSection() {
     await Promise.all([loadSummary(), loadConnections()])
   }
 
-  const handleAutoReconcile = async () => {
+  const handleUpdateConnection = async (
+    connectionId: string,
+    updates: { bankName?: string; iban?: string | null; accountingScope?: string; organizationId?: string | null }
+  ) => {
+    const body: Record<string, unknown> = {}
+    if (updates.bankName !== undefined) body.bank_name = updates.bankName
+    if (updates.iban !== undefined) body.iban = updates.iban
+    if (updates.accountingScope !== undefined) body.accounting_scope = updates.accountingScope
+    if (updates.organizationId !== undefined) body.organization_id = updates.organizationId
+    await apiRequest(`/api/v1/bank/connections/${connectionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+    await Promise.all([loadSummary(), loadConnections(), loadTransactions()])
+  }
+
+  const handleAutoReconcile = async (): Promise<{ autoMatched: number; suggested: number }> => {
     const body: Record<string, string> = {}
     if (activeConnectionId) body.connection_id = activeConnectionId
     const result = await apiRequest('/api/v1/bank/reconciliations/auto', {
@@ -154,28 +204,146 @@ export function BankSection() {
     await loadSummary()
   }
 
-  const handleReconcile = async (transactionId: string, reconcilableType: string, reconcilableId: string) => {
-    await apiRequest('/api/v1/bank/reconciliations', {
+  const refreshSelectedTransaction = async (transactionId: string) => {
+    try {
+      const data = await apiRequest(`/api/v1/bank/transactions?connection_id=${selectedTransaction?.connectionId || ''}`)
+      const updated = (data.items as BankTransaction[]).find((t) => t.id === transactionId)
+      if (updated) setSelectedTransaction(updated)
+    } catch {
+      // fall back: list refresh below will eventually reflect the state
+    }
+  }
+
+  const handleReconcile = async (
+    transactionId: string,
+    reconcilableType: string,
+    reconcilableId: string,
+    amount?: number
+  ) => {
+    const body: Record<string, unknown> = {
+      bank_transaction_id: transactionId,
+      reconcilable_type: reconcilableType,
+      reconcilable_id: reconcilableId,
+    }
+    if (amount != null) body.amount = amount
+    const result = await apiRequest('/api/v1/bank/reconciliations', {
       method: 'POST',
-      body: JSON.stringify({
-        bank_transaction_id: transactionId,
-        reconcilable_type: reconcilableType,
-        reconcilable_id: reconcilableId,
-      }),
+      body: JSON.stringify(body),
     })
-    setSelectedTransaction(null)
     await Promise.all([loadSummary(), loadTransactions()])
+    // Keep panel open if transaction is only partially allocated; otherwise go back
+    if (result?.transaction?.status === 'matched') {
+      setSelectedTransaction(null)
+      setSubView('transactions')
+    } else {
+      await refreshSelectedTransaction(transactionId)
+    }
   }
 
   const handleUnreconcile = async (reconciliationId: string) => {
     await apiRequest(`/api/v1/bank/reconciliations/${reconciliationId}`, { method: 'DELETE' })
     await Promise.all([loadSummary(), loadTransactions()])
+    if (selectedTransaction) {
+      await refreshSelectedTransaction(selectedTransaction.id)
+    }
   }
 
   const openReconcile = (tx: BankTransaction) => {
     setSelectedTransaction(tx)
     setSubView('reconcile')
   }
+
+  const [creationTarget, setCreationTarget] = useState<'expense' | 'revenue' | null>(null)
+  const [creationBusy, setCreationBusy] = useState(false)
+
+  const defaultExpenseInitial = selectedTransaction
+    ? {
+        name: selectedTransaction.counterpartName || '',
+        supplier: selectedTransaction.counterpartName || '',
+        status: 'paid',
+        invoiceDate: selectedTransaction.date,
+        paymentDate: selectedTransaction.date,
+        paymentType: 'transfer_triodos',
+        totalInclVat: Math.abs(selectedTransaction.amount),
+        amountExclVat: Math.abs(selectedTransaction.amount),
+        expenseType: 'services_and_goods',
+        vatRate: selectedTransaction.vatRegime === 'exempt' ? 'na' : '',
+        notes: selectedTransaction.remittanceInfo || '',
+        poles: [],
+      }
+    : null
+
+  const defaultRevenueInitial = selectedTransaction
+    ? {
+        id: '',
+        amount: Math.abs(selectedTransaction.amount),
+        description: selectedTransaction.remittanceInfo || '',
+        date: selectedTransaction.date,
+        contactId: null,
+        contactName: selectedTransaction.counterpartName,
+        pole: selectedTransaction.accountingScope === 'nursery' ? 'nursery' : '',
+        trainingId: null,
+        designProjectId: null,
+        revenueType: null,
+        status: 'received',
+        notes: selectedTransaction.remittanceInfo || '',
+        label: selectedTransaction.counterpartName,
+        amountExclVat: Math.abs(selectedTransaction.amount),
+        vat6: 0,
+        vat21: 0,
+        paymentMethod: 'transfer',
+        category: null,
+        vatRate: selectedTransaction.vatRegime === 'exempt' ? 'exempt' : null,
+        vatExemption: selectedTransaction.vatRegime === 'exempt',
+        invoiceUrl: null,
+        paidAt: selectedTransaction.date,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    : null
+
+  const handleCreateExpenseFromTransaction = async (payload: Record<string, unknown>) => {
+    if (!selectedTransaction) return
+    setCreationBusy(true)
+    try {
+      const formData = new FormData()
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value === undefined || value === null) return
+        if (key === 'document' && value instanceof File) {
+          formData.append('document', value)
+        } else if (key === 'poles' && Array.isArray(value)) {
+          value.forEach((p) => formData.append('poles[]', String(p)))
+        } else {
+          formData.append(key, typeof value === 'boolean' ? String(value) : String(value))
+        }
+      })
+      const created = await apiRequest('/api/v1/lab/expenses', { method: 'POST', body: formData })
+      setCreationTarget(null)
+      await handleReconcile(selectedTransaction.id, 'Expense', created.id, Math.abs(selectedTransaction.amount))
+    } finally {
+      setCreationBusy(false)
+    }
+  }
+
+  const handleCreateRevenueFromTransaction = async (payload: Record<string, unknown>) => {
+    if (!selectedTransaction) return
+    setCreationBusy(true)
+    try {
+      const created = await apiRequest('/api/v1/lab/revenues', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      setCreationTarget(null)
+      await handleReconcile(selectedTransaction.id, 'Revenue', created.id, Math.abs(selectedTransaction.amount))
+    } finally {
+      setCreationBusy(false)
+    }
+  }
+
+  const fetchContacts = useCallback(async () => {
+    const data = await apiRequest('/api/v1/lab/contacts')
+    return data
+  }, [])
 
   if (loading) {
     return <div className="flex items-center justify-center py-20 text-stone-400">Chargement...</div>
@@ -214,9 +382,11 @@ export function BankSection() {
         <ConnectionStatus
           summary={summary}
           connections={connections}
+          organizations={organizations}
           onCreateConnection={handleCreateConnection}
           onUploadCoda={handleUploadCoda}
           onDisconnect={handleDisconnect}
+          onUpdateConnection={handleUpdateConnection}
         />
       )}
 
@@ -241,7 +411,42 @@ export function BankSection() {
         <ReconciliationPanel
           transaction={selectedTransaction}
           onMatch={handleReconcile}
+          onUnreconcile={handleUnreconcile}
           onBack={() => setSubView('transactions')}
+          onCreateRequest={(kind) => setCreationTarget(kind)}
+          onReload={async () => {
+            await Promise.all([loadSummary(), loadTransactions()])
+            if (selectedTransaction) await refreshSelectedTransaction(selectedTransaction.id)
+          }}
+        />
+      )}
+
+      {creationTarget === 'expense' && selectedTransaction && defaultExpenseInitial && (
+        <ExpenseFormModal
+          expense={defaultExpenseInitial}
+          defaultTrainingId={undefined}
+          defaultDesignProjectId={undefined}
+          defaultOrganizationId={selectedTransaction.organizationId || null}
+          organizationOptions={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
+          fetchContacts={fetchContacts}
+          onCreateContact={undefined}
+          onSubmit={handleCreateExpenseFromTransaction}
+          onCancel={() => setCreationTarget(null)}
+          busy={creationBusy}
+          showTrainingLink
+          showDesignProjectLink
+          accentColor="#5B5781"
+        />
+      )}
+
+      {creationTarget === 'revenue' && selectedTransaction && defaultRevenueInitial && (
+        <RevenueFormModal
+          revenue={defaultRevenueInitial}
+          organizations={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
+          defaultOrganizationId={selectedTransaction.organizationId || null}
+          onSave={handleCreateRevenueFromTransaction}
+          onCancel={() => setCreationTarget(null)}
+          busy={creationBusy}
         />
       )}
     </div>

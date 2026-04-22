@@ -16,6 +16,13 @@ class Contact < ApplicationRecord
   validates :contact_type, inclusion: { in: CONTACT_TYPES }
   validates :name, presence: true
 
+  before_validation :normalize_iban
+
+  def normalize_iban
+    return if iban.blank?
+    self.iban = iban.to_s.gsub(/\s+/, "").upcase.presence
+  end
+
   scope :people_only, -> { where(contact_type: "person") }
   scope :organizations_only, -> { where(contact_type: "organization") }
 

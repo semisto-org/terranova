@@ -16,6 +16,8 @@ import {
   ContactDetail,
   ContactForm,
   BankSection,
+  ShopSection,
+  CashSection,
   ExpenseNoteList,
   ExpenseNoteForm,
   OrganizationList,
@@ -23,6 +25,7 @@ import {
 } from '../../lab-management/components'
 import { ExpenseFormModal } from '../../components/shared/ExpenseFormModal'
 import { RevenueFormModal } from '../../components/shared/RevenueFormModal'
+import { ExpenseCategoriesAdmin } from '../../lab-management/components/ExpenseCategoriesAdmin'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
@@ -30,6 +33,8 @@ const SECTION_TABS = [
   { id: 'timesheets', label: 'Timesheets' },
   { id: 'expenses', label: 'Dépenses' },
   { id: 'revenues', label: 'Recettes' },
+  { id: 'shop', label: 'Shop' },
+  { id: 'cash', label: 'Caisse' },
   { id: 'semos', label: 'Semos' },
   { id: 'contacts', label: 'Contacts' },
   { id: 'albums', label: 'Albums' },
@@ -53,6 +58,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
   const [expensesLoading, setExpensesLoading] = useState(false)
   const [expenseFormModal, setExpenseFormModal] = useState(null)
   const [expenseLinkOptions, setExpenseLinkOptions] = useState({ trainings: [], designProjects: [] })
+  const [expenseCategories, setExpenseCategories] = useState([])
+  const [categoriesModalOpen, setCategoriesModalOpen] = useState(false)
   const [revenues, setRevenues] = useState([])
   const [revenuesLoading, setRevenuesLoading] = useState(false)
   const [revenueFormModal, setRevenueFormModal] = useState(null)
@@ -95,9 +102,21 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
     }
   }, [])
 
+  const loadExpenseCategories = useCallback(async () => {
+    try {
+      const res = await apiRequest('/api/v1/lab/expense-categories')
+      setExpenseCategories((res.items || []).map((c) => ({ id: c.id, label: c.label })))
+    } catch {
+      setExpenseCategories([])
+    }
+  }, [])
+
   useEffect(() => {
-    if (tab === 'expenses') loadExpenses()
-  }, [tab, loadExpenses])
+    if (tab === 'expenses') {
+      loadExpenses()
+      loadExpenseCategories()
+    }
+  }, [tab, loadExpenses, loadExpenseCategories])
 
   const loadRevenues = useCallback(async () => {
     setRevenuesLoading(true)
@@ -142,11 +161,15 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
       loadOrganizations()
     }
     if (tab === 'organizations') loadOrganizations()
+    if (tab === 'expenses' || tab === 'revenues') loadOrganizations()
   }, [tab, loadExpenseNotes, loadOrganizations])
 
   useEffect(() => {
-    let cancelled = false
+    // Pre-load project link options when the modal is about to open or is open.
+    // The modal itself also self-loads these if the parent doesn't supply them,
+    // so this is a perf optimisation to avoid the brief empty-state flash.
     if (!expenseFormModal) return
+    let cancelled = false
 
     ;(async () => {
       try {
@@ -374,7 +397,11 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
     onInlineExpenseUpdate: async (expenseId, changes) => {
       const payload = {
         ...(changes.status ? { status: changes.status } : {}),
-        ...(Object.prototype.hasOwnProperty.call(changes, 'category') ? { category: changes.category || '' } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'categoryId')
+          ? { expense_category_id: changes.categoryId || null }
+          : Object.prototype.hasOwnProperty.call(changes, 'category')
+            ? { category: changes.category || '' }
+            : {}),
         ...(changes.poles ? { poles: changes.poles } : {}),
       }
       if (!Object.keys(payload).length) return
@@ -389,7 +416,11 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
     onBulkExpenseUpdate: async (ids, changes) => {
       const payload = {
         ...(changes.status ? { status: changes.status } : {}),
-        ...(Object.prototype.hasOwnProperty.call(changes, 'category') ? { category: changes.category || '' } : {}),
+        ...(Object.prototype.hasOwnProperty.call(changes, 'categoryId')
+          ? { expense_category_id: changes.categoryId || null }
+          : Object.prototype.hasOwnProperty.call(changes, 'category')
+            ? { category: changes.category || '' }
+            : {}),
         ...(changes.poles ? { poles: changes.poles } : {}),
       }
       if (!Object.keys(payload).length || !ids?.length) return
@@ -541,12 +572,15 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         <ExpenseList
           expenses={expenses}
           loading={expensesLoading}
+          categories={expenseCategories}
+          isAdmin={Boolean(currentMember?.isAdmin)}
           onCreateExpense={callbacks.onCreateExpense}
           onEditExpense={callbacks.onEditExpense}
           onDeleteExpense={callbacks.onDeleteExpense}
           onInlineUpdate={callbacks.onInlineExpenseUpdate}
           onBulkUpdate={callbacks.onBulkExpenseUpdate}
           onBulkDelete={callbacks.onBulkExpenseDelete}
+          onManageCategories={() => setCategoriesModalOpen(true)}
           trainingOptions={expenseLinkOptions.trainings}
           designProjectOptions={expenseLinkOptions.designProjects}
         />
@@ -599,6 +633,10 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
       )}
 
       {tab === 'bank' && <BankSection />}
+
+      {tab === 'shop' && <ShopSection />}
+
+      {tab === 'cash' && <CashSection />}
 
       {tab === 'expense_notes' && (
         <ExpenseNoteList
@@ -745,6 +783,9 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         <ExpenseFormModal
           expense={expenseFormModal.expense}
           contactOptions={(data?.contacts || []).map((c) => ({ id: c.id, name: c.name, contactType: c.contactType }))}
+          categoryOptions={expenseCategories}
+          organizationOptions={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
+          defaultOrganizationId={organizations.find((o) => o.isDefault)?.id || null}
           onCreateContact={async ({ name, contact_type }) => {
             const contact = await apiRequest('/api/v1/lab/contacts', {
               method: 'POST',
@@ -765,7 +806,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               supplier_contact_id: payload.supplier_contact_id,
               status: payload.status,
               invoice_date: payload.invoice_date,
-              category: payload.category,
+              expense_category_id: payload.expense_category_id ?? null,
               expense_type: payload.expense_type,
               billing_zone: payload.billing_zone,
               payment_date: payload.payment_date || null,
@@ -788,6 +829,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               poles: payload.poles || [],
               training_id: payload.training_id || null,
               design_project_id: payload.design_project_id || null,
+              organization_id: payload.organization_id || null,
+              project_allocations: payload.project_allocations || [],
             }
             setBusy(true)
             setError(null)
@@ -826,6 +869,15 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         />
       )}
 
+      <ExpenseCategoriesAdmin
+        open={categoriesModalOpen}
+        onClose={() => setCategoriesModalOpen(false)}
+        onCategoriesChanged={async () => {
+          await loadExpenseCategories()
+          await loadExpenses()
+        }}
+      />
+
       {revenueDetailModal && (
         <RevenueDetailModal
           revenue={revenueDetailModal}
@@ -842,6 +894,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         <RevenueFormModal
           revenue={revenueFormModal.revenue}
           contacts={(data?.contacts || []).map((c) => ({ value: c.id, label: c.name }))}
+          organizations={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
+          defaultOrganizationId={organizations.find((o) => o.isDefault)?.id || null}
           onSave={async (formData) => {
             setBusy(true)
             try {
@@ -991,6 +1045,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 body.append('organization[email]', values.email || '')
                 body.append('organization[phone]', values.phone || '')
                 body.append('organization[is_default]', String(values.isDefault))
+                body.append('organization[vat_subject]', String(values.vatSubject))
                 if (values.logoFile) body.append('logo', values.logoFile)
                 if (values.removeLogo) body.append('remove_logo', 'true')
                 const resp = await fetch(url, { method, headers: { 'X-CSRF-Token': csrfToken }, body })
@@ -1011,6 +1066,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                       email: values.email,
                       phone: values.phone,
                       is_default: values.isDefault,
+                      vat_subject: values.vatSubject,
                     },
                   }),
                 })
@@ -1044,6 +1100,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               notes: values.notes,
               notes_html: values.notesHtml,
               tag_names: values.tagNames,
+              iban: values.iban,
             }
             setBusy(true)
             setError(null)

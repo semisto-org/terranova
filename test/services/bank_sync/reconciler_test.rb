@@ -15,12 +15,20 @@ class BankSync::ReconcilerTest < ActiveSupport::TestCase
       m.last_name = "Test"
       m.password = "password123"
       m.is_admin = true
+      m.joined_at = Date.current
+    end
+
+    @organization = Organization.find_or_create_by!(name: "Semisto Test") do |o|
+      o.is_default = true
+      o.vat_subject = true
     end
 
     @connection = BankConnection.create!(
       provider: "gocardless",
       bank_name: "Triodos",
       status: "linked",
+      accounting_scope: "general",
+      organization: @organization,
       connected_by: @admin
     )
   end
@@ -50,8 +58,8 @@ class BankSync::ReconcilerTest < ActiveSupport::TestCase
     assert result[:auto_matched] >= 1
     tx.reload
     assert_equal "matched", tx.status
-    assert tx.bank_reconciliation.present?
-    assert_equal "Expense", tx.bank_reconciliation.reconcilable_type
+    assert tx.bank_reconciliations.first.present?
+    assert_equal "Expense", tx.bank_reconciliations.first.reconcilable_type
   end
 
   test "reconcile_all matches revenue with exact amount and close date" do
@@ -140,7 +148,8 @@ class BankSync::ReconcilerTest < ActiveSupport::TestCase
     BankReconciliation.create!(
       bank_transaction: tx1,
       reconcilable: expense,
-      confidence: "manual"
+      confidence: "manual",
+      amount: 200.00
     )
 
     tx2 = BankTransaction.create!(
@@ -163,6 +172,7 @@ class BankSync::ReconcilerTest < ActiveSupport::TestCase
       bank_name: "VDK",
       status: "linked",
       accounting_scope: "nursery",
+      organization: @organization,
       connected_by: @admin
     )
 
@@ -241,12 +251,75 @@ class BankSync::ReconcilerTest < ActiveSupport::TestCase
     assert_equal 2, candidates.size
   end
 
+  test "IBAN match boosts score enough to auto-match despite noisy name" do
+    supplier = Contact.create!(name: "ACME Supplier", contact_type: "organization", iban: "BE68539007547034")
+
+    tx = BankTransaction.create!(
+      bank_connection: @connection,
+      provider_transaction_id: "tx_iban_001",
+      date: Date.new(2026, 3, 15),
+      amount: -250.00,
+      counterpart_name: "ACME SPRL BE0123", # noisy — won't equal supplier name
+      counterpart_iban: "BE68 5390 0754 7034" # same IBAN, differently formatted
+    )
+
+    Expense.create!(
+      name: "ACME invoice",
+      supplier: supplier.name,
+      supplier_contact: supplier,
+      status: "paid",
+      expense_type: "services_and_goods",
+      invoice_date: Date.new(2026, 3, 15),
+      total_incl_vat: 250.00,
+      amount_excl_vat: 206.61
+    )
+
+    reconciler = BankSync::Reconciler.new
+    candidates = reconciler.find_candidates(tx)
+
+    assert candidates.size >= 1
+    assert candidates.first[:score] >= 80, "expected auto-match score, got #{candidates.first[:score]}"
+
+    result = reconciler.reconcile_all
+    assert_equal 1, result[:auto_matched]
+  end
+
+  test "IBAN mismatch does not grant the IBAN score boost" do
+    supplier = Contact.create!(name: "ACME", contact_type: "organization", iban: "BE68539007547034")
+
+    tx = BankTransaction.create!(
+      bank_connection: @connection,
+      provider_transaction_id: "tx_iban_002",
+      date: Date.new(2026, 3, 15),
+      amount: -250.00,
+      counterpart_iban: "FR7630006000011234567890189"
+    )
+
+    Expense.create!(
+      name: "ACME invoice",
+      supplier: supplier.name,
+      supplier_contact: supplier,
+      status: "paid",
+      expense_type: "services_and_goods",
+      invoice_date: Date.new(2026, 3, 15),
+      total_incl_vat: 250.00,
+      amount_excl_vat: 206.61
+    )
+
+    reconciler = BankSync::Reconciler.new
+    candidates = reconciler.find_candidates(tx)
+
+    # amount (40) + exact date (30) = 70, no IBAN boost, no name boost
+    assert_equal 70, candidates.first[:score]
+  end
+
   test "nursery-scoped connection only matches nursery revenues" do
     nursery_connection = BankConnection.create!(
       provider: "gocardless",
       bank_name: "VDK",
       status: "linked",
       accounting_scope: "nursery",
+      organization: @organization,
       connected_by: @admin
     )
 

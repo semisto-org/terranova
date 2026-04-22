@@ -11,6 +11,7 @@ export interface OrganizationFormValues {
   email: string
   phone: string
   isDefault: boolean
+  vatSubject: boolean
   logoFile?: File | null
   removeLogo?: boolean
 }
@@ -32,6 +33,7 @@ export function OrganizationForm({ organization, busy = false, onSave, onCancel 
     email: organization?.email ?? '',
     phone: organization?.phone ?? '',
     isDefault: organization?.isDefault ?? false,
+    vatSubject: organization?.vatSubject ?? true,
     logoFile: null,
     removeLogo: false,
   })
@@ -217,6 +219,24 @@ export function OrganizationForm({ organization, busy = false, onSave, onCancel 
               />
               <span className="text-sm text-stone-700">Définir comme structure par défaut</span>
             </label>
+
+            <div className="rounded-xl border border-stone-200 bg-stone-50/60 p-4 space-y-2">
+              <div className="text-[11px] uppercase tracking-[0.12em] text-stone-500 font-semibold">Régime TVA</div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={values.vatSubject}
+                  onChange={(e) => update({ vatSubject: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#5B5781] focus:ring-[#5B5781]"
+                />
+                <span className="text-sm text-stone-700">
+                  <span className="font-medium">Assujettie à la TVA</span>
+                  <span className="block text-xs text-stone-500 mt-0.5">
+                    Décochez si la structure est en franchise de TVA (ne récupère ni ne déclare la TVA).
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
 
           <footer className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/60 flex justify-end gap-2">

@@ -48,7 +48,7 @@ module Api
 
       def organization_params
         params.require(:organization).permit(
-          :name, :legal_form, :registration_number, :address, :iban, :email, :phone, :is_default
+          :name, :legal_form, :registration_number, :address, :iban, :email, :phone, :is_default, :vat_subject
         )
       end
 
@@ -63,6 +63,8 @@ module Api
           email: org.email,
           phone: org.phone,
           isDefault: org.is_default,
+          vatSubject: org.vat_subject,
+          vatRegime: org.vat_regime,
           logoUrl: org.logo.attached? ? Rails.application.routes.url_helpers.rails_blob_url(org.logo, only_path: true) : nil,
           archivedAt: org.archived_at&.iso8601,
           createdAt: org.created_at.iso8601

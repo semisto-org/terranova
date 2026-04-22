@@ -264,6 +264,7 @@ export interface Contact {
   people: { id: string; name: string }[]
   newsletterSubscribed: boolean
   tagNames: string[]
+  iban?: string
   createdAt: string
   updatedAt: string
 }

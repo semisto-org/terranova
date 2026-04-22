@@ -222,6 +222,12 @@ Rails.application.routes.draw do
       patch "lab/event-types/:id", to: "lab_management#update_event_type"
       delete "lab/event-types/:id", to: "lab_management#destroy_event_type"
 
+      get "lab/expense-categories", to: "lab_management#list_expense_categories"
+      post "lab/expense-categories", to: "lab_management#create_expense_category"
+      patch "lab/expense-categories/:id", to: "lab_management#update_expense_category"
+      delete "lab/expense-categories/:id", to: "lab_management#destroy_expense_category"
+      post "lab/expense-categories/:id/reassign", to: "lab_management#reassign_expense_category"
+
       get "lab/timesheet-service-types", to: "lab_management#list_timesheet_service_types"
       post "lab/timesheet-service-types", to: "lab_management#create_timesheet_service_type"
       patch "lab/timesheet-service-types/:id", to: "lab_management#update_timesheet_service_type"
@@ -268,19 +274,50 @@ Rails.application.routes.draw do
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
 
+      # Cash (virtual bank connections + transfers)
+      get "bank/cash_accounts", to: "bank#list_cash_accounts"
+      post "bank/cash_transfers", to: "bank#create_cash_transfer"
+
+      # Stripe import
+      post "bank/connections/stripe", to: "bank#create_stripe_connection"
+      post "bank/connections/:id/sync_stripe", to: "bank#sync_stripe"
+
+      # Bank reconciliation rules (auto-suggestion patterns)
+      get "bank/matching_rules", to: "bank_matching_rules#index"
+      post "bank/matching_rules", to: "bank_matching_rules#create"
+      patch "bank/matching_rules/:id", to: "bank_matching_rules#update"
+      delete "bank/matching_rules/:id", to: "bank_matching_rules#destroy"
+      get "bank/transactions/:id/applicable_rules", to: "bank_matching_rules#applicable"
+
+      # Shop (comptoir sales with inventory)
+      get "shop/products", to: "shop#list_products"
+      post "shop/products", to: "shop#create_product"
+      patch "shop/products/:id", to: "shop#update_product"
+      delete "shop/products/:id", to: "shop#destroy_product"
+      post "shop/products/:id/restock", to: "shop#restock_product"
+      get "shop/sales", to: "shop#list_sales"
+      get "shop/sales/:id", to: "shop#show_sale"
+      post "shop/sales", to: "shop#create_sale"
+      patch "shop/sales/:id", to: "shop#update_sale"
+      delete "shop/sales/:id", to: "shop#destroy_sale"
+
       # Bank integration (CODA import + GoCardless)
       post "bank/connect", to: "bank#connect"
       post "bank/callback", to: "bank#callback"
       post "bank/connections", to: "bank#create_connection"
       get "bank/connections", to: "bank#list_connections"
+      patch "bank/connections/:id", to: "bank#update_connection"
       delete "bank/connections/:id", to: "bank#destroy_connection"
       post "bank/connections/:id/upload_coda", to: "bank#upload_coda"
       post "bank/sync", to: "bank#sync"
       get "bank/transactions", to: "bank#list_transactions"
       get "bank/transactions/:id/candidates", to: "bank#candidates"
+      get "bank/transactions/:id/search_candidates", to: "bank#search_candidates"
+      get "bank/transactions/:id/registrations", to: "bank#search_registrations"
       patch "bank/transactions/:id/ignore", to: "bank#ignore_transaction"
       patch "bank/transactions/:id/unignore", to: "bank#unignore_transaction"
       post "bank/reconciliations", to: "bank#create_reconciliation"
+      post "bank/reconciliations/from_registration", to: "bank#reconcile_registration"
       post "bank/reconciliations/auto", to: "bank#auto_reconcile"
       delete "bank/reconciliations/:id", to: "bank#destroy_reconciliation"
       get "bank/summary", to: "bank#summary"

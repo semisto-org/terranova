@@ -636,7 +636,8 @@ namespace :notion do
             invoice_date: invoice_date,
             payment_date: importer.extract(props, "Paiement") || importer.extract(props, "Date paiement") || importer.extract(props, "Payé"),
             payment_type: payment_type,
-            category: category.presence && Expense::EXPENSE_CATEGORIES.include?(category) ? category : nil,
+            expense_category: category.presence ? ExpenseCategory.find_by("LOWER(label) = ?", category.downcase) : nil,
+            category: category.presence && ExpenseCategory.exists?(label: category) ? category : nil,
             supplier_contact: supplier_contact,
             supplier: supplier_contact&.name || importer.extract(props, "Fournisseur (texte)") || (supplier_contact ? "" : "Import Notion"),
             training: training,
@@ -1221,6 +1222,112 @@ namespace :notion do
 
       puts "✅ Documents: #{pages.size} fetched, #{created} created, #{updated} updated, #{skipped} skipped, #{errors} errors"
     end
+
+    desc "Import shop sales from Notion (Ventes shop)"
+    task shop_sales: :environment do
+      importer = NotionImporter.new
+      puts "📥 Importing shop sales..."
+
+      database_id = "213dab0f-3f9b-4439-9d1d-25c857a4ba47"
+      pages = importer.fetch_database(database_id)
+      created = updated = errors = 0
+
+      payment_method_map = {
+        "Cash" => "cash",
+        "Virement" => "transfer",
+        "Carte" => "card",
+        "Stripe" => "stripe"
+      }
+
+      organization = Organization.find_by(name: "Semisto") || Organization.first
+      raise "No Organization found" unless organization
+
+      pages.each do |page|
+        props = page["properties"]
+        notion_id = page["id"]
+
+        begin
+          articles = importer.extract(props, "Articles").presence || "Article"
+          sold_at = importer.extract(props, "Date") || page["created_time"]
+          payment_raw = importer.extract(props, "Mode de paiement") || ""
+          payment_method = payment_method_map[payment_raw] || "other"
+          customer_label = importer.extract(props, "Client") || ""
+
+          tvac_6 = (props.dig("TVAC (6%)", "number") || 0).to_d
+          tvac_21 = (props.dig("TVAC (21%)", "number") || 0).to_d
+
+          # Determine primary VAT rate + total for this sale.
+          # If both are set we use the higher one, but practically only one is used per sale.
+          vat_rate, total_incl_vat =
+            if tvac_21.positive? && tvac_6.positive?
+              # Mixed: fallback to 6 with combined total (user will edit lines after)
+              ["6", tvac_6 + tvac_21]
+            elsif tvac_21.positive?
+              ["21", tvac_21]
+            else
+              ["6", tvac_6]
+            end
+
+          if total_incl_vat.zero?
+            puts "  ⏭️ Sale #{notion_id}: skipped — no amount"
+            next
+          end
+
+          sale = Shop::Sale.find_by(notion_id: notion_id) || Shop::Sale.new(notion_id: notion_id)
+          is_new = sale.new_record?
+
+          # Find or create a generic product based on the article title
+          product = Shop::Product.find_by("LOWER(name) = ?", articles.downcase)
+          product ||= Shop::Product.create!(
+            name: articles,
+            description: "Produit importé depuis Notion (historique)",
+            unit_price: total_incl_vat,
+            vat_rate: vat_rate,
+            stock_quantity: 0,
+            archived_at: Time.current
+          )
+
+          Shop::Sale.transaction do
+            sale.assign_attributes(
+              organization: organization,
+              sold_at: sold_at,
+              payment_method: payment_method,
+              customer_label: customer_label,
+              notes: "",
+              notion_created_at: page["created_time"],
+              notion_updated_at: page["last_edited_time"],
+              skip_stock_decrement: true,
+              skip_revenue_generation: true,
+              skip_cash_movement: true
+            )
+
+            if is_new
+              sale.items.build(
+                product: product,
+                quantity: 1,
+                unit_price: total_incl_vat,
+                vat_rate: vat_rate
+              )
+            end
+
+            sale.save!
+          end
+
+          importer.upsert_notion_record(
+            page,
+            database_name: "Ventes shop",
+            database_id: database_id
+          )
+
+          is_new ? created += 1 : updated += 1
+        rescue => e
+          errors += 1
+          puts "  ❌ Shop sale #{notion_id}: #{e.message}"
+        end
+      end
+
+      puts "✅ Shop sales: #{pages.size} fetched, #{created} created, #{updated} updated, #{errors} errors"
+    end
   end
 
   desc "Import all data from Notion"
@@ -1257,6 +1364,8 @@ namespace :notion do
     Rake::Task["notion:import:revenues"].invoke
     puts ""
     Rake::Task["notion:import:expenses"].invoke
+    puts ""
+    Rake::Task["notion:import:shop_sales"].invoke
     puts ""
     Rake::Task["notion:import:link_contacts_organizations"].invoke
     puts ""

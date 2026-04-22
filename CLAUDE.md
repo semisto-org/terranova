@@ -129,6 +129,10 @@ test/
 - **Academy**: academy_trainings, academy_training_sessions, academy_training_registrations, etc. (9 tables)
 - **Nursery**: nursery_stock_batches, nursery_orders, nursery_mother_plants, etc. (7 tables)
 - **Plants**: plant_genera, plant_species, plant_varieties, plant_palettes, etc. (14 tables)
+- **Shop**: shop_products, shop_sales, shop_sale_items (3 tables) — comptoir avec stock simple, génère une Revenue par vente (`pole=shop`, `category='Ventes shop'`)
+- **Caisse**: pas de table dédiée — utilise `BankConnection` avec `provider='cash'` (une par Organization), auto-créée par `Organization#ensure_cash_account!`. Les ventes cash Shop et dépenses cash alimentent la caisse via `Cash::Bookkeeper`.
+- **Stripe**: BankConnection avec `provider='stripe'`, synchronisée par `BankSync::StripeImporter` (charges + payouts seulement, fees gérés via facture Stripe mensuelle). Le webhook crée désormais une Revenue par paiement (idempotence via `revenues.stripe_payment_intent_id`).
+- **Matching rules**: table `bank_matching_rules` — patterns (counterpart_name/remittance_info/counterpart_iban) qui suggèrent contact/catégorie/type/TVA lors de la réconciliation. Créées via bouton "Mémoriser" sur le panel.
 
 ## Testing
 

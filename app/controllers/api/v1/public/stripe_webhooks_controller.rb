@@ -114,9 +114,37 @@ module Api
 
           if registration
             payment_method_label = resolve_payment_method(payment_intent)
+            ensure_revenue_for(registration, payment_intent, amount_paid)
             AcademyMailer.registration_confirmation(registration, payment_method: payment_method_label).deliver_later
             notify_slack(registration, payment_intent)
           end
+        end
+
+        # Creates a Revenue tied to the registration if not already present.
+        # Idempotent via Revenue.stripe_payment_intent_id unique index.
+        def ensure_revenue_for(registration, payment_intent, amount_paid)
+          return if Revenue.where(stripe_payment_intent_id: payment_intent.id).exists?
+
+          Revenue.create!(
+            organization: Organization.default,
+            contact: registration.contact,
+            projectable: registration,
+            stripe_payment_intent_id: payment_intent.id,
+            amount: amount_paid,
+            amount_excl_vat: amount_paid,
+            label: "Inscription Stripe · #{registration.training&.title || 'activité'}",
+            description: "Paiement Stripe de #{registration.contact_name}",
+            date: Time.at(payment_intent.created.to_i).to_date,
+            paid_at: Time.at(payment_intent.created.to_i).to_date,
+            status: "received",
+            pole: "academy",
+            payment_method: "stripe",
+            revenue_type: "academy_registration",
+            category: "Formations",
+            vat_rate: ""
+          )
+        rescue ActiveRecord::RecordInvalid => e
+          Rails.logger.warn("Failed to create Revenue for Stripe PI #{payment_intent.id}: #{e.message}")
         end
 
         def notify_slack(registration, payment_intent)

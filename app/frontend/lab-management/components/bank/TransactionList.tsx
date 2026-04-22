@@ -1,6 +1,12 @@
-import { ArrowDownLeft, ArrowUpRight, Check, Eye, EyeOff, Search, Wand2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowDownLeft, ArrowUpRight, Check, Eye, EyeOff, Loader2, Search, Wand2, X } from 'lucide-react'
 import type { BankConnection, BankSummaryResponse, BankTransaction } from './BankSection'
 import { SCOPE_LABELS } from './BankSection'
+
+interface AutoReconcileResult {
+  autoMatched: number
+  suggested: number
+}
 
 interface TransactionListProps {
   transactions: BankTransaction[]
@@ -10,7 +16,7 @@ interface TransactionListProps {
   onIgnore: (id: string) => void
   onUnignore: (id: string) => void
   onUnreconcile: (reconciliationId: string) => void
-  onAutoReconcile: () => Promise<unknown>
+  onAutoReconcile: () => Promise<AutoReconcileResult>
   summary: BankSummaryResponse | null
   connections: BankConnection[]
   activeConnectionId: string | null
@@ -23,6 +29,7 @@ const fmtDate = (v: string) => new Date(v).toLocaleDateString('fr-FR')
 
 const STATUS_BADGES: Record<string, { label: string; bg: string; text: string }> = {
   unmatched: { label: 'Non rapprochée', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700' },
+  partially_matched: { label: 'Partielle', bg: 'bg-sky-50 border-sky-200', text: 'text-sky-700' },
   matched: { label: 'Rapprochée', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
   ignored: { label: 'Ignorée', bg: 'bg-stone-50 border-stone-200', text: 'text-stone-500' },
 }
@@ -45,6 +52,35 @@ export function TransactionList({
   onConnectionChange,
 }: TransactionListProps) {
   const hasMultipleConnections = connections.filter((c) => c.status === 'linked').length > 1
+  const [autoLoading, setAutoLoading] = useState(false)
+  const [autoFeedback, setAutoFeedback] = useState<AutoReconcileResult | null>(null)
+
+  useEffect(() => {
+    if (!autoFeedback) return
+    const timer = setTimeout(() => setAutoFeedback(null), 6000)
+    return () => clearTimeout(timer)
+  }, [autoFeedback])
+
+  const handleAutoClick = async () => {
+    setAutoLoading(true)
+    setAutoFeedback(null)
+    try {
+      const result = await onAutoReconcile()
+      setAutoFeedback(result)
+    } finally {
+      setAutoLoading(false)
+    }
+  }
+
+  const feedbackMessage = (r: AutoReconcileResult) => {
+    if (r.autoMatched === 0 && r.suggested === 0) {
+      return 'Aucune correspondance trouvée.'
+    }
+    const parts: string[] = []
+    if (r.autoMatched > 0) parts.push(`${r.autoMatched} rapproché${r.autoMatched > 1 ? 'es' : 'e'}`)
+    if (r.suggested > 0) parts.push(`${r.suggested} suggestion${r.suggested > 1 ? 's' : ''}`)
+    return parts.join(' · ')
+  }
 
   return (
     <div className="space-y-4">
@@ -82,7 +118,8 @@ export function TransactionList({
           className="px-3 py-2 text-sm border border-stone-300 rounded-lg bg-white"
         >
           <option value="">Tous les statuts</option>
-          <option value="unmatched">Non rapprochées</option>
+          <option value="unmatched">À traiter</option>
+          <option value="partially_matched">Partielles</option>
           <option value="matched">Rapprochées</option>
           <option value="ignored">Ignorées</option>
         </select>
@@ -98,13 +135,25 @@ export function TransactionList({
           onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value || undefined })}
           className="px-3 py-2 text-sm border border-stone-300 rounded-lg bg-white"
         />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          {autoFeedback && (
+            <span
+              className={`text-xs font-medium ${
+                autoFeedback.autoMatched === 0 && autoFeedback.suggested === 0
+                  ? 'text-stone-500'
+                  : 'text-emerald-700'
+              }`}
+            >
+              {feedbackMessage(autoFeedback)}
+            </span>
+          )}
           <button
-            onClick={() => onAutoReconcile()}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#5B5781] border border-[#5B5781] rounded-lg hover:bg-[#5B5781]/5 transition-colors"
+            onClick={handleAutoClick}
+            disabled={autoLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#5B5781] border border-[#5B5781] rounded-lg hover:bg-[#5B5781]/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Wand2 className="w-4 h-4" />
-            Réconciliation auto
+            {autoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            {autoLoading ? 'Analyse...' : 'Réconciliation auto'}
           </button>
         </div>
       </div>
@@ -172,49 +221,74 @@ export function TransactionList({
                       <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border ${badge.bg} ${badge.text}`}>
                         {badge.label}
                       </span>
-                      {tx.reconciliation && (
+                      {tx.status === 'partially_matched' && (
+                        <div className="text-[10px] text-sky-700 mt-0.5 font-mono">
+                          {tx.allocatedAmount.toFixed(2)} / {Math.abs(tx.amount).toFixed(2)} €
+                        </div>
+                      )}
+                      {tx.reconciliations.length > 0 && tx.status === 'matched' && (
                         <div className="text-[10px] text-stone-400 mt-0.5">
-                          {tx.reconciliation.type === 'Expense' ? 'Dépense' : 'Recette'} #{tx.reconciliation.recordId}
-                          {tx.reconciliation.confidence === 'auto' && ' · auto'}
+                          {tx.reconciliations.length === 1
+                            ? `${tx.reconciliations[0].type === 'Expense' ? 'Dépense' : 'Recette'} #${tx.reconciliations[0].recordId}`
+                            : `${tx.reconciliations.length} éléments`}
+                          {tx.reconciliations.some((r) => r.confidence === 'auto') && ' · auto'}
                         </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
-                        {tx.status === 'unmatched' && (
+                        {(tx.status === 'unmatched' || tx.status === 'partially_matched') && (
                           <>
                             <button
                               onClick={() => onReconcile(tx)}
-                              className="p-1.5 text-[#5B5781] hover:bg-[#5B5781]/10 rounded transition-colors"
-                              title="Rapprocher"
+                              className="group/tip relative p-1.5 text-[#5B5781] hover:bg-[#5B5781]/10 rounded transition-colors"
                             >
                               <Check className="w-4 h-4" />
+                              <span className="pointer-events-none absolute bottom-full right-1/2 translate-x-1/2 mb-1.5 px-2 py-1 bg-stone-900 text-white text-xs font-medium rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity z-10 shadow-lg">
+                                Rapprocher avec une dépense ou une recette
+                              </span>
                             </button>
-                            <button
-                              onClick={() => onIgnore(tx.id)}
-                              className="p-1.5 text-stone-400 hover:text-stone-600 rounded transition-colors"
-                              title="Ignorer"
-                            >
-                              <EyeOff className="w-4 h-4" />
-                            </button>
+                            {tx.status === 'unmatched' && (
+                              <button
+                                onClick={() => onIgnore(tx.id)}
+                                className="group/tip relative p-1.5 text-stone-400 hover:text-stone-600 rounded transition-colors"
+                              >
+                                <EyeOff className="w-4 h-4" />
+                                <span className="pointer-events-none absolute bottom-full right-1/2 translate-x-1/2 mb-1.5 px-2 py-1 bg-stone-900 text-white text-xs font-medium rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity z-10 shadow-lg">
+                                  Ignorer (exclure de la comptabilité)
+                                </span>
+                              </button>
+                            )}
                           </>
                         )}
-                        {tx.status === 'matched' && tx.reconciliation && (
+                        {tx.status === 'matched' && tx.reconciliations.length > 0 && (
                           <button
-                            onClick={() => onUnreconcile(tx.reconciliation!.id)}
-                            className="p-1.5 text-stone-400 hover:text-red-500 rounded transition-colors"
-                            title="Annuler le rapprochement"
+                            onClick={() => {
+                              if (tx.reconciliations.length === 1) {
+                                if (window.confirm('Annuler le rapprochement de cette transaction ?')) {
+                                  onUnreconcile(tx.reconciliations[0].id)
+                                }
+                              } else {
+                                onReconcile(tx)
+                              }
+                            }}
+                            className="group/tip relative p-1.5 text-stone-400 hover:text-red-500 rounded transition-colors"
                           >
                             <X className="w-4 h-4" />
+                            <span className="pointer-events-none absolute bottom-full right-1/2 translate-x-1/2 mb-1.5 px-2 py-1 bg-stone-900 text-white text-xs font-medium rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity z-10 shadow-lg">
+                              {tx.reconciliations.length === 1 ? 'Annuler le rapprochement' : 'Gérer les rapprochements'}
+                            </span>
                           </button>
                         )}
                         {tx.status === 'ignored' && (
                           <button
                             onClick={() => onUnignore(tx.id)}
-                            className="p-1.5 text-stone-400 hover:text-stone-600 rounded transition-colors"
-                            title="Rétablir"
+                            className="group/tip relative p-1.5 text-stone-400 hover:text-stone-600 rounded transition-colors"
                           >
                             <Eye className="w-4 h-4" />
+                            <span className="pointer-events-none absolute bottom-full right-1/2 translate-x-1/2 mb-1.5 px-2 py-1 bg-stone-900 text-white text-xs font-medium rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity z-10 shadow-lg">
+                              Rétablir (réintégrer dans la liste)
+                            </span>
                           </button>
                         )}
                       </div>

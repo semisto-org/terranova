@@ -54,11 +54,11 @@ module BankSync
       date = transaction.date
 
       expenses = Expense
-        .left_joins(:bank_reconciliation)
+        .left_joins(:bank_reconciliations)
         .where(bank_reconciliations: { id: nil })
-        .where(status: %w[ready_for_payment paid])
-        .where("total_incl_vat BETWEEN ? AND ?", abs_amount - AMOUNT_TOLERANCE, abs_amount + AMOUNT_TOLERANCE)
-        .where(invoice_date: (date - DATE_TOLERANCE_DAYS.days)..(date + DATE_TOLERANCE_DAYS.days))
+        .where(expenses: { status: %w[ready_for_payment paid] })
+        .where("expenses.total_incl_vat BETWEEN ? AND ?", abs_amount - AMOUNT_TOLERANCE, abs_amount + AMOUNT_TOLERANCE)
+        .where(expenses: { invoice_date: (date - DATE_TOLERANCE_DAYS.days)..(date + DATE_TOLERANCE_DAYS.days) })
 
       # Scope-aware filtering: restrict to matching poles when connection has a scope
       scope_poles = transaction.bank_connection.scope_poles
@@ -75,11 +75,11 @@ module BankSync
       date = transaction.date
 
       revenues = Revenue
-        .left_joins(:bank_reconciliation)
+        .left_joins(:bank_reconciliations)
         .where(bank_reconciliations: { id: nil })
-        .where(status: %w[confirmed received])
-        .where("amount BETWEEN ? AND ?", amount - AMOUNT_TOLERANCE, amount + AMOUNT_TOLERANCE)
-        .where(date: (date - DATE_TOLERANCE_DAYS.days)..(date + DATE_TOLERANCE_DAYS.days))
+        .where(revenues: { status: %w[confirmed received] })
+        .where("revenues.amount BETWEEN ? AND ?", amount - AMOUNT_TOLERANCE, amount + AMOUNT_TOLERANCE)
+        .where(revenues: { date: (date - DATE_TOLERANCE_DAYS.days)..(date + DATE_TOLERANCE_DAYS.days) })
 
       # Scope-aware filtering: restrict to matching poles when connection has a scope
       scope_poles = transaction.bank_connection.scope_poles
@@ -127,6 +127,16 @@ module BankSync
         end
       end
 
+      # Counterpart IBAN match (0-40 points) — strongest signal, learned from prior reconciliations
+      if type == :expense && transaction.counterpart_iban.present?
+        supplier_iban = record.supplier_contact&.iban
+        if supplier_iban.present?
+          tx_iban = transaction.counterpart_iban.to_s.gsub(/\s+/, "").upcase
+          normalized_supplier = supplier_iban.to_s.gsub(/\s+/, "").upcase
+          score += 40 if tx_iban == normalized_supplier
+        end
+      end
+
       # Counterpart name match (0-30 points)
       if transaction.counterpart_name.present?
         name_to_match = if type == :expense
@@ -147,6 +157,16 @@ module BankSync
         end
       end
 
+      # Stripe payment_intent match (+50 points) — strongest signal when Stripe
+      # imports a charge and the webhook has already created the matching Revenue.
+      if type == :revenue &&
+          transaction.internal_reference.present? &&
+          record.respond_to?(:stripe_payment_intent_id) &&
+          record.stripe_payment_intent_id.present? &&
+          transaction.internal_reference == record.stripe_payment_intent_id
+        score += 50
+      end
+
       score
     end
 
@@ -154,7 +174,8 @@ module BankSync
       BankReconciliation.create!(
         bank_transaction: transaction,
         reconcilable: record,
-        confidence: confidence
+        confidence: confidence,
+        amount: transaction.amount.abs
       )
 
       if confidence == "auto"

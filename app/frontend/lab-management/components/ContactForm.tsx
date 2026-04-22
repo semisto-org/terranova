@@ -14,6 +14,7 @@ export interface ContactFormValues {
   notesHtml: string
   newsletterSubscribed: boolean
   tagNames: string[]
+  iban: string
 }
 
 const ORGANIZATION_TYPES = ['Entreprise', 'Association', 'Collectivité', 'Collectif', 'Autre']
@@ -49,6 +50,7 @@ export function ContactForm({
     notesHtml: contact?.notesHtml ?? '',
     newsletterSubscribed: contact?.newsletterSubscribed ?? false,
     tagNames: contact?.tagNames ?? [],
+    iban: contact?.iban ?? '',
   })
 
   const [tagInput, setTagInput] = useState('')
@@ -242,6 +244,23 @@ export function ContactForm({
                   className={`${inputBase} resize-none`}
                   placeholder="Rue, numéro, code postal, ville"
                 />
+              </div>
+              <div>
+                <label htmlFor="contact-iban" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  IBAN
+                </label>
+                <input
+                  id="contact-iban"
+                  type="text"
+                  value={values.iban}
+                  onChange={(e) => update('iban', e.target.value)}
+                  className={`${inputBase} font-mono text-sm`}
+                  placeholder="BE68 5390 0754 7034"
+                  autoComplete="off"
+                />
+                <p className="text-xs text-stone-400 mt-1">
+                  Appris automatiquement lors de la réconciliation bancaire. Utilisé pour suggérer les rapprochements.
+                </p>
               </div>
             </div>
 
