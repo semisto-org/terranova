@@ -2,6 +2,8 @@ export const SHOP_ACCENT = '#C48955' // cuivre chaud comptoir
 
 export type VatRate = '0' | '6' | '12' | '21' | 'exempt'
 
+export type StockKind = 'owned' | 'consignment'
+
 export interface ShopProduct {
   id: string
   name: string
@@ -10,6 +12,7 @@ export interface ShopProduct {
   unitPrice: number
   vatRate: VatRate
   stockQuantity: number
+  stockKind: StockKind
   archivedAt: string | null
   createdAt: string
   updatedAt: string

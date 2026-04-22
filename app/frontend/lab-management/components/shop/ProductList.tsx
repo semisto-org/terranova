@@ -1,4 +1,4 @@
-import { Archive, Edit, Package, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { Archive, Edit, Handshake, Package, Plus, Trash2, TrendingUp } from 'lucide-react'
 import { fmtMoney, VAT_RATE_OPTIONS } from './helpers'
 import { SHOP_ACCENT, type ShopProduct } from './types'
 
@@ -101,7 +101,18 @@ function ProductCard({
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h4 className="text-[15px] font-semibold text-stone-900 truncate">{product.name}</h4>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-[15px] font-semibold text-stone-900 truncate">{product.name}</h4>
+              {product.stockKind === 'consignment' && (
+                <span
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-[0.12em] uppercase bg-amber-50 text-amber-800 border border-amber-200"
+                  title="Produit en dépôt — confié par un tiers"
+                >
+                  <Handshake className="w-2.5 h-2.5" />
+                  Dépôt
+                </span>
+              )}
+            </div>
             {product.sku && (
               <p className="text-[10px] font-mono text-stone-400 tracking-wider uppercase mt-0.5">{product.sku}</p>
             )}

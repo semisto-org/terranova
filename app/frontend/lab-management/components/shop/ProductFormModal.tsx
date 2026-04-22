@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Package, X } from 'lucide-react'
+import { Handshake, Package, PackageCheck, X } from 'lucide-react'
 import { VAT_RATE_OPTIONS } from './helpers'
-import { SHOP_ACCENT, type ShopProduct, type VatRate } from './types'
+import { SHOP_ACCENT, type ShopProduct, type StockKind, type VatRate } from './types'
 
 interface ProductFormModalProps {
   product: ShopProduct | null
@@ -17,6 +17,7 @@ export function ProductFormModal({ product, onSave, onCancel }: ProductFormModal
   const [unitPrice, setUnitPrice] = useState(String(product?.unitPrice ?? 0))
   const [vatRate, setVatRate] = useState<VatRate>(product?.vatRate ?? '6')
   const [stockQuantity, setStockQuantity] = useState(String(product?.stockQuantity ?? 0))
+  const [stockKind, setStockKind] = useState<StockKind>(product?.stockKind ?? 'owned')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,10 +46,11 @@ export function ProductFormModal({ product, onSave, onCancel }: ProductFormModal
         name: name.trim(),
         description: description.trim(),
         sku: sku.trim() || null,
-        unitPrice: price,
-        vatRate,
-        stockQuantity: qty,
-      } as Partial<ShopProduct>)
+        unit_price: price,
+        vat_rate: vatRate,
+        stock_quantity: qty,
+        stock_kind: stockKind,
+      } as unknown as Partial<ShopProduct>)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement.')
     } finally {
@@ -150,6 +152,38 @@ export function ProductFormModal({ product, onSave, onCancel }: ProductFormModal
               />
             </Field>
           </div>
+
+          <Field label="Provenance du stock">
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: 'owned' as const, label: 'Stock acheté', hint: 'Produit dans notre inventaire', icon: PackageCheck },
+                { value: 'consignment' as const, label: 'En dépôt', hint: 'Confié par un tiers', icon: Handshake },
+              ]).map((opt) => {
+                const active = stockKind === opt.value
+                const Icon = opt.icon
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStockKind(opt.value)}
+                    className={`flex items-start gap-2 px-3 py-2.5 rounded-lg border text-left transition-all ${
+                      active
+                        ? 'border-stone-900 bg-stone-900 text-white'
+                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{opt.label}</div>
+                      <div className={`text-[10px] mt-0.5 ${active ? 'text-stone-300' : 'text-stone-400'}`}>
+                        {opt.hint}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
 
           {error && (
             <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">

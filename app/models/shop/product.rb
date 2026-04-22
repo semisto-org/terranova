@@ -5,11 +5,13 @@ module Shop
     self.table_name = "shop_products"
 
     VAT_RATES = %w[0 6 12 21 exempt].freeze
+    STOCK_KINDS = %w[owned consignment].freeze
 
     has_many :sale_items, class_name: "Shop::SaleItem", foreign_key: :shop_product_id, dependent: :restrict_with_error
 
     validates :name, presence: true
     validates :vat_rate, inclusion: { in: VAT_RATES }
+    validates :stock_kind, inclusion: { in: STOCK_KINDS }
     validates :stock_quantity, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
     validates :unit_price, numericality: { greater_than_or_equal_to: 0 }
 
@@ -22,6 +24,10 @@ module Shop
 
     def in_stock?
       stock_quantity.to_i.positive?
+    end
+
+    def consignment?
+      stock_kind == "consignment"
     end
 
     def archive!

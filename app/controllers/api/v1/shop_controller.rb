@@ -137,7 +137,7 @@ module Api
       end
 
       def product_params
-        params.permit(:name, :description, :sku, :unit_price, :vat_rate, :stock_quantity, :archived_at)
+        params.permit(:name, :description, :sku, :unit_price, :vat_rate, :stock_quantity, :stock_kind, :archived_at)
       end
 
       def sale_scalar_params
@@ -170,6 +170,7 @@ module Api
           unitPrice: p.unit_price.to_f,
           vatRate: p.vat_rate,
           stockQuantity: p.stock_quantity,
+          stockKind: p.stock_kind,
           archivedAt: p.archived_at&.iso8601,
           createdAt: p.created_at.iso8601,
           updatedAt: p.updated_at.iso8601
