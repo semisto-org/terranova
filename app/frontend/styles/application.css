@@ -120,6 +120,11 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
+@keyframes slideDown {
+  from { transform: translateY(-4px); opacity: 0; max-height: 0; }
+  to { transform: translateY(0); opacity: 1; max-height: 500px; }
+}
+
 /* Auth Pages — Login / ForgotPassword / ResetPassword */
 @keyframes auth-fade-up {
   from { opacity: 0; transform: translateY(14px); }

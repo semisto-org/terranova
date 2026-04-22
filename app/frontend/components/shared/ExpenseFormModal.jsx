@@ -520,47 +520,97 @@ export function ExpenseFormModal({
                   <div>
                     <label className="block text-sm font-medium text-stone-600 mb-1">Fournisseur *</label>
                     {showNewContactForm ? (
-                      <div className="space-y-3 rounded-xl border border-stone-200 p-4 bg-stone-50/50">
-                        <div>
-                          <label className="block text-xs font-medium text-stone-500 mb-1">Nom</label>
-                          <input
-                            type="text"
-                            value={newContactName}
-                            onChange={(e) => setNewContactName(e.target.value)}
-                            className={inputBase}
-                            placeholder="Nom du fournisseur"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-stone-500 mb-1">Type de contact</label>
-                          <select
-                            value={newContactType}
-                            onChange={(e) => setNewContactType(e.target.value)}
-                            className={selectBase}
-                            style={selectChevronStyle}
-                          >
-                            {CONTACT_TYPE_OPTIONS.map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={handleCreateContact}
-                            disabled={creatingContact || !newContactName.trim()}
-                            className="px-4 py-2 rounded-xl font-medium text-white disabled:opacity-50"
-                            style={{ backgroundColor: accent }}
-                          >
-                            {creatingContact ? 'Création...' : 'Créer le fournisseur'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setShowNewContactForm(false); setNewContactName('') }}
-                            className="px-4 py-2 rounded-xl font-medium text-stone-600 border border-stone-300"
-                          >
-                            Annuler
-                          </button>
+                      <div
+                        className="relative overflow-hidden rounded-xl border bg-white animate-[slideDown_.2s_ease-out]"
+                        style={{ borderColor: `${accent}40` }}
+                      >
+                        {/* accent stripe */}
+                        <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: accent }} aria-hidden />
+                        {/* Decorative seal */}
+                        <div
+                          className="absolute -top-4 -right-4 w-20 h-20 rounded-full opacity-[0.05] pointer-events-none"
+                          style={{ backgroundColor: accent }}
+                          aria-hidden
+                        />
+
+                        <div className="relative pl-5 pr-4 pt-4 pb-4 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-3.5 h-3.5" style={{ color: accent }} />
+                            <div>
+                              <div className="text-[10px] uppercase tracking-[0.18em] font-semibold" style={{ color: accent }}>
+                                Nouveau fournisseur
+                              </div>
+                              <div className="text-[11px] text-stone-500">
+                                Créé directement · disponible pour les prochaines dépenses
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-1.5">
+                              Nom
+                            </label>
+                            <input
+                              type="text"
+                              value={newContactName}
+                              onChange={(e) => setNewContactName(e.target.value)}
+                              className={inputBase}
+                              placeholder="Ex. Boulangerie du coin"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  if (!creatingContact && newContactName.trim()) handleCreateContact()
+                                }
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-1.5">
+                              Type
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {CONTACT_TYPE_OPTIONS.map((o) => {
+                                const active = newContactType === o.value
+                                return (
+                                  <button
+                                    key={o.value}
+                                    type="button"
+                                    onClick={() => setNewContactType(o.value)}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                      active
+                                        ? 'text-white shadow-sm'
+                                        : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'
+                                    }`}
+                                    style={active ? { backgroundColor: accent, borderColor: accent } : undefined}
+                                  >
+                                    {o.label}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => { setShowNewContactForm(false); setNewContactName('') }}
+                              className="px-3 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 rounded-lg"
+                            >
+                              Annuler
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCreateContact}
+                              disabled={creatingContact || !newContactName.trim()}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              style={{ backgroundColor: accent }}
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              {creatingContact ? 'Création…' : 'Créer le fournisseur'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -568,7 +618,11 @@ export function ExpenseFormModal({
                         contacts={contactList}
                         value={supplierContactId}
                         onChange={setSupplierContactId}
-                        onCreateNew={onCreateContact ? () => { setShowNewContactForm(true); setSupplierContactId('') } : null}
+                        onCreateNew={onCreateContact ? (initialName) => {
+                          setNewContactName(initialName || '')
+                          setShowNewContactForm(true)
+                          setSupplierContactId('')
+                        } : null}
                         accent={accent}
                       />
                     )}
@@ -1739,16 +1793,17 @@ function SupplierCombobox({ contacts, value, onChange, onCreateNew, accent }) {
               <li className="border-b border-stone-100 mb-1">
                 <button
                   type="button"
-                  onClick={() => { setOpen(false); onCreateNew() }}
+                  onClick={() => { const q = query.trim(); setOpen(false); onCreateNew(q) }}
                   className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:bg-stone-50 font-medium"
                   style={{ color: accent }}
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  Créer un nouveau fournisseur
-                  {query.trim() && (
-                    <span className="ml-auto text-xs text-stone-400 truncate font-normal">
-                      « {query.trim()} »
-                    </span>
+                  {query.trim() ? (
+                    <>
+                      Créer <span className="font-semibold">« {query.trim()} »</span>
+                    </>
+                  ) : (
+                    'Créer un nouveau fournisseur'
                   )}
                 </button>
               </li>

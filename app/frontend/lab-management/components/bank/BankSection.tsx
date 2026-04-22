@@ -441,7 +441,14 @@ export function BankSection() {
           defaultOrganizationId={selectedTransaction.organizationId || null}
           organizationOptions={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
           fetchContacts={fetchContacts}
-          onCreateContact={undefined}
+          onCreateContact={async ({ name, contact_type }: { name: string; contact_type: string }) => {
+            const contact = await apiRequest('/api/v1/lab/contacts', {
+              method: 'POST',
+              body: JSON.stringify({ name, contact_type }),
+            })
+            await loadContacts()
+            return { id: contact.id, name: contact.name, contactType: contact.contactType }
+          }}
           onSubmit={handleCreateExpenseFromTransaction}
           onCancel={() => setCreationTarget(null)}
           busy={creationBusy}
