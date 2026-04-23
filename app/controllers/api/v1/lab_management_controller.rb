@@ -822,7 +822,7 @@ module Api
 
       def create_project_action
         action = @project_task_list.actions.new(project_action_params)
-        action.pole_project = @project_task_list.pole_project
+        action.pole_project = @project_task_list.taskable if @project_task_list.taskable_type == "PoleProject"
         action.position = (@project_task_list.actions.maximum(:position) || -1) + 1
         if action.save
           render json: serialize_project_action(action), status: :created
@@ -1317,6 +1317,7 @@ module Api
               notes: a.notes.to_s
             }
           end,
+          unallocatedAmount: item.unallocated_amount.to_f,
           reconciledAmount: item.reconciled_amount.to_f,
           fullyReconciled: item.fully_reconciled?,
           bankTransactions: serialize_linked_bank_transactions(item),

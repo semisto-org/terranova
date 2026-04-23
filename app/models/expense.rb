@@ -89,18 +89,25 @@ class Expense < ApplicationRecord
     status == "planned"
   end
 
+  def unallocated_amount
+    return 0.to_d unless project_allocations.any?
+    (total_incl_vat.to_d - project_allocations.sum(:amount).to_d).round(2)
+  end
+
   private
 
+  # Allocations must not exceed total_incl_vat. The non-allocated remainder
+  # (e.g. prospection, internal work days) is simply not imputed to a project.
   def project_allocations_total_matches_expense
     return unless project_allocations.any?
     return if project_allocations.all? { |a| a.marked_for_destruction? }
 
     live = project_allocations.reject(&:marked_for_destruction?)
     total = live.sum { |a| a.amount.to_d }
-    if (total - total_incl_vat.to_d).abs > BankReconciliation::AMOUNT_TOLERANCE
+    if total - total_incl_vat.to_d > BankReconciliation::AMOUNT_TOLERANCE
       errors.add(
         :project_allocations,
-        "La somme des allocations (#{total.round(2)} €) doit correspondre au total de la dépense (#{total_incl_vat.to_d.round(2)} €)"
+        "La somme des allocations (#{total.round(2)} €) dépasse le total de la dépense (#{total_incl_vat.to_d.round(2)} €)"
       )
     end
   end

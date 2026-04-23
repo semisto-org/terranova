@@ -411,8 +411,8 @@ export function ExpenseFormModal({
           return
         }
         const total = cleaned.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0)
-        if (Math.abs(total - (totalInclVat || 0)) > 0.01) {
-          setError(`La somme des allocations (${total.toFixed(2)} €) doit correspondre au total de la dépense (${(totalInclVat || 0).toFixed(2)} €)`)
+        if (total - (totalInclVat || 0) > 0.01) {
+          setError(`La somme des allocations (${total.toFixed(2)} €) dépasse le total de la dépense (${(totalInclVat || 0).toFixed(2)} €)`)
           return
         }
       }
@@ -1166,18 +1166,42 @@ export function ExpenseFormModal({
                       >
                         + Ajouter un projet
                       </button>
-                      <div className="text-xs text-stone-500 flex items-center justify-between px-1">
-                        <span>
-                          Total alloué :{' '}
-                          <span className="font-mono text-stone-700">
-                            {projectAllocations.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0).toFixed(2)} €
-                          </span>
-                        </span>
-                        <span>
-                          Doit correspondre à{' '}
-                          <span className="font-mono text-stone-700">{(totalInclVat || 0).toFixed(2)} €</span>
-                        </span>
-                      </div>
+                      {(() => {
+                        const allocated = projectAllocations.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0)
+                        const total = totalInclVat || 0
+                        const unallocated = +(total - allocated).toFixed(2)
+                        const overAllocated = unallocated < -0.01
+                        return (
+                          <div className="rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2.5 text-xs space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-stone-500">Imputé aux projets</span>
+                              <span className="font-mono tabular-nums text-stone-900">{allocated.toFixed(2)} €</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className={overAllocated ? 'text-red-600 font-medium' : 'text-stone-500'}>
+                                {overAllocated ? 'Dépassement' : 'Non imputé (général)'}
+                              </span>
+                              <span className={`font-mono tabular-nums ${overAllocated ? 'text-red-700 font-semibold' : 'text-stone-700'}`}>
+                                {unallocated.toFixed(2)} €
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between pt-1 border-t border-stone-200/60">
+                              <span className="text-stone-500">Total dépense</span>
+                              <span className="font-mono tabular-nums font-semibold text-stone-900">{total.toFixed(2)} €</span>
+                            </div>
+                            {overAllocated && (
+                              <div className="pt-1 text-red-600">
+                                ⚠ Les allocations dépassent le total de la dépense de {Math.abs(unallocated).toFixed(2)} €.
+                              </div>
+                            )}
+                            {!overAllocated && unallocated > 0.01 && (
+                              <div className="pt-0.5 text-stone-400">
+                                Le non-imputé restera sans projet (ex. prospection, travail interne).
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </div>
                   )}
                 </section>
