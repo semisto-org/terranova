@@ -18,8 +18,6 @@ interface ProjectSummary {
   typeKey: string
   status: string | null
   description: string
-  leadId: string | null
-  leadName: string | null
   teamCount: number
   totalTasks: number
   completedTasks: number
@@ -99,7 +97,6 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
       items = items.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          p.leadName?.toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q)
       )
     }
@@ -301,12 +298,6 @@ function ProjectCard({
 
         {/* Meta row */}
         <div className="flex items-center gap-4 mt-3 text-xs text-stone-400">
-          {project.leadName && (
-            <span className="flex items-center gap-1 truncate">
-              <Users className="w-3 h-3" />
-              {project.leadName}
-            </span>
-          )}
           {project.teamCount > 0 && (
             <span className="flex items-center gap-1">
               <Users className="w-3 h-3" />

@@ -1694,7 +1694,6 @@ module Api
           description: p.description,
           pole: p.pole,
           status: p.status,
-          leadName: p.project_memberships.find_by(role: "lead")&.member&.then { |m| "#{m.first_name} #{m.last_name}".strip },
           teamNames: p.project_memberships.where(role: "member").includes(:member).map { |pm| "#{pm.member.first_name} #{pm.member.last_name}".strip },
           needsReclassification: p.needs_reclassification,
           totalActions: actions.size,

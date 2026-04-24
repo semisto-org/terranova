@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { X, Trash2 } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
-import { MemberPicker, MultiMemberPicker, type MemberOption } from './MemberPicker'
+import { MultiMemberPicker, type MemberOption } from './MemberPicker'
 
 interface ProjectEditModalProps {
   project: {
@@ -10,13 +10,17 @@ interface ProjectEditModalProps {
     description: string | null
     pole: string | null
     status: string
-    leadName: string
     teamNames: string[]
     totalActions: number
   }
   onSave: () => void
   onDelete?: () => void
   onClose: () => void
+}
+
+interface ServerMembership {
+  id: string
+  memberId: string
 }
 
 const POLE_OPTIONS = [
@@ -44,9 +48,9 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
   const [description, setDescription] = useState(project.description || '')
   const [pole, setPole] = useState(project.pole || '')
   const [status, setStatus] = useState(project.status)
-  const [leadName, setLeadName] = useState(project.leadName || '')
   const [teamNames, setTeamNames] = useState<string[]>(project.teamNames || [])
   const [members, setMembers] = useState<MemberOption[]>([])
+  const [serverMemberships, setServerMemberships] = useState<ServerMembership[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -62,6 +66,22 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
     }).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    apiRequest(`/api/v1/projects/lab-project/${project.id}/members`).then(res => {
+      setServerMemberships(
+        (res.items || []).map((pm: any) => ({ id: pm.id, memberId: pm.memberId }))
+      )
+    }).catch(() => {})
+  }, [project.id])
+
+  const nameToIdMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const m of members) {
+      map.set(`${m.firstName} ${m.lastName}`, m.id)
+    }
+    return map
+  }, [members])
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
@@ -75,17 +95,36 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
           description: description.trim() || null,
           pole: pole || null,
           status,
-          lead_name: leadName,
-          team_names: teamNames,
         }),
       })
+
+      const desiredMemberIds = new Set(
+        teamNames.map(n => nameToIdMap.get(n)).filter((id): id is string => Boolean(id))
+      )
+      const currentByMemberId = new Map(serverMemberships.map(pm => [pm.memberId, pm.id]))
+
+      const toRemove = serverMemberships.filter(pm => !desiredMemberIds.has(pm.memberId))
+      const toAdd = [...desiredMemberIds].filter(id => !currentByMemberId.has(id))
+
+      await Promise.all([
+        ...toRemove.map(pm =>
+          apiRequest(`/api/v1/project-memberships/${pm.id}`, { method: 'DELETE' })
+        ),
+        ...toAdd.map(memberId =>
+          apiRequest(`/api/v1/projects/lab-project/${project.id}/members`, {
+            method: 'POST',
+            body: JSON.stringify({ member_id: memberId, role: 'member' }),
+          })
+        ),
+      ])
+
       onSave()
     } catch (err: any) {
       setError(err.message)
     } finally {
       setBusy(false)
     }
-  }, [name, description, pole, status, leadName, teamNames, project.id, onSave])
+  }, [name, description, pole, status, teamNames, nameToIdMap, serverMemberships, project.id, onSave])
 
   const handleDelete = useCallback(async () => {
     setBusy(true)
@@ -137,6 +176,16 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
                 autoFocus
               />
             </label>
+
+            <div className="space-y-1.5">
+              <span className={labelClass}>Équipe</span>
+              <MultiMemberPicker
+                members={members}
+                value={teamNames}
+                onChange={setTeamNames}
+                placeholder="Ajouter des membres à l'équipe..."
+              />
+            </div>
 
             <label className="block space-y-1.5">
               <span className={labelClass}>Description</span>
@@ -194,26 +243,6 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
                 ))}
               </div>
             </label>
-
-            <div className="space-y-1.5">
-              <span className={labelClass}>Responsable</span>
-              <MemberPicker
-                members={members}
-                value={leadName}
-                onChange={setLeadName}
-                placeholder="Qui dirige ce projet ?"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <span className={labelClass}>Équipe</span>
-              <MultiMemberPicker
-                members={members}
-                value={teamNames}
-                onChange={setTeamNames}
-                placeholder="Ajouter des membres à l'équipe..."
-              />
-            </div>
           </div>
 
           <div className="px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex items-center justify-between">

@@ -11,7 +11,6 @@ interface ProjectSummary {
   description: string | null
   pole: string | null
   status: string
-  leadName: string
   teamNames: string[]
   needsReclassification: boolean
   totalActions: number
@@ -201,16 +200,9 @@ export function ProjectBoard() {
                               )}
                             </div>
 
-                            {(() => {
-                              const allNames: string[] = []
-                              if (project.leadName) allNames.push(project.leadName)
-                              for (const name of (project.teamNames || [])) {
-                                if (name !== project.leadName) allNames.push(name)
-                              }
-                              return allNames.length > 0 ? (
-                                <MemberAvatarStack names={allNames} members={members} size={26} max={5} />
-                              ) : null
-                            })()}
+                            {(project.teamNames?.length ?? 0) > 0 && (
+                              <MemberAvatarStack names={project.teamNames} members={members} size={26} max={5} />
+                            )}
                           </div>
 
                           <div className="flex items-center flex-shrink-0">

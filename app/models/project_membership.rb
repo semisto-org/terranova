@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ProjectMembership < ApplicationRecord
-  ROLES = %w[lead member organizer project-manager designer butineur].freeze
+  ROLES = %w[member organizer project-manager designer butineur].freeze
 
   belongs_to :projectable, polymorphic: true
   belongs_to :member

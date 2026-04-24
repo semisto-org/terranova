@@ -25,7 +25,7 @@ import { ActionForm } from './ActionForm'
 import { ProjectEditModal } from './ProjectEditModal'
 import { ProjectDocuments } from './ProjectDocuments'
 import { CollaborativeEditor } from './CollaborativeEditor'
-import { MemberDisplay, MemberAvatarStack, type MemberOption } from './MemberPicker'
+import { MemberAvatarStack, type MemberOption } from './MemberPicker'
 import { type ActionItem } from './ActionRow'
 
 interface TaskListData {
@@ -60,7 +60,6 @@ interface ProjectData {
   description: string | null
   pole: string | null
   status: string
-  leadName: string
   teamNames: string[]
   needsReclassification: boolean
   totalActions: number
@@ -312,12 +311,6 @@ export function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
             )}
             {!project.description && <div className="mb-2" />}
             <div className="flex items-center gap-4 flex-wrap">
-              {project.leadName && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-stone-400 uppercase tracking-wider mr-1">Lead</span>
-                  <MemberDisplay name={project.leadName} members={members} size={22} />
-                </div>
-              )}
               {project.teamNames?.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium text-stone-400 uppercase tracking-wider mr-1">Équipe</span>

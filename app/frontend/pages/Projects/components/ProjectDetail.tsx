@@ -158,11 +158,6 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
 
           {/* Stats row */}
           <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5 text-xs text-stone-500">
-            {project.leadName && (
-              <span className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" /> Lead : <strong className="text-stone-700">{project.leadName}</strong>
-              </span>
-            )}
             {project.members?.length > 0 && (
               <span className="flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" /> {project.members.length} membre{project.members.length > 1 ? 's' : ''}

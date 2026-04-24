@@ -256,7 +256,6 @@ module Api
         tasks = project.unified_task_lists.flat_map(&:tasks)
         total = tasks.size
         completed = tasks.count { |t| t.status == "completed" }
-        lead = project.project_memberships.find { |m| m.role == "lead" }
 
         {
           id: project.id.to_s,
@@ -264,8 +263,6 @@ module Api
           typeKey: project.project_type_key,
           status: project.respond_to?(:status) ? project.status : nil,
           description: project.respond_to?(:description) ? project.description.to_s : "",
-          leadId: lead&.member_id&.to_s,
-          leadName: lead&.member&.then { |m| "#{m.first_name} #{m.last_name}" },
           teamCount: project.project_memberships.size,
           totalTasks: total,
           completedTasks: completed,

@@ -139,8 +139,6 @@ namespace :notion do
           project.assign_attributes(
             name: importer.extract(props, "Name") || "Sans nom",
             status: importer.extract(props, "État") || "",
-            lead_name: extract_people_name(importer, props, "Lead") || "",
-            team_names: extract_people_names(importer, props, "Team"),
             needs_reclassification: importer.extract(props, "Nécessite reclassement") || false,
             notion_created_at: page["created_time"],
             notion_updated_at: page["last_edited_time"]

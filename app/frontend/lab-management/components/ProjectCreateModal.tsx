@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { X, Sparkles } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
-import { MemberPicker, MultiMemberPicker, type MemberOption } from './MemberPicker'
+import { MultiMemberPicker, type MemberOption } from './MemberPicker'
 
 interface ProjectCreateModalProps {
   onCreated: () => void
@@ -21,7 +21,6 @@ const labelClass = 'text-xs font-medium text-stone-500 uppercase tracking-wider'
 export function ProjectCreateModal({ onCreated, onClose }: ProjectCreateModalProps) {
   const [name, setName] = useState('')
   const [status, setStatus] = useState('Idée')
-  const [leadName, setLeadName] = useState('')
   const [teamNames, setTeamNames] = useState<string[]>([])
   const [members, setMembers] = useState<MemberOption[]>([])
   const [busy, setBusy] = useState(false)
@@ -38,28 +37,48 @@ export function ProjectCreateModal({ onCreated, onClose }: ProjectCreateModalPro
     }).catch(() => {})
   }, [])
 
+  const nameToIdMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const m of members) {
+      map.set(`${m.firstName} ${m.lastName}`, m.id)
+    }
+    return map
+  }, [members])
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
     setBusy(true)
     setError(null)
     try {
-      await apiRequest('/api/v1/lab/projects', {
+      const created = await apiRequest('/api/v1/lab/projects', {
         method: 'POST',
         body: JSON.stringify({
           name: name.trim(),
           status,
-          lead_name: leadName,
-          team_names: teamNames,
         }),
       })
+
+      const memberIds = teamNames
+        .map(n => nameToIdMap.get(n))
+        .filter((id): id is string => Boolean(id))
+
+      await Promise.all(
+        memberIds.map(memberId =>
+          apiRequest(`/api/v1/projects/lab-project/${created.id}/members`, {
+            method: 'POST',
+            body: JSON.stringify({ member_id: memberId, role: 'member' }),
+          })
+        )
+      )
+
       onCreated()
     } catch (err: any) {
       setError(err.message)
     } finally {
       setBusy(false)
     }
-  }, [name, status, leadName, teamNames, onCreated])
+  }, [name, status, teamNames, nameToIdMap, onCreated])
 
   return (
     <div
@@ -110,6 +129,16 @@ export function ProjectCreateModal({ onCreated, onClose }: ProjectCreateModalPro
             </label>
 
             <div className="space-y-1.5">
+              <span className={labelClass}>Équipe</span>
+              <MultiMemberPicker
+                members={members}
+                value={teamNames}
+                onChange={setTeamNames}
+                placeholder="Ajouter des membres à l'équipe..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <span className={labelClass}>Statut initial</span>
               <div className="grid grid-cols-4 gap-1.5">
                 {STATUS_OPTIONS.map(opt => (
@@ -128,26 +157,6 @@ export function ProjectCreateModal({ onCreated, onClose }: ProjectCreateModalPro
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <span className={labelClass}>Responsable</span>
-              <MemberPicker
-                members={members}
-                value={leadName}
-                onChange={setLeadName}
-                placeholder="Qui dirige ce projet ?"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <span className={labelClass}>Équipe</span>
-              <MultiMemberPicker
-                members={members}
-                value={teamNames}
-                onChange={setTeamNames}
-                placeholder="Ajouter des membres à l'équipe..."
-              />
             </div>
           </div>
 
