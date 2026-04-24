@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { Upload, FileText, Image, File, FileSpreadsheet, Trash2, Download, Info, User, Calendar, HardDrive, X } from 'lucide-react'
 
-interface DocumentData {
+export interface DocumentData {
   id: string
   filename: string
   contentType: string
@@ -14,10 +14,10 @@ interface DocumentData {
 
 interface ProjectDocumentsProps {
   documents: DocumentData[]
-  projectId: string
   onUpload: (files: FileList) => Promise<void>
   onDelete: (docId: string) => Promise<void>
   busy: boolean
+  accentColor?: string
 }
 
 function getFileIcon(contentType: string) {
@@ -54,7 +54,7 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('fr-BE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function InfoTooltip({ doc }: { doc: DocumentData }) {
+function InfoTooltip({ doc, accentColor }: { doc: DocumentData; accentColor: string }) {
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -70,7 +70,6 @@ function InfoTooltip({ doc }: { doc: DocumentData }) {
     }
   }, [open])
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
@@ -90,11 +89,12 @@ function InfoTooltip({ doc }: { doc: DocumentData }) {
       <button
         ref={btnRef}
         onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
-        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors shadow-sm ${
-          open
-            ? 'bg-[#5B5781]/10 border-[#5B5781]/30 text-[#5B5781]'
-            : 'bg-white/90 border-stone-200 text-stone-500 hover:text-[#5B5781] hover:border-[#5B5781]/30'
-        }`}
+        className="w-7 h-7 rounded-lg border flex items-center justify-center transition-colors shadow-sm"
+        style={{
+          backgroundColor: open ? `${accentColor}1A` : 'rgba(255,255,255,0.9)',
+          borderColor: open ? `${accentColor}4D` : '#e7e5e4',
+          color: open ? accentColor : '#78716c',
+        }}
       >
         <Info className="w-3.5 h-3.5" />
       </button>
@@ -174,21 +174,16 @@ function ConfirmDeleteButton({ onConfirm }: { onConfirm: () => void }) {
       className="relative h-7 rounded-lg text-white text-[10px] font-medium shadow-sm transition-colors overflow-hidden flex items-center"
       style={{ minWidth: 0 }}
     >
-      {/* Background: fills as countdown, red base underneath */}
       <span className="absolute inset-0 bg-red-700" />
       <span
         className="absolute inset-0 bg-red-500 origin-left"
-        style={{
-          animation: `confirmShrink ${CONFIRM_TIMEOUT}ms linear forwards`,
-        }}
+        style={{ animation: `confirmShrink ${CONFIRM_TIMEOUT}ms linear forwards` }}
       />
       <style>{`@keyframes confirmShrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }`}</style>
 
       <span className="relative z-10 flex items-center gap-1 px-2 whitespace-nowrap">
         Supprimer ?
       </span>
-
-      {/* Cancel zone */}
       <span
         className="relative z-10 flex items-center justify-center w-6 h-full border-l border-red-400/40 hover:bg-red-800/50 transition-colors"
         onClick={(e) => { e.stopPropagation(); setConfirming(false) }}
@@ -199,7 +194,7 @@ function ConfirmDeleteButton({ onConfirm }: { onConfirm: () => void }) {
   )
 }
 
-export function ProjectDocuments({ documents, projectId, onUpload, onDelete, busy }: ProjectDocumentsProps) {
+export function ProjectDocuments({ documents, onUpload, onDelete, busy, accentColor = '#5B5781' }: ProjectDocumentsProps) {
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -246,7 +241,6 @@ export function ProjectDocuments({ documents, projectId, onUpload, onDelete, bus
                 key={doc.id}
                 className="group relative bg-white rounded-xl border border-stone-200 hover:border-stone-300 hover:shadow-sm transition-all overflow-hidden"
               >
-                {/* File preview area */}
                 <a
                   href={doc.url}
                   download
@@ -268,20 +262,19 @@ export function ProjectDocuments({ documents, projectId, onUpload, onDelete, bus
                   )}
                 </a>
 
-                {/* File info footer */}
                 <div className="px-3 pb-3 text-center">
                   <p className="text-xs font-medium text-stone-800 truncate leading-snug" title={doc.filename}>
                     {doc.filename}
                   </p>
                 </div>
 
-                {/* Hover actions */}
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <InfoTooltip doc={doc} />
+                  <InfoTooltip doc={doc} accentColor={accentColor} />
                   <a
                     href={doc.url}
                     download
-                    className="w-7 h-7 rounded-lg bg-white/90 border border-stone-200 flex items-center justify-center text-stone-500 hover:text-[#5B5781] hover:border-[#5B5781]/30 transition-colors shadow-sm"
+                    className="w-7 h-7 rounded-lg bg-white/90 border border-stone-200 flex items-center justify-center text-stone-500 transition-colors shadow-sm"
+                    style={{ ['--hover-color' as any]: accentColor }}
                     title="Télécharger"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -292,20 +285,19 @@ export function ProjectDocuments({ documents, projectId, onUpload, onDelete, bus
             )
           })}
 
-          {/* Add more button as card */}
           <button
             onClick={() => fileInputRef.current?.click()}
             onDragOver={e => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center py-6 px-3 rounded-xl border-2 border-dashed transition-all ${
-              dragOver
-                ? 'border-[#5B5781] bg-[#5B5781]/5'
-                : 'border-stone-200 hover:border-stone-300 hover:bg-stone-50'
-            }`}
+            className="flex flex-col items-center justify-center py-6 px-3 rounded-xl border-2 border-dashed transition-all"
+            style={{
+              borderColor: dragOver ? accentColor : '#e7e5e4',
+              backgroundColor: dragOver ? `${accentColor}0D` : undefined,
+            }}
           >
-            <Upload className={`w-6 h-6 mb-2 ${dragOver ? 'text-[#5B5781]' : 'text-stone-400'}`} />
-            <span className={`text-xs font-medium ${dragOver ? 'text-[#5B5781]' : 'text-stone-500'}`}>
+            <Upload className="w-6 h-6 mb-2" style={{ color: dragOver ? accentColor : '#a8a29e' }} />
+            <span className="text-xs font-medium" style={{ color: dragOver ? accentColor : '#78716c' }}>
               Ajouter
             </span>
           </button>
@@ -315,17 +307,18 @@ export function ProjectDocuments({ documents, projectId, onUpload, onDelete, bus
           onDragOver={e => { e.preventDefault(); setDragOver(true) }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
-          className={`rounded-xl border-2 border-dashed py-10 flex flex-col items-center justify-center transition-all ${
-            dragOver
-              ? 'border-[#5B5781] bg-[#5B5781]/5'
-              : 'border-stone-200'
-          }`}
+          className="rounded-xl border-2 border-dashed py-10 flex flex-col items-center justify-center transition-all"
+          style={{
+            borderColor: dragOver ? accentColor : '#e7e5e4',
+            backgroundColor: dragOver ? `${accentColor}0D` : undefined,
+          }}
         >
-          <Upload className={`w-8 h-8 mb-3 ${dragOver ? 'text-[#5B5781]' : 'text-stone-300'}`} />
+          <Upload className="w-8 h-8 mb-3" style={{ color: dragOver ? accentColor : '#d6d3d1' }} />
           <p className="text-sm text-stone-500 mb-1">Glissez vos fichiers ici</p>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="text-sm font-medium text-[#5B5781] hover:underline"
+            className="text-sm font-medium hover:underline"
+            style={{ color: accentColor }}
           >
             ou parcourir
           </button>

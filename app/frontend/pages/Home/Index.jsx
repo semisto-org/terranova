@@ -8,17 +8,15 @@ import {
   EventForm,
   ShapeUpWorkboard,
   SemosDashboard,
-  MyTasksDashboard,
-  ProjectBoard,
   ImpactDashboard,
 } from '../../lab-management/components'
+import { MyTasksDashboard } from '@/components/tasks'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import DeliberationsSection from '../../strategy/components/DeliberationsSection'
 import FrameworksSection from '../../strategy/components/FrameworksSection'
 
 const SECTION_TABS = [
   { id: 'calendar', label: 'Tableau de bord' },
-  { id: 'projects', label: 'Projets' },
   { id: 'semos', label: 'Semos' },
   { id: 'impact', label: 'Impact' },
   { id: 'deliberations', label: 'Délibérations' },
@@ -542,10 +540,6 @@ export default function HomeIndex() {
             />
           )}
         </>
-      )}
-
-      {tab === 'projects' && (
-        <ProjectBoard />
       )}
 
       {tab === 'shapeup' && overviewData && (

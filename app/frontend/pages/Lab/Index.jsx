@@ -6,7 +6,6 @@ import {
   Dashboard,
   ShapeUpWorkboard,
   EventForm,
-  ProjectBoard,
   SemosDashboard,
   ImpactDashboard,
 } from '../../lab-management/components'
@@ -14,7 +13,6 @@ import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
   { id: 'dashboard', label: 'Tableau de bord' },
-  { id: 'projects', label: 'Projets' },
   { id: 'semos', label: 'Semos' },
   { id: 'impact', label: 'Impact' },
   { id: 'shapeup', label: 'Shape Up' },
@@ -557,10 +555,6 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           onCreateEvent={callbacks.onCreateEvent}
           onViewMember={callbacks.onViewMember}
         />
-      )}
-
-      {tab === 'projects' && (
-        <ProjectBoard />
       )}
 
       {tab === 'shapeup' && (

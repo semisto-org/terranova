@@ -98,8 +98,10 @@ app/
     components/
       shell/                     # AppShell, ContextSwitcher, MainNav, ShellContext, FeedbackButton
       academy/                   # 13 modal components
+      projects/                  # Unified projects: ProjectEditModal, ProjectCreateModal, CollaborativeEditor, ProjectDocuments
+      tasks/                     # Shared task components (TaskRow, TaskListBlock, TaskForm, MyTasksDashboard) for all project types
       SimpleEditor.jsx           # TipTap rich text editor
-    lab-management/components/   # 35 feature components (.tsx)
+    lab-management/components/   # Lab-specific feature components (.tsx) — Project* components migrated to components/projects/
     plant-database/components/   # 27 feature components (.tsx)
     design-studio/components/    # 6 feature components
     lib/api.js                   # API request utility

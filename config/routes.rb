@@ -141,12 +141,15 @@ Rails.application.routes.draw do
       delete "bucket/:id",                to: "bucket#destroy"
 
       # Unified project listing & detail
-      get    "projects",                 to: "projects#index"
-      post   "projects/:type",           to: "projects#create"
-      get    "projects/:type/:id",       to: "projects#show"
-      patch  "projects/:type/:id",       to: "projects#update"
-      delete "projects/:type/:id",       to: "projects#destroy"
-      patch  "projects/:type/:id/notes", to: "projects#update_notes"
+      get    "projects",                     to: "projects#index"
+      post   "projects/:type",               to: "projects#create"
+      get    "projects/:type/:id",           to: "projects#show"
+      patch  "projects/:type/:id",           to: "projects#update"
+      delete "projects/:type/:id",           to: "projects#destroy"
+      patch  "projects/:type/:id/notes",     to: "projects#update_notes"
+      get    "projects/:type/:id/documents", to: "projects#list_documents"
+      post   "projects/:type/:id/documents", to: "projects#upload_documents"
+      delete "projects/documents/:id",       to: "projects#destroy_document"
 
       # Unified project-scoped resources
       get    "projects/:type/:id/expenses",            to: "projects#list_expenses"
@@ -335,23 +338,6 @@ Rails.application.routes.draw do
       end
       resources :organizations
 
-      get "lab/projects", to: "lab_management#list_projects"
-      get "lab/projects/:id", to: "lab_management#show_project"
-      post "lab/projects", to: "lab_management#create_project"
-      patch "lab/projects/:id", to: "lab_management#update_project"
-      delete "lab/projects/:id", to: "lab_management#destroy_project"
-      post "lab/projects/:id/task-lists", to: "lab_management#create_project_task_list"
-      patch "lab/projects/:id/task-lists/reorder", to: "lab_management#reorder_project_task_lists"
-      patch "lab/task-lists/:id", to: "lab_management#update_project_task_list"
-      delete "lab/task-lists/:id", to: "lab_management#destroy_project_task_list"
-      post "lab/task-lists/:id/actions", to: "lab_management#create_project_action"
-      patch "lab/task-lists/:id/actions/reorder", to: "lab_management#reorder_project_actions"
-      patch "lab/actions/:id", to: "lab_management#update_project_action"
-      patch "lab/actions/:id/toggle", to: "lab_management#toggle_project_action"
-      delete "lab/actions/:id", to: "lab_management#destroy_project_action"
-      get "lab/my-tasks", to: "lab_management#my_tasks"
-      post "lab/projects/:id/documents", to: "lab_management#upload_project_document"
-      delete "lab/documents/:id", to: "lab_management#delete_project_document"
 
       # Labs
       get "labs", to: "labs#index"

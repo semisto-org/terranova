@@ -102,9 +102,13 @@ export function TimesheetForm({
       }).catch(() => {})
     }
     if (linkType === 'project' && poleProjects.length === 0) {
-      apiRequest('/api/v1/lab/projects').then((data) => {
+      apiRequest('/api/v1/projects').then((data) => {
         if (data?.items) {
-          setPoleProjects(data.items.map((p: any) => ({ id: String(p.id), name: p.name })))
+          setPoleProjects(
+            data.items
+              .filter((p: any) => p.typeKey === 'lab-project')
+              .map((p: any) => ({ id: String(p.id), name: p.name }))
+          )
         }
       }).catch(() => {})
     }

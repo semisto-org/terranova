@@ -15,6 +15,7 @@ module Projectable
     has_many :timesheets, as: :projectable, dependent: :nullify
     has_many :events, as: :projectable, dependent: :nullify
     has_many :knowledge_sections, as: :projectable, dependent: :nullify
+    has_many_attached :project_documents
   end
 
   def project_name

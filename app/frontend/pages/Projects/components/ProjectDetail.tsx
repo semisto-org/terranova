@@ -26,6 +26,7 @@ import {
 } from '@/components/tasks'
 import { ProjectEditModal } from '@/components/projects/ProjectEditModal'
 import { CollaborativeEditor } from '@/components/projects/CollaborativeEditor'
+import { ProjectDocuments, type DocumentData } from '@/components/projects/ProjectDocuments'
 import {
   ArrowLeft,
   Users,
@@ -45,6 +46,7 @@ import {
   Pencil,
   Trash2,
   FileText,
+  Paperclip,
 } from 'lucide-react'
 
 interface ProjectDetailProps {
@@ -63,11 +65,11 @@ const TYPE_CONFIG: Record<string, { label: string; accent: string; bg: string; i
 
 const TABS = [
   { id: 'overview', label: 'Aperçu', icon: ListTodo },
-  { id: 'notes', label: 'Notes', icon: FileText },
-  { id: 'timesheets', label: 'Temps', icon: Clock },
-  { id: 'expenses', label: 'Dépenses', icon: Receipt },
-  { id: 'revenues', label: 'Recettes', icon: Receipt },
-  { id: 'events', label: 'Événements', icon: Calendar },
+  { id: 'notes', label: 'Bloc-notes', icon: FileText },
+  { id: 'documents', label: 'Documents', icon: Paperclip },
+  { id: 'timesheets', label: 'Timesheets', icon: Clock },
+  { id: 'finances', label: 'Finances', icon: Receipt },
+  { id: 'events', label: 'Calendrier', icon: Calendar },
   { id: 'wiki', label: 'Wiki', icon: BookOpen },
   { id: 'bucket', label: 'Bucket', icon: Wallet },
 ]
@@ -262,6 +264,15 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
             currentMember={auth?.member}
           />
         )}
+        {activeTab === 'documents' && (
+          <DocumentsTab
+            typeKey={typeKey}
+            projectId={projectId}
+            documents={project.documents || []}
+            accent={config.accent}
+            onRefresh={() => loadProject(true)}
+          />
+        )}
         {activeTab === 'timesheets' && (
           <ResourceTab
             typeKey={typeKey}
@@ -277,35 +288,47 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
             emptyLabel="Aucun timesheet enregistré"
           />
         )}
-        {activeTab === 'expenses' && (
-          <ResourceTab
-            typeKey={typeKey}
-            projectId={projectId}
-            resource="expenses"
-            columns={[
-              { key: 'name', label: 'Libellé' },
-              { key: 'supplier', label: 'Fournisseur' },
-              { key: 'invoiceDate', label: 'Date', format: fmtDate },
-              { key: 'status', label: 'Statut' },
-              { key: 'totalInclVat', label: 'Montant TTC', format: fmtMoney, align: 'right' },
-            ]}
-            emptyLabel="Aucune dépense"
-          />
-        )}
-        {activeTab === 'revenues' && (
-          <ResourceTab
-            typeKey={typeKey}
-            projectId={projectId}
-            resource="revenues"
-            columns={[
-              { key: 'description', label: 'Description' },
-              { key: 'contactName', label: 'Contact' },
-              { key: 'date', label: 'Date', format: fmtDate },
-              { key: 'status', label: 'Statut' },
-              { key: 'amount', label: 'Montant', format: fmtMoney, align: 'right' },
-            ]}
-            emptyLabel="Aucune recette"
-          />
+        {activeTab === 'finances' && (
+          <div className="space-y-8">
+            <section>
+              <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                <Receipt className="w-4 h-4" style={{ color: config.accent }} />
+                Dépenses
+              </h3>
+              <ResourceTab
+                typeKey={typeKey}
+                projectId={projectId}
+                resource="expenses"
+                columns={[
+                  { key: 'name', label: 'Libellé' },
+                  { key: 'supplier', label: 'Fournisseur' },
+                  { key: 'invoiceDate', label: 'Date', format: fmtDate },
+                  { key: 'status', label: 'Statut' },
+                  { key: 'totalInclVat', label: 'Montant TTC', format: fmtMoney, align: 'right' },
+                ]}
+                emptyLabel="Aucune dépense"
+              />
+            </section>
+            <section>
+              <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                <Receipt className="w-4 h-4" style={{ color: config.accent }} />
+                Recettes
+              </h3>
+              <ResourceTab
+                typeKey={typeKey}
+                projectId={projectId}
+                resource="revenues"
+                columns={[
+                  { key: 'description', label: 'Description' },
+                  { key: 'contactName', label: 'Contact' },
+                  { key: 'date', label: 'Date', format: fmtDate },
+                  { key: 'status', label: 'Statut' },
+                  { key: 'amount', label: 'Montant', format: fmtMoney, align: 'right' },
+                ]}
+                emptyLabel="Aucune recette"
+              />
+            </section>
+          </div>
         )}
         {activeTab === 'events' && (
           <ResourceTab
@@ -477,6 +500,64 @@ function NotesTab({
       initialContent={initialContent}
       currentMember={resolvedMember}
       members={memberOptions}
+      accentColor={accent}
+    />
+  )
+}
+
+/* ─── Documents Tab ─── */
+
+function DocumentsTab({
+  typeKey,
+  projectId,
+  documents,
+  accent,
+  onRefresh,
+}: {
+  typeKey: string
+  projectId: string
+  documents: DocumentData[]
+  accent: string
+  onRefresh: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+
+  const handleUpload = useCallback(async (files: FileList) => {
+    setBusy(true)
+    try {
+      const formData = new FormData()
+      Array.from(files).forEach(f => formData.append('documents[]', f))
+      await fetch(`/api/v1/projects/${typeKey}/${projectId}/documents`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRF-Token': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content || '',
+          'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
+      })
+      onRefresh()
+    } finally {
+      setBusy(false)
+    }
+  }, [typeKey, projectId, onRefresh])
+
+  const handleDelete = useCallback(async (docId: string) => {
+    setBusy(true)
+    try {
+      await apiRequest(`/api/v1/projects/documents/${docId}`, { method: 'DELETE' })
+      onRefresh()
+    } finally {
+      setBusy(false)
+    }
+  }, [onRefresh])
+
+  return (
+    <ProjectDocuments
+      documents={documents}
+      onUpload={handleUpload}
+      onDelete={handleDelete}
+      busy={busy}
       accentColor={accent}
     />
   )

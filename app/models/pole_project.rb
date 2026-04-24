@@ -5,7 +5,6 @@ class PoleProject < ApplicationRecord
 
   has_many :actions, dependent: :destroy
   has_many :notes, dependent: :destroy
-  has_many_attached :documents
 
   POLES = %w[academy design nursery].freeze
 

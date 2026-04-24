@@ -5,6 +5,7 @@ module Api
     class ProjectsController < BaseController
       before_action :set_projectable, only: [
         :show, :update, :destroy, :update_notes,
+        :list_documents, :upload_documents,
         :list_expenses, :create_expense,
         :list_revenues, :create_revenue,
         :list_timesheets, :create_timesheet,
@@ -93,6 +94,39 @@ module Api
         notes_html = params[:notes].to_s
         @projectable.update_column(:notes, notes_html)
         render json: { notes: notes_html }
+      end
+
+      # ── Documents ──
+
+      # GET /api/v1/projects/:type/:id/documents
+      def list_documents
+        render json: { items: documents_for(@projectable).map { |d| serialize_document(d) } }
+      end
+
+      # POST /api/v1/projects/:type/:id/documents
+      def upload_documents
+        unless params[:documents].present?
+          return render json: { error: "No documents provided" }, status: :unprocessable_entity
+        end
+
+        @projectable.project_documents.attach(params[:documents])
+
+        uploader_name = "#{current_member.first_name} #{current_member.last_name}"
+        @projectable.project_documents.blobs.each do |blob|
+          meta = blob.metadata || {}
+          next if meta["uploaded_by"].present?
+          meta["uploaded_by"] = uploader_name
+          blob.update_column(:metadata, meta.to_json)
+        end
+
+        render json: { items: documents_for(@projectable).map { |d| serialize_document(d) } }
+      end
+
+      # DELETE /api/v1/projects/documents/:id
+      def destroy_document
+        attachment = ActiveStorage::Attachment.find(params[:id])
+        attachment.purge
+        head :no_content
       end
 
       # ── Expenses ──
@@ -305,6 +339,25 @@ module Api
         params.permit(:name, :description, :position)
       end
 
+      def documents_for(projectable)
+        projectable.project_documents.with_attached_blob.order(created_at: :desc)
+      rescue NoMethodError
+        projectable.project_documents.order(created_at: :desc)
+      end
+
+      def serialize_document(attachment)
+        meta = attachment.blob.metadata || {}
+        {
+          id: attachment.id.to_s,
+          filename: attachment.filename.to_s,
+          contentType: attachment.content_type,
+          byteSize: attachment.byte_size,
+          url: Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true),
+          uploadedBy: meta["uploaded_by"],
+          createdAt: attachment.created_at.iso8601
+        }
+      end
+
       def common_update_params(type_key)
         fields = COMMON_UPDATE_FIELDS[type_key] || []
         permitted = params.permit(*fields)
@@ -367,6 +420,7 @@ module Api
           members: members,
           taskLists: task_lists,
           notes: project.has_attribute?(:notes) ? project.read_attribute(:notes).to_s : "",
+          documents: documents_for(project).map { |d| serialize_document(d) },
           expensesCount: project.expenses.where(deleted_at: nil).count,
           revenuesCount: project.revenues.where(deleted_at: nil).count,
           timesheetsCount: project.timesheets.count,
