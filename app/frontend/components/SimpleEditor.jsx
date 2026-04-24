@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -189,7 +189,10 @@ function MenuBar({ editor, toolbar }) {
   )
 }
 
-export default function SimpleEditor({ content, onUpdate, placeholder, minHeight = '200px', toolbar }) {
+const SimpleEditor = forwardRef(function SimpleEditor(
+  { content, onUpdate, placeholder, minHeight = '200px', toolbar },
+  ref,
+) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -220,10 +223,28 @@ export default function SimpleEditor({ content, onUpdate, placeholder, minHeight
     },
   })
 
+  useImperativeHandle(ref, () => ({
+    setContent: (html, { focus = true, atEnd = true } = {}) => {
+      if (!editor) return
+      editor.commands.setContent(html || '', { emitUpdate: true })
+      if (focus) {
+        if (atEnd) editor.commands.focus('end')
+        else editor.commands.focus()
+      }
+    },
+    clear: () => {
+      if (!editor) return
+      editor.commands.clearContent(true)
+    },
+    focus: () => editor?.commands.focus('end'),
+  }), [editor])
+
   return (
     <div className="overflow-hidden rounded-lg border border-stone-300 bg-white transition-all focus-within:border-[#B01A19] focus-within:ring-2 focus-within:ring-[#B01A19]/10">
       <MenuBar editor={editor} toolbar={toolbar} />
       <EditorContent editor={editor} />
     </div>
   )
-}
+})
+
+export default SimpleEditor

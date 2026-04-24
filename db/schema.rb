@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_24_093248) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_24_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -230,6 +230,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_093248) do
     t.text "feedback", default: "", null: false
     t.bigint "location_id"
     t.integer "max_participants", default: 0, null: false
+    t.text "notes"
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
@@ -817,6 +818,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_093248) do
     t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
     t.decimal "longitude", precision: 10, scale: 6, default: "0.0", null: false
     t.string "name", null: false
+    t.text "notes"
     t.datetime "notion_created_at"
     t.string "notion_id"
     t.datetime "notion_updated_at"
@@ -1128,6 +1130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_093248) do
     t.bigint "lab_id"
     t.bigint "leader_id"
     t.string "name", null: false
+    t.text "notes"
     t.datetime "updated_at", null: false
     t.index ["guild_type"], name: "index_guilds_on_guild_type"
     t.index ["lab_id"], name: "index_guilds_on_lab_id"
@@ -2082,15 +2085,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_093248) do
     t.index ["status"], name: "index_strategy_axes_on_status"
   end
 
+  create_table "strategy_comment_reactions", force: :cascade do |t|
+    t.bigint "comment_id", null: false
+    t.datetime "created_at", null: false
+    t.string "emoji", null: false
+    t.bigint "member_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["comment_id", "member_id", "emoji"], name: "index_strategy_comment_reactions_uniqueness", unique: true
+    t.index ["comment_id"], name: "index_strategy_comment_reactions_on_comment_id"
+    t.index ["member_id"], name: "index_strategy_comment_reactions_on_member_id"
+  end
+
   create_table "strategy_deliberation_comments", force: :cascade do |t|
     t.bigint "author_id"
     t.text "content", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.bigint "deliberation_id", null: false
+    t.datetime "edited_at"
+    t.bigint "parent_id"
     t.string "phase_at_creation", null: false
     t.datetime "updated_at", null: false
     t.index ["author_id"], name: "index_strategy_deliberation_comments_on_author_id"
+    t.index ["deliberation_id", "parent_id", "created_at"], name: "index_strategy_deliberation_comments_on_delib_parent_created"
     t.index ["deliberation_id"], name: "index_strategy_deliberation_comments_on_deliberation_id"
+    t.index ["parent_id"], name: "index_strategy_deliberation_comments_on_parent_id"
+  end
+
+  create_table "strategy_deliberation_deciders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "deliberation_id", null: false
+    t.bigint "member_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deliberation_id", "member_id"], name: "idx_strategy_deciders_uniq", unique: true
+    t.index ["deliberation_id"], name: "idx_strategy_deciders_on_deliberation"
+    t.index ["member_id"], name: "index_strategy_deliberation_deciders_on_member_id"
   end
 
   create_table "strategy_deliberations", force: :cascade do |t|
@@ -2418,8 +2447,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_093248) do
   add_foreign_key "shop_sales", "organizations"
   add_foreign_key "shop_sales", "revenues"
   add_foreign_key "strategy_axes", "members", column: "created_by_id"
+  add_foreign_key "strategy_comment_reactions", "members"
+  add_foreign_key "strategy_comment_reactions", "strategy_deliberation_comments", column: "comment_id"
   add_foreign_key "strategy_deliberation_comments", "members", column: "author_id"
+  add_foreign_key "strategy_deliberation_comments", "strategy_deliberation_comments", column: "parent_id"
   add_foreign_key "strategy_deliberation_comments", "strategy_deliberations", column: "deliberation_id"
+  add_foreign_key "strategy_deliberation_deciders", "members"
+  add_foreign_key "strategy_deliberation_deciders", "strategy_deliberations", column: "deliberation_id", on_delete: :cascade
   add_foreign_key "strategy_deliberations", "members", column: "created_by_id"
   add_foreign_key "strategy_frameworks", "members", column: "created_by_id"
   add_foreign_key "strategy_frameworks", "strategy_deliberations", column: "deliberation_id"

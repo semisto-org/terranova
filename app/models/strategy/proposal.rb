@@ -2,6 +2,8 @@
 
 module Strategy
   class Proposal < ApplicationRecord
+    include SanitizesRichText
+
     self.table_name = "strategy_proposals"
 
     belongs_to :deliberation, class_name: "Strategy::Deliberation"
@@ -13,6 +15,8 @@ module Strategy
     validates :content, presence: true
     validates :version, presence: true, numericality: { only_integer: true, greater_than: 0 }
     validates :deliberation_id, uniqueness: { message: "a déjà une proposition" }
+
+    sanitizes_rich_text :content
 
     after_create :record_initial_version
 

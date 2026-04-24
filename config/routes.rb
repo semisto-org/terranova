@@ -141,11 +141,12 @@ Rails.application.routes.draw do
       delete "bucket/:id",                to: "bucket#destroy"
 
       # Unified project listing & detail
-      get    "projects",           to: "projects#index"
-      post   "projects/:type",     to: "projects#create"
-      get    "projects/:type/:id", to: "projects#show"
-      patch  "projects/:type/:id", to: "projects#update"
-      delete "projects/:type/:id", to: "projects#destroy"
+      get    "projects",                 to: "projects#index"
+      post   "projects/:type",           to: "projects#create"
+      get    "projects/:type/:id",       to: "projects#show"
+      patch  "projects/:type/:id",       to: "projects#update"
+      delete "projects/:type/:id",       to: "projects#destroy"
+      patch  "projects/:type/:id/notes", to: "projects#update_notes"
 
       # Unified project-scoped resources
       get    "projects/:type/:id/expenses",            to: "projects#list_expenses"
@@ -629,6 +630,7 @@ Rails.application.routes.draw do
       delete "strategy/resources/:id", to: "strategy/resources#destroy"
       patch "strategy/resources/:id/pin", to: "strategy/resources#pin"
 
+      get    "strategy/effective-members",           to: "strategy/deliberations#effective_members"
       get    "strategy/deliberations",               to: "strategy/deliberations#index"
       get    "strategy/deliberations/:id",           to: "strategy/deliberations#show"
       post   "strategy/deliberations",               to: "strategy/deliberations#create"
@@ -643,7 +645,10 @@ Rails.application.routes.draw do
       post   "strategy/proposals/:id/reactions",     to: "strategy/deliberations#create_reaction"
       get    "strategy/deliberations/:id/comments",  to: "strategy/deliberations#comments"
       post   "strategy/deliberations/:id/comments",  to: "strategy/deliberations#create_comment"
+      patch  "strategy/deliberation-comments/:id",   to: "strategy/deliberations#update_comment"
       delete "strategy/deliberation-comments/:id",   to: "strategy/deliberations#destroy_comment"
+      post   "strategy/deliberation-comments/:id/reactions",        to: "strategy/deliberations#create_comment_reaction"
+      delete "strategy/deliberation-comments/:id/reactions/:emoji", to: "strategy/deliberations#destroy_comment_reaction"
       post   "strategy/deliberations/:id/attachments",                to: "strategy/deliberations#create_attachment"
       delete "strategy/deliberations/:id/attachments/:attachment_id", to: "strategy/deliberations#destroy_attachment"
 

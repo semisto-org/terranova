@@ -25,6 +25,7 @@ import {
   type MemberOption,
 } from '@/components/tasks'
 import { ProjectEditModal } from '@/components/projects/ProjectEditModal'
+import { CollaborativeEditor } from '@/components/projects/CollaborativeEditor'
 import {
   ArrowLeft,
   Users,
@@ -43,6 +44,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  FileText,
 } from 'lucide-react'
 
 interface ProjectDetailProps {
@@ -61,6 +63,7 @@ const TYPE_CONFIG: Record<string, { label: string; accent: string; bg: string; i
 
 const TABS = [
   { id: 'overview', label: 'Aperçu', icon: ListTodo },
+  { id: 'notes', label: 'Notes', icon: FileText },
   { id: 'timesheets', label: 'Temps', icon: Clock },
   { id: 'expenses', label: 'Dépenses', icon: Receipt },
   { id: 'revenues', label: 'Recettes', icon: Receipt },
@@ -249,6 +252,16 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
             onRefresh={() => loadProject(true)}
           />
         )}
+        {activeTab === 'notes' && (
+          <NotesTab
+            typeKey={typeKey}
+            projectId={projectId}
+            initialContent={project.notes || ''}
+            members={project.members || []}
+            accent={config.accent}
+            currentMember={auth?.member}
+          />
+        )}
         {activeTab === 'timesheets' && (
           <ResourceTab
             typeKey={typeKey}
@@ -418,6 +431,54 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
       <p className="text-lg font-semibold text-stone-800">{value}</p>
       <p className="text-[11px] text-stone-400">{label}</p>
     </div>
+  )
+}
+
+/* ─── Notes Tab ─── */
+
+function NotesTab({
+  typeKey,
+  projectId,
+  initialContent,
+  members,
+  accent,
+  currentMember,
+}: {
+  typeKey: string
+  projectId: string
+  initialContent: string
+  members: any[]
+  accent: string
+  currentMember: any
+}) {
+  const memberOptions = useMemo(
+    () => members.map((m: any) => ({
+      id: m.memberId || m.id,
+      firstName: m.firstName,
+      lastName: m.lastName,
+      avatar: (m.avatar ?? null) as string | null,
+    })),
+    [members]
+  )
+
+  const resolvedMember = currentMember
+    ? {
+        id: String(currentMember.id),
+        firstName: currentMember.firstName,
+        lastName: currentMember.lastName,
+      }
+    : { id: '0', firstName: 'Anonyme', lastName: '' }
+
+  return (
+    <CollaborativeEditor
+      key={`${typeKey}-${projectId}`}
+      typeKey={typeKey}
+      projectId={projectId}
+      initialContent={initialContent}
+      currentMember={resolvedMember}
+      members={memberOptions}
+      accentColor={accent}
+    />
   )
 }
 

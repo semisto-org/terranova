@@ -4,7 +4,7 @@ module Api
   module V1
     class ProjectsController < BaseController
       before_action :set_projectable, only: [
-        :show, :update, :destroy,
+        :show, :update, :destroy, :update_notes,
         :list_expenses, :create_expense,
         :list_revenues, :create_revenue,
         :list_timesheets, :create_timesheet,
@@ -86,6 +86,13 @@ module Api
           @projectable.destroy!
         end
         head :no_content
+      end
+
+      # PATCH /api/v1/projects/:type/:id/notes
+      def update_notes
+        notes_html = params[:notes].to_s
+        @projectable.update_column(:notes, notes_html)
+        render json: { notes: notes_html }
       end
 
       # ── Expenses ──
@@ -359,6 +366,7 @@ module Api
         summary.merge(
           members: members,
           taskLists: task_lists,
+          notes: project.has_attribute?(:notes) ? project.read_attribute(:notes).to_s : "",
           expensesCount: project.expenses.where(deleted_at: nil).count,
           revenuesCount: project.revenues.where(deleted_at: nil).count,
           timesheetsCount: project.timesheets.count,

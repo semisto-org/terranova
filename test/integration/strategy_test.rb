@@ -10,6 +10,7 @@ class StrategyTest < ActionDispatch::IntegrationTest
       Strategy::Reaction,
       Strategy::ProposalVersion,
       Strategy::Proposal,
+      Strategy::DeliberationDecider,
       Strategy::Deliberation,
       Strategy::Resource
     ].each(&:delete_all)
@@ -168,9 +169,105 @@ class StrategyTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test 'publish requires at least 3 deciders' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    d1     = ensure_member(email: "d1@test.local",     membership_type: "effective")
+    d2     = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+
+    # 0 deciders → cannot publish
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :unprocessable_entity
+    assert_match(/décideurs/, JSON.parse(response.body)['error'])
+
+    # 2 deciders → still cannot publish
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [d1.id, d2.id] }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :unprocessable_entity
+
+    # 3 deciders → publishes successfully
+    d3 = ensure_member(email: "d3@test.local", membership_type: "effective")
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [d1.id, d2.id, d3.id] }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :success
+  end
+
+  test 'only selected deciders can vote' do
+    author   = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    decider1 = ensure_member(email: "d1@test.local",     membership_type: "effective")
+    decider2 = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    decider3 = ensure_member(email: "d3@test.local",     membership_type: "effective")
+    observer = ensure_member(email: "observer@test.local", membership_type: "effective")
+
+    login_as(author)
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+    proposal_id = JSON.parse(response.body)['proposal']['id']
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [decider1.id, decider2.id, decider3.id] }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :success
+
+    # Force transition to voting phase
+    ::Strategy::Deliberation.find(delib_id).transition_to_voting!
+
+    # Observer (effective but not a decider) → 403
+    login_as(observer)
+    post "/api/v1/strategy/proposals/#{proposal_id}/reactions",
+      params: { position: 'consent' }, as: :json
+    assert_response :forbidden
+    assert_match(/décideurs désignés/, JSON.parse(response.body)['error'])
+
+    # Decider → 201
+    login_as(decider1)
+    post "/api/v1/strategy/proposals/#{proposal_id}/reactions",
+      params: { position: 'consent' }, as: :json
+    assert_response :created
+  end
+
+  test 'non-effective member cannot be selected as decider' do
+    author   = ensure_member(email: "author@test.local",   membership_type: "effective", admin: true)
+    effective = ensure_member(email: "eff@test.local",     membership_type: "effective")
+    adherent  = ensure_member(email: "adh@test.local",     membership_type: "adherent")
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [effective.id, adherent.id] }, as: :json
+    assert_response :unprocessable_entity
+    assert_match(/membres effectifs/, JSON.parse(response.body)['errors'].join)
+  end
+
+  test 'effective_members endpoint returns active effective members' do
+    _admin   = ensure_member(email: "admin@test.local",    membership_type: "effective", admin: true)
+    _m2      = ensure_member(email: "m2@test.local",       membership_type: "effective")
+    _m3      = ensure_member(email: "m3@test.local",       membership_type: "adherent")
+
+    login_as(_admin)
+    get '/api/v1/strategy/effective-members', as: :json
+    assert_response :success
+    emails = JSON.parse(response.body)['members'].map { |m| m['id'] }
+    assert_includes emails, _admin.id
+    assert_includes emails, _m2.id
+    assert_not_includes emails, _m3.id
+  end
+
   test 'full phase progression: draft to decided' do
     author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
     voter  = ensure_member(email: "voter@test.local",  membership_type: "effective")
+    d2     = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    d3     = ensure_member(email: "d3@test.local",     membership_type: "effective")
 
     login_as(author)
     post '/api/v1/strategy/deliberations', params: { title: 'Protocole de membrane' }, as: :json
@@ -179,6 +276,10 @@ class StrategyTest < ActionDispatch::IntegrationTest
     post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
       params: { content: '<p>Seuil local 5000 euros</p>' }, as: :json
     assert_response :created
+
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [voter.id, d2.id, d3.id] }, as: :json
+    assert_response :success
 
     patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
     assert_response :success
@@ -217,6 +318,9 @@ class StrategyTest < ActionDispatch::IntegrationTest
 
   test 'update deliberation title allowed in draft, forbidden in open' do
     author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    d1     = ensure_member(email: "d1@test.local",     membership_type: "effective")
+    d2     = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    d3     = ensure_member(email: "d3@test.local",     membership_type: "effective")
     login_as(author)
 
     post '/api/v1/strategy/deliberations', params: { title: 'v1' }, as: :json
@@ -227,7 +331,10 @@ class StrategyTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
       params: { content: '<p>proposition</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [d1.id, d2.id, d3.id] }, as: :json
     patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :success
 
     patch "/api/v1/strategy/deliberations/#{delib_id}", params: { title: 'v3' }, as: :json
     assert_response :forbidden
@@ -235,6 +342,9 @@ class StrategyTest < ActionDispatch::IntegrationTest
 
   test 'update_proposal allowed in draft and open, creates versions' do
     author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    d1     = ensure_member(email: "d1@test.local",     membership_type: "effective")
+    d2     = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    d3     = ensure_member(email: "d3@test.local",     membership_type: "effective")
     login_as(author)
 
     post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
@@ -249,7 +359,10 @@ class StrategyTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal 2, JSON.parse(response.body)['proposal']['version']
 
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [d1.id, d2.id, d3.id] }, as: :json
     patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+    assert_response :success
     patch "/api/v1/strategy/proposals/#{proposal_id}",
       params: { content: '<p>v3</p>' }, as: :json
     assert_response :success
@@ -301,6 +414,9 @@ class StrategyTest < ActionDispatch::IntegrationTest
 
   test 'comments grouped by phase' do
     author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    d1     = ensure_member(email: "d1@test.local",     membership_type: "effective")
+    d2     = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    d3     = ensure_member(email: "d3@test.local",     membership_type: "effective")
     login_as(author)
 
     post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
@@ -310,6 +426,8 @@ class StrategyTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
       params: { content: '<p>v1</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}",
+      params: { decider_ids: [d1.id, d2.id, d3.id] }, as: :json
     patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
     post "/api/v1/strategy/deliberations/#{delib_id}/comments", params: { content: 'Open remark' }, as: :json
 
@@ -325,6 +443,9 @@ class StrategyTest < ActionDispatch::IntegrationTest
   test 'destroy allowed for author on draft, forbidden otherwise' do
     author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
     other  = ensure_member(email: "other@test.local",  membership_type: "effective")
+    d1     = ensure_member(email: "d1@test.local",     membership_type: "effective")
+    d2     = ensure_member(email: "d2@test.local",     membership_type: "effective")
+    d3     = ensure_member(email: "d3@test.local",     membership_type: "effective")
 
     login_as(author)
     post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
@@ -345,7 +466,10 @@ class StrategyTest < ActionDispatch::IntegrationTest
     published_id = JSON.parse(response.body)['deliberation']['id']
     post "/api/v1/strategy/deliberations/#{published_id}/proposals",
       params: { content: '<p>proposition</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{published_id}",
+      params: { decider_ids: [d1.id, d2.id, d3.id] }, as: :json
     patch "/api/v1/strategy/deliberations/#{published_id}/publish", as: :json
+    assert_response :success
 
     delete "/api/v1/strategy/deliberations/#{published_id}", as: :json
     assert_response :unprocessable_entity

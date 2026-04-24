@@ -4,11 +4,18 @@ import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   MessageCircle, Search, Plus, Check, XCircle, ChevronLeft, Edit3, Trash2,
-  FileText, Clock, PenLine, Vote, CheckCircle2, Send, X, Paperclip, Upload, Loader2
+  FileText, Clock, PenLine, Vote, CheckCircle2, Send, X, Paperclip, Upload, Loader2, Users
 } from 'lucide-react'
 import SimpleEditor from '../../components/SimpleEditor'
+import CommentCard from './CommentCard'
+import CommentThreadDrawer from './CommentThreadDrawer'
+import SelectionToBlockquote, { buildQuotedHtml } from './SelectionToBlockquote'
+import DeciderSelector from './DeciderSelector'
+
+const MIN_DECIDERS = 3
 
 const ACCENT = '#2563EB'
+const COMMENT_EDITOR_TOOLBAR = ['bold', 'italic', 'strike', '|', 'bulletList', 'orderedList', 'blockquote', '|', 'link']
 
 const DELIB_STATUSES = [
   { value: 'draft',           label: 'Brouillons' },
@@ -292,28 +299,39 @@ function PhaseBar({ delib, authMemberId, onPublish }) {
         </div>
       )}
 
-      {showDraftPublish && typeof onPublish === 'function' && (
-        <div className="flex border-t border-amber-200/80 bg-amber-50/55">
-          <div className="w-1 shrink-0 bg-amber-400" aria-hidden />
-          <div className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-amber-950">Brouillon - visible uniquement par toi.</p>
-              {!delib.proposals?.length && (
-                <p className="mt-1 text-xs text-amber-800/85">Rédige une proposition pour pouvoir publier. Tu pourras amender ta proposition pendant toute la durée de la discussion.</p>
-              )}
+      {showDraftPublish && typeof onPublish === 'function' && (() => {
+        const hasProposal = !!delib.proposals?.length
+        const deciderCount = delib.deciderCount ?? (delib.deciders?.length || 0)
+        const enoughDeciders = deciderCount >= MIN_DECIDERS
+        const canPublish = hasProposal && enoughDeciders
+        let hint = null
+        if (!hasProposal) {
+          hint = "Rédige une proposition pour pouvoir publier. Tu pourras amender ta proposition pendant toute la durée de la discussion."
+        } else if (!enoughDeciders) {
+          hint = `Sélectionne au moins ${MIN_DECIDERS} décideurs pour pouvoir publier (${deciderCount} sélectionné${deciderCount > 1 ? 's' : ''}).`
+        }
+        return (
+          <div className="flex border-t border-amber-200/80 bg-amber-50/55">
+            <div className="w-1 shrink-0 bg-amber-400" aria-hidden />
+            <div className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-amber-950">Brouillon - visible uniquement par toi.</p>
+                {hint && <p className="mt-1 text-xs text-amber-800/85">{hint}</p>}
+              </div>
+              <button
+                type="button"
+                onClick={onPublish}
+                disabled={!canPublish}
+                title={canPublish ? undefined : hint || undefined}
+                className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                style={{ backgroundColor: ACCENT }}
+              >
+                Publier la délibération
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={onPublish}
-              disabled={!delib.proposals?.length}
-              className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
-              style={{ backgroundColor: ACCENT }}
-            >
-              Publier la délibération
-            </button>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
@@ -443,6 +461,74 @@ function AttachmentsSection({ delib, canManage, onChanged }) {
   )
 }
 
+function DecidersRow({ delib, authMemberId, onEdit }) {
+  const deciders = delib.deciders || []
+  const isOwner = String(delib.createdById) === String(authMemberId)
+  const isDraft = delib.status === 'draft'
+
+  if (!deciders.length && !(isDraft && isOwner)) return null
+
+  const reactionsByMember = {}
+  for (const p of (delib.proposals || [])) {
+    for (const r of (p.reactions || [])) {
+      reactionsByMember[String(r.memberId)] = r.position
+    }
+  }
+
+  return (
+    <div className="mt-6 pt-4 border-t border-stone-100">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+          <Users className="w-3.5 h-3.5" />
+          {deciders.length > 0 ? `Décideurs (${deciders.length})` : 'Décideurs'}
+        </h3>
+        {isDraft && isOwner && (
+          <button
+            type="button"
+            onClick={() => onEdit(delib)}
+            className="text-[11px] text-blue-600 hover:underline"
+          >
+            {deciders.length ? 'Modifier la sélection' : 'Sélectionner les décideurs'}
+          </button>
+        )}
+      </div>
+
+      {deciders.length === 0 ? (
+        <p className="text-xs text-stone-400">Aucun décideur sélectionné. Au moins {MIN_DECIDERS} décideurs sont nécessaires pour publier.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {deciders.map(d => {
+            const position = reactionsByMember[String(d.id)]
+            const ring =
+              position === 'consent' ? 'ring-2 ring-green-400 bg-green-50/50' :
+              position === 'objection' ? 'ring-2 ring-red-400 bg-red-50/50' :
+              'bg-stone-50'
+            const showPositionBadge = delib.status === 'voting' || delib.status === 'outcome_pending' || delib.status === 'decided'
+            return (
+              <span
+                key={d.id}
+                className={`inline-flex items-center gap-1.5 rounded-full border border-stone-200 px-2.5 py-1 ${ring}`}
+                title={position ? `A voté : ${position === 'consent' ? 'consentement' : 'objection'}` : undefined}
+              >
+                {d.avatar ? (
+                  <img src={d.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                ) : (
+                  <span className="w-4 h-4 rounded-full bg-stone-300 flex items-center justify-center text-[9px] text-white font-medium">
+                    {d.name?.[0]}
+                  </span>
+                )}
+                <span className="text-xs text-stone-700">{d.name}</span>
+                {showPositionBadge && position === 'consent' && <Check className="w-3 h-3 text-green-600" />}
+                {showPositionBadge && position === 'objection' && <XCircle className="w-3 h-3 text-red-500" />}
+              </span>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
   const [delib, setDelib] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -457,6 +543,10 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
   const [editingProposalContent, setEditingProposalContent] = useState('')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const [threadRootId, setThreadRootId] = useState(null)
+  const commentEditorRef = useRef(null)
+  const commentFormRef = useRef(null)
+  const proposalContainerRef = useRef(null)
 
   const load = useCallback(async ({ preserveScroll = false } = {}) => {
     const scrollY = preserveScroll ? window.scrollY : null
@@ -512,14 +602,22 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
 
   const handleAddComment = async (e) => {
     e.preventDefault()
-    if (!newComment.trim()) return
+    if (!newComment.trim() || newComment === '<p></p>') return
     await apiRequest(`/api/v1/strategy/deliberations/${deliberationId}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: newComment })
     })
     setNewComment('')
+    commentEditorRef.current?.clear()
     load({ preserveScroll: true })
+  }
+
+  const handleQuotePassage = (selectedText) => {
+    const html = buildQuotedHtml(selectedText)
+    setNewComment(html)
+    commentEditorRef.current?.setContent(html, { focus: true, atEnd: true })
+    commentFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   const handleDecide = async (e) => {
@@ -554,7 +652,6 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
       <button onClick={onBack} className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 transition-colors">
         <ChevronLeft className="w-4 h-4" /> Retour
       </button>
-      <PhaseBar delib={delib} authMemberId={authMemberId} onPublish={handlePublish} />
 
       {/* Header */}
       <div className="bg-white border border-stone-200 rounded-xl p-6">
@@ -611,6 +708,8 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
           </div>
         )}
 
+        <DecidersRow delib={delib} authMemberId={authMemberId} onEdit={onEdit} />
+
         <AttachmentsSection
           delib={delib}
           canManage={
@@ -620,6 +719,8 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
           onChanged={() => load({ preserveScroll: true })}
         />
       </div>
+
+      <PhaseBar delib={delib} authMemberId={authMemberId} onPublish={handlePublish} />
 
       {/* Outcome (if decided) */}
       {delib.status === 'decided' && delib.outcome && (
@@ -667,7 +768,7 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
                   })}
                 </span>
               </div>
-              <div className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: p.content }} />
+              <div ref={proposalContainerRef} className="prose prose-stone prose-sm max-w-none text-sm text-stone-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: p.content }} />
               <div className="flex items-center gap-3 mt-2">
                   {(delib.status === 'draft' || delib.status === 'open') && String(delib.createdById) === String(authMemberId) && (
                     <button
@@ -756,8 +857,8 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
               )
             })()}
 
-            {/* Reaction buttons — voting phase only */}
-            {delib.status === 'voting' && (
+            {/* Reaction buttons — voting phase only, deciders only */}
+            {delib.status === 'voting' && delib.isDecider && (
               <div>
                 {reactionForm?.proposalId === p.id ? (
                   <ReactionFormInline
@@ -789,6 +890,12 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
                   </p>
                 )}
               </div>
+            )}
+
+            {delib.status === 'voting' && !delib.isDecider && (
+              <p className="text-xs text-stone-400 italic">
+                Seuls les décideurs désignés peuvent voter sur cette proposition.
+              </p>
             )}
           </div>
         ))}
@@ -864,24 +971,16 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
                     </span>
                     <div className="h-px flex-1 bg-stone-100" />
                   </div>
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
                     {phaseComments.map(c => (
-                      <div key={c.id} className="flex gap-3 group">
-                        <div className="w-7 h-7 mt-0.5 rounded-full bg-stone-100 text-stone-600 text-[10px] font-bold flex items-center justify-center shrink-0 ring-2 ring-white">
-                          {c.authorAvatar ? <img src={c.authorAvatar} className="w-7 h-7 rounded-full object-cover" alt="" /> : c.authorName?.[0]}
-                        </div>
-                        <div className="flex-1 min-w-0 rounded-lg bg-stone-50 px-3.5 py-2.5">
-                          <div className="flex items-baseline gap-2 mb-0.5">
-                            <span className="text-xs font-semibold text-stone-800">{c.authorName}</span>
-                            <span className="text-[10px] text-stone-400">
-                              {new Date(c.createdAt).toLocaleString('fr-BE', {
-                                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-                              })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-stone-700 leading-relaxed">{c.content}</p>
-                        </div>
-                      </div>
+                      <CommentCard
+                        key={c.id}
+                        comment={c}
+                        variant="root"
+                        authMemberId={authMemberId}
+                        onOpenThread={(root) => setThreadRootId(root.id)}
+                        onChanged={() => load({ preserveScroll: true })}
+                      />
                     ))}
                   </div>
                 </div>
@@ -891,28 +990,51 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
         </div>
 
         {delib.status !== 'cancelled' && delib.status !== 'decided' && (
-          <form onSubmit={handleAddComment} className="flex items-end gap-2 border-t border-stone-100 px-5 py-3 bg-stone-50/50">
-            <textarea
-              rows={2}
-              value={newComment}
-              onChange={e => setNewComment(e.target.value)}
+          <form
+            ref={commentFormRef}
+            onSubmit={handleAddComment}
+            className="border-t border-stone-100 px-5 py-3 bg-stone-50/50 space-y-2"
+          >
+            <SimpleEditor
+              ref={commentEditorRef}
+              content={newComment}
+              onUpdate={setNewComment}
               placeholder="Commente la proposition..."
-              className="flex-1 resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 placeholder:text-stone-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              minHeight="80px"
+              toolbar={COMMENT_EDITOR_TOOLBAR}
             />
-            <button
-              type="submit"
-              disabled={!newComment.trim()}
-              className="shrink-0 rounded-lg p-2 text-white disabled:opacity-40 transition-colors hover:opacity-90"
-              style={{ backgroundColor: ACCENT }}
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={!newComment.trim() || newComment === '<p></p>'}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 transition-colors hover:opacity-90"
+                style={{ backgroundColor: ACCENT }}
+              >
+                <Send className="w-3.5 h-3.5" />
+                Publier le commentaire
+              </button>
+            </div>
           </form>
         )}
       </div>}
 
       {showVersionsFor && (
         <ProposalVersionsPanel proposalId={showVersionsFor} onClose={() => setShowVersionsFor(null)} />
+      )}
+
+      {/* Sélection d'un passage de la proposition → commentaire cité */}
+      {delib.status !== 'draft' && delib.status !== 'cancelled' && delib.status !== 'decided' && (
+        <SelectionToBlockquote containerRef={proposalContainerRef} onQuote={handleQuotePassage} />
+      )}
+
+      {threadRootId != null && (
+        <CommentThreadDrawer
+          rootCommentId={threadRootId}
+          deliberationId={delib.id}
+          canComment={delib.status !== 'cancelled' && delib.status !== 'decided'}
+          authMemberId={authMemberId}
+          onClose={() => { setThreadRootId(null); load({ preserveScroll: true }) }}
+        />
       )}
 
       {confirmingDelete && (
@@ -1044,22 +1166,27 @@ function ProposalVersionsPanel({ proposalId, onClose }) {
   )
 }
 
-function DeliberationForm({ deliberation, onSave, onCancel }) {
+function DeliberationForm({ deliberation, authMemberId, onSave, onCancel }) {
   const [form, setForm] = useState({
     title: deliberation?.title || '',
     context: deliberation?.context || '',
   })
+  const [deciderIds, setDeciderIds] = useState(
+    (deliberation?.deciders || []).map(d => d.id)
+  )
   const [saving, setSaving] = useState(false)
+  const isExisting = !!deliberation?.id
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
-    const url = deliberation?.id ? `/api/v1/strategy/deliberations/${deliberation.id}` : '/api/v1/strategy/deliberations'
-    const method = deliberation?.id ? 'PATCH' : 'POST'
+    const url = isExisting ? `/api/v1/strategy/deliberations/${deliberation.id}` : '/api/v1/strategy/deliberations'
+    const method = isExisting ? 'PATCH' : 'POST'
+    const payload = isExisting ? { ...form, decider_ids: deciderIds } : form
     const data = await apiRequest(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify(payload)
     })
     setSaving(false)
     if (data?.deliberation) onSave(data.deliberation)
@@ -1068,7 +1195,7 @@ function DeliberationForm({ deliberation, onSave, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-lg font-semibold text-stone-900">
-        {deliberation?.id ? 'Modifier la délibération' : 'Nouvelle délibération'}
+        {isExisting ? 'Modifier la délibération' : 'Nouvelle délibération'}
       </h2>
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
@@ -1084,6 +1211,22 @@ function DeliberationForm({ deliberation, onSave, onCancel }) {
           <SimpleEditor content={form.context} onUpdate={(html) => setForm(f => ({ ...f, context: html }))}
             placeholder="Pourquoi cette délibération est-elle nécessaire ?" minHeight="150px" />
         </div>
+
+        {isExisting && (
+          <div className="pt-4 border-t border-stone-100">
+            <DeciderSelector
+              selectedIds={deciderIds}
+              onChange={setDeciderIds}
+              authMemberId={authMemberId}
+            />
+          </div>
+        )}
+
+        {!isExisting && (
+          <p className="text-xs text-stone-400 border-t border-stone-100 pt-3">
+            Tu pourras sélectionner les décideurs après avoir créé le brouillon.
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end gap-2">
@@ -1091,7 +1234,7 @@ function DeliberationForm({ deliberation, onSave, onCancel }) {
         <button type="submit" disabled={saving || !form.title}
           className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: ACCENT }}>
-          {saving ? 'Enregistrement...' : (deliberation?.id ? 'Mettre à jour' : 'Créer')}
+          {saving ? 'Enregistrement...' : (isExisting ? 'Mettre à jour' : 'Créer')}
         </button>
       </div>
     </form>
@@ -1132,7 +1275,7 @@ export default function DeliberationsSection() {
         <p className="text-sm text-stone-500">Discussions structurées avec propositions et consentement sociocratique</p>
       </div>
       {view === 'form' ? (
-        <DeliberationForm deliberation={editingItem} onSave={handleDeliberationSaved} onCancel={handleDeliberationCancel} />
+        <DeliberationForm deliberation={editingItem} authMemberId={authMemberId} onSave={handleDeliberationSaved} onCancel={handleDeliberationCancel} />
       ) : view === 'detail' ? (
         <DeliberationDetail deliberationId={selectedId} onBack={handleBack} onEdit={handleEdit} authMemberId={authMemberId} />
       ) : (
