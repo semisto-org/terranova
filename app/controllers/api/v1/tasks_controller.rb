@@ -145,8 +145,12 @@ module Api
       end
 
       def task_params
-        params.permit(:name, :description, :status, :due_date, :assignee_id, :assignee_name,
-                       :priority, :time_minutes, :position, :parent_id, tags: [])
+        permitted = params.permit(:name, :description, :status, :due_date, :assignee_id, :assignee_name,
+                                   :priority, :time_minutes, :position, :parent_id, tags: [])
+        %i[priority due_date assignee_id assignee_name time_minutes parent_id].each do |key|
+          permitted[key] = nil if permitted[key].is_a?(String) && permitted[key].empty?
+        end
+        permitted
       end
 
       def resolve_assignee(task)

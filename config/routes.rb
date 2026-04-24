@@ -141,8 +141,11 @@ Rails.application.routes.draw do
       delete "bucket/:id",                to: "bucket#destroy"
 
       # Unified project listing & detail
-      get "projects",           to: "projects#index"
-      get "projects/:type/:id", to: "projects#show"
+      get    "projects",           to: "projects#index"
+      post   "projects/:type",     to: "projects#create"
+      get    "projects/:type/:id", to: "projects#show"
+      patch  "projects/:type/:id", to: "projects#update"
+      delete "projects/:type/:id", to: "projects#destroy"
 
       # Unified project-scoped resources
       get    "projects/:type/:id/expenses",            to: "projects#list_expenses"

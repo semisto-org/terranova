@@ -4,13 +4,23 @@ module Api
   module V1
     class ProjectsController < BaseController
       before_action :set_projectable, only: [
-        :show,
+        :show, :update, :destroy,
         :list_expenses, :create_expense,
         :list_revenues, :create_revenue,
         :list_timesheets, :create_timesheet,
         :list_events, :create_event,
         :list_knowledge_sections, :create_knowledge_section
       ]
+
+      CREATABLE_TYPES = %w[lab-project].freeze
+      # Per-type permitted params. Frontend sends `name`; for Academy::Training we
+      # remap to `title` since that's the actual column.
+      COMMON_UPDATE_FIELDS = {
+        "lab-project"    => %i[name description pole status needs_reclassification],
+        "design-project" => %i[name status],
+        "training"       => %i[name description status],
+        "guild"          => %i[name description]
+      }.freeze
 
       # GET /api/v1/projects
       def index
@@ -38,6 +48,44 @@ module Api
       # GET /api/v1/projects/:type/:id
       def show
         render json: serialize_project_detail(@projectable)
+      end
+
+      # POST /api/v1/projects/:type
+      def create
+        type_key = params[:type]
+        unless CREATABLE_TYPES.include?(type_key)
+          return render json: { error: "Creation via unified endpoint not supported for type: #{type_key}" }, status: :unprocessable_entity
+        end
+
+        klass_name = Projectable::PROJECT_TYPE_KEYS.key(type_key)
+        project = klass_name.constantize.new(common_update_params(type_key))
+
+        if project.save
+          render json: serialize_project_summary(project), status: :created
+        else
+          render json: { error: project.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/projects/:type/:id
+      def update
+        attrs = common_update_params(params[:type])
+
+        if @projectable.update(attrs)
+          render json: serialize_project_detail(@projectable)
+        else
+          render json: { error: @projectable.errors.full_messages.to_sentence }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/projects/:type/:id
+      def destroy
+        if @projectable.respond_to?(:soft_delete!)
+          @projectable.soft_delete!
+        else
+          @projectable.destroy!
+        end
+        head :no_content
       end
 
       # ── Expenses ──
@@ -250,6 +298,18 @@ module Api
         params.permit(:name, :description, :position)
       end
 
+      def common_update_params(type_key)
+        fields = COMMON_UPDATE_FIELDS[type_key] || []
+        permitted = params.permit(*fields)
+
+        # Academy::Training uses `title` column; frontend sends `name`.
+        if type_key == "training" && permitted.key?(:name)
+          permitted[:title] = permitted.delete(:name)
+        end
+
+        permitted
+      end
+
       # ── Serializers ──
 
       def serialize_project_summary(project)
@@ -287,8 +347,18 @@ module Api
           }
         end
 
+        task_lists = project.unified_task_lists.includes(tasks: :assignee).order(:position, :created_at).map do |tl|
+          {
+            id: tl.id.to_s,
+            name: tl.name,
+            position: tl.position,
+            tasks: tl.tasks.order(:position, :created_at).map { |t| serialize_task_for_project(t) }
+          }
+        end
+
         summary.merge(
           members: members,
+          taskLists: task_lists,
           expensesCount: project.expenses.where(deleted_at: nil).count,
           revenuesCount: project.revenues.where(deleted_at: nil).count,
           timesheetsCount: project.timesheets.count,
@@ -296,6 +366,27 @@ module Api
           knowledgeSectionsCount: project.knowledge_sections.count,
           typeSpecific: serialize_type_specific(project)
         )
+      end
+
+      def serialize_task_for_project(task)
+        {
+          id: task.id.to_s,
+          name: task.name,
+          description: task.description,
+          status: task.status,
+          dueDate: task.due_date&.iso8601,
+          assigneeId: task.assignee_id&.to_s,
+          assigneeName: task.assignee_name,
+          assigneeAvatar: task.assignee&.avatar_url,
+          priority: task.priority,
+          tags: task.tags,
+          timeMinutes: task.time_minutes,
+          position: task.position,
+          parentId: task.parent_id&.to_s,
+          taskListId: task.task_list_id.to_s,
+          createdAt: task.created_at.iso8601,
+          updatedAt: task.updated_at.iso8601
+        }
       end
 
       def serialize_type_specific(project)

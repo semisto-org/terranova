@@ -10,7 +10,9 @@ import {
   GraduationCap,
   FlaskConical,
   Shield,
+  Plus,
 } from 'lucide-react'
+import { ProjectCreateModal } from '@/components/projects/ProjectCreateModal'
 
 interface ProjectSummary {
   id: string
@@ -78,6 +80,7 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('active')
   const [search, setSearch] = useState('')
+  const [createOpen, setCreateOpen] = useState(false)
 
   const filtered = useMemo(() => {
     let items = projects
@@ -139,16 +142,26 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1
-          className="text-2xl font-semibold tracking-tight text-stone-900"
-          style={{ fontFamily: "var(--font-heading, 'Sole Serif Small', serif)" }}
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1
+            className="text-2xl font-semibold tracking-tight text-stone-900"
+            style={{ fontFamily: "var(--font-heading, 'Sole Serif Small', serif)" }}
+          >
+            Projets
+          </h1>
+          <p className="mt-1 text-sm text-stone-500">
+            {projects.length} projet{projects.length !== 1 ? 's' : ''} au total
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#234766] text-white text-sm font-medium hover:bg-[#1c3a54] transition-colors shadow-sm"
         >
-          Projets
-        </h1>
-        <p className="mt-1 text-sm text-stone-500">
-          {projects.length} projet{projects.length !== 1 ? 's' : ''} au total
-        </p>
+          <Plus className="w-4 h-4" />
+          Nouveau projet
+        </button>
       </div>
 
       {/* Filters */}
@@ -250,6 +263,17 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
             )
           })}
       </div>
+
+      {createOpen && (
+        <ProjectCreateModal
+          onClose={() => setCreateOpen(false)}
+          onCreated={({ id, typeKey }) => {
+            setCreateOpen(false)
+            onRefresh()
+            onSelect(typeKey, id)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,7 +1,30 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { usePage } from '@inertiajs/react'
 import { apiRequest } from '@/lib/api'
 import { BucketSection } from '@/components/shared/BucketSection'
+import {
+  SortableTaskListBlock,
+  TaskListForm,
+  TaskForm,
+  type Task,
+  type MemberOption,
+} from '@/components/tasks'
+import { ProjectEditModal } from '@/components/projects/ProjectEditModal'
 import {
   ArrowLeft,
   Users,
@@ -62,12 +85,13 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const [editOpen, setEditOpen] = useState(false)
 
   const config = TYPE_CONFIG[typeKey] || { label: typeKey, accent: '#78716C', bg: '#f5f5f4', icon: ListTodo }
   const Icon = config.icon
 
-  const loadProject = useCallback(async () => {
-    setLoading(true)
+  const loadProject = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     setError(null)
     try {
       const res = await apiRequest(`/api/v1/projects/${typeKey}/${projectId}`)
@@ -75,7 +99,7 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
     } catch (err: any) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [typeKey, projectId])
 
@@ -129,18 +153,28 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
             </span>
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-                <span
-                  className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider text-white"
-                  style={{ backgroundColor: config.accent }}
-                >
-                  {config.label}
-                </span>
-                {project.status && (
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-stone-200/70 text-stone-600">
-                    {project.status}
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span
+                    className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider text-white"
+                    style={{ backgroundColor: config.accent }}
+                  >
+                    {config.label}
                   </span>
-                )}
+                  {project.status && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-stone-200/70 text-stone-600">
+                      {project.status}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-800 bg-white/70 hover:bg-white border border-stone-200/70 transition-colors shrink-0"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Modifier
+                </button>
               </div>
 
               <h1
@@ -206,7 +240,14 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
       {/* Tab content */}
       <div className="min-h-[300px]">
         {activeTab === 'overview' && (
-          <OverviewTab project={project} typeKey={typeKey} config={config} isAdmin={isAdmin} />
+          <OverviewTab
+            project={project}
+            typeKey={typeKey}
+            projectId={projectId}
+            config={config}
+            isAdmin={isAdmin}
+            onRefresh={() => loadProject(true)}
+          />
         )}
         {activeTab === 'timesheets' && (
           <ResourceTab
@@ -275,66 +316,98 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
           <BucketSection projectType={typeKey} projectId={projectId} />
         )}
       </div>
+
+      {editOpen && (
+        <ProjectEditModal
+          project={{
+            id: projectId,
+            typeKey,
+            name: project.name,
+            description: project.description || null,
+            pole: project.typeSpecific?.pole ?? null,
+            status: project.status,
+            totalTasks: project.totalTasks,
+            expensesCount: project.expensesCount,
+            revenuesCount: project.revenuesCount,
+            timesheetsCount: project.timesheetsCount,
+          }}
+          onClose={() => setEditOpen(false)}
+          onSave={() => { setEditOpen(false); loadProject(true); onRefreshList?.() }}
+          onDelete={() => { setEditOpen(false); onRefreshList?.(); onBack() }}
+        />
+      )}
     </div>
   )
 }
 
 /* ─── Overview Tab ─── */
 
-function OverviewTab({ project, typeKey, config, isAdmin }: any) {
+function OverviewTab({ project, typeKey, projectId, config, isAdmin, onRefresh }: any) {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Members */}
-      <div className="rounded-xl border border-stone-200/80 bg-white p-5">
-        <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
-          <Users className="w-4 h-4" style={{ color: config.accent }} />
-          Équipe
-        </h3>
-        {project.members?.length > 0 ? (
-          <div className="space-y-2.5">
-            {project.members.map((m: any) => (
-              <div key={m.id} className="flex items-center gap-3">
-                {m.avatar ? (
-                  <img src={m.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <span className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-xs font-semibold text-stone-600">
-                    {m.firstName?.[0]}{m.lastName?.[0]}
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-stone-800 truncate">{m.firstName} {m.lastName}</p>
-                  {m.role && <p className="text-[11px] text-stone-400">{m.role}</p>}
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Members */}
+        <div className="rounded-xl border border-stone-200/80 bg-white p-5">
+          <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+            <Users className="w-4 h-4" style={{ color: config.accent }} />
+            Équipe
+          </h3>
+          {project.members?.length > 0 ? (
+            <div className="space-y-2.5">
+              {project.members.map((m: any) => (
+                <div key={m.id} className="flex items-center gap-3">
+                  {m.avatar ? (
+                    <img src={m.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-xs font-semibold text-stone-600">
+                      {m.firstName?.[0]}{m.lastName?.[0]}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-800 truncate">{m.firstName} {m.lastName}</p>
+                    {m.role && <p className="text-[11px] text-stone-400">{m.role}</p>}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-stone-400">Aucun membre</p>
+          )}
+        </div>
+
+        {/* Quick stats */}
+        <div className="rounded-xl border border-stone-200/80 bg-white p-5">
+          <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+            <ListTodo className="w-4 h-4" style={{ color: config.accent }} />
+            Résumé
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard label="Tâches" value={`${project.completedTasks}/${project.totalTasks}`} accent={config.accent} />
+            <StatCard label="Timesheets" value={project.timesheetsCount} accent={config.accent} />
+            <StatCard label="Dépenses" value={project.expensesCount} accent={config.accent} />
+            <StatCard label="Recettes" value={project.revenuesCount} accent={config.accent} />
+            <StatCard label="Événements" value={project.eventsCount} accent={config.accent} />
+            <StatCard label="Wiki" value={project.knowledgeSectionsCount} accent={config.accent} />
           </div>
-        ) : (
-          <p className="text-sm text-stone-400">Aucun membre</p>
+        </div>
+
+        {/* Type-specific details */}
+        {project.typeSpecific && (
+          <div className="lg:col-span-2 rounded-xl border border-stone-200/80 bg-white p-5">
+            <TypeSpecificDetails typeKey={typeKey} data={project.typeSpecific} accent={config.accent} />
+          </div>
         )}
       </div>
 
-      {/* Quick stats */}
-      <div className="rounded-xl border border-stone-200/80 bg-white p-5">
-        <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
-          <ListTodo className="w-4 h-4" style={{ color: config.accent }} />
-          Résumé
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <StatCard label="Tâches" value={`${project.completedTasks}/${project.totalTasks}`} accent={config.accent} />
-          <StatCard label="Timesheets" value={project.timesheetsCount} accent={config.accent} />
-          <StatCard label="Dépenses" value={project.expensesCount} accent={config.accent} />
-          <StatCard label="Recettes" value={project.revenuesCount} accent={config.accent} />
-          <StatCard label="Événements" value={project.eventsCount} accent={config.accent} />
-          <StatCard label="Wiki" value={project.knowledgeSectionsCount} accent={config.accent} />
-        </div>
-      </div>
-
-      {/* Type-specific details */}
-      {project.typeSpecific && (
-        <div className="lg:col-span-2 rounded-xl border border-stone-200/80 bg-white p-5">
-          <TypeSpecificDetails typeKey={typeKey} data={project.typeSpecific} accent={config.accent} />
-        </div>
-      )}
+      {/* Tasks */}
+      <TasksSection
+        typeKey={typeKey}
+        projectId={projectId}
+        taskLists={project.taskLists || []}
+        members={project.members || []}
+        accent={config.accent}
+        onRefresh={onRefresh}
+      />
     </div>
   )
 }
@@ -344,6 +417,232 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
     <div className="rounded-lg bg-stone-50 px-3 py-2.5">
       <p className="text-lg font-semibold text-stone-800">{value}</p>
       <p className="text-[11px] text-stone-400">{label}</p>
+    </div>
+  )
+}
+
+/* ─── Tasks Section ─── */
+
+interface TaskListData {
+  id: string
+  name: string
+  position: number
+  tasks: Task[]
+}
+
+function TasksSection({
+  typeKey,
+  projectId,
+  taskLists,
+  members,
+  accent,
+  onRefresh,
+}: {
+  typeKey: string
+  projectId: string
+  taskLists: TaskListData[]
+  members: any[]
+  accent: string
+  onRefresh: () => void
+}) {
+  const [localLists, setLocalLists] = useState<TaskListData[]>(taskLists)
+  const [busy, setBusy] = useState(false)
+  const [taskListModal, setTaskListModal] = useState<{ id?: string; name?: string } | null>(null)
+  const [taskModal, setTaskModal] = useState<{ taskListId: string; task?: Task } | null>(null)
+
+  useEffect(() => { setLocalLists(taskLists) }, [taskLists])
+
+  const memberOptions: MemberOption[] = useMemo(
+    () => members.map((m: any) => ({
+      id: m.memberId || m.id,
+      firstName: m.firstName,
+      lastName: m.lastName,
+      avatar: m.avatar ?? null,
+    })),
+    [members]
+  )
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const runAndRefresh = useCallback(async (fn: () => Promise<any>) => {
+    setBusy(true)
+    try {
+      await fn()
+      onRefresh()
+    } finally {
+      setBusy(false)
+    }
+  }, [onRefresh])
+
+  const handleCreateTaskList = useCallback((name: string) => {
+    runAndRefresh(() => apiRequest(`/api/v1/projects/${typeKey}/${projectId}/task-lists`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }))
+    setTaskListModal(null)
+  }, [runAndRefresh, typeKey, projectId])
+
+  const handleUpdateTaskList = useCallback((id: string, name: string) => {
+    runAndRefresh(() => apiRequest(`/api/v1/task-lists/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    }))
+    setTaskListModal(null)
+  }, [runAndRefresh])
+
+  const handleDeleteTaskList = useCallback((id: string) => {
+    runAndRefresh(() => apiRequest(`/api/v1/task-lists/${id}`, { method: 'DELETE' }))
+  }, [runAndRefresh])
+
+  const handleToggleTask = useCallback((taskId: string) => {
+    runAndRefresh(() => apiRequest(`/api/v1/tasks/${taskId}/toggle`, { method: 'PATCH' }))
+  }, [runAndRefresh])
+
+  const handleDeleteTask = useCallback((taskId: string) => {
+    runAndRefresh(() => apiRequest(`/api/v1/tasks/${taskId}`, { method: 'DELETE' }))
+  }, [runAndRefresh])
+
+  const handleSubmitTask = useCallback((values: any) => {
+    if (!taskModal) return
+    if (taskModal.task) {
+      runAndRefresh(() => apiRequest(`/api/v1/tasks/${taskModal.task!.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(values),
+      }))
+    } else {
+      runAndRefresh(() => apiRequest(`/api/v1/task-lists/${taskModal.taskListId}/tasks`, {
+        method: 'POST',
+        body: JSON.stringify(values),
+      }))
+    }
+    setTaskModal(null)
+  }, [runAndRefresh, taskModal])
+
+  const handleReorderTasks = useCallback(async (taskListId: string, orderedIds: string[]) => {
+    await apiRequest(`/api/v1/task-lists/${taskListId}/tasks/reorder`, {
+      method: 'PATCH',
+      body: JSON.stringify({ task_ids: orderedIds }),
+    })
+    onRefresh()
+  }, [onRefresh])
+
+  const handleReorderLists = useCallback(async (orderedIds: string[]) => {
+    // Optimistic
+    const next = orderedIds
+      .map(id => localLists.find(tl => tl.id === id))
+      .filter(Boolean) as TaskListData[]
+    setLocalLists(next)
+    // Persist by setting position for each list via PATCH /task-lists/:id
+    await Promise.all(
+      orderedIds.map((id, i) =>
+        apiRequest(`/api/v1/task-lists/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ position: i }),
+        })
+      )
+    )
+    onRefresh()
+  }, [localLists, onRefresh])
+
+  return (
+    <div className="rounded-xl border border-stone-200/80 bg-white p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-stone-700 flex items-center gap-2">
+          <ListTodo className="w-4 h-4" style={{ color: accent }} />
+          Tâches
+        </h3>
+        <button
+          type="button"
+          onClick={() => setTaskListModal({})}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+          style={{ backgroundColor: `${accent}14`, color: accent }}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Nouvelle liste
+        </button>
+      </div>
+
+      {localLists.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-stone-200 py-10 flex flex-col items-center justify-center">
+          <p className="text-sm text-stone-500 mb-2">Aucune tâche pour ce projet</p>
+          <button
+            type="button"
+            onClick={() => setTaskListModal({})}
+            className="text-sm font-medium hover:underline"
+            style={{ color: accent }}
+          >
+            Créer une liste de tâches
+          </button>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(event: DragEndEvent) => {
+            const { active, over } = event
+            if (!over || active.id === over.id) return
+            const oldIndex = localLists.findIndex(tl => tl.id === String(active.id))
+            const newIndex = localLists.findIndex(tl => tl.id === String(over.id))
+            if (oldIndex === -1 || newIndex === -1) return
+            const reordered = arrayMove(localLists, oldIndex, newIndex)
+            setLocalLists(reordered)
+            handleReorderLists(reordered.map(tl => tl.id))
+          }}
+        >
+          <SortableContext
+            items={localLists.map(tl => tl.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-3">
+              {localLists.map(tl => (
+                <SortableTaskListBlock
+                  key={tl.id}
+                  id={tl.id}
+                  name={tl.name}
+                  tasks={tl.tasks}
+                  onToggleTask={handleToggleTask}
+                  onEditTask={task => setTaskModal({ taskListId: tl.id, task })}
+                  onDeleteTask={handleDeleteTask}
+                  onAddTask={taskListId => setTaskModal({ taskListId })}
+                  onEditList={(id, name) => setTaskListModal({ id, name })}
+                  onDeleteList={handleDeleteTaskList}
+                  onReorderTasks={handleReorderTasks}
+                  busy={busy}
+                  accentColor={accent}
+                  members={memberOptions}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      {taskListModal && (
+        <TaskListForm
+          initialName={taskListModal.name}
+          onSubmit={(name: string) => {
+            if (taskListModal.id) handleUpdateTaskList(taskListModal.id, name)
+            else handleCreateTaskList(name)
+          }}
+          onClose={() => setTaskListModal(null)}
+          busy={busy}
+          accentColor={accent}
+        />
+      )}
+
+      {taskModal && (
+        <TaskForm
+          task={taskModal.task}
+          members={memberOptions}
+          onSubmit={handleSubmitTask}
+          onClose={() => setTaskModal(null)}
+          busy={busy}
+          accentColor={accent}
+        />
+      )}
     </div>
   )
 }
