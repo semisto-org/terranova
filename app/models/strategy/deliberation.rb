@@ -11,6 +11,8 @@ module Strategy
     has_many :proposals, class_name: "Strategy::Proposal", foreign_key: :deliberation_id, dependent: :destroy
     has_many :comments, class_name: "Strategy::DeliberationComment", foreign_key: :deliberation_id, dependent: :destroy
 
+    has_many_attached :attachments
+
     validates :title, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
 
@@ -50,6 +52,10 @@ module Strategy
       status == "draft" && proposals.any?
     end
 
+    def can_manage_attachments?
+      %w[draft open].include?(status)
+    end
+
     def discussion_deadline
       raise "opened_at is not set" unless opened_at
       opened_at + 15.days
@@ -80,7 +86,16 @@ module Strategy
         context: context,
         outcome: outcome,
         proposals: proposals.includes(:author, reactions: :member).order(:created_at).map(&:as_json_full),
-        commentsByPhase: comments_grouped_by_phase
+        commentsByPhase: comments_grouped_by_phase,
+        attachments: attachments.map { |a|
+          {
+            id: a.id,
+            filename: a.filename.to_s,
+            url: Rails.application.routes.url_helpers.rails_blob_path(a, only_path: true),
+            contentType: a.content_type,
+            byteSize: a.byte_size
+          }
+        }
       )
     end
 

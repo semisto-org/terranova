@@ -641,6 +641,8 @@ Rails.application.routes.draw do
       get    "strategy/deliberations/:id/comments",  to: "strategy/deliberations#comments"
       post   "strategy/deliberations/:id/comments",  to: "strategy/deliberations#create_comment"
       delete "strategy/deliberation-comments/:id",   to: "strategy/deliberations#destroy_comment"
+      post   "strategy/deliberations/:id/attachments",                to: "strategy/deliberations#create_attachment"
+      delete "strategy/deliberations/:id/attachments/:attachment_id", to: "strategy/deliberations#destroy_attachment"
 
       get "strategy/frameworks", to: "strategy/frameworks#index"
       get "strategy/frameworks/:id", to: "strategy/frameworks#show"

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { usePage } from '@inertiajs/react'
 import { useUrlState } from '@/hooks/useUrlState'
 import { apiRequest } from '../../lib/api'
 import {
   MessageCircle, Search, Plus, Check, XCircle, ChevronLeft, Edit3, Trash2,
-  FileText, Clock, PenLine, Vote, CheckCircle2, Send, X
+  FileText, Clock, PenLine, Vote, CheckCircle2, Send, X, Paperclip, Upload, Loader2
 } from 'lucide-react'
 import SimpleEditor from '../../components/SimpleEditor'
 
@@ -318,6 +318,131 @@ function PhaseBar({ delib, authMemberId, onPublish }) {
   )
 }
 
+function formatByteSize(bytes) {
+  if (bytes == null) return ''
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+}
+
+function AttachmentsSection({ delib, canManage, onChanged }) {
+  const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState([]) // [{ name, error }]
+  const attachments = delib.attachments || []
+
+  if (!canManage && attachments.length === 0) return null
+
+  const handleSelect = () => fileInputRef.current?.click()
+
+  const handleFiles = async (e) => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (!files.length) return
+
+    for (const file of files) {
+      const token = `${file.name}-${Date.now()}-${Math.random()}`
+      setUploading(prev => [...prev, { token, name: file.name }])
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        await apiRequest(`/api/v1/strategy/deliberations/${delib.id}/attachments`, {
+          method: 'POST',
+          body: fd,
+        })
+        setUploading(prev => prev.filter(u => u.token !== token))
+      } catch (err) {
+        setUploading(prev => prev.map(u => u.token === token ? { ...u, error: err.message } : u))
+      }
+    }
+    onChanged()
+  }
+
+  const handleDelete = async (attachment) => {
+    if (!window.confirm(`Supprimer le document « ${attachment.filename} » ?`)) return
+    await apiRequest(`/api/v1/strategy/deliberations/${delib.id}/attachments/${attachment.id}`, { method: 'DELETE' })
+    onChanged()
+  }
+
+  return (
+    <div className="mt-6 pt-4 border-t border-stone-100">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+          <Paperclip className="w-3.5 h-3.5" /> Pièces jointes
+          {attachments.length > 0 && <span className="text-stone-400">({attachments.length})</span>}
+        </h3>
+        {canManage && (
+          <button
+            type="button"
+            onClick={handleSelect}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50"
+          >
+            <Upload className="w-3.5 h-3.5" /> Ajouter
+          </button>
+        )}
+        <input ref={fileInputRef} type="file" multiple hidden onChange={handleFiles} />
+      </div>
+
+      {attachments.length === 0 && canManage && (
+        <p className="text-xs text-stone-400">
+          Ajoute des documents en annexe (PDF, images, tableurs...). Les membres pourront les télécharger.
+        </p>
+      )}
+
+      {attachments.length > 0 && (
+        <ul className="space-y-1">
+          {attachments.map(a => (
+            <li key={a.id} className="flex items-center gap-2 group">
+              <a
+                href={a.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 min-w-0"
+              >
+                <Paperclip className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{a.filename}</span>
+              </a>
+              {a.byteSize != null && (
+                <span className="text-[11px] text-stone-400 shrink-0">{formatByteSize(a.byteSize)}</span>
+              )}
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(a)}
+                  className="ml-auto p-1 rounded hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Supprimer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {uploading.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {uploading.map(u => (
+            <li key={u.token} className="flex items-center gap-2 text-xs text-stone-500">
+              {u.error ? (
+                <>
+                  <XCircle className="w-3.5 h-3.5 text-red-500" />
+                  <span className="truncate">{u.name}</span>
+                  <span className="text-red-600">{u.error}</span>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span className="truncate">{u.name}</span>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
   const [delib, setDelib] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -485,6 +610,15 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
             <p className="text-xs text-stone-400">Aucun contexte renseigné. <button type="button" onClick={() => onEdit(delib)} className="text-blue-600 hover:underline">Modifie la délibération</button> pour ajouter du contexte et aider les membres à comprendre le sujet.</p>
           </div>
         )}
+
+        <AttachmentsSection
+          delib={delib}
+          canManage={
+            String(delib.createdById) === String(authMemberId) &&
+            ['draft', 'open'].includes(delib.status)
+          }
+          onChanged={() => load({ preserveScroll: true })}
+        />
       </div>
 
       {/* Outcome (if decided) */}

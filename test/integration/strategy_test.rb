@@ -351,6 +351,118 @@ class StrategyTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  # ─── Attachments ───
+
+  def sample_file(name: 'annexe.txt', content: 'Hello annex')
+    Rack::Test::UploadedFile.new(
+      StringIO.new(content),
+      'text/plain',
+      true,
+      original_filename: name
+    )
+  end
+
+  def post_attachment(delib_id, file: sample_file)
+    post "/api/v1/strategy/deliberations/#{delib_id}/attachments",
+      params: { file: file }
+  end
+
+  test 'author can upload attachment in draft phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    post_attachment(delib_id)
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal 'annexe.txt', body['attachment']['filename']
+    assert body['attachment']['id'].present?
+    assert body['attachment']['url'].present?
+
+    # Attachment exposed in as_json_full
+    get "/api/v1/strategy/deliberations/#{delib_id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body['deliberation']['attachments'].size
+    assert_equal 'annexe.txt', body['deliberation']['attachments'][0]['filename']
+  end
+
+  test 'author can upload attachment in open (discussion) phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+
+    post_attachment(delib_id)
+    assert_response :created
+  end
+
+  test 'attachment upload rejected in voting phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    delib = Strategy::Deliberation.create!(title: 'Sujet', created_by_id: author.id, status: 'voting')
+    post_attachment(delib.id)
+    assert_response :unprocessable_entity
+  end
+
+  test 'non-author cannot upload attachment' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    other  = ensure_member(email: "other@test.local",  membership_type: "effective")
+
+    login_as(author)
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+
+    login_as(other)
+    post_attachment(delib_id)
+    assert_response :forbidden
+  end
+
+  test 'author can delete attachment in open phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    post '/api/v1/strategy/deliberations', params: { title: 'Sujet' }, as: :json
+    delib_id = JSON.parse(response.body)['deliberation']['id']
+    post "/api/v1/strategy/deliberations/#{delib_id}/proposals",
+      params: { content: '<p>v1</p>' }, as: :json
+    patch "/api/v1/strategy/deliberations/#{delib_id}/publish", as: :json
+
+    post_attachment(delib_id)
+    attachment_id = JSON.parse(response.body)['attachment']['id']
+
+    delete "/api/v1/strategy/deliberations/#{delib_id}/attachments/#{attachment_id}"
+    assert_response :no_content
+
+    get "/api/v1/strategy/deliberations/#{delib_id}", as: :json
+    assert_equal 0, JSON.parse(response.body)['deliberation']['attachments'].size
+  end
+
+  test 'attachment delete rejected in voting phase' do
+    author = ensure_member(email: "author@test.local", membership_type: "effective", admin: true)
+    login_as(author)
+
+    # Attach while in draft, then move to voting
+    delib = Strategy::Deliberation.create!(title: 'Sujet', created_by_id: author.id, status: 'draft')
+    delib.attachments.attach(
+      io: StringIO.new('content'),
+      filename: 'annexe.txt',
+      content_type: 'text/plain'
+    )
+    attachment_id = delib.attachments.attachments.first.id
+    delib.update!(status: 'voting')
+
+    delete "/api/v1/strategy/deliberations/#{delib.id}/attachments/#{attachment_id}"
+    assert_response :unprocessable_entity
+  end
+
   # ─── Frameworks ───
 
   test 'frameworks CRUD with deliberation link' do

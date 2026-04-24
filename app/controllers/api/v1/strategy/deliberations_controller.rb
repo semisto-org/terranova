@@ -189,7 +189,50 @@ module Api
           head :no_content
         end
 
+        # Attachments
+        def create_attachment
+          deliberation = ::Strategy::Deliberation.find(params[:id])
+          return forbid("Seul l'auteur peut ajouter un document") unless owner?(deliberation)
+          unless deliberation.can_manage_attachments?
+            return render json: { error: "Les documents ne peuvent être modifiés qu'en brouillon ou en discussion" }, status: :unprocessable_entity
+          end
+
+          file = params[:file]
+          if file.blank?
+            return render json: { error: "Fichier manquant" }, status: :unprocessable_entity
+          end
+
+          existing_ids = deliberation.attachments.attachments.pluck(:id)
+          deliberation.attachments.attach(file)
+          attachment = deliberation.attachments.attachments.where.not(id: existing_ids).order(:id).last
+          render json: { attachment: serialize_attachment(attachment) }, status: :created
+        end
+
+        def destroy_attachment
+          deliberation = ::Strategy::Deliberation.find(params[:id])
+          return forbid("Seul l'auteur peut supprimer un document") unless owner?(deliberation)
+          unless deliberation.can_manage_attachments?
+            return render json: { error: "Les documents ne peuvent être modifiés qu'en brouillon ou en discussion" }, status: :unprocessable_entity
+          end
+
+          attachment = deliberation.attachments.attachments.find_by(id: params[:attachment_id])
+          return render json: { error: "Document introuvable" }, status: :not_found unless attachment
+
+          attachment.purge
+          head :no_content
+        end
+
         private
+
+        def serialize_attachment(attachment)
+          {
+            id: attachment.id,
+            filename: attachment.filename.to_s,
+            url: Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true),
+            contentType: attachment.content_type,
+            byteSize: attachment.byte_size
+          }
+        end
 
         def ensure_effective_member
           return if current_member&.can_access_strategy?
