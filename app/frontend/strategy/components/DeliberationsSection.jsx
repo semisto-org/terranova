@@ -948,17 +948,19 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
       )}
 
       {editingProposalId && (
-        <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center z-50">
-          <div className="w-full max-w-xl bg-white rounded-xl p-6 shadow-xl">
-            <h2 className="text-sm font-semibold text-stone-900 mb-3">Amender ma proposition</h2>
-            <form onSubmit={handleAmendProposal}>
-              <SimpleEditor
-                content={editingProposalContent}
-                onUpdate={setEditingProposalContent}
-                placeholder="Nouvelle version de la proposition..."
-                minHeight="200px"
-              />
-              <div className="flex justify-end gap-2 mt-3">
+        <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-xl max-h-[90vh] bg-white rounded-xl shadow-xl flex flex-col overflow-hidden">
+            <h2 className="text-sm font-semibold text-stone-900 px-6 pt-6 pb-3 shrink-0">Amender ma proposition</h2>
+            <form onSubmit={handleAmendProposal} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-y-auto px-6">
+                <SimpleEditor
+                  content={editingProposalContent}
+                  onUpdate={setEditingProposalContent}
+                  placeholder="Nouvelle version de la proposition..."
+                  minHeight="200px"
+                />
+              </div>
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-stone-100 shrink-0">
                 <button type="button" onClick={() => { setEditingProposalId(null); setEditingProposalContent('') }}
                   className="px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-100 rounded-lg">Annuler</button>
                 <button type="submit" disabled={!editingProposalContent.trim()}
