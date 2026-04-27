@@ -18,6 +18,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { ProjectableQuickEditModal } from '../../components/shared/ProjectableQuickEditModal'
+import type { ProjectableValue } from '../../components/shared/ProjectableCombobox'
 
 export interface LinkedBankTransaction {
   reconciliationId: string
@@ -122,6 +124,12 @@ const POLE_BG_COLOR: Record<string, string> = {
   academy: '#f5dad3',
   nursery: '#fdf0d6',
 }
+const PROJECTABLE_TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
+  PoleProject:        { color: '#5B5781', bg: '#e8e5ed', label: 'Lab' },
+  'Academy::Training': { color: '#B01A19', bg: '#f5dad3', label: 'Academy' },
+  'Design::Project':  { color: '#6F7900', bg: '#eef0e0', label: 'Design' },
+  Guild:              { color: '#78716C', bg: '#e7e5e4', label: 'Guilde' },
+}
 const fmtMoney = (value: number) => `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
 const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleDateString('fr-FR') : '—')
 
@@ -192,6 +200,7 @@ export function ExpenseList({
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [drawerExpenseId, setDrawerExpenseId] = useState<string | null>(null)
+  const [quickEdit, setQuickEdit] = useState<{ expense: ExpenseItem } | null>(null)
 
   const statuses = useMemo(() => Array.from(new Set(expenses.map((e) => e.status))), [expenses])
   const poles = useMemo(() => Array.from(new Set(expenses.flatMap((e) => e.poles || []))), [expenses])
@@ -496,6 +505,9 @@ export function ExpenseList({
                   <SortHeader label="Date" dir={sortDir('invoiceDate')} onClick={() => cycleSort('invoiceDate')} />
                   <SortHeader label="Fournisseur · Libellé" dir={sortDir('supplier')} onClick={() => cycleSort('supplier')} />
                   <SortHeader label="Catégorie" dir={sortDir('category')} onClick={() => cycleSort('category')} />
+                  <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em]">
+                    Projet
+                  </th>
                   <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em]">Pôle</th>
                   <SortHeader label="Statut" dir={sortDir('status')} onClick={() => cycleSort('status')} />
                   <SortHeader label="HT" right dir={sortDir('amountExclVat')} onClick={() => cycleSort('amountExclVat')} />
@@ -567,6 +579,47 @@ export function ExpenseList({
                           <option value="">— Non catégorisée</option>
                           {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                         </select>
+                      </td>
+                      <td className={`px-3 ${rowPad}`} onClick={(ev) => ev.stopPropagation()}>
+                        {(() => {
+                          const allocCount = e.projectAllocations?.length ?? 0
+                          if (allocCount > 0) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => onEditExpense(e)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors"
+                                title="Modifier les allocations dans le formulaire complet"
+                              >
+                                {allocCount} projet{allocCount > 1 ? 's' : ''}
+                              </button>
+                            )
+                          }
+                          const style = e.projectableType ? PROJECTABLE_TYPE_STYLE[e.projectableType] : null
+                          if (e.projectableType && e.projectableId && style) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setQuickEdit({ expense: e })}
+                                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium hover:opacity-80 transition-opacity max-w-[180px]"
+                                style={{ color: style.color, backgroundColor: style.bg }}
+                                title="Cliquer pour changer le projet lié"
+                              >
+                                <span className="truncate">{e.projectName || '—'}</span>
+                              </button>
+                            )
+                          }
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setQuickEdit({ expense: e })}
+                              className="text-[11px] text-stone-400 hover:text-stone-600 italic underline-offset-2 hover:underline"
+                              title="Lier cette dépense à un projet"
+                            >
+                              + Lier un projet
+                            </button>
+                          )
+                        })()}
                       </td>
                       <td className={`px-3 ${rowPad}`}>
                         {(e.poles || []).length > 0 ? (
@@ -688,6 +741,28 @@ export function ExpenseList({
           } : undefined}
           hasPrev={drawerIndex > 0}
           hasNext={drawerIndex < sorted.length - 1}
+        />
+      )}
+
+      {quickEdit && (
+        <ProjectableQuickEditModal
+          entity={{ type: 'expense', id: quickEdit.expense.id, label: quickEdit.expense.name || quickEdit.expense.supplier }}
+          currentProjectable={
+            quickEdit.expense.projectableType && quickEdit.expense.projectableId
+              ? { type: quickEdit.expense.projectableType as ProjectableValue['type'], id: quickEdit.expense.projectableId }
+              : null
+          }
+          onSaved={(next) => {
+            if (onInlineUpdate) {
+              onInlineUpdate(quickEdit.expense.id, {
+                projectableType: next?.type ?? null,
+                projectableId: next?.id ?? null,
+                projectName: next ? quickEdit.expense.projectName : null,
+              } as Partial<ExpenseItem>)
+            }
+            setQuickEdit(null)
+          }}
+          onCancel={() => setQuickEdit(null)}
         />
       )}
     </div>
