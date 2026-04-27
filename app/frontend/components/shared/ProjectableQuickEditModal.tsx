@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { apiRequest } from '../../lib/api'
 import { ProjectableCombobox, type ProjectableValue } from './ProjectableCombobox'
@@ -19,9 +19,11 @@ export function ProjectableQuickEditModal({ entity, currentProjectable, onSaved,
     ? `/api/v1/lab/expenses/${entity.id}`
     : `/api/v1/lab/revenues/${entity.id}`
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     setBusy(true)
     setError(null)
+    // onSaved unmounts this modal, so no need to reset busy on success.
     try {
       await apiRequest(endpoint, {
         method: 'PATCH',
@@ -36,6 +38,14 @@ export function ProjectableQuickEditModal({ entity, currentProjectable, onSaved,
       setBusy(false)
     }
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !busy) onCancel()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [busy, onCancel])
 
   return (
     <>
@@ -68,37 +78,38 @@ export function ProjectableQuickEditModal({ entity, currentProjectable, onSaved,
             </button>
           </header>
 
-          <div className="px-6 py-5 space-y-3">
-            <label className="block text-[11px] uppercase tracking-[0.12em] text-stone-500 font-medium">
-              Projet concerné
-            </label>
-            <ProjectableCombobox
-              value={value}
-              onChange={setValue}
-              placeholder="Aucun projet (global)"
-              disabled={busy}
-            />
-            {error && <p className="text-xs text-red-600">{error}</p>}
-          </div>
+          <form onSubmit={handleSave}>
+            <div className="px-6 py-5 space-y-3">
+              <label className="block text-[11px] uppercase tracking-[0.12em] text-stone-500 font-medium">
+                Projet concerné
+              </label>
+              <ProjectableCombobox
+                value={value}
+                onChange={setValue}
+                placeholder="Aucun projet (global)"
+                disabled={busy}
+              />
+              {error && <p className="text-xs text-red-600">{error}</p>}
+            </div>
 
-          <div className="px-6 py-4 border-t border-stone-100 bg-stone-50/40 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={busy}
-              className="px-4 py-2 rounded-lg font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-50 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={busy}
-              className="rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white hover:bg-[#5B5781] disabled:opacity-60 transition-colors"
-            >
-              {busy ? 'Enregistrement…' : 'Enregistrer'}
-            </button>
-          </div>
+            <div className="px-6 py-4 border-t border-stone-100 bg-stone-50/40 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={busy}
+                className="px-4 py-2 rounded-lg font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white hover:bg-[#5B5781] disabled:opacity-60 transition-colors"
+              >
+                {busy ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </>
