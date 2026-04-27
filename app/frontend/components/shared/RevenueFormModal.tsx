@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Calendar, Check, ChevronDown, ChevronsUpDown, CreditCard, FileText, Link2, Search, StickyNote, User, X } from 'lucide-react'
-import type { RevenueItem } from '../../lab-management/components/RevenueList'
+import { Calendar, Check, ChevronDown, ChevronsUpDown, CreditCard, FileText, Image as ImageIcon, Link2, Paperclip, Search, Sparkles, StickyNote, Trash2, Upload, User, X } from 'lucide-react'
+import type { RevenueDocument, RevenueItem } from '../../lab-management/components/RevenueList'
+import { ProjectableCombobox, type ProjectableValue } from './ProjectableCombobox'
 
 // Shared inputs — stripped-back editorial style matching the new Dépenses ledger
 const inputBase =
@@ -72,17 +73,26 @@ interface OrganizationOption {
   vatSubject?: boolean
 }
 
+interface CreatedContact {
+  id: string
+  name?: string
+  contactType?: string
+  contact_type?: string
+}
+
 interface RevenueFormModalProps {
   revenue: RevenueItem | null
   contacts?: { value: string; label: string }[]
   organizations?: OrganizationOption[]
   defaultOrganizationId?: string | null
-  onSave: (data: Record<string, unknown>) => void
+  onSave: (data: Record<string, unknown>, options?: { documents?: File[] }) => void
   onCancel: () => void
+  onCreateContact?: (input: { name: string; contact_type: string }) => Promise<CreatedContact>
+  onDeleteDocument?: (documentId: string) => Promise<void>
   busy?: boolean
 }
 
-export function RevenueFormModal({ revenue, contacts = [], organizations = [], defaultOrganizationId, onSave, onCancel, busy = false }: RevenueFormModalProps) {
+export function RevenueFormModal({ revenue, contacts: contactsProp = [], organizations = [], defaultOrganizationId, onSave, onCancel, onCreateContact, onDeleteDocument, busy = false }: RevenueFormModalProps) {
   const isEdit = !!revenue
   const today = new Date().toISOString().slice(0, 10)
   const amountInputRef = useRef<HTMLInputElement>(null)
@@ -104,12 +114,29 @@ export function RevenueFormModal({ revenue, contacts = [], organizations = [], d
     vat_exemption: false,
     notes: '',
     organization_id: '',
+    projectable: null as ProjectableValue | null,
   })
 
   const [showPaymentSection, setShowPaymentSection] = useState(false)
   const [showInvoiceSection, setShowInvoiceSection] = useState(false)
   const [showNotesSection, setShowNotesSection] = useState(false)
+  const [showDocumentsSection, setShowDocumentsSection] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Inline contact creation
+  const [contacts, setContacts] = useState(contactsProp)
+  useEffect(() => { setContacts(contactsProp) }, [contactsProp])
+  const [showNewContactForm, setShowNewContactForm] = useState(false)
+  const [newContactName, setNewContactName] = useState('')
+  const [newContactType, setNewContactType] = useState<'person' | 'organization'>('organization')
+  const [creatingContact, setCreatingContact] = useState(false)
+  const [contactError, setContactError] = useState<string | null>(null)
+
+  // Document attachments
+  const [existingDocuments, setExistingDocuments] = useState<RevenueDocument[]>(revenue?.documents ?? [])
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [removingDocId, setRemovingDocId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (revenue) {
@@ -130,17 +157,25 @@ export function RevenueFormModal({ revenue, contacts = [], organizations = [], d
         vat_exemption: Boolean(revenue.vatExemption),
         notes: revenue.notes || '',
         organization_id: (revenue as RevenueItem & { organizationId?: string }).organizationId || defaultOrganizationId || '',
+        projectable: revenue.projectableType && revenue.projectableId
+          ? { type: revenue.projectableType as ProjectableValue['type'], id: revenue.projectableId }
+          : null,
       })
+      setExistingDocuments(revenue.documents ?? [])
+      setPendingFiles([])
       // Auto-expand optional sections that have content
       if (revenue.paymentMethod || revenue.paidAt) setShowPaymentSection(true)
       if (revenue.invoiceUrl || revenue.vatExemption) setShowInvoiceSection(true)
       if (revenue.notes) setShowNotesSection(true)
+      if ((revenue.documents?.length ?? 0) > 0) setShowDocumentsSection(true)
     } else {
       amountInputRef.current?.focus()
       const initialOrg = defaultOrganizationId || organizations[0]?.value || ''
       if (initialOrg) {
         setForm((prev) => ({ ...prev, organization_id: initialOrg }))
       }
+      setExistingDocuments([])
+      setPendingFiles([])
     }
   }, [revenue, defaultOrganizationId, organizations])
 
@@ -206,10 +241,58 @@ export function RevenueFormModal({ revenue, contacts = [], organizations = [], d
       invoice_url: form.invoice_url.trim(),
       vat_exemption: form.vat_exemption,
       notes: form.notes || '',
+      projectable_type: form.projectable?.type ?? null,
+      projectable_id: form.projectable?.id ?? null,
     }
     if (form.contact_id) data.contact_id = form.contact_id
     if (form.organization_id) data.organization_id = form.organization_id
-    onSave(data)
+    onSave(data, { documents: pendingFiles })
+  }
+
+  const handleCreateContact = async () => {
+    if (!newContactName.trim() || !onCreateContact) return
+    setContactError(null)
+    setCreatingContact(true)
+    try {
+      const contact = await onCreateContact({ name: newContactName.trim(), contact_type: newContactType })
+      if (contact?.id) {
+        const label = contact.name ?? newContactName.trim()
+        setContacts((prev) => [...prev, { value: contact.id, label }])
+        update('contact_id', contact.id)
+        setShowNewContactForm(false)
+        setNewContactName('')
+      }
+    } catch (err) {
+      setContactError((err as Error)?.message || 'Impossible de créer le contact')
+    } finally {
+      setCreatingContact(false)
+    }
+  }
+
+  const handleAddFiles = (files: FileList | File[] | null) => {
+    if (!files) return
+    const arr = Array.from(files)
+    if (arr.length === 0) return
+    setPendingFiles((prev) => [...prev, ...arr])
+    setShowDocumentsSection(true)
+  }
+
+  const handleRemovePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleDeleteExistingDocument = async (docId: string) => {
+    if (!onDeleteDocument) return
+    if (!window.confirm('Supprimer ce document ? Cette action est irréversible.')) return
+    setRemovingDocId(docId)
+    try {
+      await onDeleteDocument(docId)
+      setExistingDocuments((prev) => prev.filter((d) => d.id !== docId))
+    } catch (err) {
+      alert((err as Error)?.message || 'Erreur lors de la suppression du document')
+    } finally {
+      setRemovingDocId(null)
+    }
   }
 
   // Cmd/Ctrl + Enter submits from anywhere inside the form
@@ -446,14 +529,45 @@ export function RevenueFormModal({ revenue, contacts = [], organizations = [], d
                     </Field>
 
                     <Field label="Client" icon={<User className="w-3.5 h-3.5" />}>
-                      <ContactCombobox
-                        contacts={contacts}
-                        value={form.contact_id}
-                        onChange={(v) => update('contact_id', v)}
-                      />
+                      {showNewContactForm ? (
+                        <InlineContactForm
+                          name={newContactName}
+                          contactType={newContactType}
+                          onNameChange={setNewContactName}
+                          onTypeChange={setNewContactType}
+                          onCancel={() => { setShowNewContactForm(false); setNewContactName(''); setContactError(null) }}
+                          onSubmit={handleCreateContact}
+                          busy={creatingContact}
+                          error={contactError}
+                        />
+                      ) : (
+                        <ContactCombobox
+                          contacts={contacts}
+                          value={form.contact_id}
+                          onChange={(v) => update('contact_id', v)}
+                          onCreateNew={onCreateContact ? (initialName) => {
+                            setNewContactName(initialName || '')
+                            setShowNewContactForm(true)
+                            update('contact_id', '')
+                          } : undefined}
+                        />
+                      )}
                     </Field>
                   </div>
                 </div>
+              </section>
+
+              {/* PROJET — lien optionnel vers un projectable */}
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium mb-2">
+                  Projet
+                </div>
+                <ProjectableCombobox
+                  value={form.projectable}
+                  onChange={(v) => update('projectable', v)}
+                  placeholder="Sélectionner un projet (optionnel — sinon recette globale)"
+                  accent="#5B5781"
+                />
               </section>
 
               {/* COLLAPSIBLE — PAIEMENT */}
@@ -522,6 +636,29 @@ export function RevenueFormModal({ revenue, contacts = [], organizations = [], d
                     </div>
                   </label>
                 </div>
+              </Collapsible>
+
+              {/* COLLAPSIBLE — DOCUMENTS */}
+              <Collapsible
+                label="Documents"
+                icon={<Paperclip className="w-4 h-4" />}
+                open={showDocumentsSection}
+                onToggle={() => setShowDocumentsSection((v) => !v)}
+                summary={
+                  existingDocuments.length + pendingFiles.length > 0
+                    ? `${existingDocuments.length + pendingFiles.length} document${existingDocuments.length + pendingFiles.length > 1 ? 's' : ''}`
+                    : 'Joindre une facture, une preuve…'
+                }
+              >
+                <DocumentsField
+                  existing={existingDocuments}
+                  pending={pendingFiles}
+                  fileInputRef={fileInputRef}
+                  onAddFiles={handleAddFiles}
+                  onRemovePending={handleRemovePendingFile}
+                  onDeleteExisting={onDeleteDocument ? handleDeleteExistingDocument : undefined}
+                  removingDocId={removingDocId}
+                />
               </Collapsible>
 
               {/* COLLAPSIBLE — NOTES */}
@@ -648,10 +785,12 @@ function ContactCombobox({
   contacts,
   value,
   onChange,
+  onCreateNew,
 }: {
   contacts: { value: string; label: string }[]
   value: string
   onChange: (id: string) => void
+  onCreateNew?: (initialName: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -725,6 +864,18 @@ function ContactCombobox({
   }
 
   if (contacts.length === 0) {
+    if (onCreateNew) {
+      return (
+        <button
+          type="button"
+          onClick={() => onCreateNew('')}
+          className={`${inputBase} text-left flex items-center gap-2 text-[#5B5781] hover:bg-[#5B5781]/5`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          Créer un nouveau client
+        </button>
+      )
+    }
     return (
       <input
         type="text"
@@ -769,6 +920,24 @@ function ContactCombobox({
           </div>
 
           <ul ref={listRef} className="max-h-60 overflow-y-auto py-1">
+            {onCreateNew && (
+              <li className="border-b border-stone-100 mb-1">
+                <button
+                  type="button"
+                  onClick={() => { const q = query.trim(); setOpen(false); onCreateNew(q) }}
+                  className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:bg-stone-50 font-medium text-[#5B5781]"
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  {query.trim() ? (
+                    <>
+                      Créer <span className="font-semibold">« {query.trim()} »</span>
+                    </>
+                  ) : (
+                    'Créer un nouveau client'
+                  )}
+                </button>
+              </li>
+            )}
             {value && (
               <li>
                 <button
@@ -812,6 +981,271 @@ function ContactCombobox({
               50 premiers résultats — affinez votre recherche
             </div>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CONTACT_TYPE_OPTIONS: { value: 'person' | 'organization'; label: string }[] = [
+  { value: 'person', label: 'Personne' },
+  { value: 'organization', label: 'Organisation' },
+]
+
+function InlineContactForm({
+  name,
+  contactType,
+  onNameChange,
+  onTypeChange,
+  onCancel,
+  onSubmit,
+  busy,
+  error,
+}: {
+  name: string
+  contactType: 'person' | 'organization'
+  onNameChange: (v: string) => void
+  onTypeChange: (v: 'person' | 'organization') => void
+  onCancel: () => void
+  onSubmit: () => void
+  busy: boolean
+  error: string | null
+}) {
+  const accent = '#5B5781'
+  return (
+    <div
+      className="relative overflow-hidden rounded-xl border bg-white animate-[slideDown_.2s_ease-out]"
+      style={{ borderColor: `${accent}40` }}
+    >
+      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: accent }} aria-hidden />
+      <div
+        className="absolute -top-4 -right-4 w-20 h-20 rounded-full opacity-[0.05] pointer-events-none"
+        style={{ backgroundColor: accent }}
+        aria-hidden
+      />
+      <div className="relative pl-5 pr-4 pt-4 pb-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5" style={{ color: accent }} />
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] font-semibold" style={{ color: accent }}>
+              Nouveau client
+            </div>
+            <div className="text-[11px] text-stone-500">
+              Créé directement · disponible pour les prochaines recettes
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">{error}</div>
+        )}
+
+        <div>
+          <label className="block text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-1.5">Nom</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            className={inputBase}
+            placeholder="Ex. SPRL Verger des Saveurs"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                if (!busy && name.trim()) onSubmit()
+              }
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-1.5">Type</label>
+          <div className="grid grid-cols-2 gap-2">
+            {CONTACT_TYPE_OPTIONS.map((o) => {
+              const active = contactType === o.value
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => onTypeChange(o.value)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                    active ? 'text-white shadow-sm' : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'
+                  }`}
+                  style={active ? { backgroundColor: accent, borderColor: accent } : undefined}
+                >
+                  {o.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 rounded-lg"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={busy || !name.trim()}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            style={{ backgroundColor: accent }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {busy ? 'Création…' : 'Créer le client'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DocumentsField({
+  existing,
+  pending,
+  fileInputRef,
+  onAddFiles,
+  onRemovePending,
+  onDeleteExisting,
+  removingDocId,
+}: {
+  existing: RevenueDocument[]
+  pending: File[]
+  fileInputRef: React.RefObject<HTMLInputElement | null>
+  onAddFiles: (files: FileList | File[] | null) => void
+  onRemovePending: (index: number) => void
+  onDeleteExisting?: (id: string) => void
+  removingDocId: string | null
+}) {
+  const [isDragging, setIsDragging] = useState(false)
+
+  const fmtSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  }
+
+  const isImage = (type: string | null | undefined) => Boolean(type?.startsWith('image/'))
+  const isPdf = (type: string | null | undefined) => type === 'application/pdf'
+
+  const docIcon = (type: string | null | undefined) => {
+    if (isImage(type)) return <ImageIcon className="w-4 h-4" />
+    if (isPdf(type)) return <FileText className="w-4 h-4" />
+    return <Paperclip className="w-4 h-4" />
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setIsDragging(false)
+          onAddFiles(e.dataTransfer.files)
+        }}
+        className={`rounded-xl border-2 border-dashed transition-colors ${
+          isDragging ? 'border-[#5B5781] bg-[#5B5781]/5' : 'border-stone-300 hover:border-stone-400'
+        }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            onAddFiles(e.target.files)
+            if (e.target) e.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full px-4 py-6 flex flex-col items-center gap-2 text-center"
+        >
+          <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500">
+            <Upload className="w-4 h-4" />
+          </div>
+          <div className="text-sm text-stone-700 font-medium">
+            Glissez vos fichiers ici ou <span className="text-[#5B5781]">cliquez pour parcourir</span>
+          </div>
+          <div className="text-[11px] text-stone-400">PDF, images · plusieurs fichiers possibles</div>
+        </button>
+      </div>
+
+      {/* Existing documents */}
+      {existing.length > 0 && (
+        <ul className="space-y-1.5">
+          {existing.map((doc) => (
+            <li
+              key={doc.id}
+              className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2"
+            >
+              <span className="shrink-0 w-8 h-8 rounded-md bg-stone-100 text-stone-500 flex items-center justify-center">
+                {docIcon(doc.contentType)}
+              </span>
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-0 text-sm text-stone-800 hover:text-[#5B5781] truncate"
+                title={doc.filename}
+              >
+                {doc.filename}
+              </a>
+              <span className="shrink-0 text-[11px] font-mono text-stone-400">{fmtSize(doc.byteSize)}</span>
+              {onDeleteExisting && (
+                <button
+                  type="button"
+                  onClick={() => onDeleteExisting(doc.id)}
+                  disabled={removingDocId === doc.id}
+                  className="shrink-0 p-1.5 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Supprimer ce document"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Pending uploads */}
+      {pending.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium mb-1.5">
+            À téléverser à l'enregistrement
+          </div>
+          <ul className="space-y-1.5">
+            {pending.map((file, idx) => (
+              <li
+                key={`${file.name}-${idx}`}
+                className="flex items-center gap-3 rounded-lg border border-dashed border-[#5B5781]/40 bg-[#5B5781]/[0.04] px-3 py-2"
+              >
+                <span className="shrink-0 w-8 h-8 rounded-md bg-white text-[#5B5781] flex items-center justify-center">
+                  {docIcon(file.type)}
+                </span>
+                <span className="flex-1 min-w-0 text-sm text-stone-800 truncate" title={file.name}>
+                  {file.name}
+                </span>
+                <span className="shrink-0 text-[11px] font-mono text-stone-400">{fmtSize(file.size)}</span>
+                <button
+                  type="button"
+                  onClick={() => onRemovePending(idx)}
+                  className="shrink-0 p-1.5 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  title="Retirer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
