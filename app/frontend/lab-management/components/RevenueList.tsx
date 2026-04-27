@@ -19,6 +19,8 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react'
+import { ProjectableQuickEditModal } from '../../components/shared/ProjectableQuickEditModal'
+import type { ProjectableValue } from '../../components/shared/ProjectableCombobox'
 
 export interface RevenueLinkedBankTransaction {
   reconciliationId: string
@@ -97,6 +99,12 @@ const POLE_LABELS: Record<string, string> = {
   roots: 'Roots',
   lab: 'Lab',
 }
+const PROJECTABLE_TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
+  PoleProject:        { color: '#5B5781', bg: '#e8e5ed', label: 'Lab' },
+  'Academy::Training': { color: '#B01A19', bg: '#f5dad3', label: 'Academy' },
+  'Design::Project':  { color: '#6F7900', bg: '#eef0e0', label: 'Design' },
+  Guild:              { color: '#78716C', bg: '#e7e5e4', label: 'Guilde' },
+}
 
 type Density = 'compact' | 'comfort'
 type SortKey = 'date' | 'contactName' | 'pole' | 'amountExclVat' | 'amount' | 'status' | 'category'
@@ -173,6 +181,7 @@ export function RevenueList({
   const [pageSize, setPageSize] = useState(50)
   const [drawerRevenueId, setDrawerRevenueId] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
+  const [quickEdit, setQuickEdit] = useState<{ revenue: RevenueItem } | null>(null)
 
   const statuses = useMemo(() => Array.from(new Set(revenues.map((r) => r.status).filter(Boolean))), [revenues])
   const poles = useMemo(() => Array.from(new Set(revenues.map((r) => r.pole).filter(Boolean) as string[])), [revenues])
@@ -536,6 +545,9 @@ export function RevenueList({
                   <SortHeader label="Client / source" dir={sortDir('contactName')} onClick={() => cycleSort('contactName')} />
                   <SortHeader label="Pôle" dir={sortDir('pole')} onClick={() => cycleSort('pole')} />
                   <SortHeader label="Catégorie" dir={sortDir('category')} onClick={() => cycleSort('category')} />
+                  <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em]">
+                    Projet
+                  </th>
                   <SortHeader label="Statut" dir={sortDir('status')} onClick={() => cycleSort('status')} />
                   <SortHeader label="HT" right dir={sortDir('amountExclVat')} onClick={() => cycleSort('amountExclVat')} />
                   <SortHeader label="TTC" right dir={sortDir('amount')} onClick={() => cycleSort('amount')} />
@@ -624,6 +636,34 @@ export function RevenueList({
                             </option>
                           ))}
                         </select>
+                      </td>
+                      <td className={`px-3 ${rowPad}`} onClick={(ev) => ev.stopPropagation()}>
+                        {(() => {
+                          const style = r.projectableType ? PROJECTABLE_TYPE_STYLE[r.projectableType] : null
+                          if (r.projectableType && r.projectableId && style) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setQuickEdit({ revenue: r })}
+                                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium hover:opacity-80 transition-opacity max-w-[180px]"
+                                style={{ color: style.color, backgroundColor: style.bg }}
+                                title="Cliquer pour changer le projet lié"
+                              >
+                                <span className="truncate">{r.projectName || '—'}</span>
+                              </button>
+                            )
+                          }
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setQuickEdit({ revenue: r })}
+                              className="text-[11px] text-stone-400 hover:text-stone-600 italic underline-offset-2 hover:underline"
+                              title="Lier cette recette à un projet"
+                            >
+                              + Lier un projet
+                            </button>
+                          )
+                        })()}
                       </td>
                       <td className={`px-3 ${rowPad}`} onClick={(ev) => ev.stopPropagation()}>
                         <div className="relative inline-flex">
@@ -749,6 +789,26 @@ export function RevenueList({
           onEdit={() => onEditRevenue(drawerRevenue)}
           hasPrev={drawerIndex > 0}
           hasNext={drawerIndex < sorted.length - 1}
+        />
+      )}
+
+      {quickEdit && (
+        <ProjectableQuickEditModal
+          entity={{ type: 'revenue', id: quickEdit.revenue.id, label: quickEdit.revenue.label || quickEdit.revenue.description }}
+          currentProjectable={
+            quickEdit.revenue.projectableType && quickEdit.revenue.projectableId
+              ? { type: quickEdit.revenue.projectableType as ProjectableValue['type'], id: quickEdit.revenue.projectableId }
+              : null
+          }
+          onSaved={(next) => {
+            patchRevenue(quickEdit.revenue.id, {
+              projectableType: next?.type ?? null,
+              projectableId: next?.id ?? null,
+              projectName: next ? quickEdit.revenue.projectName : null,
+            } as Partial<RevenueItem>)
+            setQuickEdit(null)
+          }}
+          onCancel={() => setQuickEdit(null)}
         />
       )}
     </div>
