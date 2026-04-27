@@ -38,6 +38,18 @@ const GROUPS: { typeKey: ProjectableTypeKey; label: string; color: string; bg: s
   { typeKey: 'guild',          label: 'Guildes',       color: '#78716C', bg: '#e7e5e4' },
 ]
 
+// Same color palette as GROUPS, but indexed by Ruby class name and with shorter
+// labels for compact pill display in lists (Revenue, Expense, etc.). Typed as
+// Record<string, …> so call sites that index with `string | null` compile
+// without changes — the dropdown header in this component continues to use the
+// longer GROUPS labels.
+export const PROJECTABLE_TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
+  PoleProject:        { color: '#5B5781', bg: '#e8e5ed', label: 'Lab' },
+  'Academy::Training': { color: '#B01A19', bg: '#f5dad3', label: 'Academy' },
+  'Design::Project':  { color: '#6F7900', bg: '#eef0e0', label: 'Design' },
+  Guild:              { color: '#78716C', bg: '#e7e5e4', label: 'Guilde' },
+}
+
 const normalize = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
 

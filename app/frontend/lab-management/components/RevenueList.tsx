@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react'
 import { ProjectableQuickEditModal } from '../../components/shared/ProjectableQuickEditModal'
-import type { ProjectableValue } from '../../components/shared/ProjectableCombobox'
+import { PROJECTABLE_TYPE_STYLE, type ProjectableValue } from '../../components/shared/ProjectableCombobox'
 
 export interface RevenueLinkedBankTransaction {
   reconciliationId: string
@@ -99,13 +99,6 @@ const POLE_LABELS: Record<string, string> = {
   roots: 'Roots',
   lab: 'Lab',
 }
-const PROJECTABLE_TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
-  PoleProject:        { color: '#5B5781', bg: '#e8e5ed', label: 'Lab' },
-  'Academy::Training': { color: '#B01A19', bg: '#f5dad3', label: 'Academy' },
-  'Design::Project':  { color: '#6F7900', bg: '#eef0e0', label: 'Design' },
-  Guild:              { color: '#78716C', bg: '#e7e5e4', label: 'Guilde' },
-}
-
 type Density = 'compact' | 'comfort'
 type SortKey = 'date' | 'contactName' | 'pole' | 'amountExclVat' | 'amount' | 'status' | 'category'
 

@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import { ProjectableQuickEditModal } from '../../components/shared/ProjectableQuickEditModal'
-import type { ProjectableValue } from '../../components/shared/ProjectableCombobox'
+import { PROJECTABLE_TYPE_STYLE, type ProjectableValue } from '../../components/shared/ProjectableCombobox'
 
 export interface LinkedBankTransaction {
   reconciliationId: string
@@ -123,12 +123,6 @@ const POLE_BG_COLOR: Record<string, string> = {
   design: '#eef0e0',
   academy: '#f5dad3',
   nursery: '#fdf0d6',
-}
-const PROJECTABLE_TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
-  PoleProject:        { color: '#5B5781', bg: '#e8e5ed', label: 'Lab' },
-  'Academy::Training': { color: '#B01A19', bg: '#f5dad3', label: 'Academy' },
-  'Design::Project':  { color: '#6F7900', bg: '#eef0e0', label: 'Design' },
-  Guild:              { color: '#78716C', bg: '#e7e5e4', label: 'Guilde' },
 }
 const fmtMoney = (value: number) => `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
 const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleDateString('fr-FR') : '—')
