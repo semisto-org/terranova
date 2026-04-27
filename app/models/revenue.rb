@@ -7,6 +7,7 @@ class Revenue < ApplicationRecord
   STATUSES = %w[draft confirmed received].freeze
 
   has_many :bank_reconciliations, as: :reconcilable, class_name: "BankReconciliation", dependent: :destroy
+  has_many_attached :documents
 
   belongs_to :contact, optional: true
   belongs_to :projectable, polymorphic: true, optional: true

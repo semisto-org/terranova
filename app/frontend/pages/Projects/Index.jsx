@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { usePage } from '@inertiajs/react'
+import { usePage, router } from '@inertiajs/react'
 import { useShellNav } from '@/components/shell/ShellContext'
 import { useUrlState, useUrlStatePush } from '@/hooks/useUrlState'
 import { apiRequest } from '@/lib/api'
 import ProjectBoard from './components/ProjectBoard'
 import ProjectDetail from './components/ProjectDetail'
 
-const SECTION_TABS = [
-  { id: 'board', label: 'Vue d\u2019ensemble' },
-  { id: 'timesheets', label: 'Timesheets' },
-  { id: 'finances', label: 'Finances' },
+const LAB_SECTION_TABS = [
+  { id: 'calendar', label: 'Tableau de bord' },
+  { id: 'projects', label: 'Projets' },
+  { id: 'impact', label: 'Impact' },
+  { id: 'deliberations', label: 'Délibérations' },
+  { id: 'cadres', label: 'Gouvernance' },
 ]
 
 export default function ProjectsIndex() {
   const { initialType, initialId } = usePage().props
-  const [tab, setTab] = useUrlState('tab', 'board')
   const [selectedProject, setSelectedProject] = useUrlStatePush('project', null)
 
   // If coming from /projects/:type/:id, open that project
@@ -24,10 +25,19 @@ export default function ProjectsIndex() {
     }
   }, [initialType, initialId])
 
+  const handleSectionChange = useCallback((id) => {
+    if (id === 'projects') return
+    if (id === 'calendar') {
+      router.visit('/')
+    } else {
+      router.visit(`/?tab=${id}`)
+    }
+  }, [])
+
   useShellNav({
-    sections: selectedProject ? [] : SECTION_TABS,
-    activeSection: tab,
-    onSectionChange: setTab,
+    sections: selectedProject ? [] : LAB_SECTION_TABS,
+    activeSection: 'projects',
+    onSectionChange: handleSectionChange,
   })
 
   const [projects, setProjects] = useState([])
@@ -77,15 +87,13 @@ export default function ProjectsIndex() {
 
   return (
     <div className="px-4 py-6 sm:px-8 lg:px-12 max-w-[1400px] mx-auto">
-      {tab === 'board' && (
-        <ProjectBoard
-          projects={projects}
-          loading={loading}
-          error={error}
-          onSelect={handleSelectProject}
-          onRefresh={loadProjects}
-        />
-      )}
+      <ProjectBoard
+        projects={projects}
+        loading={loading}
+        error={error}
+        onSelect={handleSelectProject}
+        onRefresh={loadProjects}
+      />
     </div>
   )
 }

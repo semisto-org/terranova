@@ -280,6 +280,8 @@ Rails.application.routes.draw do
       post "lab/revenues", to: "lab_management#create_revenue"
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
+      post "lab/revenues/:id/documents", to: "lab_management#upload_revenue_documents"
+      delete "lab/revenues/:id/documents/:document_id", to: "lab_management#destroy_revenue_document"
 
       # Cash (virtual bank connections + transfers)
       get "bank/cash_accounts", to: "bank#list_cash_accounts"

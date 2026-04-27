@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link, usePage, router } from '@inertiajs/react'
 
 const POLES = [
-  { id: 'home', label: 'Accueil', path: '/', accent: '#78716C', bg: '#e7e5e4', icon: '/semisto-global.png' },
-  { id: 'projects', label: 'Projets', path: '/projects', accent: '#234766', bg: '#c9d1d9' },
+  { id: 'home', label: 'Semisto Lab', path: '/', accent: '#78716C', bg: '#e7e5e4', icon: '/semisto-global.png' },
   { id: 'design', label: 'Design Studio', path: '/design', accent: '#AFBD00', bg: '#e1e6d8', icon: '/icons/design.png' },
   { id: 'academy', label: 'Academy', path: '/academy', accent: '#B01A19', bg: '#eac7b8', icon: '/icons/academy.png' },
   { id: 'nursery', label: 'Pépinière-école', path: '/nursery', accent: '#EF9B0D', bg: '#fbe6c3', icon: '/icons/nursery.png' },
@@ -19,7 +18,7 @@ const POLES = [
 
 export function getPoleFromPath(pathname) {
   const segment = pathname.split('/').filter(Boolean)[0] || ''
-  if (segment === '') return POLES.find((p) => p.id === 'home')
+  if (segment === '' || segment === 'projects') return POLES.find((p) => p.id === 'home')
   return POLES.find((p) => p.id === segment) || POLES[0]
 }
 

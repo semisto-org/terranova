@@ -1,16 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { Search, X, Briefcase, Compass, GraduationCap, Users } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import type { Timesheet } from '../types'
 
 const HOURS_PRESETS = [0.5, 1, 2, 4, 6, 8]
-
-const LINK_TYPES = [
-  { value: 'design', label: 'Projet de design', color: 'bg-[#AFBD00]/15 text-[#8a9600] border-[#AFBD00]/30' },
-  { value: 'training', label: 'Activité Academy', color: 'bg-[#B01A19]/15 text-[#B01A19] border-[#B01A19]/30' },
-  { value: 'project', label: 'Projet', color: 'bg-[#5B5781]/15 text-[#5B5781] border-[#5B5781]/30' },
-] as const
-
-type LinkType = (typeof LINK_TYPES)[number]['value']
 
 const DESIGN_PHASES = [
   { value: 'offre', label: 'Offre' },
@@ -21,8 +14,56 @@ const DESIGN_PHASES = [
   { value: 'termine', label: 'Autonome' },
 ]
 
+const PROJECT_TYPE_META: Record<
+  string,
+  { label: string; accent: string; bg: string; text: string; border: string; modelClass: string; Icon: typeof Briefcase }
+> = {
+  'lab-project': {
+    label: 'Lab',
+    accent: '#5B5781',
+    bg: 'bg-[#5B5781]/12',
+    text: 'text-[#5B5781]',
+    border: 'border-[#5B5781]/25',
+    modelClass: 'PoleProject',
+    Icon: Briefcase,
+  },
+  'design-project': {
+    label: 'Design',
+    accent: '#AFBD00',
+    bg: 'bg-[#AFBD00]/15',
+    text: 'text-[#7a8500]',
+    border: 'border-[#AFBD00]/30',
+    modelClass: 'Design::Project',
+    Icon: Compass,
+  },
+  training: {
+    label: 'Academy',
+    accent: '#B01A19',
+    bg: 'bg-[#B01A19]/12',
+    text: 'text-[#B01A19]',
+    border: 'border-[#B01A19]/25',
+    modelClass: 'Academy::Training',
+    Icon: GraduationCap,
+  },
+  guild: {
+    label: 'Guild',
+    accent: '#234766',
+    bg: 'bg-[#234766]/12',
+    text: 'text-[#234766]',
+    border: 'border-[#234766]/25',
+    modelClass: 'Guild',
+    Icon: Users,
+  },
+}
+
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
+
+interface ProjectOption {
+  id: string
+  name: string
+  typeKey: string
+}
 
 export interface TimesheetFormValues {
   date: string
@@ -32,9 +73,8 @@ export interface TimesheetFormValues {
   description: string
   travel_km: number
   billed: boolean
-  design_project_id?: string
-  training_id?: string
-  pole_project_id?: string
+  projectable_type?: string
+  projectable_id?: string
 }
 
 export interface TimesheetFormProps {
@@ -42,6 +82,176 @@ export interface TimesheetFormProps {
   onSubmit: (values: TimesheetFormValues | { description: string }) => Promise<boolean | void>
   onCancel: () => void
   busy?: boolean
+}
+
+function ProjectCombobox({
+  projects,
+  loading,
+  selected,
+  onChange,
+}: {
+  projects: ProjectOption[]
+  loading: boolean
+  selected: ProjectOption | null
+  onChange: (p: ProjectOption | null) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return projects.slice(0, 50)
+    return projects
+      .filter((p) => {
+        const meta = PROJECT_TYPE_META[p.typeKey]
+        return (
+          p.name.toLowerCase().includes(q) ||
+          (meta?.label.toLowerCase().includes(q) ?? false)
+        )
+      })
+      .slice(0, 50)
+  }, [projects, query])
+
+  useEffect(() => {
+    setActiveIndex(0)
+  }, [query, open])
+
+  useEffect(() => {
+    if (!open) return
+    const item = listRef.current?.querySelector<HTMLElement>(`[data-idx="${activeIndex}"]`)
+    item?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex, open])
+
+  const commit = (p: ProjectOption | null) => {
+    onChange(p)
+    setQuery('')
+    setOpen(false)
+    inputRef.current?.blur()
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setOpen(true)
+      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter' && open) {
+      e.preventDefault()
+      const pick = filtered[activeIndex]
+      if (pick) commit(pick)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setOpen(false)
+      setQuery('')
+      inputRef.current?.blur()
+    }
+  }
+
+  if (selected) {
+    const meta = PROJECT_TYPE_META[selected.typeKey]
+    const Icon = meta?.Icon ?? Briefcase
+    return (
+      <div
+        className={`flex items-center gap-3 rounded-xl border ${meta?.border ?? 'border-stone-200'} ${meta?.bg ?? 'bg-stone-50'} px-3 py-2.5`}
+      >
+        <span className={`flex items-center justify-center w-8 h-8 rounded-lg ${meta?.bg ?? 'bg-stone-100'} ${meta?.text ?? 'text-stone-600'}`}>
+          <Icon className="w-4 h-4" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-stone-900 truncate">{selected.name}</div>
+          <div className={`text-[11px] font-medium uppercase tracking-wider ${meta?.text ?? 'text-stone-500'}`}>
+            {meta?.label ?? selected.typeKey}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => commit(null)}
+          aria-label="Retirer le projet"
+          className="p-1.5 rounded-lg text-stone-500 hover:bg-white/70 hover:text-stone-800 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 120)}
+          onKeyDown={handleKeyDown}
+          placeholder={loading ? 'Chargement des projets…' : 'Rechercher un projet par nom ou type…'}
+          className={`${inputBase} pl-10`}
+          autoComplete="off"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="project-combobox-listbox"
+        />
+      </div>
+      {open && (
+        <div
+          ref={listRef}
+          id="project-combobox-listbox"
+          role="listbox"
+          className="absolute z-50 mt-1.5 w-full max-h-64 overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg shadow-stone-900/10"
+        >
+          {loading && filtered.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-stone-400">Chargement…</div>
+          )}
+          {!loading && filtered.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-stone-400">
+              Aucun projet ne correspond à « {query} »
+            </div>
+          )}
+          {filtered.map((p, idx) => {
+            const meta = PROJECT_TYPE_META[p.typeKey]
+            const Icon = meta?.Icon ?? Briefcase
+            const isActive = idx === activeIndex
+            return (
+              <button
+                key={`${p.typeKey}-${p.id}`}
+                type="button"
+                role="option"
+                aria-selected={isActive}
+                data-idx={idx}
+                onMouseEnter={() => setActiveIndex(idx)}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  commit(p)
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                  isActive ? 'bg-stone-100' : 'bg-white'
+                }`}
+              >
+                <span className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${meta?.bg ?? 'bg-stone-100'} ${meta?.text ?? 'text-stone-600'}`}>
+                  <Icon className="w-3.5 h-3.5" />
+                </span>
+                <span className="flex-1 min-w-0 text-sm text-stone-800 truncate">{p.name}</span>
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${meta?.bg ?? 'bg-stone-100'} ${meta?.text ?? 'text-stone-500'}`}>
+                  {meta?.label ?? p.typeKey}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TimesheetForm({
@@ -67,17 +277,10 @@ export function TimesheetForm({
   const [description, setDescription] = useState(timesheet?.description ?? '')
   const [travelKm, setTravelKm] = useState(timesheet?.travelKm ?? 0)
 
-  // Link type & related selections
-  const [linkType, setLinkType] = useState<LinkType | null>(null)
-  const [designProjectId, setDesignProjectId] = useState('')
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [projectsLoading, setProjectsLoading] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<ProjectOption | null>(null)
   const [phase, setPhase] = useState('')
-  const [trainingId, setTrainingId] = useState('')
-  const [poleProjectId, setPoleProjectId] = useState('')
-
-  // Data lists
-  const [designProjects, setDesignProjects] = useState<{ id: string; name: string }[]>([])
-  const [trainings, setTrainings] = useState<{ id: string; title: string }[]>([])
-  const [poleProjects, setPoleProjects] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     if (!isEdit) return
@@ -85,47 +288,28 @@ export function TimesheetForm({
     el?.focus()
   }, [isEdit])
 
-  // Fetch data lists when link type changes
   useEffect(() => {
-    if (linkType === 'design' && designProjects.length === 0) {
-      apiRequest('/api/v1/design').then((data) => {
-        if (data?.projects) {
-          setDesignProjects(data.projects.map((p: any) => ({ id: String(p.id), name: p.name })))
-        }
-      }).catch(() => {})
-    }
-    if (linkType === 'training' && trainings.length === 0) {
-      apiRequest('/api/v1/academy').then((data) => {
-        if (data?.trainings) {
-          setTrainings(data.trainings.map((t: any) => ({ id: String(t.id), title: t.title })))
-        }
-      }).catch(() => {})
-    }
-    if (linkType === 'project' && poleProjects.length === 0) {
-      apiRequest('/api/v1/projects').then((data) => {
-        if (data?.items) {
-          setPoleProjects(
-            data.items
-              .filter((p: any) => p.typeKey === 'lab-project')
-              .map((p: any) => ({ id: String(p.id), name: p.name }))
+    if (isEdit) return
+    setProjectsLoading(true)
+    apiRequest('/api/v1/projects')
+      .then((data) => {
+        if (Array.isArray(data?.items)) {
+          setProjects(
+            data.items.map((p: any) => ({
+              id: String(p.id),
+              name: p.name,
+              typeKey: p.typeKey,
+            }))
           )
         }
-      }).catch(() => {})
-    }
-  }, [linkType])
+      })
+      .catch(() => {})
+      .finally(() => setProjectsLoading(false))
+  }, [isEdit])
 
-  const toggleLinkType = (type: LinkType) => {
-    if (linkType === type) {
-      setLinkType(null)
-    } else {
-      setLinkType(type)
-    }
-    // Reset sub-selections when changing type
-    setDesignProjectId('')
-    setPhase('')
-    setTrainingId('')
-    setPoleProjectId('')
-  }
+  useEffect(() => {
+    if (selectedProject?.typeKey !== 'design-project') setPhase('')
+  }, [selectedProject])
 
   const setQuickDate = (daysOffset: number) => {
     const d = new Date()
@@ -143,19 +327,17 @@ export function TimesheetForm({
         date,
         hours,
         mode,
-        phase: linkType === 'design' ? phase : '',
+        phase: selectedProject?.typeKey === 'design-project' ? phase : '',
         description,
         travel_km: travelKm,
         billed: mode === 'billed',
       }
-      if (linkType === 'design' && designProjectId) {
-        values.design_project_id = designProjectId
-      }
-      if (linkType === 'training' && trainingId) {
-        values.training_id = trainingId
-      }
-      if (linkType === 'project' && poleProjectId) {
-        values.pole_project_id = poleProjectId
+      if (selectedProject) {
+        const meta = PROJECT_TYPE_META[selectedProject.typeKey]
+        if (meta) {
+          values.projectable_type = meta.modelClass
+          values.projectable_id = selectedProject.id
+        }
       }
       payload = values
     }
@@ -263,94 +445,34 @@ export function TimesheetForm({
                     onChange={(e) => setHours(parseFloat(e.target.value) || 0)} className={inputBase} />
                 </div>
 
-                {/* Link type */}
+                {/* Project (unified search) */}
                 <div>
                   <span className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                    Lier à (optionnel)
+                    Projet <span className="text-stone-400 normal-case font-normal tracking-normal">(optionnel)</span>
                   </span>
-                  <div className="flex flex-wrap gap-2">
-                    {LINK_TYPES.map((lt) => (
-                      <button key={lt.value} type="button" onClick={() => toggleLinkType(lt.value)}
-                        className={`px-3 py-2 rounded-xl text-sm font-medium border transition-all ${linkType === lt.value ? `${lt.color} ring-2 ring-[#5B5781]/40 ring-offset-2` : 'bg-stone-100 text-stone-600 border-transparent hover:bg-stone-200'}`}>
-                        {lt.label}
-                      </button>
-                    ))}
-                  </div>
+                  <ProjectCombobox
+                    projects={projects}
+                    loading={projectsLoading}
+                    selected={selectedProject}
+                    onChange={setSelectedProject}
+                  />
                 </div>
 
-                {/* Conditional: Design project */}
-                {linkType === 'design' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label htmlFor="timesheet-design-project" className="block text-sm font-medium text-stone-700 mb-1.5">
-                        Projet de design
-                      </label>
-                      <select
-                        id="timesheet-design-project"
-                        value={designProjectId}
-                        onChange={(e) => setDesignProjectId(e.target.value)}
-                        className={inputBase}
-                      >
-                        <option value="">Sélectionner un projet...</option>
-                        {designProjects.map((p) => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="timesheet-phase" className="block text-sm font-medium text-stone-700 mb-1.5">
-                        Phase
-                      </label>
-                      <select
-                        id="timesheet-phase"
-                        value={phase}
-                        onChange={(e) => setPhase(e.target.value)}
-                        className={inputBase}
-                      >
-                        <option value="">Sélectionner une phase...</option>
-                        {DESIGN_PHASES.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Conditional: Training */}
-                {linkType === 'training' && (
+                {/* Conditional: Phase (design projects only) */}
+                {selectedProject?.typeKey === 'design-project' && (
                   <div>
-                    <label htmlFor="timesheet-training" className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Activité Academy
+                    <label htmlFor="timesheet-phase" className="block text-sm font-medium text-stone-700 mb-1.5">
+                      Phase
                     </label>
                     <select
-                      id="timesheet-training"
-                      value={trainingId}
-                      onChange={(e) => setTrainingId(e.target.value)}
+                      id="timesheet-phase"
+                      value={phase}
+                      onChange={(e) => setPhase(e.target.value)}
                       className={inputBase}
                     >
-                      <option value="">Sélectionner une activité...</option>
-                      {trainings.map((t) => (
-                        <option key={t.id} value={t.id}>{t.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Conditional: Pole project */}
-                {linkType === 'project' && (
-                  <div>
-                    <label htmlFor="timesheet-pole-project" className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Projet
-                    </label>
-                    <select
-                      id="timesheet-pole-project"
-                      value={poleProjectId}
-                      onChange={(e) => setPoleProjectId(e.target.value)}
-                      className={inputBase}
-                    >
-                      <option value="">Sélectionner un projet...</option>
-                      {poleProjects.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
+                      <option value="">Sélectionner une phase...</option>
+                      {DESIGN_PHASES.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
                       ))}
                     </select>
                   </div>

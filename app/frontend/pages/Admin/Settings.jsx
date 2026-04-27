@@ -748,11 +748,13 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                     member_id: currentMemberId,
                     date: values.date,
                     hours: Number(values.hours),
-                    payment_type: values.payment_type,
-                    category: values.category,
+                    mode: values.mode,
+                    phase: values.phase,
                     description: values.description,
-                    invoiced: false,
-                    kilometers: Number(values.kilometers || 0),
+                    billed: values.billed,
+                    travel_km: Number(values.travel_km || 0),
+                    projectable_type: values.projectable_type,
+                    projectable_id: values.projectable_id,
                   }),
                 })
               }
@@ -855,8 +857,20 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 const formData = new FormData()
                 Object.entries(body).forEach(([k, v]) => {
                   if (v === null || v === undefined) return
-                  if (Array.isArray(v)) v.forEach((x) => formData.append(`${k}[]`, x))
-                  else formData.append(k, v)
+                  if (Array.isArray(v)) {
+                    v.forEach((x) => {
+                      if (x !== null && typeof x === 'object') {
+                        Object.entries(x).forEach(([nk, nv]) => {
+                          if (nv === null || nv === undefined) return
+                          formData.append(`${k}[][${nk}]`, nv)
+                        })
+                      } else {
+                        formData.append(`${k}[]`, x)
+                      }
+                    })
+                  } else {
+                    formData.append(k, v)
+                  }
                 })
                 if (documentFile instanceof File) formData.append('document', documentFile)
                 const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
@@ -912,14 +926,39 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           contacts={(data?.contacts || []).map((c) => ({ value: c.id, label: c.name }))}
           organizations={organizations.map((o) => ({ value: o.id, label: o.name, vatSubject: o.vatSubject }))}
           defaultOrganizationId={organizations.find((o) => o.isDefault)?.id || null}
-          onSave={async (formData) => {
+          onCreateContact={async ({ name, contact_type }) => {
+            const contact = await apiRequest('/api/v1/lab/contacts', {
+              method: 'POST',
+              body: JSON.stringify({ name, contact_type }),
+            })
+            await loadOverview(false)
+            return { id: contact.id, name: contact.name, contactType: contact.contactType }
+          }}
+          onDeleteDocument={async (documentId) => {
+            const existing = revenueFormModal.revenue
+            if (!existing) return
+            await apiRequest(`/api/v1/lab/revenues/${existing.id}/documents/${documentId}`, { method: 'DELETE' })
+            await loadRevenues()
+          }}
+          onSave={async (payload, options) => {
             setBusy(true)
             try {
               const existing = revenueFormModal.revenue
-              if (existing) {
-                await apiRequest(`/api/v1/lab/revenues/${existing.id}`, { method: 'PATCH', body: JSON.stringify(formData) })
+              const documents = options?.documents || []
+              const url = existing ? `/api/v1/lab/revenues/${existing.id}` : '/api/v1/lab/revenues'
+              const method = existing ? 'PATCH' : 'POST'
+
+              if (documents.length > 0) {
+                const fd = new FormData()
+                Object.entries(payload).forEach(([k, v]) => {
+                  if (v === null || v === undefined) return
+                  if (typeof v === 'boolean') fd.append(k, v ? '1' : '0')
+                  else fd.append(k, String(v))
+                })
+                documents.forEach((file) => fd.append('documents[]', file))
+                await apiRequest(url, { method, body: fd })
               } else {
-                await apiRequest('/api/v1/lab/revenues', { method: 'POST', body: JSON.stringify(formData) })
+                await apiRequest(url, { method, body: JSON.stringify(payload) })
               }
               setRevenueFormModal(null)
               loadRevenues()

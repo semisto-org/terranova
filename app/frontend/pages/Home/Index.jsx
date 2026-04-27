@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { usePage } from '@inertiajs/react'
+import { usePage, router } from '@inertiajs/react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
@@ -17,10 +17,10 @@ import FrameworksSection from '../../strategy/components/FrameworksSection'
 
 const SECTION_TABS = [
   { id: 'calendar', label: 'Tableau de bord' },
-  { id: 'semos', label: 'Semos' },
+  { id: 'projects', label: 'Projets' },
   { id: 'impact', label: 'Impact' },
   { id: 'deliberations', label: 'Délibérations' },
-  { id: 'cadres', label: 'Cadres' },
+  { id: 'cadres', label: 'Gouvernance' },
 ]
 
 const APPETITES = ['2-weeks', '3-weeks', '6-weeks']
@@ -138,7 +138,14 @@ export default function HomeIndex() {
   const firstName = auth?.member?.firstName
 
   const [tab, setTab] = useUrlState('tab', 'calendar')
-  useShellNav({ sections: SECTION_TABS, activeSection: tab, onSectionChange: setTab })
+  const handleSectionChange = useCallback((id) => {
+    if (id === 'projects') {
+      router.visit('/projects')
+    } else {
+      setTab(id)
+    }
+  }, [setTab])
+  useShellNav({ sections: SECTION_TABS, activeSection: tab, onSectionChange: handleSectionChange })
 
   const [events, setEvents] = useState([])
   const [overviewData, setOverviewData] = useState(null)

@@ -15,7 +15,7 @@ module Api
       before_action :set_timesheet_service_type, only: [:update_timesheet_service_type, :destroy_timesheet_service_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
       before_action :set_expense, only: [:update_expense, :destroy_expense]
-      before_action :set_revenue, only: [:update_revenue, :destroy_revenue]
+      before_action :set_revenue, only: [:update_revenue, :destroy_revenue, :upload_revenue_documents, :destroy_revenue_document]
       before_action :set_album, only: [:update_album, :destroy_album, :album_media, :upload_album_media, :delete_album_media]
 
       def overview
@@ -693,7 +693,8 @@ module Api
         revenue = Revenue.new(revenue_params)
 
         if revenue.save
-          render json: serialize_revenue(revenue), status: :created
+          attach_revenue_documents!(revenue, params[:documents])
+          render json: serialize_revenue(revenue.reload), status: :created
         else
           render json: { error: revenue.errors.full_messages.to_sentence }, status: :unprocessable_entity
         end
@@ -701,7 +702,8 @@ module Api
 
       def update_revenue
         if @revenue.update(revenue_params)
-          render json: serialize_revenue(@revenue)
+          attach_revenue_documents!(@revenue, params[:documents])
+          render json: serialize_revenue(@revenue.reload)
         else
           render json: { error: @revenue.errors.full_messages.to_sentence }, status: :unprocessable_entity
         end
@@ -709,6 +711,23 @@ module Api
 
       def destroy_revenue
         @revenue.soft_delete!
+        head :no_content
+      end
+
+      def upload_revenue_documents
+        files = Array(params[:documents]).reject(&:blank?)
+        return render json: { error: "No documents provided" }, status: :unprocessable_entity if files.empty?
+
+        attach_revenue_documents!(@revenue, files)
+        render json: { items: revenue_documents_for(@revenue).map { |d| serialize_revenue_document(d) } }
+      end
+
+      def destroy_revenue_document
+        attachment = ActiveStorage::Attachment.find(params[:document_id])
+        unless attachment.record_type == "Revenue" && attachment.record_id == @revenue.id && attachment.name == "documents"
+          return render json: { error: "Document not found for this revenue" }, status: :not_found
+        end
+        attachment.purge
         head :no_content
       end
 
@@ -911,6 +930,28 @@ module Api
         @revenue = Revenue.find(params.require(:id))
       end
 
+      def attach_revenue_documents!(revenue, documents)
+        files = Array(documents).reject(&:blank?)
+        return if files.empty?
+        revenue.documents.attach(files)
+      end
+
+      def revenue_documents_for(revenue)
+        revenue.documents.attachments.includes(:blob).order(created_at: :desc)
+      end
+
+      def serialize_revenue_document(attachment)
+        blob = attachment.blob
+        {
+          id: attachment.id.to_s,
+          filename: blob.filename.to_s,
+          contentType: blob.content_type,
+          byteSize: blob.byte_size,
+          url: Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true),
+          createdAt: attachment.created_at.iso8601
+        }
+      end
+
       def set_album
         @album = Album.find(params.require(:id))
       end
@@ -975,8 +1016,16 @@ module Api
       def project_allocations_params
         return [] unless params[:project_allocations].is_a?(Array)
 
-        params[:project_allocations].map do |alloc|
-          alloc.permit(:projectable_type, :projectable_id, :amount, :notes).to_h
+        params[:project_allocations].filter_map do |alloc|
+          permitted = case alloc
+          when ActionController::Parameters
+            alloc.permit(:projectable_type, :projectable_id, :amount, :notes).to_h
+          when Hash
+            alloc.slice('projectable_type', 'projectable_id', 'amount', 'notes',
+                        :projectable_type, :projectable_id, :amount, :notes)
+                 .transform_keys(&:to_s)
+          end
+          permitted&.with_indifferent_access
         end
       end
 
@@ -1080,6 +1129,7 @@ module Api
           reconciledAmount: r.reconciled_amount.to_f,
           fullyReconciled: r.fully_reconciled?,
           bankTransactions: serialize_linked_bank_transactions(r),
+          documents: revenue_documents_for(r).map { |d| serialize_revenue_document(d) },
           createdAt: r.created_at.iso8601,
           updatedAt: r.updated_at.iso8601
         }
