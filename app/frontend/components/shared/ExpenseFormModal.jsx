@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Building2, Check, ChevronsUpDown, GraduationCap, Globe2, Layers, Palette, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, Globe2, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
 import SimpleEditor from '../SimpleEditor'
 import { apiRequest } from '@/lib/api'
 import { ProjectableCombobox } from './ProjectableCombobox'
