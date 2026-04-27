@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
 import { apiRequest } from '../../lib/api'
 
-// Mapping typeKey (API) ↔ projectable_type (Ruby class). Mirrors
-// Projectable::PROJECT_TYPE_KEYS in app/models/concerns/projectable.rb.
+// Mirrors Projectable::PROJECT_TYPE_KEYS in app/models/concerns/projectable.rb.
 const TYPE_KEY_TO_RUBY = {
   'lab-project': 'PoleProject',
   'training': 'Academy::Training',
@@ -59,7 +58,7 @@ export function ProjectableCombobox({
   accent = '#5B5781',
   disabled = false,
 }: Props) {
-  const [fetched, setFetched] = useState<ProjectableOption[] | null>(projectsProp ? null : null)
+  const [fetched, setFetched] = useState<ProjectableOption[] | null>(null)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
@@ -102,11 +101,18 @@ export function ProjectableCombobox({
     })).filter((g) => g.items.length > 0)
   }, [filtered])
 
-  // Flat list of (group, item) tuples used by keyboard navigation.
   const flatItems = useMemo(
     () => grouped.flatMap((g) => g.items.map((item) => ({ group: g, item }))),
     [grouped]
   )
+
+  const flatIndexByKey = useMemo(() => {
+    const map = new Map<string, number>()
+    flatItems.forEach((fi, i) => {
+      map.set(`${fi.item.typeKey}:${fi.item.id}`, i)
+    })
+    return map
+  }, [flatItems])
 
   useEffect(() => {
     if (!open) return
@@ -234,7 +240,7 @@ export function ProjectableCombobox({
                   </div>
                   <ul>
                     {group.items.map((item) => {
-                      const flatIdx = flatItems.findIndex((fi) => fi.item === item)
+                      const flatIdx = flatIndexByKey.get(`${item.typeKey}:${item.id}`) ?? -1
                       const isSelected = value?.type === TYPE_KEY_TO_RUBY[item.typeKey] && value.id === item.id
                       const isHighlighted = flatIdx === highlight
                       return (
