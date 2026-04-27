@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { Building2, Check, ChevronsUpDown, GraduationCap, Globe2, Layers, Palette, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
 import SimpleEditor from '../SimpleEditor'
 import { apiRequest } from '@/lib/api'
+import { ProjectableCombobox } from './ProjectableCombobox'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)]'
@@ -126,37 +127,7 @@ export function ExpenseFormModal({
     expense?.categoryId ?? expense?.category_id ?? expense?.expense_category_id ?? ''
   )
   const [fetchedCategories, setFetchedCategories] = useState([])
-  const [fetchedTrainings, setFetchedTrainings] = useState([])
-  const [fetchedDesignProjects, setFetchedDesignProjects] = useState([])
   const effectiveCategoryOptions = categoryOptions.length > 0 ? categoryOptions : fetchedCategories
-  const effectiveTrainingOptions = trainingOptions.length > 0 ? trainingOptions : fetchedTrainings
-  const effectiveDesignProjectOptions = designProjectOptions.length > 0 ? designProjectOptions : fetchedDesignProjects
-
-  // Fetch trainings and design projects in parallel when not provided by parent
-  // (e.g. when the modal is opened from the Bank view, Academy, Design Studio…).
-  useEffect(() => {
-    if (!showTrainingLink || trainingOptions.length > 0) return
-    let cancelled = false
-    apiRequest('/api/v1/academy')
-      .then((payload) => {
-        if (cancelled) return
-        setFetchedTrainings((payload?.trainings || []).map((t) => ({ value: t.id, label: t.title })))
-      })
-      .catch(() => { /* silently fall back to empty list */ })
-    return () => { cancelled = true }
-  }, []) // eslint-disable-line -- run once on mount
-
-  useEffect(() => {
-    if (!showDesignProjectLink || designProjectOptions.length > 0) return
-    let cancelled = false
-    apiRequest('/api/v1/design')
-      .then((payload) => {
-        if (cancelled) return
-        setFetchedDesignProjects((payload?.projects || []).map((p) => ({ value: p.id, label: p.name })))
-      })
-      .catch(() => { /* silently fall back to empty list */ })
-    return () => { cancelled = true }
-  }, []) // eslint-disable-line -- run once on mount
 
   useEffect(() => {
     // Fetch once on mount when parent doesn't supply categories. We intentionally
@@ -228,8 +199,14 @@ export function ExpenseFormModal({
   const [poles, setPoles] = useState(
     expense?.poles ? [...expense.poles].filter((p) => poleValues.includes(p)) : []
   )
-  const [trainingId, setTrainingId] = useState(expense?.trainingId ?? expense?.training_id ?? defaultTrainingId ?? '')
-  const [designProjectId, setDesignProjectId] = useState(expense?.designProjectId ?? expense?.design_project_id ?? defaultDesignProjectId ?? '')
+  const [projectable, setProjectable] = useState(() => {
+    if (expense?.projectableType && expense?.projectableId) {
+      return { type: expense.projectableType, id: String(expense.projectableId) }
+    }
+    if (defaultTrainingId) return { type: 'Academy::Training', id: String(defaultTrainingId) }
+    if (defaultDesignProjectId) return { type: 'Design::Project', id: String(defaultDesignProjectId) }
+    return null
+  })
   const [organizationId, setOrganizationId] = useState(
     expense?.organizationId ?? expense?.organization_id ?? defaultOrganizationId ?? organizationOptions[0]?.value ?? ''
   )
@@ -322,39 +299,11 @@ export function ExpenseFormModal({
     }
   }, [billingZone]) // eslint-disable-line -- intentional: only react to zone changes
 
-  // Project groups for the combobox: Academy trainings + Design Studio projects.
-  const projectGroups = useMemo(() => {
-    const groups = []
-    if (showTrainingLink && effectiveTrainingOptions.length > 0) {
-      groups.push({
-        type: 'Academy::Training',
-        label: 'Academy',
-        sublabel: 'Activités & formations',
-        icon: 'graduation',
-        color: '#B01A19',
-        bg: '#f5dad3',
-        items: effectiveTrainingOptions,
-      })
-    }
-    if (showDesignProjectLink && effectiveDesignProjectOptions.length > 0) {
-      groups.push({
-        type: 'Design::Project',
-        label: 'Design Studio',
-        sublabel: 'Projets de design',
-        icon: 'palette',
-        color: '#6F7900',
-        bg: '#eef0e0',
-        items: effectiveDesignProjectOptions,
-      })
-    }
-    return groups
-  }, [showTrainingLink, showDesignProjectLink, effectiveTrainingOptions, effectiveDesignProjectOptions])
-
   // Whether at least one project is linked (single or multi mode).
   // Drives the visibility of the "Refacturation client" section.
   const hasProjectLink = multiProject
     ? projectAllocations.some((a) => a.projectable_type && a.projectable_id)
-    : Boolean(trainingId || designProjectId)
+    : Boolean(projectable)
 
   // Auto-uncheck "billable to client" when no project is linked (avoid stale state).
   useEffect(() => {
@@ -442,8 +391,8 @@ export function ExpenseFormModal({
         name: name.trim() || '',
         notes: notes || '',
         poles: poles.length ? poles : [],
-        training_id: multiProject ? undefined : (trainingId || undefined),
-        design_project_id: multiProject ? undefined : (designProjectId || undefined),
+        projectable_type: multiProject ? null : (projectable?.type ?? null),
+        projectable_id: multiProject ? null : (projectable?.id ?? null),
         organization_id: organizationId || undefined,
         project_allocations: multiProject
           ? projectAllocations
@@ -1062,8 +1011,7 @@ export function ExpenseFormModal({
                 </div>
               </section>
 
-              {(showTrainingLink || showDesignProjectLink) && (
-                <section>
+              <section>
                   <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h4 className="text-sm font-semibold text-stone-700">Liens</h4>
                     <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-stone-600">
@@ -1080,27 +1028,9 @@ export function ExpenseFormModal({
                   {!multiProject && (
                     <div>
                       <label className="block text-sm font-medium text-stone-600 mb-1">Projet concerné</label>
-                      <ProjectCombobox
-                        groups={projectGroups}
-                        value={
-                          trainingId
-                            ? { type: 'Academy::Training', id: trainingId }
-                            : designProjectId
-                              ? { type: 'Design::Project', id: designProjectId }
-                              : null
-                        }
-                        onChange={(sel) => {
-                          if (!sel) {
-                            setTrainingId('')
-                            setDesignProjectId('')
-                          } else if (sel.type === 'Academy::Training') {
-                            setTrainingId(sel.id)
-                            setDesignProjectId('')
-                          } else if (sel.type === 'Design::Project') {
-                            setDesignProjectId(sel.id)
-                            setTrainingId('')
-                          }
-                        }}
+                      <ProjectableCombobox
+                        value={projectable}
+                        onChange={setProjectable}
                         accent={accent}
                         placeholder="Sélectionnez un projet (optionnel — sinon dépense globale)"
                       />
@@ -1127,8 +1057,7 @@ export function ExpenseFormModal({
                             </div>
                             <div className="flex items-start gap-2">
                               <div className="flex-1 min-w-0">
-                                <ProjectCombobox
-                                  groups={projectGroups}
+                                <ProjectableCombobox
                                   value={alloc.projectable_type && alloc.projectable_id
                                     ? { type: alloc.projectable_type, id: alloc.projectable_id }
                                     : null}
@@ -1205,7 +1134,6 @@ export function ExpenseFormModal({
                     </div>
                   )}
                 </section>
-              )}
 
               {hasProjectLink && (
                 <section>
@@ -1481,226 +1409,6 @@ function CategoryCombobox({ categories, value, onChange, accent }) {
               })
             )}
           </ul>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ProjectCombobox({ groups, value, onChange, accent, placeholder }) {
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [highlight, setHighlight] = useState(0)
-  const wrapperRef = useRef(null)
-  const inputRef = useRef(null)
-  const listRef = useRef(null)
-
-  // Flatten all items keeping their group context
-  const flatItems = useMemo(() => {
-    const arr = []
-    groups.forEach((g) => {
-      g.items.forEach((item) => arr.push({ ...item, groupType: g.type, groupLabel: g.label, groupColor: g.color, groupBg: g.bg, groupIcon: g.icon }))
-    })
-    return arr
-  }, [groups])
-
-  const selected = useMemo(
-    () => value ? flatItems.find((it) => it.groupType === value.type && String(it.value) === String(value.id)) : null,
-    [flatItems, value],
-  )
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return q
-      ? flatItems.filter((it) => (it.label || '').toLowerCase().includes(q))
-      : flatItems
-  }, [flatItems, query])
-
-  // Group the filtered items by groupType for display
-  const filteredGroups = useMemo(() => {
-    const map = new Map()
-    filtered.forEach((it) => {
-      if (!map.has(it.groupType)) {
-        map.set(it.groupType, { type: it.groupType, label: it.groupLabel, color: it.groupColor, bg: it.groupBg, icon: it.groupIcon, items: [] })
-      }
-      map.get(it.groupType).items.push(it)
-    })
-    return Array.from(map.values())
-  }, [filtered])
-
-  // Outside click closes
-  useEffect(() => {
-    if (!open) return
-    const onDocClick = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDocClick)
-    return () => document.removeEventListener('mousedown', onDocClick)
-  }, [open])
-
-  useEffect(() => { setHighlight(0) }, [query])
-
-  useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => inputRef.current?.focus(), 0)
-      return () => clearTimeout(t)
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (!open || !listRef.current) return
-    const el = listRef.current.querySelector(`[data-idx="${highlight}"]`)
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [highlight, open])
-
-  const handleSelect = (item) => {
-    onChange({ type: item.groupType, id: String(item.value) })
-    setOpen(false)
-    setQuery('')
-  }
-
-  const onKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setHighlight((h) => Math.max(h - 1, 0))
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-      if (filtered[highlight]) handleSelect(filtered[highlight])
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      setOpen(false)
-    }
-  }
-
-  // Render group icon
-  const renderIcon = (name, className) => {
-    if (name === 'graduation') return <GraduationCap className={className} />
-    if (name === 'palette') return <Palette className={className} />
-    return <Layers className={className} />
-  }
-
-  if (groups.length === 0) {
-    return (
-      <input
-        type="text"
-        value=""
-        disabled
-        placeholder="Aucun projet disponible"
-        className={`${inputBase} bg-stone-50 text-stone-400`}
-      />
-    )
-  }
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full pl-4 pr-10 py-2.5 rounded-xl bg-stone-50 border text-stone-900 text-left transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/25 ${
-          open ? 'border-[var(--expense-accent,#B01A19)]' : 'border-stone-200 hover:border-stone-300'
-        }`}
-      >
-        {selected ? (
-          <span className="flex items-center gap-2 truncate">
-            <span
-              className="inline-flex items-center justify-center w-5 h-5 rounded shrink-0"
-              style={{ color: selected.groupColor, backgroundColor: selected.groupBg }}
-            >
-              {renderIcon(selected.groupIcon, 'w-3 h-3')}
-            </span>
-            <span className="truncate">{selected.label}</span>
-            <span className="text-xs text-stone-400 ml-auto shrink-0">{selected.groupLabel}</span>
-          </span>
-        ) : (
-          <span className="text-stone-400 truncate block">{placeholder || 'Sélectionner un projet…'}</span>
-        )}
-        <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
-      </button>
-
-      {open && (
-        <div className="absolute z-30 mt-1.5 w-full rounded-xl bg-white border border-stone-200 shadow-2xl overflow-hidden">
-          <div className="relative border-b border-stone-100">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="Rechercher un projet…"
-              className="w-full pl-9 pr-3 py-2.5 text-sm bg-transparent outline-none placeholder:text-stone-400"
-            />
-          </div>
-
-          <div ref={listRef} className="max-h-80 overflow-y-auto py-1">
-            {value && (
-              <button
-                type="button"
-                onClick={() => { onChange(null); setOpen(false); setQuery('') }}
-                className="w-full text-left px-3 py-1.5 text-xs text-stone-500 hover:bg-stone-50 italic border-b border-stone-100 mb-1"
-              >
-                Aucun projet (effacer la sélection)
-              </button>
-            )}
-
-            {filtered.length === 0 ? (
-              <div className="px-3 py-6 text-center text-sm text-stone-400">
-                Aucun projet trouvé pour « {query} »
-              </div>
-            ) : (
-              filteredGroups.map((group) => {
-                // Find the absolute index of each item in `filtered` for highlight tracking
-                return (
-                  <div key={group.type} className="mb-1">
-                    <div className="px-3 py-1.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold sticky top-0 bg-white"
-                      style={{ color: group.color }}
-                    >
-                      <span
-                        className="inline-flex items-center justify-center w-4 h-4 rounded"
-                        style={{ backgroundColor: group.bg }}
-                      >
-                        {renderIcon(group.icon, 'w-2.5 h-2.5')}
-                      </span>
-                      {group.label}
-                      <span className="ml-auto text-stone-400 font-normal normal-case tracking-normal">
-                        {group.items.length}
-                      </span>
-                    </div>
-                    <ul>
-                      {group.items.map((it) => {
-                        const absIdx = filtered.findIndex((f) => f.groupType === it.groupType && f.value === it.value)
-                        const isSelected = value && value.type === it.groupType && String(value.id) === String(it.value)
-                        const isHighlighted = absIdx === highlight
-                        return (
-                          <li key={`${it.groupType}:${it.value}`}>
-                            <button
-                              type="button"
-                              data-idx={absIdx}
-                              onMouseEnter={() => setHighlight(absIdx)}
-                              onClick={() => handleSelect(it)}
-                              className={`w-full text-left pl-9 pr-3 py-2 text-sm flex items-center gap-2 transition-colors ${
-                                isSelected ? 'font-medium' : 'text-stone-800'
-                              } ${!isHighlighted && !isSelected ? 'hover:bg-stone-50' : ''}`}
-                              style={{
-                                backgroundColor: isHighlighted ? `${group.color}1A` : undefined,
-                                color: isSelected ? group.color : undefined,
-                              }}
-                            >
-                              <span className="flex-1 truncate">{it.label}</span>
-                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                )
-              })
-            )}
-          </div>
         </div>
       )}
     </div>
