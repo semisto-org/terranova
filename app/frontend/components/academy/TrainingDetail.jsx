@@ -218,7 +218,7 @@ export default function TrainingDetail({
   const sessions = data.trainingSessions?.filter((s) => s.trainingId === training.id) || []
   const registrations = data.trainingRegistrations?.filter((r) => r.trainingId === training.id) || []
   const documents = data.trainingDocuments?.filter((d) => d.trainingId === training.id) || []
-  const expenses = data.trainingExpenses?.filter((e) => e.trainingId === training.id) || []
+  const expenses = data.trainingExpenses?.filter((e) => e.projectableType === 'Academy::Training' && e.projectableId === training.id) || []
   const attendances = data.trainingAttendances || []
   const locations = data.trainingLocations || []
   const members = data.members || []

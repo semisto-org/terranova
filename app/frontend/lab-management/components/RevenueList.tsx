@@ -8,7 +8,9 @@ import {
   Edit3,
   FileText,
   Filter,
+  Image as ImageIcon,
   Landmark,
+  Paperclip,
   Plus,
   Search,
   Sparkles,
@@ -32,6 +34,15 @@ export interface RevenueLinkedBankTransaction {
   confidence: string
 }
 
+export interface RevenueDocument {
+  id: string
+  filename: string
+  contentType: string | null
+  byteSize: number
+  url: string
+  createdAt: string
+}
+
 export interface RevenueItem {
   id: string
   amount: number
@@ -40,8 +51,9 @@ export interface RevenueItem {
   contactId: string | null
   contactName: string | null
   pole: string | null
-  trainingId: string | null
-  designProjectId: string | null
+  projectableType: string | null
+  projectableId: string | null
+  projectName: string | null
   revenueType: string | null
   status: string
   notes: string | null
@@ -58,6 +70,7 @@ export interface RevenueItem {
   reconciledAmount?: number
   fullyReconciled?: boolean
   bankTransactions?: RevenueLinkedBankTransaction[]
+  documents?: RevenueDocument[]
   createdAt: string
   updatedAt: string
 }
@@ -565,8 +578,18 @@ export function RevenueList({
                         {fmtDate(r.date)}
                       </td>
                       <td className={`px-3 ${rowPad} ${fontSize}`}>
-                        <div className="font-medium text-stone-900 truncate max-w-[260px]">
-                          {r.contactName || <span className="text-stone-400 italic">Sans source</span>}
+                        <div className="font-medium text-stone-900 truncate max-w-[260px] inline-flex items-center gap-1.5">
+                          <span className="truncate">
+                            {r.contactName || <span className="text-stone-400 italic">Sans source</span>}
+                          </span>
+                          {(r.documents?.length ?? 0) > 0 && (
+                            <span
+                              title={`${r.documents!.length} document${r.documents!.length > 1 ? 's' : ''} joint${r.documents!.length > 1 ? 's' : ''}`}
+                              className="shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-stone-100 text-stone-500"
+                            >
+                              <Paperclip className="w-2.5 h-2.5" strokeWidth={2} />
+                            </span>
+                          )}
                         </div>
                         {descr && (
                           <div className="text-[11px] text-stone-400 truncate max-w-[260px] mt-0.5">{descr}</div>
@@ -1047,6 +1070,22 @@ function RevenueDrawer({
               </div>
             </div>
           )}
+
+          {(revenue.documents?.length ?? 0) > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Paperclip className="w-3 h-3 text-stone-400" />
+                <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">
+                  Documents · {revenue.documents!.length}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {revenue.documents!.map((doc) => (
+                  <DocumentPreview key={doc.id} doc={doc} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer actions */}
@@ -1087,6 +1126,56 @@ function DrawerField({ label, children, wide }: { label: string; children: React
     <div className={wide ? 'col-span-2' : ''}>
       <dt className="text-[10px] uppercase tracking-[0.14em] text-stone-400 font-medium">{label}</dt>
       <dd className="mt-1 text-stone-800">{children}</dd>
+    </div>
+  )
+}
+
+function DocumentPreview({ doc }: { doc: RevenueDocument }) {
+  const fmtSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  }
+  const isImage = Boolean(doc.contentType?.startsWith('image/'))
+  const isPdf = doc.contentType === 'application/pdf'
+
+  return (
+    <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-stone-100 bg-stone-50/50">
+        <span className="shrink-0 w-7 h-7 rounded-md bg-white border border-stone-200 text-stone-500 flex items-center justify-center">
+          {isImage ? <ImageIcon className="w-3.5 h-3.5" /> : isPdf ? <FileText className="w-3.5 h-3.5" /> : <Paperclip className="w-3.5 h-3.5" />}
+        </span>
+        <a
+          href={doc.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 min-w-0 text-sm text-stone-800 hover:text-[#5B5781] truncate font-medium"
+          title={doc.filename}
+        >
+          {doc.filename}
+        </a>
+        <span className="shrink-0 text-[11px] font-mono text-stone-400">{fmtSize(doc.byteSize)}</span>
+      </div>
+      {isImage ? (
+        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="block bg-stone-50">
+          <img src={doc.url} alt={doc.filename} className="w-full max-h-[420px] object-contain" />
+        </a>
+      ) : isPdf ? (
+        <object data={doc.url} type="application/pdf" className="w-full h-[480px] bg-stone-50" aria-label={doc.filename}>
+          <div className="px-4 py-6 text-center text-sm text-stone-500">
+            Aperçu indisponible —{' '}
+            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-[#5B5781] hover:underline">
+              ouvrir le PDF
+            </a>
+          </div>
+        </object>
+      ) : (
+        <div className="px-4 py-4 text-center text-xs text-stone-500">
+          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-[#5B5781] hover:underline">
+            Télécharger le fichier
+          </a>
+        </div>
+      )}
     </div>
   )
 }

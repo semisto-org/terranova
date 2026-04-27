@@ -302,7 +302,8 @@ export default function AcademyIndex({ initialTrainingId }) {
 
   const handleExpenseSubmit = useCallback(async (payload) => {
     const isEdit = Boolean(modalData?.isEdit && modalData?.expense?.id)
-    const trainingId = modalData?.trainingId || modalData?.expense?.trainingId
+    const expenseTrainingId = modalData?.expense?.projectableType === 'Academy::Training' ? modalData?.expense?.projectableId : null
+    const trainingId = modalData?.trainingId || expenseTrainingId
     const documentFile = payload.document
     const body = {
       supplier: payload.supplier,
@@ -551,7 +552,8 @@ export default function AcademyIndex({ initialTrainingId }) {
     editExpense: (expenseId) => {
       const current = data.trainingExpenses.find((item) => item.id === expenseId)
       if (!current) return
-      setModalData({ isEdit: true, expense: current, trainingId: current.trainingId })
+      const currentTrainingId = current.projectableType === 'Academy::Training' ? current.projectableId : null
+      setModalData({ isEdit: true, expense: current, trainingId: currentTrainingId })
       setActiveModal('expense')
     },
     deleteExpense: (expenseId) => {

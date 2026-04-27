@@ -294,8 +294,9 @@ export function BankSection() {
         contactId: null,
         contactName: selectedTransaction.counterpartName,
         pole: selectedTransaction.accountingScope === 'nursery' ? 'nursery' : '',
-        trainingId: null,
-        designProjectId: null,
+        projectableType: null,
+        projectableId: null,
+        projectName: null,
         revenueType: null,
         status: 'received',
         notes: selectedTransaction.remittanceInfo || '',
@@ -323,8 +324,17 @@ export function BankSection() {
         if (value === undefined || value === null) return
         if (key === 'document' && value instanceof File) {
           formData.append('document', value)
-        } else if (key === 'poles' && Array.isArray(value)) {
-          value.forEach((p) => formData.append('poles[]', String(p)))
+        } else if (Array.isArray(value)) {
+          value.forEach((item) => {
+            if (item !== null && typeof item === 'object') {
+              Object.entries(item as Record<string, unknown>).forEach(([nk, nv]) => {
+                if (nv === null || nv === undefined) return
+                formData.append(`${key}[][${nk}]`, String(nv))
+              })
+            } else {
+              formData.append(`${key}[]`, String(item))
+            }
+          })
         } else {
           formData.append(key, typeof value === 'boolean' ? String(value) : String(value))
         }

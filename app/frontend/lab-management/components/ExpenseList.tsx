@@ -52,8 +52,16 @@ export interface ExpenseItem {
   vat21: number
   totalInclVat: number
   poles: string[]
-  trainingId: string | null
-  designProjectId: string | null
+  projectableType: string | null
+  projectableId: string | null
+  projectName: string | null
+  projectAllocations?: Array<{
+    projectableType: string
+    projectableId: string
+    projectName: string | null
+    amount: number
+    notes: string
+  }>
   notes: string
   documentUrl: string | null
   documentFilename?: string | null
