@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { ProjectableQuickEditModal } from '../../components/shared/ProjectableQuickEditModal'
 import { PROJECTABLE_TYPE_STYLE, type ProjectableValue } from '../../components/shared/ProjectableCombobox'
+import { TableTotalsFooter } from '../../components/shared/TableTotalsFooter'
 
 export interface LinkedBankTransaction {
   reconciliationId: string
@@ -52,6 +53,8 @@ export interface ExpenseItem {
   vat6: number
   vat12: number
   vat21: number
+  euVatRate: string | null
+  euVatAmount: number
   totalInclVat: number
   poles: string[]
   projectableType: string | null
@@ -260,13 +263,33 @@ export function ExpenseList({
   const totals = useMemo(() => {
     const totalInclVat = sorted.reduce((s, e) => s + Number(e.totalInclVat || 0), 0)
     const totalExclVat = sorted.reduce((s, e) => s + Number(e.amountExclVat || 0), 0)
+    const totalVat6 = sorted.reduce((s, e) => s + Number(e.vat6 || 0), 0)
+    const totalVat12 = sorted.reduce((s, e) => s + Number(e.vat12 || 0), 0)
+    const totalVat21 = sorted.reduce((s, e) => s + Number(e.vat21 || 0), 0)
+    const totalIntracom6 = sorted.reduce(
+      (s, e) => s + (e.euVatRate === '6' ? Number(e.euVatAmount || 0) : 0),
+      0,
+    )
+    const totalIntracom21 = sorted.reduce(
+      (s, e) => s + (e.euVatRate === '21' ? Number(e.euVatAmount || 0) : 0),
+      0,
+    )
     const grouped = sorted.reduce((acc, e) => {
       const key = e.categoryLabel || e.category || 'Non catégorisé'
       acc[key] = (acc[key] || 0) + Number(e.totalInclVat || 0)
       return acc
     }, {} as Record<string, number>)
     const topCategories = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 3)
-    return { totalInclVat, totalExclVat, topCategories }
+    return {
+      totalInclVat,
+      totalExclVat,
+      totalVat6,
+      totalVat12,
+      totalVat21,
+      totalIntracom6,
+      totalIntracom21,
+      topCategories,
+    }
   }, [sorted])
 
   const anomalies = useMemo(() => {
@@ -483,7 +506,7 @@ export function ExpenseList({
       ) : (
         <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
           <div className="max-h-[62vh] overflow-auto">
-            <table className="w-full text-left">
+            <table className="min-w-full text-left">
               <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-stone-200">
                 <tr>
                   <th className="pl-4 pr-2 py-3 w-10">
@@ -505,6 +528,11 @@ export function ExpenseList({
                   <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em]">Pôle</th>
                   <SortHeader label="Statut" dir={sortDir('status')} onClick={() => cycleSort('status')} />
                   <SortHeader label="HT" right dir={sortDir('amountExclVat')} onClick={() => cycleSort('amountExclVat')} />
+                  <VatColHeader label="TVA 6%" />
+                  <VatColHeader label="TVA 12%" />
+                  <VatColHeader label="TVA 21%" />
+                  <VatColHeader label="Intra 6%" />
+                  <VatColHeader label="Intra 21%" />
                   <SortHeader label="TTC" right dir={sortDir('totalInclVat')} onClick={() => cycleSort('totalInclVat')} />
                   <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] text-right pr-4">Actions</th>
                 </tr>
@@ -649,6 +677,11 @@ export function ExpenseList({
                       <td className={`px-3 ${rowPad} ${fontSize} text-right text-stone-500 font-mono tabular-nums whitespace-nowrap`}>
                         {fmtMoney(e.amountExclVat)}
                       </td>
+                      <VatCell value={e.vat6} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={e.vat12} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={e.vat21} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={e.euVatRate === '6' ? Number(e.euVatAmount || 0) : 0} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={e.euVatRate === '21' ? Number(e.euVatAmount || 0) : 0} rowPad={rowPad} fontSize={fontSize} />
                       <td className={`px-3 ${rowPad} ${fontSize} text-right font-mono tabular-nums font-semibold whitespace-nowrap ${
                         isAnomaly ? 'text-red-700' : isReconciled ? 'text-emerald-700' : 'text-stone-900'
                       }`}>
@@ -686,6 +719,22 @@ export function ExpenseList({
                   )
                 })}
               </tbody>
+              <TableTotalsFooter
+                leftColSpan={7}
+                rightColSpan={1}
+                filteredCount={filteredCount}
+                isFiltered={isFiltered}
+                density={density}
+                totals={{
+                  exclVat: totals.totalExclVat,
+                  vat6: totals.totalVat6,
+                  vat12: totals.totalVat12,
+                  vat21: totals.totalVat21,
+                  intracom6: totals.totalIntracom6,
+                  intracom21: totals.totalIntracom21,
+                  inclVat: totals.totalInclVat,
+                }}
+              />
             </table>
           </div>
           <div className="flex items-center justify-between px-4 pr-20 py-3 border-t border-stone-100 bg-stone-50/40 text-xs text-stone-500">
@@ -863,6 +912,27 @@ function IconButton({
         {title}
       </span>
     </button>
+  )
+}
+
+function VatColHeader({ label }: { label: string }) {
+  return (
+    <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] text-right whitespace-nowrap">
+      {label}
+    </th>
+  )
+}
+
+function VatCell({ value, rowPad, fontSize }: { value: number; rowPad: string; fontSize: string }) {
+  if (value > 0) {
+    return (
+      <td className={`px-3 ${rowPad} ${fontSize} text-right text-stone-500 font-mono tabular-nums whitespace-nowrap`}>
+        {fmtMoney(value)}
+      </td>
+    )
+  }
+  return (
+    <td className={`px-3 ${rowPad} ${fontSize} text-right text-stone-300 whitespace-nowrap`}>—</td>
   )
 }
 

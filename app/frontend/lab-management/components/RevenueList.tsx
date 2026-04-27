@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { ProjectableQuickEditModal } from '../../components/shared/ProjectableQuickEditModal'
 import { PROJECTABLE_TYPE_STYLE, type ProjectableValue } from '../../components/shared/ProjectableCombobox'
+import { TableTotalsFooter } from '../../components/shared/TableTotalsFooter'
 
 export interface RevenueLinkedBankTransaction {
   reconciliationId: string
@@ -245,7 +246,9 @@ export function RevenueList({
 
   const totals = useMemo(() => {
     const totalExclVat = sorted.reduce((s, r) => s + Number(r.amountExclVat || 0), 0)
-    const totalVat = sorted.reduce((s, r) => s + Number(r.vat6 || 0) + Number(r.vat21 || 0), 0)
+    const totalVat6 = sorted.reduce((s, r) => s + Number(r.vat6 || 0), 0)
+    const totalVat21 = sorted.reduce((s, r) => s + Number(r.vat21 || 0), 0)
+    const totalVat = totalVat6 + totalVat21
     const totalInclVat = totalExclVat + totalVat
     const receivedAmount = sorted
       .filter((r) => r.status === 'received')
@@ -257,7 +260,19 @@ export function RevenueList({
       return acc
     }, {} as Record<string, number>)
     const topSources = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 3)
-    return { totalExclVat, totalVat, totalInclVat, receivedAmount, pendingAmount, topSources }
+    return {
+      totalExclVat,
+      totalVat,
+      totalVat6,
+      totalVat12: 0,
+      totalVat21,
+      totalIntracom6: 0,
+      totalIntracom21: 0,
+      totalInclVat,
+      receivedAmount,
+      pendingAmount,
+      topSources,
+    }
   }, [sorted])
 
   // Month-over-month trend based on current month vs previous month across all revenues
@@ -517,7 +532,7 @@ export function RevenueList({
       ) : (
         <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
           <div className="max-h-[62vh] overflow-auto">
-            <table className="w-full text-left">
+            <table className="min-w-full text-left">
               <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-stone-200">
                 <tr>
                   <th className="pl-4 pr-2 py-3 w-10">
@@ -543,6 +558,11 @@ export function RevenueList({
                   </th>
                   <SortHeader label="Statut" dir={sortDir('status')} onClick={() => cycleSort('status')} />
                   <SortHeader label="HT" right dir={sortDir('amountExclVat')} onClick={() => cycleSort('amountExclVat')} />
+                  <VatColHeader label="TVA 6%" />
+                  <VatColHeader label="TVA 12%" />
+                  <VatColHeader label="TVA 21%" />
+                  <VatColHeader label="Intra 6%" />
+                  <VatColHeader label="Intra 21%" />
                   <SortHeader label="TTC" right dir={sortDir('amount')} onClick={() => cycleSort('amount')} />
                   <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] text-right pr-4">
                     Actions
@@ -680,6 +700,11 @@ export function RevenueList({
                       <td className={`px-3 ${rowPad} ${fontSize} text-right text-stone-500 font-mono tabular-nums whitespace-nowrap`}>
                         {fmtMoney(r.amountExclVat)}
                       </td>
+                      <VatCell value={r.vat6} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={0} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={r.vat21} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={0} rowPad={rowPad} fontSize={fontSize} />
+                      <VatCell value={0} rowPad={rowPad} fontSize={fontSize} />
                       <td
                         className={`px-3 ${rowPad} ${fontSize} text-right font-mono tabular-nums font-semibold whitespace-nowrap text-stone-900`}
                       >
@@ -730,6 +755,22 @@ export function RevenueList({
                   )
                 })}
               </tbody>
+              <TableTotalsFooter
+                leftColSpan={7}
+                rightColSpan={1}
+                filteredCount={filteredCount}
+                isFiltered={isFiltered}
+                density={density}
+                totals={{
+                  exclVat: totals.totalExclVat,
+                  vat6: totals.totalVat6,
+                  vat12: totals.totalVat12,
+                  vat21: totals.totalVat21,
+                  intracom6: totals.totalIntracom6,
+                  intracom21: totals.totalIntracom21,
+                  inclVat: totals.totalInclVat,
+                }}
+              />
             </table>
           </div>
           <div className="flex items-center justify-between px-4 pr-20 py-3 border-t border-stone-100 bg-stone-50/40 text-xs text-stone-500">
@@ -953,6 +994,27 @@ function IconButton({
         {title}
       </span>
     </button>
+  )
+}
+
+function VatColHeader({ label }: { label: string }) {
+  return (
+    <th className="px-3 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] text-right whitespace-nowrap">
+      {label}
+    </th>
+  )
+}
+
+function VatCell({ value, rowPad, fontSize }: { value: number; rowPad: string; fontSize: string }) {
+  if (value > 0) {
+    return (
+      <td className={`px-3 ${rowPad} ${fontSize} text-right text-stone-500 font-mono tabular-nums whitespace-nowrap`}>
+        {fmtMoney(value)}
+      </td>
+    )
+  }
+  return (
+    <td className={`px-3 ${rowPad} ${fontSize} text-right text-stone-300 whitespace-nowrap`}>—</td>
   )
 }
 
