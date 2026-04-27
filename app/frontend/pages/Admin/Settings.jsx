@@ -412,12 +412,20 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             ? { reimbursement_date: changes.reimbursement_date }
             : {}),
       }
-      if (!Object.keys(payload).length) return
+      // The projectable quick-edit modal does its own PATCH then calls back here
+      // with { projectableType, projectableId, projectName } — we just need to refetch
+      // to surface the new project name in the list.
+      const projectableChanged =
+        Object.prototype.hasOwnProperty.call(changes, 'projectableType') ||
+        Object.prototype.hasOwnProperty.call(changes, 'projectableId')
+      if (!Object.keys(payload).length && !projectableChanged) return
       await runAndRefresh(async () => {
-        await apiRequest(`/api/v1/lab/expenses/${expenseId}`, {
-          method: 'PATCH',
-          body: JSON.stringify(payload),
-        })
+        if (Object.keys(payload).length) {
+          await apiRequest(`/api/v1/lab/expenses/${expenseId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+          })
+        }
         await loadExpenses()
       })
     },
