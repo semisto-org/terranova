@@ -37,12 +37,8 @@
     "file": "assets/terranova-mhra3Bjy.svg",
     "src": "assets/terranova.svg"
   },
-  "components/nova-chat/nova-avatar.jpg": {
-    "file": "assets/nova-avatar-Zmmp7TEI.jpg",
-    "src": "components/nova-chat/nova-avatar.jpg"
-  },
   "entrypoints/application.jsx": {
-    "file": "assets/application-q5_Xnf0o.js",
+    "file": "assets/application-DW85URk_.js",
     "name": "application",
     "src": "entrypoints/application.jsx",
     "isEntry": true,
@@ -59,16 +55,15 @@
       "my-semisto/components/DirectoryMap.jsx"
     ],
     "css": [
-      "assets/application-BclbN5Qm.css"
+      "assets/application-C9tFI0bG.css"
     ],
     "assets": [
       "assets/terranova-mhra3Bjy.svg",
-      "assets/semisto-square-main-WW6PcdSx.png",
-      "assets/nova-avatar-Zmmp7TEI.jpg"
+      "assets/semisto-square-main-WW6PcdSx.png"
     ]
   },
   "my-semisto/components/DirectoryMap.jsx": {
-    "file": "assets/DirectoryMap-BlLcbJzw.js",
+    "file": "assets/DirectoryMap-DBAiu3aK.js",
     "name": "DirectoryMap",
     "src": "my-semisto/components/DirectoryMap.jsx",
     "isDynamicEntry": true,

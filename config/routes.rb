@@ -77,6 +77,7 @@ Rails.application.routes.draw do
   get "design", to: "app#design"
   get "design/:project_id", to: "app#design_project"
   get "client/design/:project_id", to: "app#design_client_portal"
+  get "catalogue", to: "app#public_catalog"
   get "projects", to: "app#projects"
   get "projects/:type/:id", to: "app#projects"
   get "plants", to: "app#plants"
@@ -399,6 +400,9 @@ Rails.application.routes.draw do
       get "plants/genera/:id", to: "plants#genus"
       get "plants/species/:id", to: "plants#species"
       get "plants/varieties/:id", to: "plants#variety"
+      # Public catalogue (no auth)
+      get "plants/public/species/:id", to: "plants#public_species"
+      get "plants/public/varieties/:id", to: "plants#public_variety"
       post "plants/ai-summary", to: "plants#generate_ai_summary"
       get "plants/activity", to: "plants#activity_feed"
       get "plants/contributors/:id", to: "plants#contributor"
@@ -556,6 +560,7 @@ Rails.application.routes.draw do
       # Stock batches
       post "nursery/stock-batches", to: "nursery#create_stock_batch"
       patch "nursery/stock-batches/:batch_id", to: "nursery#update_stock_batch"
+      patch "nursery/stock-batches/:batch_id/status", to: "nursery#update_stock_batch_status"
       delete "nursery/stock-batches/:batch_id", to: "nursery#destroy_stock_batch"
 
       # Orders

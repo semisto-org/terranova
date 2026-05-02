@@ -1,7 +1,7 @@
 module Api
   module V1
     class PlantsController < BaseController
-      skip_before_action :require_authentication, only: [:filter_options, :search, :genus, :species, :variety]
+      skip_before_action :require_authentication, only: [:filter_options, :search, :genus, :species, :variety, :public_species, :public_variety]
 
       STRATE_KEYS = %w[aquatic groundCover herbaceous climbers shrubs trees].freeze
 
@@ -129,6 +129,29 @@ module Api
           nurseryStock: nursery_stocks_for('variety', variety.id),
           aiSummary: serialize_ai_summary('variety', variety.id),
           contributors: contributors_for_target('variety', variety.id)
+        }
+      end
+
+      def public_species
+        species = Plant::Species.includes(:genus, :varieties).find(params.require(:id))
+        render json: {
+          species: serialize_public_species(species),
+          genus: species.genus ? { id: species.genus.id.to_s, latinName: species.genus.latin_name } : nil,
+          commonNames: common_names_for('species', species.id),
+          photos: photos_for('species', species.id).first(8),
+          varieties: species.varieties.order(:latin_name).map { |v| { id: v.id.to_s, latinName: v.latin_name, additionalNotes: v.additional_notes.presence } }
+        }
+      end
+
+      def public_variety
+        variety = Plant::Variety.includes(species: :genus).find(params.require(:id))
+        species = variety.species
+        render json: {
+          variety: serialize_public_variety(variety),
+          species: serialize_public_species(species),
+          genus: species.genus ? { id: species.genus.id.to_s, latinName: species.genus.latin_name } : nil,
+          commonNames: common_names_for('variety', variety.id),
+          photos: photos_for('variety', variety.id).first(8)
         }
       end
 
@@ -548,6 +571,10 @@ module Api
           :growth_rate, :forest_garden_zone, :pollination_type, :root_system,
           :soil_moisture, :soil_richness, :watering_need, :is_invasive,
           :therapeutic_properties, :toxic_elements, :additional_notes,
+          :growth_habit,
+          :height_min_cm, :height_max_cm, :height_description,
+          :spread_min_cm, :spread_max_cm, :spread_description,
+          :edible_rating, :medicinal_rating,
           edible_parts: [], interests: [], ecosystem_needs: [], exposures: [],
           flower_colors: [], flowering_months: [], fruiting_months: [],
           harvest_months: [], planting_seasons: [], propagation_methods: [],
@@ -573,7 +600,7 @@ module Api
       end
 
       def photo_params
-        params.permit(:target_type, :target_id, :contributor_id, :url, :caption)
+        params.permit(:target_type, :target_id, :contributor_id, :url, :caption, :role)
       end
 
       def reference_params
@@ -725,14 +752,18 @@ module Api
         end
       end
 
+      PHOTO_ROLE_ORDER = { 'flower' => 0, 'fruit' => 1, 'foliage' => 2, 'habit' => 3, 'general' => 4, nil => 5 }.freeze
+
       def photos_for(target_type, target_id)
-        Plant::Photo.where(target_type: target_type, target_id: target_id).order(created_at: :desc).map do |item|
+        scope = Plant::Photo.where(target_type: target_type, target_id: target_id).to_a
+        scope.sort_by { |p| [PHOTO_ROLE_ORDER.fetch(p.role, 5), -p.created_at.to_i] }.map do |item|
           {
             id: item.id.to_s,
             targetId: item.target_id.to_s,
             targetType: item.target_type,
             url: item.url,
             caption: item.caption,
+            role: item.role,
             contributorId: item.contributor_id.to_s,
             createdAt: item.created_at.iso8601
           }
@@ -854,7 +885,16 @@ module Api
           fragrance: item.fragrance,
           transformations: item.transformations,
           fodderQualities: item.fodder_qualities,
-          additionalNotes: item.additional_notes
+          additionalNotes: item.additional_notes,
+          growthHabit: item.growth_habit,
+          heightMinCm: item.height_min_cm,
+          heightMaxCm: item.height_max_cm,
+          heightDescription: item.height_description.presence,
+          spreadMinCm: item.spread_min_cm,
+          spreadMaxCm: item.spread_max_cm,
+          spreadDescription: item.spread_description.presence,
+          edibleRating: item.edible_rating,
+          medicinalRating: item.medicinal_rating
         }
       end
 
@@ -870,6 +910,58 @@ module Api
           maturity: item.maturity,
           diseaseResistance: item.disease_resistance,
           additionalNotes: item.additional_notes
+        }
+      end
+
+      # Trimmed payload for the public catalogue drawer — botanical info only,
+      # no contributor / activity / AI-summary internal fields.
+      def serialize_public_species(item)
+        {
+          id: item.id.to_s,
+          latinName: item.latin_name,
+          type: item.plant_type,
+          edibleParts: item.edible_parts,
+          interests: item.interests,
+          exposures: item.exposures,
+          hardiness: item.hardiness,
+          flowerColors: item.flower_colors,
+          floweringMonths: item.flowering_months,
+          fruitingMonths: item.fruiting_months,
+          harvestMonths: item.harvest_months,
+          lifeCycle: item.life_cycle,
+          foliageType: item.foliage_type,
+          forestGardenZone: item.forest_garden_zone,
+          soilTypes: item.soil_types,
+          soilMoisture: item.soil_moisture,
+          wateringNeed: item.watering_need,
+          fragrance: item.fragrance,
+          propagationMethods: item.propagation_methods,
+          transformations: item.transformations,
+          isInvasive: item.is_invasive,
+          growthHabit: item.growth_habit,
+          heightMinCm: item.height_min_cm,
+          heightMaxCm: item.height_max_cm,
+          heightDescription: item.height_description.presence,
+          spreadMinCm: item.spread_min_cm,
+          spreadMaxCm: item.spread_max_cm,
+          spreadDescription: item.spread_description.presence,
+          edibleRating: item.edible_rating,
+          medicinalRating: item.medicinal_rating
+        }
+      end
+
+      def serialize_public_variety(item)
+        {
+          id: item.id.to_s,
+          speciesId: item.species_id.to_s,
+          latinName: item.latin_name,
+          tasteRating: item.taste_rating,
+          maturity: item.maturity,
+          fruitSize: item.fruit_size,
+          storageLife: item.storage_life,
+          productivity: item.productivity,
+          diseaseResistance: item.disease_resistance,
+          additionalNotes: item.additional_notes.presence
         }
       end
 

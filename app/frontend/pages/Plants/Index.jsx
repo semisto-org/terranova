@@ -238,6 +238,20 @@ function ContributionModal({ modal, busy, onClose, onChange, onSubmit }) {
                     onChange={(event) => onChange('caption', event.target.value)}
                   />
                 </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-stone-700">Rôle de la photo</span>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm"
+                    value={modal.values.role || ''}
+                    onChange={(event) => onChange('role', event.target.value)}
+                  >
+                    <option value="">Général (par défaut)</option>
+                    <option value="flower">Fleur</option>
+                    <option value="fruit">Fruit</option>
+                    <option value="foliage">Feuillage</option>
+                    <option value="habit">Port / silhouette</option>
+                  </select>
+                </label>
               </>
             )}
 
@@ -798,6 +812,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
             contributor_id: currentContributorId,
             url: values.url,
             caption: values.caption || '',
+            role: values.role || null,
           }),
         })
       }

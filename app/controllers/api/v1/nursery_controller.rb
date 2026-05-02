@@ -22,13 +22,20 @@ module Api
         item.reserved_quantity = 0 if item.reserved_quantity.nil?
         item.save!
 
-        render json: serialize_stock_batch(item), status: :created
+        render json: serialize_stock_batch(item.reload), status: :created
       end
 
       def update_stock_batch
         item = Nursery::StockBatch.find(params.require(:batch_id))
         item.update!(stock_batch_params)
-        render json: serialize_stock_batch(item)
+        render json: serialize_stock_batch(item.reload)
+      end
+
+      def update_stock_batch_status
+        item = Nursery::StockBatch.find(params.require(:batch_id))
+        attrs = params.permit(:status, :expected_availability_on, :availability_label).to_h
+        item.update!(attrs)
+        render json: serialize_stock_batch(item.reload)
       end
 
       def destroy_stock_batch
@@ -304,19 +311,24 @@ module Api
       end
 
       def stock_batch_params
-        params.permit(:nursery_id, :species_id, :species_name, :variety_id, :variety_name, :container_id, :quantity, :available_quantity, :reserved_quantity, :sowing_date, :origin, :growth_stage, :price_euros, :accepts_semos, :price_semos, :notes)
+        params.permit(
+          :nursery_id, :species_id, :variety_id, :container_id,
+          :quantity, :available_quantity, :reserved_quantity,
+          :sowing_date, :origin, :growth_stage,
+          :price_euros, :accepts_semos, :price_semos, :notes,
+          :status, :expected_availability_on, :availability_label
+        )
       end
 
       def nursery_params
-        params.permit(:name, :nursery_type, :integration, :address, :city, :postal_code, :country, :latitude, :longitude, :contact_name, :contact_email, :contact_phone, :website, :description, :is_pickup_point, specialties: [])
+        permitted = params.permit(:name, :nursery_type, :integration, :address, :city, :postal_code, :country, :latitude, :longitude, :contact_name, :contact_email, :contact_phone, :website, :description, :is_pickup_point, specialties: [])
+        permitted.delete(:latitude) if permitted[:latitude].nil?
+        permitted.delete(:longitude) if permitted[:longitude].nil?
+        permitted
       end
 
       def order_params
         params.permit(:customer_id, :customer_name, :customer_email, :customer_phone, :is_member, :price_level, :notes)
-      end
-
-      def nursery_params
-        params.permit(:name, :nursery_type, :integration, :address, :city, :postal_code, :country, :latitude, :longitude, :contact_name, :contact_email, :contact_phone, :website, :description, :is_pickup_point, specialties: [])
       end
 
       def container_params
@@ -446,26 +458,34 @@ module Api
       end
 
       def build_catalog(filters:)
-        batches = Nursery::StockBatch.includes(:nursery, :container).where('available_quantity > 0')
+        batches = Nursery::StockBatch
+                    .includes(:nursery, :container, :variety)
+                    .where(status: %w[available in_production])
         batches = batches.where(nursery_id: filters[:nursery_id]) if filters[:nursery_id].present?
         if filters[:species_query].present?
           q = "%#{filters[:species_query].to_s.downcase}%"
           batches = batches.where('LOWER(species_name) LIKE ?', q)
         end
         available_only = ActiveModel::Type::Boolean.new.cast(filters[:available_only])
-        batches = batches.where('available_quantity > 0') if available_only
+        batches = batches.where(status: 'available').where('available_quantity > 0') if available_only
 
         batches.map do |batch|
+          available = batch.status == 'available' && batch.available_quantity.to_i.positive?
           {
             stockBatchId: batch.id.to_s,
-            speciesId: batch.species_id,
+            speciesId: batch.species_id&.to_s,
             speciesName: batch.species_name,
+            varietyId: batch.variety_id&.to_s,
             varietyName: batch.variety_name.presence,
+            varietyNotes: batch.variety&.additional_notes.presence,
             nurseryId: batch.nursery_id.to_s,
             nurseryName: batch.nursery.name,
             nurseryIntegration: batch.nursery.integration,
+            status: batch.status,
+            expectedAvailabilityOn: batch.expected_availability_on&.iso8601,
+            availabilityLabel: batch.availability_label.presence,
             availableQuantity: batch.nursery.integration == 'manual' ? nil : batch.available_quantity,
-            available: batch.available_quantity.to_i.positive?,
+            available: available,
             containerName: batch.container.short_name,
             priceEuros: batch.price_euros.to_f,
             acceptsSemos: batch.accepts_semos,
@@ -587,9 +607,9 @@ module Api
         {
           id: item.id.to_s,
           nurseryId: item.nursery_id.to_s,
-          speciesId: item.species_id,
+          speciesId: item.species_id&.to_s,
           speciesName: item.species_name,
-          varietyId: item.variety_id.presence,
+          varietyId: item.variety_id&.to_s,
           varietyName: item.variety_name.presence,
           containerId: item.container_id.to_s,
           quantity: item.quantity,
@@ -598,6 +618,9 @@ module Api
           sowingDate: item.sowing_date&.iso8601,
           origin: item.origin.presence,
           growthStage: item.growth_stage,
+          status: item.status,
+          expectedAvailabilityOn: item.expected_availability_on&.iso8601,
+          availabilityLabel: item.availability_label.presence,
           priceEuros: item.price_euros.to_f,
           acceptsSemos: item.accepts_semos,
           priceSemos: item.price_semos&.to_f,

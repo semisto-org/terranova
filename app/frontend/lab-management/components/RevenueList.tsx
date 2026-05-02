@@ -172,7 +172,7 @@ export function RevenueList({
   const [sort, setSort] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'date', dir: 'desc' }])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(50)
+  const [pageSize, setPageSize] = useState(100)
   const [drawerRevenueId, setDrawerRevenueId] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [quickEdit, setQuickEdit] = useState<{ revenue: RevenueItem } | null>(null)

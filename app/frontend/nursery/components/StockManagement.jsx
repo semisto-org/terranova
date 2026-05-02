@@ -7,11 +7,18 @@ const growthStageLabels = {
   seed: 'Graine', seedling: 'Semis', young: 'Jeune', established: 'Établi', mature: 'Mature',
 }
 
-export function StockManagement({ batches, nurseries, containers, onSaveBatch, onDeleteBatch }) {
+const statusLabels = {
+  available: 'Disponible',
+  in_production: 'En production',
+  sold_out: 'Épuisé',
+  archived: 'Archivé',
+}
+
+export function StockManagement({ batches, nurseries, containers, onSaveBatch, onDeleteBatch, onQuickStatusChange, onCreateContainer }) {
   const [showForm, setShowForm] = useState(false)
   const [editingBatch, setEditingBatch] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState({})
+  const [filters, setFilters] = useState({ status: 'active' })
 
   const filteredBatches = useMemo(() => {
     return batches.filter((batch) => {
@@ -26,6 +33,9 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
       if (filters.nurseryId && batch.nurseryId !== filters.nurseryId) return false
       if (filters.containerId && batch.containerId !== filters.containerId) return false
       if (filters.stage && batch.growthStage !== filters.stage) return false
+      const batchStatus = batch.status || 'available'
+      if (filters.status === 'active' && batchStatus === 'archived') return false
+      if (filters.status && filters.status !== 'active' && filters.status !== 'all' && batchStatus !== filters.status) return false
       return true
     })
   }, [batches, searchQuery, filters, containers, nurseries])
@@ -39,8 +49,13 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
   }
   const handleCancel = () => { setShowForm(false); setEditingBatch(null) }
   const handleFilterChange = (key, value) => setFilters((prev) => ({ ...prev, [key]: value || undefined }))
-  const clearFilters = () => { setFilters({}); setSearchQuery('') }
-  const hasActiveFilters = Object.values(filters).some(Boolean) || searchQuery.length > 0
+  const clearFilters = () => { setFilters({ status: 'active' }); setSearchQuery('') }
+  const hasActiveFilters =
+    searchQuery.length > 0 ||
+    Boolean(filters.nurseryId) ||
+    Boolean(filters.containerId) ||
+    Boolean(filters.stage) ||
+    (filters.status && filters.status !== 'active')
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -60,7 +75,15 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Rechercher par espèce, variété, contenant ou pépinière..." className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-md bg-white text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-stone-700 mb-1.5">Statut</label>
+              <select value={filters.status || ''} onChange={(e) => handleFilterChange('status', e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent">
+                <option value="active">Actifs (sauf archivés)</option>
+                <option value="all">Tous</option>
+                {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-stone-700 mb-1.5">Pépinière</label>
               <select value={filters.nurseryId || ''} onChange={(e) => handleFilterChange('nurseryId', e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent">
@@ -105,7 +128,7 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
             <div className="col-span-1 text-xs font-semibold text-stone-700 uppercase tracking-wide">Contenant</div>
             <div className="col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Quantités</div>
             <div className="col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Prix</div>
-            <div className="col-span-1 text-xs font-semibold text-stone-700 uppercase tracking-wide">Stade</div>
+            <div className="col-span-1 text-xs font-semibold text-stone-700 uppercase tracking-wide">Statut</div>
             <div className="col-span-1" />
           </div>
           <div className="divide-y divide-stone-200">
@@ -118,6 +141,7 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
                 onView={() => {}}
                 onEdit={() => handleEdit(batch)}
                 onDelete={() => onDeleteBatch(batch.id)}
+                onQuickStatusChange={onQuickStatusChange}
               />
             ))}
           </div>
@@ -125,7 +149,14 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
       )}
 
       {showForm && (
-        <StockBatchForm batch={editingBatch} nurseries={nurseries} containers={containers} onSave={handleSave} onCancel={handleCancel} />
+        <StockBatchForm
+          batch={editingBatch}
+          nurseries={nurseries}
+          containers={containers}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          onCreateContainer={onCreateContainer}
+        />
       )}
     </div>
   )

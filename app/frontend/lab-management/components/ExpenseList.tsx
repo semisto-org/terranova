@@ -195,7 +195,7 @@ export function ExpenseList({
   const [sort, setSort] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'invoiceDate', dir: 'desc' }])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(50)
+  const [pageSize, setPageSize] = useState(100)
   const [drawerExpenseId, setDrawerExpenseId] = useState<string | null>(null)
   const [quickEdit, setQuickEdit] = useState<{ expense: ExpenseItem } | null>(null)
 

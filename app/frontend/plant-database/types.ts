@@ -84,6 +84,15 @@ export interface Species {
   transformations: string[]
   fodderQualities: string[]
   additionalNotes?: string
+  growthHabit?: 'arbustif-elance' | 'arbustif-arrondi' | 'buissonnant-elance' | 'buissonnant-arrondi' | 'grimpant' | 'tige' | 'touffe' | 'acaule' | 'tapissant' | null
+  heightMinCm?: number | null
+  heightMaxCm?: number | null
+  heightDescription?: string | null
+  spreadMinCm?: number | null
+  spreadMaxCm?: number | null
+  spreadDescription?: string | null
+  edibleRating?: 1 | 2 | 3 | 4 | 5 | null
+  medicinalRating?: 1 | 2 | 3 | 4 | 5 | null
 }
 
 export interface Variety {

@@ -11,6 +11,8 @@ import { Catalog } from '../../nursery/components/Catalog'
 import { TransferManagement } from '../../nursery/components/TransferManagement'
 import { NurseryList } from '../../nursery/components/NurseryList'
 import { NurseryForm } from '../../nursery/components/NurseryForm'
+import { ContainerList } from '../../nursery/components/ContainerList'
+import { ContainerForm } from '../../nursery/components/ContainerForm'
 
 const NURSERY_SECTIONS = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -20,6 +22,7 @@ const NURSERY_SECTIONS = [
   { id: 'catalog', label: 'Catalogue' },
   { id: 'transfers', label: 'Transferts' },
   { id: 'nurseries', label: 'Pépinières' },
+  { id: 'containers', label: 'Contenants' },
 ]
 
 export default function NurseryIndex() {
@@ -30,6 +33,7 @@ export default function NurseryIndex() {
   const [view, setView] = useUrlState('tab', 'dashboard')
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [nurseryForm, setNurseryForm] = useState(null)
+  const [containerForm, setContainerForm] = useState(null) // null | 'new' | container
   useShellNav({ sections: NURSERY_SECTIONS, activeSection: view, onSectionChange: (v) => { setView(v); setSelectedOrderId(null) } })
 
   const [payload, setPayload] = useState({
@@ -84,10 +88,8 @@ export default function NurseryIndex() {
     const body = JSON.stringify({
       nursery_id: data.nurseryId,
       container_id: data.containerId,
-      species_id: data.speciesId || `sp-${Date.now()}`,
-      species_name: data.speciesName,
-      variety_id: data.varietyId,
-      variety_name: data.varietyName,
+      species_id: data.speciesId,
+      variety_id: data.varietyId || null,
       quantity: data.quantity,
       available_quantity: data.availableQuantity,
       reserved_quantity: data.reservedQuantity,
@@ -98,6 +100,9 @@ export default function NurseryIndex() {
       accepts_semos: data.acceptsSemos,
       price_semos: data.priceSemos,
       notes: data.notes,
+      status: data.status,
+      expected_availability_on: data.expectedAvailabilityOn,
+      availability_label: data.availabilityLabel,
     })
     if (editId) {
       return runMutation(() => apiRequest(`/api/v1/nursery/stock-batches/${editId}`, { method: 'PATCH', body }))
@@ -108,6 +113,15 @@ export default function NurseryIndex() {
   const handleDeleteBatch = useCallback((id) => {
     if (!confirm('Supprimer ce lot ?')) return
     runMutation(() => apiRequest(`/api/v1/nursery/stock-batches/${id}`, { method: 'DELETE' }))
+  }, [runMutation])
+
+  const handleQuickStatusChange = useCallback((id, status) => {
+    return runMutation(() =>
+      apiRequest(`/api/v1/nursery/stock-batches/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+    )
   }, [runMutation])
 
   // ── Order actions ──
@@ -143,6 +157,29 @@ export default function NurseryIndex() {
     runMutation(() => apiRequest(`/api/v1/nursery/nurseries/${id}`, { method: 'DELETE' }))
   }, [payload.nurseries, runMutation])
 
+  // ── Container CRUD ──
+  const handleSaveContainer = useCallback(async (data) => {
+    const editId = containerForm && containerForm !== 'new' ? containerForm.id : null
+    const ok = editId
+      ? await runMutation(() => apiRequest(`/api/v1/nursery/containers/${editId}`, { method: 'PATCH', body: JSON.stringify(data) }))
+      : await runMutation(() => apiRequest('/api/v1/nursery/containers', { method: 'POST', body: JSON.stringify(data) }))
+    if (ok) setContainerForm(null)
+  }, [containerForm, runMutation])
+
+  const handleDeleteContainer = useCallback((c) => {
+    if (!confirm(`Supprimer le contenant « ${c.name} » ? Les lots qui l'utilisent empêcheront la suppression.`)) return
+    runMutation(() => apiRequest(`/api/v1/nursery/containers/${c.id}`, { method: 'DELETE' }))
+  }, [runMutation])
+
+  // Inline container creation from the StockBatchForm — returns the created
+  // container so the form can auto-select it. We refresh the payload after to
+  // pick up the new entry in the global list.
+  const handleCreateContainerInline = useCallback(async (data) => {
+    const created = await apiRequest('/api/v1/nursery/containers', { method: 'POST', body: JSON.stringify(data) })
+    await loadNursery()
+    return created
+  }, [loadNursery])
+
   // ── Order detail ──
   const selectedOrder = selectedOrderId ? payload.orders.find((o) => o.id === selectedOrderId) : null
 
@@ -173,6 +210,8 @@ export default function NurseryIndex() {
             containers={payload.containers}
             onSaveBatch={handleSaveBatch}
             onDeleteBatch={handleDeleteBatch}
+            onQuickStatusChange={handleQuickStatusChange}
+            onCreateContainer={handleCreateContainerInline}
           />
         )}
 
@@ -231,11 +270,29 @@ export default function NurseryIndex() {
           />
         )}
 
+        {view === 'containers' && (
+          <ContainerList
+            containers={payload.containers}
+            onCreate={() => setContainerForm('new')}
+            onEdit={(c) => setContainerForm(c)}
+            onDelete={handleDeleteContainer}
+          />
+        )}
+
         {nurseryForm && (
           <NurseryForm
             nursery={nurseryForm === 'new' ? null : nurseryForm}
             onCancel={() => setNurseryForm(null)}
             onSave={handleSaveNursery}
+          />
+        )}
+
+        {containerForm && (
+          <ContainerForm
+            container={containerForm === 'new' ? null : containerForm}
+            onCancel={() => setContainerForm(null)}
+            onSave={handleSaveContainer}
+            busy={busy}
           />
         )}
 

@@ -1,0 +1,8 @@
+{
+  "setup": [
+    "yarn install",
+    "bundle install"
+  ],
+  "teardown": [],
+  "run": []
+}

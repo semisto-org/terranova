@@ -697,76 +697,95 @@ container_rn = Nursery::Container.find_or_create_by!(short_name: 'RN') do |c|
   c.sort_order = 4
 end
 
-# Stock Batches
-batch1 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species_name: 'Malus domestica', container: container_c2) do |b|
-  b.species_id = 'sp-malus-domestica'
-  b.variety_name = 'Reine des Reinettes'
-  b.variety_id = 'var-reine-reinettes'
+# Stock Batches — link to Plant::Species / Plant::Variety in the plant DB
+def find_or_create_seed_species(latin_name)
+  Plant::Species.find_or_create_by!(latin_name: latin_name) do |s|
+    s.plant_type = 'herbaceous'
+  end
+end
+
+def find_or_create_seed_variety(species, latin_name)
+  Plant::Variety.find_or_create_by!(species: species, latin_name: latin_name)
+end
+
+species_malus     = find_or_create_seed_species('Malus domestica')
+species_corylus   = find_or_create_seed_species('Corylus avellana')
+species_quercus   = find_or_create_seed_species('Quercus robur')
+species_lavandula = find_or_create_seed_species('Lavandula angustifolia')
+species_rubus     = find_or_create_seed_species('Rubus idaeus')
+
+variety_reinettes = find_or_create_seed_variety(species_malus, 'Reine des Reinettes')
+variety_bollwiller = find_or_create_seed_variety(species_corylus, 'Merveille de Bollwiller')
+variety_hidcote = find_or_create_seed_variety(species_lavandula, 'Hidcote')
+variety_heritage = find_or_create_seed_variety(species_rubus, 'Heritage')
+
+batch1 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species: species_malus, container: container_c2) do |b|
+  b.variety = variety_reinettes
   b.quantity = 50
   b.available_quantity = 42
   b.reserved_quantity = 8
   b.sowing_date = Date.new(2025, 3, 15)
   b.origin = 'Greffage local'
   b.growth_stage = 'young'
+  b.status = 'available'
   b.price_euros = 12.50
   b.accepts_semos = true
   b.price_semos = 25.0
   b.notes = 'Greffés sur M26, bon développement'
 end
 
-batch2 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species_name: 'Corylus avellana', container: container_rn) do |b|
-  b.species_id = 'sp-corylus-avellana'
-  b.variety_name = 'Merveille de Bollwiller'
-  b.variety_id = 'var-bollwiller'
+batch2 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species: species_corylus, container: container_rn) do |b|
+  b.variety = variety_bollwiller
   b.quantity = 120
   b.available_quantity = 95
   b.reserved_quantity = 25
   b.sowing_date = Date.new(2024, 11, 1)
   b.origin = 'Marcottage'
   b.growth_stage = 'established'
+  b.status = 'available'
   b.price_euros = 8.00
   b.accepts_semos = true
   b.price_semos = 16.0
 end
 
-batch3 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_partner, species_name: 'Quercus robur', container: container_c5) do |b|
-  b.species_id = 'sp-quercus-robur'
+batch3 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_partner, species: species_quercus, container: container_c5) do |b|
   b.quantity = 30
   b.available_quantity = 5
   b.reserved_quantity = 0
   b.sowing_date = Date.new(2024, 10, 20)
   b.origin = 'Semis'
   b.growth_stage = 'young'
+  b.status = 'available'
   b.price_euros = 18.00
   b.accepts_semos = false
   b.notes = 'Stock bas - réappro prévue mars 2026'
 end
 
-batch4 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_third, species_name: 'Lavandula angustifolia', container: container_p9) do |b|
-  b.species_id = 'sp-lavandula'
-  b.variety_name = 'Hidcote'
-  b.variety_id = 'var-hidcote'
+batch4 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_third, species: species_lavandula, container: container_p9) do |b|
+  b.variety = variety_hidcote
   b.quantity = 200
   b.available_quantity = 180
   b.reserved_quantity = 20
   b.sowing_date = Date.new(2025, 5, 1)
   b.origin = 'Bouturage'
   b.growth_stage = 'seedling'
+  b.status = 'available'
   b.price_euros = 3.50
   b.accepts_semos = true
   b.price_semos = 7.0
 end
 
-batch5 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species_name: 'Rubus idaeus', container: container_p9) do |b|
-  b.species_id = 'sp-rubus-idaeus'
-  b.variety_name = 'Heritage'
-  b.variety_id = 'var-heritage'
+batch5 = Nursery::StockBatch.find_or_create_by!(nursery: nursery_semisto, species: species_rubus, container: container_p9) do |b|
+  b.variety = variety_heritage
   b.quantity = 80
   b.available_quantity = 3
   b.reserved_quantity = 2
   b.sowing_date = Date.new(2025, 6, 10)
   b.origin = 'Division'
   b.growth_stage = 'mature'
+  b.status = 'in_production'
+  b.expected_availability_on = Date.new(2026, 9, 1)
+  b.availability_label = 'septembre 2026'
   b.price_euros = 5.00
   b.accepts_semos = true
   b.price_semos = 10.0

@@ -395,6 +395,17 @@ export function SpeciesFormModal({
   const [toxicElements, setToxicElements] = useState(species?.toxicElements ?? '')
   const [additionalNotes, setAdditionalNotes] = useState(species?.additionalNotes ?? '')
 
+  // Port & dimensions
+  const [growthHabit, setGrowthHabit] = useState<string>(species?.growthHabit ?? '')
+  const [heightMinCm, setHeightMinCm] = useState<string>(species?.heightMinCm != null ? String(species.heightMinCm) : '')
+  const [heightMaxCm, setHeightMaxCm] = useState<string>(species?.heightMaxCm != null ? String(species.heightMaxCm) : '')
+  const [heightDescription, setHeightDescription] = useState<string>(species?.heightDescription ?? '')
+  const [spreadMinCm, setSpreadMinCm] = useState<string>(species?.spreadMinCm != null ? String(species.spreadMinCm) : '')
+  const [spreadMaxCm, setSpreadMaxCm] = useState<string>(species?.spreadMaxCm != null ? String(species.spreadMaxCm) : '')
+  const [spreadDescription, setSpreadDescription] = useState<string>(species?.spreadDescription ?? '')
+  const [edibleRating, setEdibleRating] = useState<number | null>(species?.edibleRating ?? null)
+  const [medicinalRating, setMedicinalRating] = useState<number | null>(species?.medicinalRating ?? null)
+
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch | null>(null)
@@ -511,6 +522,15 @@ export function SpeciesFormModal({
       toxic_elements: (toxicElements === '<p></p>' ? '' : toxicElements.trim()) || null,
       additional_notes: (additionalNotes === '<p></p>' ? '' : additionalNotes.trim()) || null,
       common_names: filteredNames,
+      growth_habit: growthHabit || null,
+      height_min_cm: heightMinCm.trim() ? Number(heightMinCm) : null,
+      height_max_cm: heightMaxCm.trim() ? Number(heightMaxCm) : null,
+      height_description: heightDescription.trim() || null,
+      spread_min_cm: spreadMinCm.trim() ? Number(spreadMinCm) : null,
+      spread_max_cm: spreadMaxCm.trim() ? Number(spreadMaxCm) : null,
+      spread_description: spreadDescription.trim() || null,
+      edible_rating: edibleRating,
+      medicinal_rating: medicinalRating,
     })
   }
 
@@ -743,6 +763,46 @@ export function SpeciesFormModal({
                         {opts.rootSystems.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </div>
+                    <div>
+                      <label className={labelBase}>Port (silhouette)</label>
+                      <select value={growthHabit} onChange={(e) => setGrowthHabit(e.target.value)} className={inputBase}>
+                        <option value="">—</option>
+                        <option value="arbustif-elance">Arbustif élancé</option>
+                        <option value="arbustif-arrondi">Arbustif arrondi</option>
+                        <option value="buissonnant-elance">Buissonnant élancé</option>
+                        <option value="buissonnant-arrondi">Buissonnant arrondi</option>
+                        <option value="grimpant">Grimpant</option>
+                        <option value="tige">Tige</option>
+                        <option value="touffe">Touffe</option>
+                        <option value="acaule">Acaule</option>
+                        <option value="tapissant">Tapissant</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelBase}>Dimensions (cm)</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                        <p className="text-xs text-stone-500 mb-1">Hauteur (cm)</p>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min={0} placeholder="min" value={heightMinCm} onChange={(e) => setHeightMinCm(e.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm focus:border-[#5B5781] focus:outline-none" />
+                          <span className="text-stone-400 text-xs">→</span>
+                          <input type="number" min={0} placeholder="max" value={heightMaxCm} onChange={(e) => setHeightMaxCm(e.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm focus:border-[#5B5781] focus:outline-none" />
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                        <p className="text-xs text-stone-500 mb-1">Largeur (cm)</p>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min={0} placeholder="min" value={spreadMinCm} onChange={(e) => setSpreadMinCm(e.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm focus:border-[#5B5781] focus:outline-none" />
+                          <span className="text-stone-400 text-xs">→</span>
+                          <input type="number" min={0} placeholder="max" value={spreadMaxCm} onChange={(e) => setSpreadMaxCm(e.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-sm focus:border-[#5B5781] focus:outline-none" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input type="text" placeholder="Notes sur la hauteur (ex. taille à 4 m en pratique)" value={heightDescription} onChange={(e) => setHeightDescription(e.target.value)} className={inputBase} />
+                      <input type="text" placeholder="Notes sur la largeur" value={spreadDescription} onChange={(e) => setSpreadDescription(e.target.value)} className={inputBase} />
+                    </div>
                   </div>
                   <div>
                     <label className={labelBase}>Zones forêt-jardin</label>
@@ -860,6 +920,10 @@ export function SpeciesFormModal({
                 </h4>
                 <div className="space-y-4">
                   <div><label className={labelBase}>Parties comestibles</label><ChipGroup options={opts.edibleParts} selected={edibleParts} onChange={setEdibleParts} color="#4caf50" /></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <RatingField label="Qualité comestible" value={edibleRating} onChange={setEdibleRating} />
+                    <RatingField label="Qualité médicinale" value={medicinalRating} onChange={setMedicinalRating} />
+                  </div>
                   <div><label className={labelBase}>Transformations</label><ChipGroup options={opts.transformations} selected={transformations} onChange={setTransformations} color="#ff9800" /></div>
                   <div><label className={labelBase}>Fourrage</label><ChipGroup options={opts.fodderQualities} selected={fodderQualities} onChange={setFodderQualities} color="#795548" /></div>
                   <div>
@@ -956,5 +1020,32 @@ export function SpeciesFormModal({
         @keyframes modalSlideIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
       `}</style>
     </>
+  )
+}
+
+function RatingField({ label, value, onChange }: { label: string; value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-stone-700 mb-2">{label}</label>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = value !== null && n <= value
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(value === n ? null : n)}
+              className="p-1 transition-transform hover:scale-110"
+              aria-label={`${n} sur 5`}
+            >
+              <svg className={`w-6 h-6 ${active ? 'text-amber-400' : 'text-stone-200'}`} viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+            </button>
+          )
+        })}
+        <span className="ml-2 text-xs text-stone-500">{value === null ? 'Non évalué' : `${value} / 5`}</span>
+      </div>
+    </div>
   )
 }

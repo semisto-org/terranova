@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_02_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1519,10 +1519,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
 
   create_table "nursery_stock_batches", force: :cascade do |t|
     t.boolean "accepts_semos", default: false, null: false
+    t.string "availability_label", default: "", null: false
     t.integer "available_quantity", default: 0, null: false
     t.bigint "container_id", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.date "expected_availability_on"
     t.string "growth_stage", default: "young", null: false
     t.text "notes", default: "", null: false
     t.bigint "nursery_id", null: false
@@ -1532,14 +1534,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
     t.integer "quantity", default: 0, null: false
     t.integer "reserved_quantity", default: 0, null: false
     t.date "sowing_date"
-    t.string "species_id", null: false
+    t.bigint "species_id", null: false
     t.string "species_name", null: false
+    t.string "status", default: "available", null: false
     t.datetime "updated_at", null: false
-    t.string "variety_id", default: "", null: false
+    t.bigint "variety_id"
     t.string "variety_name", default: "", null: false
     t.index ["container_id"], name: "index_nursery_stock_batches_on_container_id"
     t.index ["deleted_at"], name: "index_nursery_stock_batches_on_deleted_at"
     t.index ["nursery_id"], name: "index_nursery_stock_batches_on_nursery_id"
+    t.index ["species_id"], name: "index_nursery_stock_batches_on_species_id"
+    t.index ["status"], name: "index_nursery_stock_batches_on_status"
+    t.index ["variety_id"], name: "index_nursery_stock_batches_on_variety_id"
   end
 
   create_table "nursery_team_members", force: :cascade do |t|
@@ -1754,11 +1760,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
     t.string "caption", default: "", null: false
     t.bigint "contributor_id", null: false
     t.datetime "created_at", null: false
+    t.string "role"
     t.bigint "target_id", null: false
     t.string "target_type", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
     t.index ["contributor_id"], name: "index_plant_photos_on_contributor_id"
+    t.index ["role"], name: "index_plant_photos_on_role"
     t.index ["target_type", "target_id"], name: "index_plant_photos_on_target_type_and_target_id"
   end
 
@@ -1809,6 +1817,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
     t.text "description", default: "", null: false
     t.jsonb "ecosystem_needs", default: [], null: false
     t.jsonb "edible_parts", default: [], null: false
+    t.integer "edible_rating"
     t.jsonb "exposures", default: [], null: false
     t.string "fertility", default: "self-fertile", null: false
     t.jsonb "flower_colors", default: [], null: false
@@ -1820,15 +1829,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
     t.string "fragrance", default: "none", null: false
     t.jsonb "fruiting_months", default: [], null: false
     t.bigint "genus_id"
+    t.string "growth_habit"
     t.string "growth_rate", default: "medium", null: false
     t.string "hardiness", default: "", null: false
     t.jsonb "harvest_months", default: [], null: false
     t.string "height_description", default: "", null: false
+    t.integer "height_max_cm"
+    t.integer "height_min_cm"
     t.jsonb "interests", default: [], null: false
     t.boolean "is_invasive", default: false, null: false
     t.boolean "is_native_belgium", default: false, null: false
     t.string "latin_name", null: false
     t.string "life_cycle", default: "perennial", null: false
+    t.integer "medicinal_rating"
     t.jsonb "native_countries", default: [], null: false
     t.datetime "notion_created_at"
     t.string "notion_id"
@@ -1843,6 +1856,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
     t.string "soil_richness", default: "moderate", null: false
     t.jsonb "soil_types", default: [], null: false
     t.string "spread_description", default: "", null: false
+    t.integer "spread_max_cm"
+    t.integer "spread_min_cm"
     t.text "therapeutic_properties"
     t.text "toxic_elements"
     t.jsonb "transformations", default: [], null: false
@@ -2414,6 +2429,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_180001) do
   add_foreign_key "nursery_schedule_slots", "nursery_team_members", column: "member_id"
   add_foreign_key "nursery_stock_batches", "nursery_containers", column: "container_id"
   add_foreign_key "nursery_stock_batches", "nursery_nurseries", column: "nursery_id"
+  add_foreign_key "nursery_stock_batches", "plant_species", column: "species_id"
+  add_foreign_key "nursery_stock_batches", "plant_varieties", column: "variety_id"
   add_foreign_key "nursery_team_members", "nursery_nurseries", column: "nursery_id"
   add_foreign_key "nursery_timesheet_entries", "nursery_nurseries", column: "nursery_id"
   add_foreign_key "nursery_timesheet_entries", "nursery_team_members", column: "member_id"

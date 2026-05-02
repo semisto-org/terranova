@@ -1,5 +1,5 @@
 class AppController < ApplicationController
-  before_action :require_authentication, except: [:design_client_portal, :academy_registration]
+  before_action :require_authentication, except: [:design_client_portal, :academy_registration, :public_catalog]
   before_action :verify_client_portal_token!, only: [:design_client_portal]
   before_action :require_effective_for_strategy, only: [:strategy]
 
@@ -86,6 +86,12 @@ class AppController < ApplicationController
   def nursery
     render inertia: "Nursery/Index", props: {
       milestone: "Nursery"
+    }
+  end
+
+  def public_catalog
+    render inertia: "Public/Catalog", props: {
+      milestone: "Public Catalog"
     }
   end
 
