@@ -95,7 +95,6 @@ export function StockBatchForm({ batch, nurseries, containers, onSave, onCancel,
   const varietyValue = formData.varietyId ? { id: formData.varietyId, latinName: formData.varietyName } : null
 
   const handleSpeciesChange = (next) => {
-    console.debug('[StockBatchForm] species changed →', next)
     setFormData((prev) => ({
       ...prev,
       speciesId: next?.id || '',

@@ -1,20 +1,20 @@
-import { useState, useMemo } from 'react'
-import { StockBatchRow } from './StockBatchRow'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { StockBatchForm } from './StockBatchForm'
-import { Plus, Search, X } from 'lucide-react'
+import { StockTable } from './StockTable'
+import { Plus, Search, X, SlidersHorizontal, ChevronDown, Check } from 'lucide-react'
 
-const growthStageLabels = {
+const GROWTH_STAGE_LABELS = {
   seed: 'Graine', seedling: 'Semis', young: 'Jeune', established: 'Établi', mature: 'Mature',
 }
 
-const statusLabels = {
+const STATUS_LABELS = {
   available: 'Disponible',
   in_production: 'En production',
   sold_out: 'Épuisé',
   archived: 'Archivé',
 }
 
-export function StockManagement({ batches, nurseries, containers, onSaveBatch, onDeleteBatch, onQuickStatusChange, onCreateContainer }) {
+export function StockManagement({ batches, nurseries, containers, onSaveBatch, onDeleteBatch, onPatchBatch, onCreateContainer }) {
   const [showForm, setShowForm] = useState(false)
   const [editingBatch, setEditingBatch] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -48,105 +48,120 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
     setEditingBatch(null)
   }
   const handleCancel = () => { setShowForm(false); setEditingBatch(null) }
-  const handleFilterChange = (key, value) => setFilters((prev) => ({ ...prev, [key]: value || undefined }))
+  const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value || undefined }))
   const clearFilters = () => { setFilters({ status: 'active' }); setSearchQuery('') }
-  const hasActiveFilters =
-    searchQuery.length > 0 ||
-    Boolean(filters.nurseryId) ||
-    Boolean(filters.containerId) ||
-    Boolean(filters.stage) ||
-    (filters.status && filters.status !== 'active')
+
+  const activeFilterCount =
+    Number(Boolean(filters.nurseryId)) +
+    Number(Boolean(filters.containerId)) +
+    Number(Boolean(filters.stage)) +
+    Number(filters.status && filters.status !== 'active' ? 1 : 0)
+
+  const total = batches.length
+  const available = batches.filter((b) => (b.status || 'available') === 'available').length
+  const inProd = batches.filter((b) => b.status === 'in_production').length
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-900" style={{ fontFamily: 'Sole Serif Small, serif' }}>Gestion du stock</h1>
-          <p className="mt-1 text-sm text-stone-600">{filteredBatches.length} lot{filteredBatches.length !== 1 ? 's' : ''} trouvé{filteredBatches.length !== 1 ? 's' : ''}</p>
+    <div className="max-w-[1200px] mx-auto">
+      {/* Page header — compact, editorial */}
+      <div className="flex flex-col gap-1 pb-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-serif text-[28px] leading-none text-stone-900" style={{ fontFamily: 'Sole Serif Small, serif' }}>
+            Stock
+          </h1>
+          <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-stone-400">
+            {filteredBatches.length}/{total}
+            {filteredBatches.length !== total && ' filtrés'}
+          </span>
         </div>
-        <button onClick={handleCreate} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md bg-[#EF9B0D] hover:bg-[#d88a0b] transition-colors focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:ring-offset-2">
-          <Plus className="w-4 h-4" />Créer un lot
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg border border-stone-200 p-4">
-        <div className="flex flex-col gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Rechercher par espèce, variété, contenant ou pépinière..." className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-md bg-white text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1.5">Statut</label>
-              <select value={filters.status || ''} onChange={(e) => handleFilterChange('status', e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent">
-                <option value="active">Actifs (sauf archivés)</option>
-                <option value="all">Tous</option>
-                {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1.5">Pépinière</label>
-              <select value={filters.nurseryId || ''} onChange={(e) => handleFilterChange('nurseryId', e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent">
-                <option value="">Toutes les pépinières</option>
-                {nurseries.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1.5">Contenant</label>
-              <select value={filters.containerId || ''} onChange={(e) => handleFilterChange('containerId', e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent">
-                <option value="">Tous les contenants</option>
-                {containers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1.5">Stade</label>
-              <select value={filters.stage || ''} onChange={(e) => handleFilterChange('stage', e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:border-transparent">
-                <option value="">Tous les stades</option>
-                {Object.entries(growthStageLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </div>
-            <div className="flex items-end">
-              {hasActiveFilters && (
-                <button onClick={clearFilters} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-stone-700 border border-stone-300 rounded-md hover:bg-stone-50 transition-colors">
-                  <X className="w-4 h-4" />Réinitialiser
-                </button>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.14em] text-stone-400">
+          <span><span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 align-middle" />{available} dispo</span>
+          <span><span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle" />{inProd} en prod</span>
         </div>
       </div>
 
-      {filteredBatches.length === 0 ? (
-        <div className="bg-white rounded-lg border border-stone-200 p-12 text-center">
-          <p className="text-stone-500">{hasActiveFilters ? 'Aucun lot ne correspond aux filtres.' : 'Aucun lot en stock.'}</p>
+      {/* Toolbar — slim & dense, Linear-style */}
+      <div className="flex flex-wrap items-center gap-2 border-y border-stone-200/70 bg-white/60 px-1 py-2">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Espèce, variété, contenant…"
+            className="w-full rounded-md border border-transparent bg-stone-50 px-2.5 py-1 pl-8 text-[12px] text-stone-800 placeholder-stone-400 transition focus:border-stone-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EF9B0D]/15"
+          />
         </div>
-      ) : (
-        <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
-          <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 bg-[#fbe6c3] border-b border-stone-200">
-            <div className="col-span-3 text-xs font-semibold text-stone-700 uppercase tracking-wide">Espèce / Variété</div>
-            <div className="col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Pépinière</div>
-            <div className="col-span-1 text-xs font-semibold text-stone-700 uppercase tracking-wide">Contenant</div>
-            <div className="col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Quantités</div>
-            <div className="col-span-2 text-xs font-semibold text-stone-700 uppercase tracking-wide">Prix</div>
-            <div className="col-span-1 text-xs font-semibold text-stone-700 uppercase tracking-wide">Statut</div>
-            <div className="col-span-1" />
-          </div>
-          <div className="divide-y divide-stone-200">
-            {filteredBatches.map((batch) => (
-              <StockBatchRow
-                key={batch.id}
-                batch={batch}
-                containerName={containers.find((c) => c.id === batch.containerId)?.name || batch.containerId}
-                nurseryName={nurseries.find((n) => n.id === batch.nurseryId)?.name || batch.nurseryId}
-                onView={() => {}}
-                onEdit={() => handleEdit(batch)}
-                onDelete={() => onDeleteBatch(batch.id)}
-                onQuickStatusChange={onQuickStatusChange}
-              />
-            ))}
-          </div>
+
+        <FilterPopover label="Statut" value={statusLabel(filters.status)} count={filters.status && filters.status !== 'active' ? 1 : 0}>
+          {[
+            ['active', 'Actifs (sauf archivés)'],
+            ['all', 'Tous'],
+            ...Object.entries(STATUS_LABELS),
+          ].map(([v, l]) => (
+            <FilterOption key={v} active={filters.status === v} onClick={() => setFilter('status', v)}>{l}</FilterOption>
+          ))}
+        </FilterPopover>
+
+        <FilterPopover label="Pépinière" value={nurseryLabel(filters.nurseryId, nurseries)} count={filters.nurseryId ? 1 : 0}>
+          <FilterOption active={!filters.nurseryId} onClick={() => setFilter('nurseryId', '')}>Toutes</FilterOption>
+          {nurseries.map((n) => (
+            <FilterOption key={n.id} active={filters.nurseryId === n.id} onClick={() => setFilter('nurseryId', n.id)}>{n.name}</FilterOption>
+          ))}
+        </FilterPopover>
+
+        <FilterPopover label="Pot" value={containerLabel(filters.containerId, containers)} count={filters.containerId ? 1 : 0}>
+          <FilterOption active={!filters.containerId} onClick={() => setFilter('containerId', '')}>Tous</FilterOption>
+          {containers.map((c) => (
+            <FilterOption key={c.id} active={filters.containerId === c.id} onClick={() => setFilter('containerId', c.id)}>
+              <span className="font-mono text-[10px] mr-2 rounded bg-stone-100 px-1 text-stone-600">{c.shortName}</span>
+              {c.name}
+            </FilterOption>
+          ))}
+        </FilterPopover>
+
+        <FilterPopover label="Stade" value={GROWTH_STAGE_LABELS[filters.stage]} count={filters.stage ? 1 : 0}>
+          <FilterOption active={!filters.stage} onClick={() => setFilter('stage', '')}>Tous</FilterOption>
+          {Object.entries(GROWTH_STAGE_LABELS).map(([v, l]) => (
+            <FilterOption key={v} active={filters.stage === v} onClick={() => setFilter('stage', v)}>{l}</FilterOption>
+          ))}
+        </FilterPopover>
+
+        {activeFilterCount > 0 && (
+          <button onClick={clearFilters} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-stone-500 transition hover:bg-stone-100 hover:text-stone-700">
+            <X className="h-3 w-3" /> Réinitialiser
+          </button>
+        )}
+
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center gap-1.5 rounded-md bg-stone-900 px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition hover:bg-stone-800"
+          >
+            <Plus className="h-3.5 w-3.5" /> Nouveau lot
+          </button>
         </div>
-      )}
+      </div>
+
+      <div className="pt-4">
+        {filteredBatches.length === 0 ? (
+          <div className="rounded-xl border border-stone-200 bg-white px-6 py-16 text-center">
+            <p className="font-serif text-lg italic text-stone-400" style={{ fontFamily: 'Sole Serif Small, serif' }}>
+              {activeFilterCount + (searchQuery ? 1 : 0) > 0 ? 'Aucun lot ne correspond aux filtres.' : 'Aucun lot en stock.'}
+            </p>
+          </div>
+        ) : (
+          <StockTable
+            batches={filteredBatches}
+            nurseries={nurseries}
+            containers={containers}
+            onPatch={onPatchBatch}
+            onEdit={handleEdit}
+            onDelete={onDeleteBatch}
+          />
+        )}
+      </div>
 
       {showForm && (
         <StockBatchForm
@@ -160,4 +175,70 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
       )}
     </div>
   )
+}
+
+// ──────────────────────────────────────────────────────────────
+// Slim popover-based filter chips
+// ──────────────────────────────────────────────────────────────
+
+function FilterPopover({ label, value, count, children }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+
+  const isActive = count > 0 && value && value !== 'Actifs (sauf archivés)'
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12px] transition ${
+          isActive
+            ? 'border-stone-900 bg-stone-900 text-white'
+            : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50'
+        }`}
+      >
+        <span className="font-mono text-[9px] uppercase tracking-[0.18em] opacity-40">{label}</span>
+        {value && <span className="font-medium">{value}</span>}
+        <ChevronDown className="h-3 w-3 opacity-50" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-1 min-w-[220px] overflow-hidden rounded-lg border border-stone-200 bg-white py-0.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.12)]">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FilterOption({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition ${active ? 'bg-stone-50 text-stone-900' : 'text-stone-700 hover:bg-stone-50'}`}
+    >
+      <span className="flex-1">{children}</span>
+      {active && <Check className="h-3 w-3 text-stone-400" />}
+    </button>
+  )
+}
+
+function statusLabel(value) {
+  if (!value || value === 'active') return 'Actifs'
+  if (value === 'all') return 'Tous'
+  return STATUS_LABELS[value] || value
+}
+
+function nurseryLabel(id, nurseries) {
+  if (!id) return 'Toutes'
+  return nurseries.find((n) => n.id === id)?.name
+}
+
+function containerLabel(id, containers) {
+  if (!id) return 'Tous'
+  return containers.find((c) => c.id === id)?.shortName
 }

@@ -124,6 +124,21 @@ export default function NurseryIndex() {
     )
   }, [runMutation])
 
+  // Partial PATCH for inline-edited cells in the spreadsheet view.
+  // The /status endpoint accepts status + availability fields; for everything
+  // else (quantities, prices, stage, notes…) we hit the main update endpoint.
+  const handlePatchBatch = useCallback(async (id, partial) => {
+    const usesStatusEndpoint = Object.keys(partial).every((k) =>
+      k === 'status' || k === 'expected_availability_on' || k === 'availability_label'
+    )
+    const path = usesStatusEndpoint
+      ? `/api/v1/nursery/stock-batches/${id}/status`
+      : `/api/v1/nursery/stock-batches/${id}`
+    return runMutation(() =>
+      apiRequest(path, { method: 'PATCH', body: JSON.stringify(partial) })
+    )
+  }, [runMutation])
+
   // ── Order actions ──
   const handleAdvanceOrder = useCallback((orderId, action) => {
     const endpoint = action === 'process' ? 'process' : action === 'ready' ? 'ready' : action === 'picked-up' ? 'picked-up' : 'cancel'
@@ -210,7 +225,7 @@ export default function NurseryIndex() {
             containers={payload.containers}
             onSaveBatch={handleSaveBatch}
             onDeleteBatch={handleDeleteBatch}
-            onQuickStatusChange={handleQuickStatusChange}
+            onPatchBatch={handlePatchBatch}
             onCreateContainer={handleCreateContainerInline}
           />
         )}
