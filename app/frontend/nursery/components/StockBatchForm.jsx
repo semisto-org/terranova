@@ -236,10 +236,10 @@ export function StockBatchForm({ batch, nurseries, containers, onSave, onCancel,
                   {nurseries.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
                 </select>
               </Field>
-              <Field label="Contenant" required>
+              <Field label="Contenant" hint="optionnel">
                 <div className="flex gap-2">
-                  <select required value={formData.containerId} onChange={(e) => setFormData({ ...formData, containerId: e.target.value })} className={`${inputClass} flex-1`}>
-                    <option value="">Sélectionner</option>
+                  <select value={formData.containerId} onChange={(e) => setFormData({ ...formData, containerId: e.target.value })} className={`${inputClass} flex-1`}>
+                    <option value="">Non précisé</option>
                     {containers.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.shortName})</option>)}
                   </select>
                   <button

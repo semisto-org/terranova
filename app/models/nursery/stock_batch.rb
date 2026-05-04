@@ -7,7 +7,7 @@ module Nursery
     STATUSES = %w[available in_production sold_out archived].freeze
 
     belongs_to :nursery, class_name: 'Nursery::Nursery'
-    belongs_to :container, class_name: 'Nursery::Container'
+    belongs_to :container, class_name: 'Nursery::Container', optional: true
     belongs_to :species, class_name: 'Plant::Species'
     belongs_to :variety, class_name: 'Plant::Variety', optional: true
     has_many :order_lines, class_name: 'Nursery::OrderLine', foreign_key: :stock_batch_id, dependent: :restrict_with_error

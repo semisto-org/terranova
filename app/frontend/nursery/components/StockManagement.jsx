@@ -104,12 +104,14 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
           ))}
         </FilterPopover>
 
-        <FilterPopover label="Pépinière" value={nurseryLabel(filters.nurseryId, nurseries)} count={filters.nurseryId ? 1 : 0}>
-          <FilterOption active={!filters.nurseryId} onClick={() => setFilter('nurseryId', '')}>Toutes</FilterOption>
-          {nurseries.map((n) => (
-            <FilterOption key={n.id} active={filters.nurseryId === n.id} onClick={() => setFilter('nurseryId', n.id)}>{n.name}</FilterOption>
-          ))}
-        </FilterPopover>
+        {nurseries.length > 1 && (
+          <FilterPopover label="Pépinière" value={nurseryLabel(filters.nurseryId, nurseries)} count={filters.nurseryId ? 1 : 0}>
+            <FilterOption active={!filters.nurseryId} onClick={() => setFilter('nurseryId', '')}>Toutes</FilterOption>
+            {nurseries.map((n) => (
+              <FilterOption key={n.id} active={filters.nurseryId === n.id} onClick={() => setFilter('nurseryId', n.id)}>{n.name}</FilterOption>
+            ))}
+          </FilterPopover>
+        )}
 
         <FilterPopover label="Pot" value={containerLabel(filters.containerId, containers)} count={filters.containerId ? 1 : 0}>
           <FilterOption active={!filters.containerId} onClick={() => setFilter('containerId', '')}>Tous</FilterOption>

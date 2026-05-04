@@ -37,11 +37,24 @@ const STATUSES = [
   { value: 'archived',      label: 'Archivé',       dot: 'bg-stone-300',    text: 'text-stone-400' },
 ]
 
-// Column template — narrow index gutter on the left, then nursery, pot, stock,
-// price, stage, status, notes, actions.
-const COLS = '[grid-template-columns:36px_minmax(140px,1fr)_72px_140px_92px_120px_140px_minmax(180px,1.2fr)_56px]'
+// Column templates — narrow index gutter on the left, then optionally a
+// nursery column, then pot/stock/price/stage/status/notes/actions.
+const COLS_WITH_NURSERY = '[grid-template-columns:36px_minmax(140px,1fr)_72px_140px_92px_120px_140px_minmax(180px,1.2fr)_56px]'
+const COLS_NO_NURSERY   = '[grid-template-columns:36px_72px_140px_92px_120px_140px_minmax(220px,1.4fr)_56px]'
 
 export function StockTable({ batches, nurseries, containers, onPatch, onEdit, onDelete }) {
+  // Hide the nursery column when every visible batch belongs to the same
+  // nursery — repeated identical values are noise. As soon as multiple
+  // nurseries are present in the result set, the column reappears.
+  const distinctNurseryIds = useMemo(() => {
+    const set = new Set()
+    batches.forEach((b) => set.add(b.nurseryId))
+    return set
+  }, [batches])
+  const showNursery = distinctNurseryIds.size > 1
+
+  const cols = showNursery ? COLS_WITH_NURSERY : COLS_NO_NURSERY
+
   const groups = useMemo(() => {
     const map = new Map()
     for (const b of batches) {
@@ -68,9 +81,9 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
       `}</style>
 
       {/* Sticky column header */}
-      <div className={`sticky top-0 z-20 hidden md:grid ${COLS} border-b border-stone-200 bg-stone-50/80 backdrop-blur supports-[backdrop-filter]:bg-stone-50/70`}>
+      <div className={`sticky top-0 z-20 hidden md:grid ${cols} border-b border-stone-200 bg-stone-50/80 backdrop-blur supports-[backdrop-filter]:bg-stone-50/70`}>
         <Th />
-        <Th>Pépinière</Th>
+        {showNursery && <Th>Pépinière</Th>}
         <Th>Pot</Th>
         <Th>Stock</Th>
         <Th align="right">Prix</Th>
@@ -84,7 +97,7 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
         <div className="px-6 py-16 text-center text-sm text-stone-400">Aucun lot ne correspond aux filtres.</div>
       ) : (
         groups.map((g) => (
-          <GroupBlock key={g.key} group={g} nurseries={nurseries} containers={containers} onPatch={onPatch} onEdit={onEdit} onDelete={onDelete} />
+          <GroupBlock key={g.key} group={g} nurseries={nurseries} containers={containers} onPatch={onPatch} onEdit={onEdit} onDelete={onDelete} cols={cols} showNursery={showNursery} />
         ))
       )}
     </div>
@@ -102,7 +115,7 @@ function Th({ children, align = 'left' }) {
   )
 }
 
-function GroupBlock({ group, nurseries, containers, onPatch, onEdit, onDelete }) {
+function GroupBlock({ group, nurseries, containers, onPatch, onEdit, onDelete, cols, showNursery }) {
   return (
     <div className="border-t border-stone-100/80 first:border-t-0">
       {group.batches.map((batch, idx) => (
@@ -117,20 +130,22 @@ function GroupBlock({ group, nurseries, containers, onPatch, onEdit, onDelete })
           onDelete={onDelete}
           showGroupHeader={idx === 0}
           group={group}
+          cols={cols}
+          showNursery={showNursery}
         />
       ))}
     </div>
   )
 }
 
-function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDelete, showGroupHeader, group }) {
+function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDelete, showGroupHeader, group, cols, showNursery }) {
   const [notesOpen, setNotesOpen] = useState(false)
   const [flashKey, setFlashKey] = useState(0)
   const status = batch.status || 'available'
   const isLowStock = status === 'available' && batch.availableQuantity <= 10
   const nurseryName = nurseries.find((n) => n.id === batch.nurseryId)?.name || batch.nurseryId
   const container = containers.find((c) => c.id === batch.containerId)
-  const containerLabel = container?.shortName || batch.containerId
+  const containerLabel = container?.shortName || (batch.containerId ? batch.containerId : null)
 
   const patchAndFlash = async (id, partial) => {
     const r = await onPatch(id, partial)
@@ -158,7 +173,7 @@ function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDele
 
       <div
         key={flashKey}
-        className={`group/row hidden md:grid ${COLS} h-9 items-stretch border-b border-stone-100/60 transition-colors hover:bg-stone-50/60 ${flashKey > 0 ? 'save-flash' : ''}`}
+        className={`group/row hidden md:grid ${cols} h-9 items-stretch border-b border-stone-100/60 transition-colors hover:bg-stone-50/60 ${flashKey > 0 ? 'save-flash' : ''}`}
       >
         {/* Index gutter — Airtable-style row number. Anchors the eye and reinforces
             the group/lot relationship without repeating the species name. */}
@@ -168,12 +183,18 @@ function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDele
           </span>
         </Cell>
 
-        <Cell><span className="truncate text-[12px] text-stone-600">{nurseryName}</span></Cell>
+        {showNursery && (
+          <Cell><span className="truncate text-[12px] text-stone-600">{nurseryName}</span></Cell>
+        )}
 
         <Cell>
-          <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-            {containerLabel}
-          </span>
+          {containerLabel ? (
+            <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-600">
+              {containerLabel}
+            </span>
+          ) : (
+            <span className="text-[11px] text-stone-300">—</span>
+          )}
         </Cell>
 
         <StockCell batch={batch} onPatch={patchAndFlash} isLowStock={isLowStock} />

@@ -87,7 +87,7 @@ export default function NurseryIndex() {
   const handleSaveBatch = useCallback((data, editId) => {
     const body = JSON.stringify({
       nursery_id: data.nurseryId,
-      container_id: data.containerId,
+      container_id: data.containerId || null,
       species_id: data.speciesId,
       variety_id: data.varietyId || null,
       quantity: data.quantity,
