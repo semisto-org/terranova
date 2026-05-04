@@ -173,4 +173,26 @@ class PlantsStep1Test < ActionDispatch::IntegrationTest
     assert_operator @contributor.photos_added, :>=, 1
     assert_operator @contributor.semos_earned, :>=, 10
   end
+
+  test 'create variety is idempotent on (species_id, latin_name)' do
+    # Regression: bulk-import scripts that POST the same variety twice used to
+    # silently create duplicates because there was no uniqueness check.
+    species = Plant::Species.create!(latin_name: 'Allium ampeloprasum', plant_type: 'herbaceous')
+
+    post '/api/v1/plants/varieties',
+         params: { species_id: species.id, latin_name: 'Atlas' },
+         as: :json
+    assert_response :created
+    first_id = JSON.parse(response.body)['id']
+
+    # Second call with the same payload — should return the same record.
+    post '/api/v1/plants/varieties',
+         params: { species_id: species.id, latin_name: 'Atlas' },
+         as: :json
+    assert_response :success
+    second_id = JSON.parse(response.body)['id']
+
+    assert_equal first_id, second_id
+    assert_equal 1, Plant::Variety.where(species_id: species.id, latin_name: 'Atlas').count
+  end
 end

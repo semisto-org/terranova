@@ -84,6 +84,28 @@ class NurseryManagementTest < ActionDispatch::IntegrationTest
     assert_equal 'sold_out', JSON.parse(response.body)['status']
   end
 
+  test 'create stock batch tolerates null availability_label / notes / origin' do
+    # Regression: bulk imports were sending these fields as null and the
+    # controller previously forwarded them straight to a NOT NULL column,
+    # producing a 500. The controller must coerce nil → DB default.
+    post '/api/v1/nursery/stock-batches', params: {
+      nursery_id: @nursery.id,
+      species_id: @species_malus.id,
+      container_id: @container.id,
+      quantity: 5,
+      growth_stage: 'young',
+      status: 'available',
+      availability_label: nil,
+      notes: nil,
+      origin: nil,
+      price_euros: 5
+    }, as: :json
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal 5, body['quantity']
+    assert_equal 'available', body['status']
+  end
+
   test 'order processing workflow updates statuses and stock' do
     batch = Nursery::StockBatch.create!(
       nursery: @nursery,

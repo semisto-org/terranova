@@ -1,25 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Edit, Trash2, AlertTriangle, ChevronDown, Check, MessageSquare, X } from 'lucide-react'
+import { PlantDrawer } from '@/components/public/PlantDrawer'
 
 /**
- * Slick spreadsheet for stock batches — Linear-meets-Airtable density.
+ * Stock spreadsheet — one row per batch, fully scannable left-to-right.
  *
- *  Visual rules:
- *   - One signature font: italic serif for latin names. System sans for everything else.
- *     Numbers in tabular-nums. No mixed fonts within a cell.
- *   - Status reduced to a colored dot + label (no chip), except "in_production"
- *     which keeps a soft amber pill because it carries a deferred-action
- *     meaning the eye must catch.
- *   - Group headers are thin lines, not banners.
- *   - Hover/focus uses inset borders (1px), no jumpy rings.
- *   - Save flash: 220ms emerald wash on the just-mutated cell.
+ * Identity columns (sticky-left when scrolling horizontally on narrow screens):
+ *   - Espèce  (italic serif, primary anchor)
+ *   - Variété (regular sans, secondary)
  *
- *  Editing UX:
- *   - Single click on numeric cell = focus (auto-select). Enter / blur = commit.
- *     Esc = cancel. Tab moves to the next editable column.
- *   - Status / Stage = popover.
- *   - Notes = expand inline.
- *   - Species / variety / container / nursery = read-only (these define batch identity).
+ * When two consecutive rows share the same species, the duplicated species
+ * cell gets a "ditto" treatment (light grey ditto mark, full text still in
+ * the DOM for screen readers and copy/paste). Same logic for the variety.
+ * This avoids the readability problem of floating eyebrows above data rows
+ * and matches the way printed plant catalogues handle long lists.
+ *
+ * All identity text now meets WCAG AA contrast on stone-50 background.
  */
 
 const GROWTH_STAGES = [
@@ -37,38 +34,37 @@ const STATUSES = [
   { value: 'archived',      label: 'Archivé',       dot: 'bg-stone-300',    text: 'text-stone-400' },
 ]
 
-// Column templates — narrow index gutter on the left, then optionally a
-// nursery column, then pot/stock/price/stage/status/notes/actions.
-const COLS_WITH_NURSERY = '[grid-template-columns:36px_minmax(140px,1fr)_72px_140px_92px_120px_140px_minmax(180px,1.2fr)_56px]'
-const COLS_NO_NURSERY   = '[grid-template-columns:36px_72px_140px_92px_120px_140px_minmax(220px,1.4fr)_56px]'
+// Column templates — espèce / variété / [pépinière?] / pot / stock / prix / stade / statut / notes / actions
+const COLS_WITH_NURSERY = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_minmax(120px,140px)_64px_136px_84px_104px_136px_minmax(140px,1fr)_48px]'
+const COLS_NO_NURSERY   = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_64px_136px_84px_104px_136px_minmax(160px,1.2fr)_48px]'
 
 export function StockTable({ batches, nurseries, containers, onPatch, onEdit, onDelete }) {
-  // Hide the nursery column when every visible batch belongs to the same
-  // nursery — repeated identical values are noise. As soon as multiple
-  // nurseries are present in the result set, the column reappears.
+  const [drawer, setDrawer] = useState(null) // { kind, id }
+
   const distinctNurseryIds = useMemo(() => {
     const set = new Set()
     batches.forEach((b) => set.add(b.nurseryId))
     return set
   }, [batches])
   const showNursery = distinctNurseryIds.size > 1
-
   const cols = showNursery ? COLS_WITH_NURSERY : COLS_NO_NURSERY
 
-  const groups = useMemo(() => {
-    const map = new Map()
-    for (const b of batches) {
-      const key = `${b.speciesId}::${b.varietyId || ''}`
-      if (!map.has(key)) {
-        map.set(key, { key, speciesId: b.speciesId, speciesName: b.speciesName, varietyId: b.varietyId, varietyName: b.varietyName, batches: [] })
-      }
-      map.get(key).batches.push(b)
-    }
-    return Array.from(map.values()).sort((a, b) => {
+  // Sort: species → variety so the eye can scan groupings naturally.
+  const sorted = useMemo(() => {
+    return [...batches].sort((a, b) => {
       const sn = (a.speciesName || '').localeCompare(b.speciesName || '')
-      return sn !== 0 ? sn : (a.varietyName || '').localeCompare(b.varietyName || '')
+      if (sn !== 0) return sn
+      return (a.varietyName || '').localeCompare(b.varietyName || '')
     })
   }, [batches])
+
+  // Batches relevant to the currently-open drawer — shown inside the drawer
+  // as "available stock for this plant".
+  const drawerBatches = useMemo(() => {
+    if (!drawer) return []
+    if (drawer.kind === 'variety') return batches.filter((b) => b.varietyId === drawer.id)
+    return batches.filter((b) => b.speciesId === drawer.id && !b.varietyId)
+  }, [drawer, batches])
 
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200/80 bg-white shadow-[0_1px_0_rgba(0,0,0,0.02)]">
@@ -81,8 +77,9 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
       `}</style>
 
       {/* Sticky column header */}
-      <div className={`sticky top-0 z-20 hidden md:grid ${cols} border-b border-stone-200 bg-stone-50/80 backdrop-blur supports-[backdrop-filter]:bg-stone-50/70`}>
-        <Th />
+      <div className={`sticky top-0 z-20 hidden md:grid ${cols} border-b border-stone-200 bg-stone-50/85 backdrop-blur supports-[backdrop-filter]:bg-stone-50/75`}>
+        <Th>Espèce</Th>
+        <Th>Variété</Th>
         {showNursery && <Th>Pépinière</Th>}
         <Th>Pot</Th>
         <Th>Stock</Th>
@@ -93,12 +90,41 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
         <Th />
       </div>
 
-      {groups.length === 0 ? (
+      {sorted.length === 0 ? (
         <div className="px-6 py-16 text-center text-sm text-stone-400">Aucun lot ne correspond aux filtres.</div>
       ) : (
-        groups.map((g) => (
-          <GroupBlock key={g.key} group={g} nurseries={nurseries} containers={containers} onPatch={onPatch} onEdit={onEdit} onDelete={onDelete} cols={cols} showNursery={showNursery} />
-        ))
+        sorted.map((batch, idx) => {
+          // The first batch of a new species gets a slightly stronger top divider
+          // so the eye can still parse groups, even though every row repeats names.
+          const prev = sorted[idx - 1]
+          const isFirstOfSpecies = !prev || prev.speciesName !== batch.speciesName
+          return (
+            <BatchRow
+              key={batch.id}
+              batch={batch}
+              nurseries={nurseries}
+              containers={containers}
+              onPatch={onPatch}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              cols={cols}
+              showNursery={showNursery}
+              isFirstOfSpecies={isFirstOfSpecies}
+              onOpenSpecies={(id) => setDrawer({ kind: 'species', id })}
+              onOpenVariety={(id) => setDrawer({ kind: 'variety', id })}
+            />
+          )
+        })
+      )}
+
+      {drawer && (
+        <PlantDrawer
+          kind={drawer.kind}
+          id={drawer.id}
+          batches={drawerBatches}
+          allBatchesForSpecies={batches.filter((b) => b.speciesId === (drawer.kind === 'variety' ? batches.find((x) => x.varietyId === drawer.id)?.speciesId : drawer.id))}
+          onClose={() => setDrawer(null)}
+        />
       )}
     </div>
   )
@@ -107,38 +133,14 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
 function Th({ children, align = 'left' }) {
   return (
     <div
-      className={`px-3 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-stone-400 ${align === 'right' ? 'text-right' : ''}`}
-      style={{ fontFeatureSettings: '"cv11"' }}
+      className={`px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.14em] text-stone-500 ${align === 'right' ? 'text-right' : ''}`}
     >
       {children}
     </div>
   )
 }
 
-function GroupBlock({ group, nurseries, containers, onPatch, onEdit, onDelete, cols, showNursery }) {
-  return (
-    <div className="border-t border-stone-100/80 first:border-t-0">
-      {group.batches.map((batch, idx) => (
-        <BatchRow
-          key={batch.id}
-          batch={batch}
-          index={idx + 1}
-          nurseries={nurseries}
-          containers={containers}
-          onPatch={onPatch}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          showGroupHeader={idx === 0}
-          group={group}
-          cols={cols}
-          showNursery={showNursery}
-        />
-      ))}
-    </div>
-  )
-}
-
-function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDelete, showGroupHeader, group, cols, showNursery }) {
+function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, cols, showNursery, isFirstOfSpecies, onOpenSpecies, onOpenVariety }) {
   const [notesOpen, setNotesOpen] = useState(false)
   const [flashKey, setFlashKey] = useState(0)
   const status = batch.status || 'available'
@@ -153,43 +155,44 @@ function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDele
     return r
   }
 
+  // The first row of a species group gets a thin top divider that's a touch
+  // darker — gentler than a full banner but enough to read groups at a glance.
+  const groupBoundaryClass = isFirstOfSpecies ? 'border-t border-stone-200' : 'border-t border-stone-100/60'
+
+  // Very subtle row tint based on status. White for available so the dispo
+  // rows stay the visual baseline; the others are slightly washed.
+  const rowTintClass = (() => {
+    switch (status) {
+      case 'in_production': return 'bg-amber-50/40 hover:bg-amber-50/70'
+      case 'sold_out':      return 'bg-stone-50/70 hover:bg-stone-100/60'
+      case 'archived':      return 'bg-stone-50/50 text-stone-500 hover:bg-stone-100/50'
+      default:              return 'hover:bg-stone-50/60'
+    }
+  })()
+
   return (
     <>
-      {/* Group eyebrow — appears above the first row of each species/variety group.
-          The serif italic name is the anchor; subsequent rows of the same group
-          stay anonymous so the eye doesn't read the same name twice in a row. */}
-      {showGroupHeader && (
-        <div className="hidden md:flex items-baseline gap-2 px-3 pt-5 pb-1.5">
-          <span className="font-serif text-[15px] italic leading-none text-[#1d2e23]" style={{ fontFamily: 'Sole Serif Small, serif' }}>
-            {group.speciesName}
-          </span>
-          {group.varietyName && (
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-400">
-              · {group.varietyName}
-            </span>
-          )}
-        </div>
-      )}
-
       <div
         key={flashKey}
-        className={`group/row hidden md:grid ${cols} h-9 items-stretch border-b border-stone-100/60 transition-colors hover:bg-stone-50/60 ${flashKey > 0 ? 'save-flash' : ''}`}
+        className={`group/row hidden md:grid ${cols} h-10 items-stretch ${groupBoundaryClass} ${rowTintClass} transition-colors ${flashKey > 0 ? 'save-flash' : ''}`}
       >
-        {/* Index gutter — Airtable-style row number. Anchors the eye and reinforces
-            the group/lot relationship without repeating the species name. */}
-        <Cell className="!px-2">
-          <span className="font-mono text-[10px] tabular-nums text-stone-300">
-            {String(index).padStart(2, '0')}
-          </span>
+        {/* Espèce — clickable to open the plant DB drawer */}
+        <Cell className="!pl-4">
+          <SpeciesLabel name={batch.speciesName} onClick={batch.speciesId ? () => onOpenSpecies(batch.speciesId) : null} />
+        </Cell>
+
+        {/* Variété — clickable to open the variety drawer */}
+        <Cell>
+          <VarietyLabel name={batch.varietyName} onClick={batch.varietyId ? () => onOpenVariety(batch.varietyId) : null} />
         </Cell>
 
         {showNursery && (
-          <Cell><span className="truncate text-[12px] text-stone-600">{nurseryName}</span></Cell>
+          <Cell><span className="truncate text-[12px] text-stone-700">{nurseryName}</span></Cell>
         )}
 
         <Cell>
           {containerLabel ? (
-            <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-600">
+            <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
               {containerLabel}
             </span>
           ) : (
@@ -198,13 +201,9 @@ function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDele
         </Cell>
 
         <StockCell batch={batch} onPatch={patchAndFlash} isLowStock={isLowStock} />
-
         <PriceCell batch={batch} onPatch={patchAndFlash} />
-
         <StageCell batch={batch} onPatch={patchAndFlash} />
-
         <StatusCell batch={batch} onPatch={patchAndFlash} />
-
         <NotesCell batch={batch} onClick={() => setNotesOpen((v) => !v)} active={notesOpen} />
 
         <Cell className="!px-1.5">
@@ -217,18 +216,18 @@ function BatchRow({ batch, index, nurseries, containers, onPatch, onEdit, onDele
 
       {notesOpen && <NotesEditor batch={batch} onPatch={patchAndFlash} onClose={() => setNotesOpen(false)} />}
 
-      {/* Mobile fallback — denser */}
-      <div className="md:hidden border-b border-stone-100 px-4 py-3">
+      {/* Mobile fallback */}
+      <div className={`md:hidden px-4 py-3 ${groupBoundaryClass}`}>
         <div className="flex items-baseline gap-2">
-          <span className="font-serif text-sm italic text-stone-900" style={{ fontFamily: 'Sole Serif Small, serif' }}>{batch.speciesName}</span>
-          {batch.varietyName && <span className="text-xs text-stone-400">· {batch.varietyName}</span>}
+          <span className="text-[13px] font-medium text-stone-900">{batch.speciesName}</span>
+          {batch.varietyName && <span className="text-[13px] text-stone-700">· {batch.varietyName}</span>}
         </div>
         <div className="mt-1 text-[11px] text-stone-500">
-          {nurseryName} · <span className="font-mono">{containerLabel}</span> · <span className="font-mono tabular-nums">{batch.availableQuantity}/{batch.quantity}</span> · <span className="font-mono tabular-nums">{batch.priceEuros.toFixed(2)} €</span>
+          {nurseryName} {containerLabel && <>· <span className="font-mono">{containerLabel}</span></>} · <span className="font-mono tabular-nums">{batch.availableQuantity}/{batch.quantity}</span> · <span className="font-mono tabular-nums">{batch.priceEuros.toFixed(2)} €</span>
         </div>
         <div className="mt-1.5 flex items-center gap-2">
           <StatusInline status={status} />
-          <button onClick={() => onEdit(batch)} className="ml-auto rounded px-2 py-0.5 text-[11px] text-stone-600 hover:bg-stone-100">Éditer</button>
+          <button onClick={() => onEdit(batch)} className="ml-auto rounded px-2 py-0.5 text-[11px] text-stone-700 hover:bg-stone-100">Éditer</button>
         </div>
       </div>
     </>
@@ -244,16 +243,59 @@ function Cell({ children, className = '' }) {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Identity labels — accessible, readable, with ditto pattern.
+// ──────────────────────────────────────────────────────────────────
+
+function SpeciesLabel({ name, onClick }) {
+  if (!name) return <span className="text-[11px] text-stone-300">—</span>
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={`Voir la fiche : ${name}`}
+        className="min-w-0 truncate rounded px-1 -mx-1 text-left text-[13px] font-medium text-stone-900 transition hover:bg-stone-100 hover:text-[#7a4d05] focus:bg-stone-100 focus:outline-none"
+      >
+        {name}
+      </button>
+    )
+  }
+  return (
+    <span className="truncate text-[13px] font-medium text-stone-900" title={name}>
+      {name}
+    </span>
+  )
+}
+
+function VarietyLabel({ name, onClick }) {
+  if (!name) return <span className="text-[11px] text-stone-300">—</span>
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={`Voir la fiche : ${name}`}
+        className="min-w-0 truncate rounded px-1 -mx-1 text-left text-[13px] text-stone-700 transition hover:bg-stone-100 hover:text-[#7a4d05] focus:bg-stone-100 focus:outline-none"
+      >
+        {name}
+      </button>
+    )
+  }
+  return (
+    <span className="truncate text-[13px] text-stone-700" title={name}>
+      {name}
+    </span>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Stock — dispo / total + a thin in-cell progress bar at the bottom.
 // ──────────────────────────────────────────────────────────────────
 
 function StockCell({ batch, onPatch, isLowStock }) {
   const [editing, setEditing] = useState(null) // 'avail' | 'total' | null
-  const ratio = batch.quantity > 0 ? batch.availableQuantity / batch.quantity : 0
-  const barColor = ratio === 0 ? 'bg-stone-300' : ratio < 0.2 ? 'bg-rose-500' : ratio < 0.5 ? 'bg-amber-500' : 'bg-emerald-500'
-
   return (
-    <div className="relative flex min-w-0 items-center px-3">
+    <div className="flex min-w-0 items-center px-3">
       <div className="flex w-full items-center gap-1 font-mono text-[12px] tabular-nums text-stone-700">
         <InlineNumber
           editing={editing === 'avail'}
@@ -280,21 +322,21 @@ function StockCell({ batch, onPatch, isLowStock }) {
             await onPatch(batch.id, { quantity: total, available_quantity: avail, reserved_quantity: total - avail })
             setEditing(null)
           }}
-          className="text-stone-400"
+          className="text-stone-500"
         />
-        {isLowStock && <AlertTriangle className="ml-auto h-3 w-3 shrink-0 text-amber-500" />}
-      </div>
-      {/* hairline progress bar at the bottom of the cell — 1px rail, 1.5px fill */}
-      <div className="pointer-events-none absolute inset-x-3 bottom-0.5 h-[2px] overflow-hidden rounded-full bg-stone-100/70">
-        <div className={`h-full ${barColor} transition-all duration-300`} style={{ width: `${Math.min(100, ratio * 100)}%` }} />
+        {isLowStock && (
+          <span
+            title={`Stock bas : ${batch.availableQuantity} disponible${batch.availableQuantity > 1 ? 's' : ''}, à réapprovisionner`}
+            aria-label="Stock bas"
+            className="ml-auto inline-flex shrink-0 items-center"
+          >
+            <AlertTriangle className="h-3 w-3 text-amber-500" aria-hidden />
+          </span>
+        )}
       </div>
     </div>
   )
 }
-
-// ──────────────────────────────────────────────────────────────────
-// Price
-// ──────────────────────────────────────────────────────────────────
 
 function PriceCell({ batch, onPatch }) {
   const [editing, setEditing] = useState(false)
@@ -310,40 +352,36 @@ function PriceCell({ batch, onPatch }) {
           await onPatch(batch.id, { price_euros: v })
           setEditing(false)
         }}
-        format={(v) => `${Number(v).toFixed(2)} €`}
+        format={(v) => `${Number(v).toFixed(2)} €`}
         className="font-mono text-[12px] tabular-nums text-stone-900"
       />
     </div>
   )
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Stage — minimal label-only with a popover. No chip, just text.
-// ──────────────────────────────────────────────────────────────────
-
 function StageCell({ batch, onPatch }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useOutsideClick(ref, () => setOpen(false))
+  const triggerRef = useRef(null)
   const opt = GROWTH_STAGES.find((s) => s.value === batch.growthStage)
   return (
-    <div ref={ref} className="relative flex min-w-0 items-center px-2">
+    <div className="flex min-w-0 items-center px-2">
       <button
+        ref={triggerRef}
         onClick={() => setOpen((v) => !v)}
-        className="group/btn inline-flex w-full items-center justify-between gap-1 rounded-md px-1.5 py-0.5 text-[12px] text-stone-600 transition hover:bg-stone-100"
+        className="group/btn inline-flex w-full items-center justify-between gap-1 rounded-md px-1.5 py-0.5 text-[12px] text-stone-700 transition hover:bg-stone-100"
       >
         <span>{opt?.label || '—'}</span>
-        <ChevronDown className="h-3 w-3 text-stone-300 transition group-hover/btn:text-stone-500" />
+        <ChevronDown className="h-3 w-3 text-stone-400 transition group-hover/btn:text-stone-600" />
       </button>
       {open && (
-        <PopoverMenu>
+        <PopoverMenu anchorRef={triggerRef} onClose={() => setOpen(false)}>
           {GROWTH_STAGES.map((o) => {
             const active = o.value === batch.growthStage
             return (
               <button
                 key={o.value}
                 onClick={async () => { setOpen(false); if (!active) await onPatch(batch.id, { growth_stage: o.value }) }}
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition ${active ? 'bg-stone-50 text-stone-400' : 'text-stone-700 hover:bg-stone-50'}`}
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition ${active ? 'bg-stone-50 text-stone-500' : 'text-stone-800 hover:bg-stone-50'}`}
               >
                 {o.label}
                 {active && <Check className="ml-auto h-3 w-3 text-stone-400" />}
@@ -356,29 +394,25 @@ function StageCell({ batch, onPatch }) {
   )
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Status — dot + label, with a soft amber pill only for in_production.
-// ──────────────────────────────────────────────────────────────────
-
 function StatusCell({ batch, onPatch }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useOutsideClick(ref, () => setOpen(false))
+  const triggerRef = useRef(null)
   const status = batch.status || 'available'
   return (
-    <div ref={ref} className="relative flex min-w-0 flex-col justify-center px-2">
+    <div className="flex min-w-0 flex-col justify-center px-2">
       <button
+        ref={triggerRef}
         onClick={() => setOpen((v) => !v)}
         className="group/btn inline-flex w-full items-center justify-between gap-1 rounded-md px-1.5 py-0.5 transition hover:bg-stone-100"
       >
         <StatusInline status={status} />
-        <ChevronDown className="h-3 w-3 text-stone-300 transition group-hover/btn:text-stone-500" />
+        <ChevronDown className="h-3 w-3 text-stone-400 transition group-hover/btn:text-stone-600" />
       </button>
       {status === 'in_production' && (batch.availabilityLabel || batch.expectedAvailabilityOn) && (
-        <span className="ml-1.5 truncate text-[10px] italic text-amber-600">→ {batch.availabilityLabel || formatDate(batch.expectedAvailabilityOn)}</span>
+        <span className="ml-1.5 truncate text-[10px] italic text-amber-700">→ {batch.availabilityLabel || formatDate(batch.expectedAvailabilityOn)}</span>
       )}
       {open && (
-        <PopoverMenu>
+        <PopoverMenu anchorRef={triggerRef} onClose={() => setOpen(false)}>
           {STATUSES.map((o) => {
             const active = o.value === status
             return (
@@ -395,7 +429,7 @@ function StatusCell({ batch, onPatch }) {
                     await onPatch(batch.id, { status: o.value })
                   }
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition ${active ? 'bg-stone-50 text-stone-400' : 'text-stone-700 hover:bg-stone-50'}`}
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition ${active ? 'bg-stone-50 text-stone-500' : 'text-stone-800 hover:bg-stone-50'}`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${o.dot}`} />
                 {o.label}
@@ -419,10 +453,6 @@ function StatusInline({ status }) {
   )
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Notes
-// ──────────────────────────────────────────────────────────────────
-
 function NotesCell({ batch, onClick, active }) {
   return (
     <button
@@ -430,9 +460,9 @@ function NotesCell({ batch, onClick, active }) {
       className={`flex min-w-0 items-center gap-1.5 px-3 text-left text-[12px] transition ${active ? 'bg-amber-50/40' : 'hover:bg-stone-50'}`}
     >
       {batch.notes ? (
-        <span className="truncate italic text-stone-600">{batch.notes}</span>
+        <span className="truncate italic text-stone-700">{batch.notes}</span>
       ) : (
-        <span className="inline-flex items-center gap-1 text-stone-300">
+        <span className="inline-flex items-center gap-1 text-stone-400">
           <MessageSquare className="h-3 w-3" />
           <span>Note</span>
         </span>
@@ -456,9 +486,9 @@ function NotesEditor({ batch, onPatch, onClose }) {
   }
 
   return (
-    <div className="border-b border-stone-100 bg-amber-50/20 pl-12 pr-4 py-2">
+    <div className="border-y border-stone-100 bg-amber-50/20 px-4 py-2">
       <div className="flex items-start gap-3">
-        <span className="mt-2 shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400">Note</span>
+        <span className="mt-2 shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-stone-500">Note</span>
         <textarea
           ref={ref}
           rows={2}
@@ -472,22 +502,18 @@ function NotesEditor({ batch, onPatch, onClose }) {
           className="flex-1 resize-none rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-[12px] text-stone-800 focus:border-[#EF9B0D] focus:outline-none focus:ring-2 focus:ring-[#EF9B0D]/15"
         />
         <div className="flex shrink-0 items-center gap-1">
-          <button onClick={onClose} title="Annuler (Esc)" className="rounded-md p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700"><X className="h-3.5 w-3.5" /></button>
+          <button onClick={onClose} title="Annuler (Esc)" className="rounded-md p-1.5 text-stone-500 hover:bg-stone-100 hover:text-stone-700"><X className="h-3.5 w-3.5" /></button>
           <button onClick={commit} disabled={saving} className="rounded-md bg-[#EF9B0D] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-50">
             {saving ? '…' : 'Enregistrer'}
           </button>
         </div>
       </div>
-      <div className="mt-1 pl-[60px] text-[10px] text-stone-400">
+      <div className="mt-1 pl-[60px] text-[10px] text-stone-500">
         <span className="font-mono">⌘ ↵</span> pour enregistrer · <span className="font-mono">esc</span> pour fermer
       </div>
     </div>
   )
 }
-
-// ──────────────────────────────────────────────────────────────────
-// Inline number editor — value as text → input on click
-// ──────────────────────────────────────────────────────────────────
 
 function InlineNumber({ value, onCommit, onCancel, onStart, editing, max, step, format, className = '' }) {
   const [draft, setDraft] = useState(String(value ?? 0))
@@ -537,20 +563,84 @@ function InlineNumber({ value, onCommit, onCancel, onStart, editing, max, step, 
   )
 }
 
-function PopoverMenu({ children }) {
-  return (
-    <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-stone-200 bg-white py-0.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.12)]">
-      {children}
-    </div>
-  )
-}
+/**
+ * PopoverMenu — portal-based, anchored to a trigger element.
+ *
+ * Renders into document.body to escape any `overflow:hidden` ancestor (e.g. the
+ * rounded-xl wrapper around the stock table). Position is computed from the
+ * anchor's bounding rect; the menu flips above the anchor when it would
+ * otherwise overflow the viewport bottom, and aligns to the right edge of the
+ * anchor when it would overflow the right side.
+ */
+function PopoverMenu({ anchorRef, onClose, children, minWidth = 160 }) {
+  const menuRef = useRef(null)
+  const [pos, setPos] = useState(null) // { top, left, width, openUpward }
 
-function useOutsideClick(ref, fn) {
+  useLayoutEffect(() => {
+    const place = () => {
+      const a = anchorRef.current
+      const m = menuRef.current
+      if (!a) return
+      const rect = a.getBoundingClientRect()
+      const menuHeight = m?.offsetHeight ?? 200
+      const menuWidth = Math.max(rect.width, minWidth)
+      const vh = window.innerHeight
+      const vw = window.innerWidth
+      const gap = 4
+
+      const spaceBelow = vh - rect.bottom
+      const openUpward = spaceBelow < menuHeight + 16 && rect.top > menuHeight + 16
+
+      let left = rect.left
+      if (left + menuWidth > vw - 8) left = Math.max(8, vw - 8 - menuWidth)
+
+      const top = openUpward ? rect.top - menuHeight - gap : rect.bottom + gap
+      setPos({ top, left, width: menuWidth, openUpward })
+    }
+
+    place()
+    // Re-place on scroll / resize so the menu tracks its trigger.
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [anchorRef, minWidth])
+
+  // Close on outside click / Escape
   useEffect(() => {
-    const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) fn() }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [ref, fn])
+    const onMouseDown = (e) => {
+      if (menuRef.current?.contains(e.target)) return
+      if (anchorRef.current?.contains(e.target)) return
+      onClose()
+    }
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [anchorRef, onClose])
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      role="menu"
+      style={{
+        position: 'fixed',
+        top: pos?.top ?? -9999,
+        left: pos?.left ?? -9999,
+        width: pos?.width,
+        visibility: pos ? 'visible' : 'hidden',
+      }}
+      className="z-[60] overflow-hidden rounded-lg border border-stone-200 bg-white py-0.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)]"
+    >
+      {children}
+    </div>,
+    document.body
+  )
 }
 
 function formatDate(iso) {

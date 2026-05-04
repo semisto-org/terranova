@@ -311,13 +311,19 @@ module Api
       end
 
       def stock_batch_params
-        params.permit(
+        permitted = params.permit(
           :nursery_id, :species_id, :variety_id, :container_id,
           :quantity, :available_quantity, :reserved_quantity,
           :sowing_date, :origin, :growth_stage,
           :price_euros, :accepts_semos, :price_semos, :notes,
           :status, :expected_availability_on, :availability_label
         )
+        # availability_label and notes are NOT NULL with default "" — strip
+        # explicit nils so the DB default applies instead of a NotNullViolation.
+        permitted.delete(:availability_label) if permitted.key?(:availability_label) && permitted[:availability_label].nil?
+        permitted.delete(:notes) if permitted.key?(:notes) && permitted[:notes].nil?
+        permitted.delete(:origin) if permitted.key?(:origin) && permitted[:origin].nil?
+        permitted
       end
 
       def nursery_params

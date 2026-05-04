@@ -13,6 +13,7 @@ import { NurseryList } from '../../nursery/components/NurseryList'
 import { NurseryForm } from '../../nursery/components/NurseryForm'
 import { ContainerList } from '../../nursery/components/ContainerList'
 import { ContainerForm } from '../../nursery/components/ContainerForm'
+import { InactiveFeatureCallout } from '../../nursery/components/InactiveFeatureCallout'
 
 const NURSERY_SECTIONS = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -231,15 +232,20 @@ export default function NurseryIndex() {
         )}
 
         {view === 'orders' && !selectedOrder && (
-          <OrderList
-            orders={payload.orders}
-            nurseries={payload.nurseries}
-            onView={(id) => setSelectedOrderId(id)}
-            onProcess={(id) => handleAdvanceOrder(id, 'process')}
-            onMarkReady={(id) => handleAdvanceOrder(id, 'ready')}
-            onMarkPickedUp={(id) => handleAdvanceOrder(id, 'picked-up')}
-            onCancel={(id) => handleAdvanceOrder(id, 'cancel')}
-          />
+          <>
+            <InactiveFeatureCallout title="Commandes — pas encore actif">
+              La gestion des commandes en ligne sera activée plus tard. Les éléments ci-dessous sont une prévisualisation et ne sont pas reliés à un tunnel d'achat fonctionnel.
+            </InactiveFeatureCallout>
+            <OrderList
+              orders={payload.orders}
+              nurseries={payload.nurseries}
+              onView={(id) => setSelectedOrderId(id)}
+              onProcess={(id) => handleAdvanceOrder(id, 'process')}
+              onMarkReady={(id) => handleAdvanceOrder(id, 'ready')}
+              onMarkPickedUp={(id) => handleAdvanceOrder(id, 'picked-up')}
+              onCancel={(id) => handleAdvanceOrder(id, 'cancel')}
+            />
+          </>
         )}
 
         {view === 'orders' && selectedOrder && (
@@ -254,11 +260,16 @@ export default function NurseryIndex() {
         )}
 
         {view === 'mother-plants' && (
-          <MotherPlantList
-            motherPlants={payload.motherPlants}
-            onValidate={handleValidateMotherPlant}
-            onReject={handleRejectMotherPlant}
-          />
+          <>
+            <InactiveFeatureCallout title="Plants-mères — pas encore actif">
+              La gestion des plants-mères et des propositions citoyennes sera activée plus tard. La liste ci-dessous est une prévisualisation.
+            </InactiveFeatureCallout>
+            <MotherPlantList
+              motherPlants={payload.motherPlants}
+              onValidate={handleValidateMotherPlant}
+              onReject={handleRejectMotherPlant}
+            />
+          </>
         )}
 
         {view === 'catalog' && (
@@ -270,10 +281,15 @@ export default function NurseryIndex() {
         )}
 
         {view === 'transfers' && (
-          <TransferManagement
-            transfers={payload.transfers}
-            nurseries={payload.nurseries}
-          />
+          <>
+            <InactiveFeatureCallout title="Transferts — pas encore actif">
+              La planification des transferts entre pépinières sera activée plus tard. Les écrans ci-dessous sont une prévisualisation.
+            </InactiveFeatureCallout>
+            <TransferManagement
+              transfers={payload.transfers}
+              nurseries={payload.nurseries}
+            />
+          </>
         )}
 
         {view === 'nurseries' && (

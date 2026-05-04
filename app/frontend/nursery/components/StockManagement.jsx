@@ -26,6 +26,9 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
         const q = searchQuery.toLowerCase()
         const match = batch.speciesName.toLowerCase().includes(q) ||
           batch.varietyName?.toLowerCase().includes(q) ||
+          batch.notes?.toLowerCase().includes(q) ||
+          batch.availabilityLabel?.toLowerCase().includes(q) ||
+          batch.origin?.toLowerCase().includes(q) ||
           containers.find((c) => c.id === batch.containerId)?.name.toLowerCase().includes(q) ||
           nurseries.find((n) => n.id === batch.nurseryId)?.name.toLowerCase().includes(q)
         if (!match) return false
@@ -89,7 +92,7 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Espèce, variété, contenant…"
+            placeholder="Espèce, variété, note, origine…"
             className="w-full rounded-md border border-transparent bg-stone-50 px-2.5 py-1 pl-8 text-[12px] text-stone-800 placeholder-stone-400 transition focus:border-stone-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EF9B0D]/15"
           />
         </div>

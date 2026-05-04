@@ -369,7 +369,21 @@ module Api
       end
 
       def create_variety
-        variety = Plant::Variety.create!(variety_params)
+        # Idempotent on (species_id, latin_name): if a variety with that exact
+        # pair already exists, return it instead of creating a duplicate. This
+        # mirrors the safety we have around species/genera lookups, and prevents
+        # the runaway-duplicate situation we hit during the Yggdrasil PDF import.
+        permitted = variety_params
+        existing = Plant::Variety.find_by(
+          species_id: permitted[:species_id],
+          latin_name: permitted[:latin_name]
+        )
+
+        if existing
+          return render json: serialize_variety(existing), status: :ok
+        end
+
+        variety = Plant::Variety.create!(permitted)
 
         # Create common names if provided
         Array(params[:common_names]).each do |cn|
