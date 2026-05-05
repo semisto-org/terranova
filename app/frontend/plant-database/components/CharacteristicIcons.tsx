@@ -375,6 +375,7 @@ export function getCharacteristicIcon(type: string, value: string): ReactNode {
       case 'self-fertile': return <SelfFertileIcon className={iconClass} />
       case 'self-sterile': return <CrossPollinationIcon className={iconClass} />
       case 'partially-self-fertile': return <CrossPollinationIcon className={iconClass} />
+      case 'dioecious': return <CrossPollinationIcon className={iconClass} />
     }
   }
 

@@ -88,7 +88,7 @@ const FR_LABELS: Record<string, string> = {
   'sheep': 'Moutons', 'goats': 'Chèvres', 'pigs': 'Porcs',
   'cattle': 'Bovins', 'poultry': 'Volaille', 'rabbits': 'Lapins',
   // Fertility
-  'self-fertile': 'Autofertile', 'self-sterile': 'Autostérile', 'partially-self-fertile': 'Partiellement autofertile',
+  'self-fertile': 'Autofertile', 'self-sterile': 'Autostérile', 'partially-self-fertile': 'Partiellement autofertile', 'dioecious': 'Dioïque',
   // Pollination
   'insect': 'Insectes', 'wind': 'Vent', 'self': 'Autopollinisation', 'bird': 'Oiseaux',
 }

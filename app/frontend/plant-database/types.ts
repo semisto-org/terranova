@@ -67,7 +67,7 @@ export interface Species {
   floweringMonths: string[]
   foliageType: 'deciduous' | 'semi-evergreen' | 'evergreen' | 'marcescent'
   nativeCountries: string[]
-  fertility: 'self-fertile' | 'self-sterile' | 'partially-self-fertile'
+  fertility: 'self-fertile' | 'self-sterile' | 'partially-self-fertile' | 'dioecious'
   rootSystem: 'taproot' | 'fibrous' | 'spreading' | 'shallow' | 'deep'
   growthRate: 'slow' | 'medium' | 'fast' | 'slow-start' | 'fast-start'
   forestGardenZone: 'edge' | 'light-shade' | 'full-sun' | 'understory' | 'canopy'

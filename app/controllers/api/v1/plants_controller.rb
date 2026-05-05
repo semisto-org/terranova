@@ -19,7 +19,7 @@ module Api
           months: build_options(%w[jan feb mar apr may jun jul aug sep oct nov dec]),
           foliageTypes: build_options(%w[deciduous semi-evergreen evergreen marcescent]),
           europeanCountries: build_options(%w[be fr de nl lu ch es it pt uk ie at pl cz dk se no fi]),
-          fertilityTypes: build_options(%w[self-fertile self-sterile partially-self-fertile]),
+          fertilityTypes: build_options(%w[self-fertile self-sterile partially-self-fertile dioecious]),
           rootSystems: build_options(%w[taproot fibrous spreading shallow deep]),
           growthRates: build_options(%w[slow medium fast slow-start fast-start]),
           forestGardenZones: build_options(%w[edge light-shade full-sun understory canopy]),
@@ -567,6 +567,7 @@ module Api
         'dk' => 'Danemark', 'se' => 'Suède', 'no' => 'Norvège', 'fi' => 'Finlande',
         # Fertility types
         'self-fertile' => 'Autofertile', 'self-sterile' => 'Autostérile', 'partially-self-fertile' => 'Partiellement autofertile',
+        'dioecious' => 'Dioïque',
         # Root systems
         'taproot' => 'Pivotant', 'fibrous' => 'Fasciculé', 'spreading' => 'Traçant', 'shallow' => 'Superficiel', 'deep' => 'Profond',
         # Growth rates

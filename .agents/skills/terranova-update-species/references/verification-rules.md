@@ -63,8 +63,14 @@ Référence pomologique pour les genres courants :
 | **Juglans regia** (noyer) | partially-self-fertile (autofertile mais protandre/protogyne, mieux avec pollinisateur) |
 | **Corylus avellana** (noisetier) | self-sterile |
 | **Diospyros kaki** (kaki) | mixte selon variété (parthenocarpiques courantes) |
-| **Actinidia deliciosa / chinensis** (kiwi) | dioïque — `fertility` non applicable, marquer `dioecious` dans notes |
-| **Hippophae rhamnoides** (argousier) | dioïque |
+| **Actinidia deliciosa / chinensis / arguta** (kiwi, kiwaï) | `dioecious` (pieds mâles + femelles séparés ; exception : 'Issaï' chez arguta = autofertile) |
+| **Hippophae rhamnoides** (argousier) | `dioecious` |
+| **Salix** (saules) | `dioecious` |
+| **Populus** (peupliers) | `dioecious` |
+| **Ilex aquifolium** (houx) | `dioecious` |
+| **Taxus baccata** (if) | `dioecious` |
+| **Diospyros virginiana** (kaki américain) | `dioecious` (D. kaki cultivé est plus mixte) |
+| **Ginkgo biloba** | `dioecious` |
 | **Vitis vinifera** (vigne) | self-fertile majoritairement (cépages cultivés) |
 | **Ribes** (groseillier, cassis) | self-fertile majoritairement |
 | **Rubus** (framboisier, mûrier) | self-fertile majoritairement |

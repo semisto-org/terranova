@@ -19,7 +19,7 @@ Le PATCH species ignore silencieusement les clés inconnues (`params.permit`). T
 | `root_system` | `rootSystem` | taproot / fibrous / spreading / shallow / deep |
 | `forest_garden_zone` | `forestGardenZone` | edge / light-shade / full-sun / understory / canopy |
 | `pollination_type` | `pollinationType` | insect / wind / self / bird |
-| `fertility` | `fertility` | self-fertile / self-sterile / partially-self-fertile |
+| `fertility` | `fertility` | self-fertile / self-sterile / partially-self-fertile / dioecious |
 | `fragrance` | `fragrance` | none / light / medium / strong |
 | `soil_moisture` | `soilMoisture` | dry / moist / wet / waterlogged |
 | `soil_richness` | `soilRichness` | poor / moderate / rich / very-rich |
