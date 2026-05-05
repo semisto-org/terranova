@@ -13,8 +13,8 @@ export function ReferenceList({ references }: ReferenceListProps) {
     )
   }
 
-  const links = references.filter(r => r.type === 'link')
   const pdfs = references.filter(r => r.type === 'pdf')
+  const links = references.filter(r => r.type !== 'pdf')
 
   return (
     <div className="space-y-3">
