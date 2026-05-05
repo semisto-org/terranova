@@ -39,7 +39,7 @@ import {
   SelfFertileIcon,
   CrossPollinationIcon,
   HardinessIcon,
-  WaterDropIcon
+  WaterDropLevelIcon
 } from './CharacteristicIcons'
 
 interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
@@ -364,16 +364,11 @@ export function SpeciesDetail({
 
             {/* Watering */}
             <div className="flex flex-col items-center text-center p-3 rounded-xl hover:bg-stone-50 transition-colors">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 bg-blue-100">
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map(level => (
-                    <WaterDropIcon
-                      key={level}
-                      filled={level <= parseInt(species.wateringNeed)}
-                      className={`w-3 h-3 ${level <= parseInt(species.wateringNeed) ? 'text-blue-500' : 'text-blue-300'}`}
-                    />
-                  ))}
-                </div>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 bg-blue-100 text-blue-500">
+                <WaterDropLevelIcon
+                  level={parseInt(species.wateringNeed) || 0}
+                  className="w-7 h-7"
+                />
               </div>
               <p className="text-xs text-stone-500 mb-0.5">Arrosage</p>
               <p className="text-sm font-medium text-stone-900">

@@ -172,17 +172,36 @@ export function FastGrowthIcon({ className = "w-6 h-6" }: { className?: string }
   )
 }
 
-// Watering icons
-export function WaterDropIcon({ filled = false, className = "w-5 h-5" }: { filled?: boolean; className?: string }) {
+// Watering icon — single drop with vertical fill encoding the watering level (0–5)
+export function WaterDropLevelIcon({
+  level = 0,
+  className = "w-7 h-7"
+}: { level?: number; className?: string }) {
+  const safeLevel = Math.max(0, Math.min(5, level))
+  const clipId = `drop-fill-${safeLevel}`
+  const fillRatio = safeLevel / 5
+  const fillY = 21 - (21 - 2) * fillRatio
+  const dropPath = "M12 21C16.4183 21 20 17.4183 20 13C20 8.58172 12 2 12 2C12 2 4 8.58172 4 13C4 17.4183 7.58172 21 12 21Z"
+
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs>
+        <clipPath id={clipId}>
+          <rect x="0" y={fillY} width="24" height={24 - fillY} />
+        </clipPath>
+      </defs>
       <path
-        d="M12 21C16.4183 21 20 17.4183 20 13C20 8.58172 12 2 12 2C12 2 4 8.58172 4 13C4 17.4183 7.58172 21 12 21Z"
-        fill={filled ? "currentColor" : "none"}
+        d={dropPath}
         stroke="currentColor"
         strokeWidth="2"
-        opacity={filled ? 1 : 0.3}
+        strokeLinejoin="round"
       />
+      <path
+        d={dropPath}
+        fill="currentColor"
+        clipPath={`url(#${clipId})`}
+      />
+      <ellipse cx="9.5" cy="13" rx="1.2" ry="2.2" fill="white" opacity="0.35" />
     </svg>
   )
 }
@@ -215,10 +234,22 @@ export function SoilSandyIcon({ className = "w-6 h-6" }: { className?: string })
 // Fertility icons
 export function SelfFertileIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-      <path d="M12 8V12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="12" cy="12" r="2" fill="currentColor" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="6" r="2.2" fill="currentColor" />
+      <circle cx="8" cy="8.5" r="2.2" fill="currentColor" opacity="0.85" />
+      <circle cx="16" cy="8.5" r="2.2" fill="currentColor" opacity="0.85" />
+      <circle cx="9.5" cy="12.5" r="2.2" fill="currentColor" opacity="0.7" />
+      <circle cx="14.5" cy="12.5" r="2.2" fill="currentColor" opacity="0.7" />
+      <circle cx="12" cy="9.5" r="1.4" fill="white" />
+      <path d="M12 14V18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path
+        d="M12 18 C 7.5 18, 7.5 22, 12 22 C 16.5 22, 16.5 18, 14 18"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path d="M14 18 L13.2 16.8 M14 18 L15.2 17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }
