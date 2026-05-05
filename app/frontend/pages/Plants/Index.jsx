@@ -5,13 +5,11 @@ import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import {
   ActivityFeed,
   ContributorProfile,
-  GenusDetail,
   GenusFormModal,
   PlantPalette,
+  PlantSheetDrawer,
   SearchView,
-  SpeciesDetail,
   SpeciesFormModal,
-  VarietyDetail,
   VarietyFormModal,
   SendToDesignStudioModal,
   PaletteSelector,
@@ -452,9 +450,6 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const [activities, setActivities] = useState([])
   const [contributors, setContributors] = useState([])
 
-  const [genusPayload, setGenusPayload] = useState(null)
-  const [speciesPayload, setSpeciesPayload] = useState(null)
-  const [varietyPayload, setVarietyPayload] = useState(null)
   const [contributorPayload, setContributorPayload] = useState(null)
   const [contributionModal, setContributionModal] = useState(null)
   const [notice, setNotice] = useState(null)
@@ -462,25 +457,20 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const [genusFormModal, setGenusFormModal] = useState(null) // null | { genus?, commonNames? }
   const [speciesFormModal, setSpeciesFormModal] = useState(null) // null | { species?, defaultGenusId?, commonNames? }
   const [varietyFormModal, setVarietyFormModal] = useState(null) // null | { variety?, defaultSpeciesId?, commonNames? }
+  const [drawerStack, setDrawerStack] = useState([])
+  const [drawerRefresh, setDrawerRefresh] = useState(0)
+  const [lastListView, setLastListView] = useState('search')
 
   const catalogSpecies = useMemo(() => {
-    const items = []
-
-    if (speciesPayload?.species) items.push(speciesPayload.species)
-    if (genusPayload?.species?.length) items.push(...genusPayload.species)
-    if (varietyPayload?.species) items.push(varietyPayload.species)
-
-    results
+    const items = results
       .filter((item) => item.type === 'species')
-      .forEach((item) => {
-        items.push({
-          id: item.id,
-          genusId: null,
-          latinName: item.latinName,
-          type: item.plantType || 'tree',
-          exposures: item.exposures || [],
-        })
-      })
+      .map((item) => ({
+        id: item.id,
+        genusId: null,
+        latinName: item.latinName,
+        type: item.plantType || 'tree',
+        exposures: item.exposures || [],
+      }))
 
     const dedup = new Map()
     items.forEach((item) => {
@@ -488,20 +478,9 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     })
 
     return Array.from(dedup.values())
-  }, [genusPayload, results, speciesPayload, varietyPayload])
+  }, [results])
 
-  const catalogVarieties = useMemo(() => {
-    const items = []
-    if (speciesPayload?.varieties?.length) items.push(...speciesPayload.varieties)
-    if (varietyPayload?.variety) items.push(varietyPayload.variety)
-
-    const dedup = new Map()
-    items.forEach((item) => {
-      if (!dedup.has(item.id)) dedup.set(item.id, item)
-    })
-
-    return Array.from(dedup.values())
-  }, [speciesPayload, varietyPayload])
+  const catalogVarieties = useMemo(() => [], [])
 
   const paletteItemIds = useMemo(() => {
     if (!palette?.strates) return []
@@ -588,24 +567,6 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     return created
   }, [currentContributorId, palette])
 
-  const loadGenus = useCallback(async (id) => {
-    const payload = await apiRequest(`/api/v1/plants/genera/${id}`)
-    setGenusPayload(payload)
-    syncContributors(payload.contributors || [])
-  }, [syncContributors])
-
-  const loadSpecies = useCallback(async (id) => {
-    const payload = await apiRequest(`/api/v1/plants/species/${id}`)
-    setSpeciesPayload(payload)
-    syncContributors(payload.contributors || [])
-  }, [syncContributors])
-
-  const loadVariety = useCallback(async (id) => {
-    const payload = await apiRequest(`/api/v1/plants/varieties/${id}`)
-    setVarietyPayload(payload)
-    syncContributors(payload.contributors || [])
-  }, [syncContributors])
-
   const loadContributor = useCallback(async (id) => {
     const payload = await apiRequest(`/api/v1/plants/contributors/${id}`)
     setContributorPayload(payload)
@@ -629,9 +590,6 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     try {
       await Promise.all([loadSearchResults(filters), loadActivity()])
 
-      if (route.view === 'genus' && route.id) await loadGenus(route.id)
-      if (route.view === 'species' && route.id) await loadSpecies(route.id)
-      if (route.view === 'variety' && route.id) await loadVariety(route.id)
       if (route.view === 'contributor' && route.id) await loadContributor(route.id)
       if (route.view === 'palette' && palette?.id) await loadPalette(palette.id)
     } catch (err) {
@@ -639,7 +597,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     } finally {
       setBusy(false)
     }
-  }, [filters, loadActivity, loadContributor, loadGenus, loadPalette, loadSearchResults, loadSpecies, loadVariety, palette, route.id, route.view])
+  }, [filters, loadActivity, loadContributor, loadPalette, loadSearchResults, palette, route.id, route.view])
 
   useEffect(() => {
     let mounted = true
@@ -660,9 +618,6 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
         if (mounted) {
           setRoute(initialRoute)
 
-          if (initialRoute.view === 'genus' && initialRoute.id) await loadGenus(initialRoute.id)
-          if (initialRoute.view === 'species' && initialRoute.id) await loadSpecies(initialRoute.id)
-          if (initialRoute.view === 'variety' && initialRoute.id) await loadVariety(initialRoute.id)
           if (initialRoute.view === 'contributor' && initialRoute.id) await loadContributor(initialRoute.id)
         }
       } catch (err) {
@@ -685,7 +640,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
       mounted = false
       window.removeEventListener('popstate', onPopState)
     }
-  }, [initialPaletteId, loadActivity, loadContributor, loadFilterOptions, loadGenus, loadPalette, loadSearchResults, loadSpecies, loadVariety])
+  }, [initialPaletteId, loadActivity, loadContributor, loadFilterOptions, loadPalette, loadSearchResults])
 
   useEffect(() => {
     let cancelled = false
@@ -709,9 +664,6 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     async function loadByRoute() {
       setError(null)
       try {
-        if (route.view === 'genus' && route.id) await loadGenus(route.id)
-        if (route.view === 'species' && route.id) await loadSpecies(route.id)
-        if (route.view === 'variety' && route.id) await loadVariety(route.id)
         if (route.view === 'contributor' && route.id) await loadContributor(route.id)
       } catch (err) {
         setError(err.message)
@@ -719,7 +671,25 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     }
 
     loadByRoute()
-  }, [loadContributor, loadGenus, loadSpecies, loadVariety, route.id, route.view])
+  }, [loadContributor, route.id, route.view])
+
+  // Sync drawer stack and last list view from the current route. The drawer
+  // owns its data cache; we only seed it with the top-most entry and let it
+  // resolve parent layers automatically.
+  useEffect(() => {
+    if (['genus', 'species', 'variety'].includes(route.view) && route.id) {
+      setDrawerStack((current) => {
+        const top = current[current.length - 1]
+        if (top && top.kind === route.view && top.id === route.id) return current
+        return [{ kind: route.view, id: route.id }]
+      })
+    } else {
+      setDrawerStack([])
+      if (['search', 'palette', 'activity'].includes(route.view)) {
+        setLastListView(route.view)
+      }
+    }
+  }, [route.view, route.id])
 
   const mutateAndRefresh = useCallback(async (mutation) => {
     setBusy(true)
@@ -729,11 +699,11 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
       await mutation()
       await Promise.all([loadActivity(), loadSearchResults(filters)])
 
-      if (route.view === 'genus' && route.id) await loadGenus(route.id)
-      if (route.view === 'species' && route.id) await loadSpecies(route.id)
-      if (route.view === 'variety' && route.id) await loadVariety(route.id)
       if (route.view === 'contributor' && route.id) await loadContributor(route.id)
       if (palette?.id) await loadPalette(palette.id)
+      // Force the drawer to re-fetch any visible fiches so newly added notes /
+      // photos / edits show up immediately.
+      setDrawerRefresh((value) => value + 1)
       return true
     } catch (err) {
       setError(err.message)
@@ -741,7 +711,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
     } finally {
       setBusy(false)
     }
-  }, [filters, loadActivity, loadContributor, loadGenus, loadPalette, loadSearchResults, loadSpecies, loadVariety, palette, route.id, route.view])
+  }, [filters, loadActivity, loadContributor, loadPalette, loadSearchResults, palette, route.id, route.view])
 
   const openNoteModal = useCallback((targetType, targetId) => {
     setNotice(null)
@@ -1117,7 +1087,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
         <div className="max-w-5xl mx-auto px-4 pt-2 text-xs text-stone-500">Synchronisation en cours...</div>
       )}
 
-      {route.view === 'search' && (
+      {(route.view === 'search' || ['genus', 'species', 'variety'].includes(route.view)) && (
         <>
           <SearchView
             filterOptions={filterOptions}
@@ -1130,97 +1100,15 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
             onResultSelect={(id, type) => navigateTo(type === 'genus' ? 'genus' : type, id)}
             onAddToPalette={addToPalette}
           />
-          {/* Floating Add Button */}
-          <AddPlantMenu
-            onAddGenus={() => openGenusForm()}
-            onAddSpecies={() => openSpeciesForm()}
-            onAddVariety={() => openVarietyForm()}
-          />
+          {/* Floating Add Button — hidden while a fiche drawer is open. */}
+          {drawerStack.length === 0 && (
+            <AddPlantMenu
+              onAddGenus={() => openGenusForm()}
+              onAddSpecies={() => openSpeciesForm()}
+              onAddVariety={() => openVarietyForm()}
+            />
+          )}
         </>
-      )}
-
-      {route.view === 'genus' && genusPayload && (
-        <GenusDetail
-          genus={genusPayload.genus}
-          species={genusPayload.species || []}
-          commonNames={genusPayload.commonNames || []}
-          references={genusPayload.references || []}
-          photos={genusPayload.photos || []}
-          notes={genusPayload.notes || []}
-          contributors={genusPayload.contributors || []}
-          aiSummary={genusPayload.aiSummary}
-          filterOptions={filterOptions}
-          allGenera={results.filter((item) => item.type === 'genus').map((item) => ({ id: item.id, latinName: item.latinName, description: '' }))}
-          allCommonNames={[]}
-          onSpeciesSelect={(id) => navigateTo('species', id)}
-          onContributorSelect={(id) => navigateTo('contributor', id)}
-          onGenusSelect={(id) => navigateTo('genus', id)}
-          onGenerateAISummary={() => generateAiSummary('genus', genusPayload.genus.id)}
-          onAddPhoto={() => openPhotoModal('genus', genusPayload.genus.id)}
-          onAddNote={() => openNoteModal('genus', genusPayload.genus.id)}
-          onAddReference={() => openReferenceModal('genus', genusPayload.genus.id)}
-          onAddSpecies={() => openSpeciesForm(null, genusPayload.genus.id)}
-          onEdit={() => openGenusForm(genusPayload.genus, genusPayload.commonNames || [])}
-        />
-      )}
-
-      {route.view === 'species' && speciesPayload && (
-        <SpeciesDetail
-          species={speciesPayload.species}
-          genus={speciesPayload.genus}
-          varieties={speciesPayload.varieties || []}
-          commonNames={speciesPayload.commonNames || []}
-          references={speciesPayload.references || []}
-          photos={speciesPayload.photos || []}
-          notes={speciesPayload.notes || []}
-          plantLocations={speciesPayload.locations || []}
-          nurseryStocks={speciesPayload.nurseryStock || []}
-          contributors={speciesPayload.contributors || []}
-          aiSummary={speciesPayload.aiSummary}
-          filterOptions={filterOptions}
-          siblingSpecies={speciesPayload.siblingSpecies || []}
-          isInPalette={paletteItemKeySet.has(`species:${speciesPayload.species.id}`)}
-          onRemoveFromPalette={() => removePaletteItemById(speciesPayload.species.id)}
-          onVarietySelect={(id) => navigateTo('variety', id)}
-          onGenusSelect={(id) => navigateTo('genus', id)}
-          onContributorSelect={(id) => navigateTo('contributor', id)}
-          onAddToPalette={(strate) => addToPalette(speciesPayload.species.id, 'species', strate)}
-          onGenerateAISummary={() => generateAiSummary('species', speciesPayload.species.id)}
-          onAddPhoto={() => openPhotoModal('species', speciesPayload.species.id)}
-          onAddNote={() => openNoteModal('species', speciesPayload.species.id)}
-          onAddReference={() => openReferenceModal('species', speciesPayload.species.id)}
-          onAddVariety={() => openVarietyForm(null, speciesPayload.species.id)}
-          onEdit={() => openSpeciesForm(speciesPayload.species, speciesPayload.species.genusId, speciesPayload.commonNames || [])}
-        />
-      )}
-
-      {route.view === 'variety' && varietyPayload && (
-        <VarietyDetail
-          variety={varietyPayload.variety}
-          species={varietyPayload.species}
-          genus={varietyPayload.genus}
-          commonNames={varietyPayload.commonNames || []}
-          references={varietyPayload.references || []}
-          photos={varietyPayload.photos || []}
-          notes={varietyPayload.notes || []}
-          plantLocations={varietyPayload.locations || []}
-          nurseryStocks={varietyPayload.nurseryStock || []}
-          contributors={varietyPayload.contributors || []}
-          aiSummary={varietyPayload.aiSummary}
-          filterOptions={filterOptions}
-          varieties={varietyPayload.siblingVarieties || []}
-          isInPalette={paletteItemKeySet.has(`variety:${varietyPayload.variety.id}`)}
-          onRemoveFromPalette={() => removePaletteItemById(varietyPayload.variety.id)}
-          onVarietySelect={(id) => navigateTo('variety', id)}
-          onSpeciesSelect={(id) => navigateTo('species', id)}
-          onContributorSelect={(id) => navigateTo('contributor', id)}
-          onAddToPalette={(strate) => addToPalette(varietyPayload.variety.id, 'variety', strate)}
-          onGenerateAISummary={() => generateAiSummary('variety', varietyPayload.variety.id)}
-          onAddPhoto={() => openPhotoModal('variety', varietyPayload.variety.id)}
-          onAddNote={() => openNoteModal('variety', varietyPayload.variety.id)}
-          onAddReference={() => openReferenceModal('variety', varietyPayload.variety.id)}
-          onEdit={() => openVarietyForm(varietyPayload.variety, varietyPayload.variety.speciesId)}
-        />
       )}
 
       {route.view === 'palette' && (
@@ -1341,6 +1229,46 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
           onSuccess={handleDesignStudioImportSuccess}
         />
       )}
+
+      <PlantSheetDrawer
+        stack={drawerStack}
+        onStackChange={(next) => {
+          const previousTop = drawerStack[drawerStack.length - 1]
+          const nextTop = next[next.length - 1]
+          setDrawerStack(next)
+          if (
+            nextTop &&
+            (!previousTop || previousTop.kind !== nextTop.kind || previousTop.id !== nextTop.id)
+          ) {
+            navigateTo(nextTop.kind, nextTop.id)
+          }
+        }}
+        onClose={() => {
+          setDrawerStack([])
+          navigateTo(lastListView)
+        }}
+        filterOptions={filterOptions}
+        paletteItemKeySet={paletteItemKeySet}
+        onAddToPalette={(id, kind, strate) => addToPalette(id, kind, strate)}
+        onRemoveFromPalette={(id) => removePaletteItemById(id)}
+        onEdit={(kind, payload) => {
+          if (kind === 'genus') {
+            openGenusForm(payload.genus, payload.commonNames || [])
+          } else if (kind === 'species') {
+            openSpeciesForm(payload.species, payload.species.genusId, payload.commonNames || [])
+          } else if (kind === 'variety') {
+            openVarietyForm(payload.variety, payload.variety.speciesId)
+          }
+        }}
+        onAddPhoto={(kind, id) => openPhotoModal(kind, id)}
+        onAddNote={(kind, id) => openNoteModal(kind, id)}
+        onAddReference={(kind, id) => openReferenceModal(kind, id)}
+        onAddSpecies={(genusId) => openSpeciesForm(null, genusId)}
+        onAddVariety={(speciesId) => openVarietyForm(null, speciesId)}
+        onGenerateAISummary={(kind, id) => generateAiSummary(kind, id)}
+        onContributorSelect={(id) => navigateTo('contributor', id)}
+        refreshSignal={drawerRefresh}
+      />
     </div>
   )
 }

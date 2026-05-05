@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Edit, Trash2, AlertTriangle, ChevronDown, Check, MessageSquare, X } from 'lucide-react'
-import { PlantDrawer } from '@/components/public/PlantDrawer'
+import { Edit, Trash2, AlertTriangle, ChevronDown, Check, MessageSquare, MapPin, X } from 'lucide-react'
+import { PlantSheetDrawer } from '@/plant-database/components'
 
 /**
  * Stock spreadsheet — one row per batch, fully scannable left-to-right.
@@ -34,12 +34,14 @@ const STATUSES = [
   { value: 'archived',      label: 'Archivé',       dot: 'bg-stone-300',    text: 'text-stone-400' },
 ]
 
-// Column templates — espèce / variété / [pépinière?] / pot / stock / prix / stade / statut / notes / actions
-const COLS_WITH_NURSERY = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_minmax(120px,140px)_64px_136px_84px_104px_136px_minmax(140px,1fr)_48px]'
-const COLS_NO_NURSERY   = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_64px_136px_84px_104px_136px_minmax(160px,1.2fr)_48px]'
+// Column templates — espèce / variété / [pépinière?] / pot / stock / prix / stade / statut / notes / [actions?]
+const COLS_WITH_NURSERY    = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_minmax(120px,140px)_64px_136px_84px_104px_136px_minmax(140px,1fr)_48px]'
+const COLS_NO_NURSERY      = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_64px_136px_84px_104px_136px_minmax(160px,1.2fr)_48px]'
+const COLS_WITH_NURSERY_RO = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_minmax(120px,140px)_64px_136px_84px_104px_136px_minmax(140px,1fr)]'
+const COLS_NO_NURSERY_RO   = '[grid-template-columns:minmax(160px,1.2fr)_minmax(120px,1fr)_64px_136px_84px_104px_136px_minmax(160px,1.2fr)]'
 
-export function StockTable({ batches, nurseries, containers, onPatch, onEdit, onDelete }) {
-  const [drawer, setDrawer] = useState(null) // { kind, id }
+export function StockTable({ batches, nurseries, containers, onPatch, onEdit, onDelete, readOnly = false }) {
+  const [drawerStack, setDrawerStack] = useState([])
 
   const distinctNurseryIds = useMemo(() => {
     const set = new Set()
@@ -47,7 +49,9 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
     return set
   }, [batches])
   const showNursery = distinctNurseryIds.size > 1
-  const cols = showNursery ? COLS_WITH_NURSERY : COLS_NO_NURSERY
+  const cols = showNursery
+    ? (readOnly ? COLS_WITH_NURSERY_RO : COLS_WITH_NURSERY)
+    : (readOnly ? COLS_NO_NURSERY_RO : COLS_NO_NURSERY)
 
   // Sort: species → variety so the eye can scan groupings naturally.
   const sorted = useMemo(() => {
@@ -58,13 +62,65 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
     })
   }, [batches])
 
-  // Batches relevant to the currently-open drawer — shown inside the drawer
-  // as "available stock for this plant".
-  const drawerBatches = useMemo(() => {
-    if (!drawer) return []
-    if (drawer.kind === 'variety') return batches.filter((b) => b.varietyId === drawer.id)
-    return batches.filter((b) => b.speciesId === drawer.id && !b.varietyId)
-  }, [drawer, batches])
+  const openSpecies = (speciesId, varietyId) => {
+    const next = [{ kind: 'species', id: speciesId }]
+    if (varietyId) next.push({ kind: 'variety', id: varietyId })
+    setDrawerStack(next)
+  }
+
+  // Local-context "lots dans ce stock" section injected at the top of each
+  // fiche by the PlantSheetDrawer.
+  const localBatchesSection = {
+    title: 'Lots dans ce stock',
+    forKinds: ['species', 'variety'],
+    render: (_payload, entry) => {
+      const matched =
+        entry.kind === 'variety'
+          ? batches.filter((b) => b.varietyId === entry.id)
+          : batches.filter((b) => b.speciesId === entry.id && !b.varietyId)
+      if (matched.length === 0) {
+        return <p className="text-sm italic text-stone-500">Aucun lot dans la sélection courante.</p>
+      }
+      return (
+        <ul className="space-y-1.5">
+          {matched.map((b) => {
+            const nursery = nurseries.find((n) => n.id === b.nurseryId)
+            const container = containers.find((c) => c.id === b.containerId)
+            const status = b.status || 'available'
+            const statusMeta = STATUSES.find((s) => s.value === status) || STATUSES[0]
+            return (
+              <li
+                key={b.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[12px]"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
+                    <span className={`${statusMeta.text} font-medium`}>{statusMeta.label}</span>
+                    {container && (
+                      <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
+                        {container.shortName}
+                      </span>
+                    )}
+                  </div>
+                  {nursery && (
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-stone-500">
+                      <MapPin className="h-3 w-3" />
+                      {nursery.name}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right font-mono tabular-nums">
+                  <p className="text-stone-900">{b.availableQuantity}/{b.quantity}</p>
+                  <p className="text-[11px] text-stone-500">{Number(b.priceEuros).toFixed(2)} €</p>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )
+    },
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200/80 bg-white shadow-[0_1px_0_rgba(0,0,0,0.02)]">
@@ -87,7 +143,7 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
         <Th>Stade</Th>
         <Th>Statut</Th>
         <Th>Notes</Th>
-        <Th />
+        {!readOnly && <Th />}
       </div>
 
       {sorted.length === 0 ? (
@@ -109,23 +165,21 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
               onDelete={onDelete}
               cols={cols}
               showNursery={showNursery}
+              readOnly={readOnly}
               isFirstOfSpecies={isFirstOfSpecies}
-              onOpenSpecies={(id) => setDrawer({ kind: 'species', id })}
-              onOpenVariety={(id) => setDrawer({ kind: 'variety', id })}
+              onOpenSpecies={(id) => openSpecies(id)}
+              onOpenVariety={(varietyId, speciesId) => openSpecies(speciesId, varietyId)}
             />
           )
         })
       )}
 
-      {drawer && (
-        <PlantDrawer
-          kind={drawer.kind}
-          id={drawer.id}
-          batches={drawerBatches}
-          allBatchesForSpecies={batches.filter((b) => b.speciesId === (drawer.kind === 'variety' ? batches.find((x) => x.varietyId === drawer.id)?.speciesId : drawer.id))}
-          onClose={() => setDrawer(null)}
-        />
-      )}
+      <PlantSheetDrawer
+        stack={drawerStack}
+        onStackChange={setDrawerStack}
+        onClose={() => setDrawerStack([])}
+        extraSection={localBatchesSection}
+      />
     </div>
   )
 }
@@ -140,7 +194,7 @@ function Th({ children, align = 'left' }) {
   )
 }
 
-function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, cols, showNursery, isFirstOfSpecies, onOpenSpecies, onOpenVariety }) {
+function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, cols, showNursery, readOnly, isFirstOfSpecies, onOpenSpecies, onOpenVariety }) {
   const [notesOpen, setNotesOpen] = useState(false)
   const [flashKey, setFlashKey] = useState(0)
   const status = batch.status || 'available'
@@ -149,11 +203,13 @@ function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, col
   const container = containers.find((c) => c.id === batch.containerId)
   const containerLabel = container?.shortName || (batch.containerId ? batch.containerId : null)
 
-  const patchAndFlash = async (id, partial) => {
-    const r = await onPatch(id, partial)
-    setFlashKey((k) => k + 1)
-    return r
-  }
+  const patchAndFlash = readOnly
+    ? null
+    : async (id, partial) => {
+        const r = await onPatch(id, partial)
+        setFlashKey((k) => k + 1)
+        return r
+      }
 
   // The first row of a species group gets a thin top divider that's a touch
   // darker — gentler than a full banner but enough to read groups at a glance.
@@ -163,10 +219,11 @@ function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, col
   // rows stay the visual baseline; the others are slightly washed.
   const rowTintClass = (() => {
     switch (status) {
-      case 'in_production': return 'bg-amber-50/40 hover:bg-amber-50/70'
-      case 'sold_out':      return 'bg-stone-50/70 hover:bg-stone-100/60'
-      case 'archived':      return 'bg-stone-50/50 text-stone-500 hover:bg-stone-100/50'
-      default:              return 'hover:bg-stone-50/60'
+      case 'in_production': return 'bg-amber-50/40 hover:bg-amber-100'
+      case 'sold_out':      return 'bg-stone-50/70 opacity-85 hover:bg-stone-200'
+      case 'archived':      return 'bg-stone-50/50 text-stone-500 hover:bg-stone-200'
+      case 'available':     return 'bg-emerald-50/60 hover:bg-emerald-100'
+      default:              return 'hover:bg-stone-100'
     }
   })()
 
@@ -183,38 +240,32 @@ function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, col
 
         {/* Variété — clickable to open the variety drawer */}
         <Cell>
-          <VarietyLabel name={batch.varietyName} onClick={batch.varietyId ? () => onOpenVariety(batch.varietyId) : null} />
+          <VarietyLabel name={batch.varietyName} onClick={batch.varietyId ? () => onOpenVariety(batch.varietyId, batch.speciesId) : null} />
         </Cell>
 
         {showNursery && (
           <Cell><span className="truncate text-[12px] text-stone-700">{nurseryName}</span></Cell>
         )}
 
-        <Cell>
-          {containerLabel ? (
-            <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
-              {containerLabel}
-            </span>
-          ) : (
-            <span className="text-[11px] text-stone-300">—</span>
-          )}
-        </Cell>
+        <ContainerCell batch={batch} containers={containers} onPatch={patchAndFlash} readOnly={readOnly} />
 
-        <StockCell batch={batch} onPatch={patchAndFlash} isLowStock={isLowStock} />
-        <PriceCell batch={batch} onPatch={patchAndFlash} />
-        <StageCell batch={batch} onPatch={patchAndFlash} />
-        <StatusCell batch={batch} onPatch={patchAndFlash} />
-        <NotesCell batch={batch} onClick={() => setNotesOpen((v) => !v)} active={notesOpen} />
+        <StockCell batch={batch} onPatch={patchAndFlash} isLowStock={isLowStock} readOnly={readOnly} />
+        <PriceCell batch={batch} onPatch={patchAndFlash} readOnly={readOnly} />
+        <StageCell batch={batch} onPatch={patchAndFlash} readOnly={readOnly} />
+        <StatusCell batch={batch} onPatch={patchAndFlash} readOnly={readOnly} />
+        <NotesCell batch={batch} onClick={readOnly ? null : () => setNotesOpen((v) => !v)} active={notesOpen} readOnly={readOnly} />
 
-        <Cell className="!px-1.5">
-          <div className="flex h-full items-center justify-end gap-px opacity-0 transition-opacity group-hover/row:opacity-100">
-            <button onClick={() => onEdit(batch)} title="Édition complète" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"><Edit className="h-3 w-3" /></button>
-            <button onClick={() => onDelete(batch.id)} title="Supprimer" className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3 w-3" /></button>
-          </div>
-        </Cell>
+        {!readOnly && (
+          <Cell className="!px-1.5">
+            <div className="flex h-full items-center justify-end gap-px opacity-0 transition-opacity group-hover/row:opacity-100">
+              <button onClick={() => onEdit(batch)} title="Édition complète" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"><Edit className="h-3 w-3" /></button>
+              <button onClick={() => onDelete(batch.id)} title="Supprimer" className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3 w-3" /></button>
+            </div>
+          </Cell>
+        )}
       </div>
 
-      {notesOpen && <NotesEditor batch={batch} onPatch={patchAndFlash} onClose={() => setNotesOpen(false)} />}
+      {notesOpen && !readOnly && <NotesEditor batch={batch} onPatch={patchAndFlash} onClose={() => setNotesOpen(false)} />}
 
       {/* Mobile fallback */}
       <div className={`md:hidden px-4 py-3 ${groupBoundaryClass}`}>
@@ -227,7 +278,9 @@ function BatchRow({ batch, nurseries, containers, onPatch, onEdit, onDelete, col
         </div>
         <div className="mt-1.5 flex items-center gap-2">
           <StatusInline status={status} />
-          <button onClick={() => onEdit(batch)} className="ml-auto rounded px-2 py-0.5 text-[11px] text-stone-700 hover:bg-stone-100">Éditer</button>
+          {!readOnly && (
+            <button onClick={() => onEdit(batch)} className="ml-auto rounded px-2 py-0.5 text-[11px] text-stone-700 hover:bg-stone-100">Éditer</button>
+          )}
         </div>
       </div>
     </>
@@ -292,8 +345,102 @@ function VarietyLabel({ name, onClick }) {
 // Stock — dispo / total + a thin in-cell progress bar at the bottom.
 // ──────────────────────────────────────────────────────────────────
 
-function StockCell({ batch, onPatch, isLowStock }) {
+// ──────────────────────────────────────────────────────────────────
+// Container — same popover pattern as Stage/Status, with a "—" option
+// to clear the container association.
+// ──────────────────────────────────────────────────────────────────
+
+function ContainerCell({ batch, containers, onPatch, readOnly }) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef(null)
+  const current = containers.find((c) => c.id === batch.containerId)
+  const sortedContainers = useMemo(
+    () => [...containers].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)),
+    [containers]
+  )
+
+  if (readOnly) {
+    return (
+      <div className="flex min-w-0 items-center px-3">
+        {current ? (
+          <span title={current.name} className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
+            {current.shortName}
+          </span>
+        ) : (
+          <span className="text-[11px] text-stone-300">—</span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-w-0 items-center px-3">
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen((v) => !v)}
+        title={current ? `${current.name} (${current.shortName})` : 'Aucun contenant'}
+        className="group/btn inline-flex w-full items-center justify-between gap-1 rounded-md px-1 py-0.5 transition hover:bg-stone-100"
+      >
+        {current ? (
+          <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
+            {current.shortName}
+          </span>
+        ) : (
+          <span className="text-[11px] text-stone-300">—</span>
+        )}
+        <ChevronDown className="h-3 w-3 text-stone-400 transition group-hover/btn:text-stone-600" />
+      </button>
+      {open && (
+        <PopoverMenu anchorRef={triggerRef} onClose={() => setOpen(false)} minWidth={220}>
+          <button
+            onClick={async () => { setOpen(false); if (batch.containerId) await onPatch(batch.id, { container_id: null }) }}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition ${!batch.containerId ? 'bg-stone-50 text-stone-500' : 'text-stone-800 hover:bg-stone-50'}`}
+          >
+            <span className="text-stone-400">—</span>
+            <span className="text-stone-600">Aucun contenant</span>
+            {!batch.containerId && <Check className="ml-auto h-3 w-3 text-stone-400" />}
+          </button>
+          <div className="my-0.5 h-px bg-stone-100" aria-hidden />
+          {sortedContainers.map((c) => {
+            const active = c.id === batch.containerId
+            return (
+              <button
+                key={c.id}
+                onClick={async () => { setOpen(false); if (!active) await onPatch(batch.id, { container_id: c.id }) }}
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition ${active ? 'bg-stone-50 text-stone-500' : 'text-stone-800 hover:bg-stone-50'}`}
+              >
+                <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
+                  {c.shortName}
+                </span>
+                <span className="truncate">{c.name}</span>
+                {active && <Check className="ml-auto h-3 w-3 text-stone-400" />}
+              </button>
+            )
+          })}
+        </PopoverMenu>
+      )}
+    </div>
+  )
+}
+
+function StockCell({ batch, onPatch, isLowStock, readOnly }) {
   const [editing, setEditing] = useState(null) // 'avail' | 'total' | null
+  if (readOnly) {
+    return (
+      <div className="flex min-w-0 items-center px-3">
+        <div className="flex w-full items-center gap-1 font-mono text-[12px] tabular-nums text-stone-700">
+          <span className="font-semibold text-stone-900">{batch.availableQuantity}</span>
+          <span className="text-stone-300">/</span>
+          <span className="text-stone-500">{batch.quantity}</span>
+          {isLowStock && (
+            <span title={`Stock bas : ${batch.availableQuantity} disponible${batch.availableQuantity > 1 ? 's' : ''}`} className="ml-auto inline-flex shrink-0 items-center">
+              <AlertTriangle className="h-3 w-3 text-amber-500" aria-hidden />
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="flex min-w-0 items-center px-3">
       <div className="flex w-full items-center gap-1 font-mono text-[12px] tabular-nums text-stone-700">
@@ -338,8 +485,18 @@ function StockCell({ batch, onPatch, isLowStock }) {
   )
 }
 
-function PriceCell({ batch, onPatch }) {
+function PriceCell({ batch, onPatch, readOnly }) {
   const [editing, setEditing] = useState(false)
+  if (readOnly) {
+    return (
+      <div className="flex min-w-0 flex-col items-end justify-center px-3">
+        <span className="font-mono text-[12px] tabular-nums text-stone-900">{Number(batch.priceEuros).toFixed(2)} €</span>
+        {batch.acceptsSemos && batch.priceSemos > 0 && (
+          <span className="font-mono text-[10px] tabular-nums text-stone-500">{batch.priceSemos} sem</span>
+        )}
+      </div>
+    )
+  }
   return (
     <div className="flex min-w-0 items-center justify-end px-3">
       <InlineNumber
@@ -359,10 +516,17 @@ function PriceCell({ batch, onPatch }) {
   )
 }
 
-function StageCell({ batch, onPatch }) {
+function StageCell({ batch, onPatch, readOnly }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef(null)
   const opt = GROWTH_STAGES.find((s) => s.value === batch.growthStage)
+  if (readOnly) {
+    return (
+      <div className="flex min-w-0 items-center px-2">
+        <span className="text-[12px] text-stone-700">{opt?.label || '—'}</span>
+      </div>
+    )
+  }
   return (
     <div className="flex min-w-0 items-center px-2">
       <button
@@ -394,10 +558,20 @@ function StageCell({ batch, onPatch }) {
   )
 }
 
-function StatusCell({ batch, onPatch }) {
+function StatusCell({ batch, onPatch, readOnly }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef(null)
   const status = batch.status || 'available'
+  if (readOnly) {
+    return (
+      <div className="flex min-w-0 flex-col justify-center px-2">
+        <StatusInline status={status} />
+        {status === 'in_production' && (batch.availabilityLabel || batch.expectedAvailabilityOn) && (
+          <span className="ml-1.5 truncate text-[10px] italic text-amber-700">→ {batch.availabilityLabel || formatDate(batch.expectedAvailabilityOn)}</span>
+        )}
+      </div>
+    )
+  }
   return (
     <div className="flex min-w-0 flex-col justify-center px-2">
       <button
@@ -453,7 +627,18 @@ function StatusInline({ status }) {
   )
 }
 
-function NotesCell({ batch, onClick, active }) {
+function NotesCell({ batch, onClick, active, readOnly }) {
+  if (readOnly) {
+    return (
+      <div className="flex min-w-0 items-center gap-1.5 px-3 text-[12px]">
+        {batch.notes ? (
+          <span className="truncate italic text-stone-700" title={batch.notes}>{batch.notes}</span>
+        ) : (
+          <span className="text-[11px] text-stone-300">—</span>
+        )}
+      </div>
+    )
+  }
   return (
     <button
       onClick={onClick}

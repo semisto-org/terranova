@@ -4,18 +4,32 @@ export function ContainerList({ containers, onCreate, onEdit, onDelete }) {
   const sorted = [...containers].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-stone-900" style={{ fontFamily: 'Sole Serif Small, serif' }}>Contenants</h1>
           <p className="mt-1 text-sm text-stone-600">Référentiel des pots, godets, racines nues utilisés en pépinière. Ces formats sont sélectionnables pour chaque lot de stock.</p>
-        </div>
-        <button
+        </div>        <button
           onClick={onCreate}
           className="inline-flex items-center gap-2 rounded-md bg-[#EF9B0D] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#d88a0b] focus:outline-none focus:ring-2 focus:ring-[#EF9B0D] focus:ring-offset-2"
         >
           <Plus className="h-4 w-4" /> Nouveau contenant
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg border border-stone-200 p-4">
+          <div className="text-2xl font-bold text-stone-900">{sorted.length}</div>
+          <div className="text-sm text-stone-600">Contenants référencés</div>
+        </div>
+        <div className="bg-white rounded-lg border border-stone-200 p-4">
+          <div className="text-2xl font-bold text-emerald-600">{sorted.filter((c) => c.volumeLiters != null).length}</div>
+          <div className="text-sm text-stone-600">Avec volume défini</div>
+        </div>
+        <div className="bg-white rounded-lg border border-stone-200 p-4">
+          <div className="text-2xl font-bold text-amber-600">{sorted.filter((c) => !c.description).length}</div>
+          <div className="text-sm text-stone-600">Sans description</div>
+        </div>
       </div>
 
       {sorted.length === 0 ? (

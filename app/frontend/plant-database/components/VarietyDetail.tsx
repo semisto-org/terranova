@@ -36,6 +36,7 @@ export function VarietyDetail({
   onEdit,
   isInPalette = false,
   onRemoveFromPalette,
+  embedded = false,
 }: VarietyDetailProps & {
   filterOptions: FilterOptions
   varieties?: any[]
@@ -43,15 +44,18 @@ export function VarietyDetail({
   onEdit?: () => void
   isInPalette?: boolean
   onRemoveFromPalette?: () => void
+  /** Render without page-level wrappers (min-h-screen, max-w-4xl) so the
+   *  fiche fits inside a drawer or other constrained container. */
+  embedded?: boolean
 }) {
   const primaryCommonName = commonNames.find((cn) => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter((cn) => cn.language !== 'fr')
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className={embedded ? '' : 'min-h-screen bg-stone-50'}>
       {/* Header */}
       <div className="bg-white border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+        <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 sm:px-6 py-6`}>
           {/* Breadcrumb */}
           {genus && species && (
             <VarietyBreadcrumb
@@ -122,7 +126,7 @@ export function VarietyDetail({
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 sm:px-6 py-6 space-y-6`}>
         {/* AI Summary */}
         {aiSummary && (
           <AISummaryCallout

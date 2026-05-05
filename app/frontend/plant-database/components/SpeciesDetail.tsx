@@ -54,6 +54,9 @@ interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
   onAddVariety?: () => void
   /** Called when user wants to edit this species */
   onEdit?: () => void
+  /** Render without page-level wrappers (min-h-screen, max-w-4xl) so the
+   *  fiche fits inside a drawer or other constrained container. */
+  embedded?: boolean
 }
 
 export function SpeciesDetail({
@@ -83,6 +86,7 @@ export function SpeciesDetail({
   onSpeciesSelect,
   onAddVariety,
   onEdit,
+  embedded = false,
 }: SpeciesDetailWithFiltersProps & { onSpeciesSelect?: (id: string) => void }) {
   const primaryCommonName = commonNames.find(cn => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter(cn => cn.language !== 'fr')
@@ -204,10 +208,10 @@ export function SpeciesDetail({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className={embedded ? '' : 'min-h-screen bg-stone-50'}>
       {/* Hero Section */}
       <div className="bg-white border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+        <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 py-6 md:py-8`}>
           {/* Breadcrumb with dropdown */}
           <SpeciesBreadcrumb
             genus={genus}
@@ -292,7 +296,7 @@ export function SpeciesDetail({
 
       {/* Visual Characteristics Grid */}
       <div className="bg-white border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 py-6`}>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {/* Type */}
             <CharacteristicCard
@@ -386,7 +390,7 @@ export function SpeciesDetail({
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+      <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 py-6 md:py-8`}>
         {/* Collapsible sections */}
         <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-200 overflow-hidden">
           {/* Origin & Details */}

@@ -38,7 +38,7 @@
     "src": "assets/terranova.svg"
   },
   "entrypoints/application.jsx": {
-    "file": "assets/application-CLax5QZH.js",
+    "file": "assets/application-DF9T8ecF.js",
     "name": "application",
     "src": "entrypoints/application.jsx",
     "isEntry": true,
@@ -55,7 +55,7 @@
       "my-semisto/components/DirectoryMap.jsx"
     ],
     "css": [
-      "assets/application-JXJWLmrf.css"
+      "assets/application-CYTkEFAg.css"
     ],
     "assets": [
       "assets/terranova-mhra3Bjy.svg",
@@ -63,7 +63,7 @@
     ]
   },
   "my-semisto/components/DirectoryMap.jsx": {
-    "file": "assets/DirectoryMap-BFzXMqXu.js",
+    "file": "assets/DirectoryMap-ZBWz8w03.js",
     "name": "DirectoryMap",
     "src": "my-semisto/components/DirectoryMap.jsx",
     "isDynamicEntry": true,

@@ -17,11 +17,19 @@ import { InactiveFeatureCallout } from '../../nursery/components/InactiveFeature
 
 const NURSERY_SECTIONS = [
   { id: 'dashboard', label: 'Dashboard' },
-  { id: 'stock', label: 'Stock' },
+  { id: 'plants', label: 'Plants' },
   { id: 'orders', label: 'Commandes' },
   { id: 'mother-plants', label: 'Plants-mères' },
-  { id: 'catalog', label: 'Catalogue' },
   { id: 'transfers', label: 'Transferts' },
+  { id: 'settings', label: 'Paramètres' },
+]
+
+const PLANTS_TABS = [
+  { id: 'stock', label: 'Gestion du stock' },
+  { id: 'catalog', label: 'Catalogue' },
+]
+
+const SETTINGS_TABS = [
   { id: 'nurseries', label: 'Pépinières' },
   { id: 'containers', label: 'Contenants' },
 ]
@@ -32,6 +40,8 @@ export default function NurseryIndex() {
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
   const [view, setView] = useUrlState('tab', 'dashboard')
+  const [settingsTab, setSettingsTab] = useUrlState('settings', 'nurseries')
+  const [plantsTab, setPlantsTab] = useUrlState('plants', 'stock')
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [nurseryForm, setNurseryForm] = useState(null)
   const [containerForm, setContainerForm] = useState(null) // null | 'new' | container
@@ -212,40 +222,70 @@ export default function NurseryIndex() {
             pendingTransfersCount={payload.dashboard.pendingTransfersCount}
             pendingValidationsCount={payload.dashboard.pendingValidationsCount}
             recentOrders={payload.dashboard.recentOrders}
-            onViewStock={() => setView('stock')}
+            onViewStock={() => { setView('plants'); setPlantsTab('stock') }}
             onViewOrders={() => setView('orders')}
             onViewTransfers={() => setView('transfers')}
             onViewValidations={() => setView('mother-plants')}
           />
         )}
 
-        {view === 'stock' && (
-          <StockManagement
-            batches={payload.stockBatches}
-            nurseries={payload.nurseries}
-            containers={payload.containers}
-            onSaveBatch={handleSaveBatch}
-            onDeleteBatch={handleDeleteBatch}
-            onPatchBatch={handlePatchBatch}
-            onCreateContainer={handleCreateContainerInline}
-          />
+        {view === 'plants' && (
+          <div className="space-y-4">
+            <div className="border-b border-stone-200">
+              <nav className="-mb-px flex gap-1" aria-label="Onglets plants">
+                {PLANTS_TABS.map((tab) => {
+                  const active = plantsTab === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setPlantsTab(tab.id)}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                        active
+                          ? 'border-[#EF9B0D] text-[#EF9B0D]'
+                          : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
+                      }`}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </nav>
+            </div>
+
+            {plantsTab === 'stock' && (
+              <StockManagement
+                batches={payload.stockBatches}
+                nurseries={payload.nurseries}
+                containers={payload.containers}
+                onSaveBatch={handleSaveBatch}
+                onDeleteBatch={handleDeleteBatch}
+                onPatchBatch={handlePatchBatch}
+                onCreateContainer={handleCreateContainerInline}
+              />
+            )}
+
+            {plantsTab === 'catalog' && (
+              <Catalog
+                nurseries={payload.nurseries}
+                batches={payload.stockBatches}
+                containers={payload.containers}
+              />
+            )}
+          </div>
         )}
 
         {view === 'orders' && !selectedOrder && (
-          <>
-            <InactiveFeatureCallout title="Commandes — pas encore actif">
-              La gestion des commandes en ligne sera activée plus tard. Les éléments ci-dessous sont une prévisualisation et ne sont pas reliés à un tunnel d'achat fonctionnel.
-            </InactiveFeatureCallout>
-            <OrderList
-              orders={payload.orders}
-              nurseries={payload.nurseries}
-              onView={(id) => setSelectedOrderId(id)}
-              onProcess={(id) => handleAdvanceOrder(id, 'process')}
-              onMarkReady={(id) => handleAdvanceOrder(id, 'ready')}
-              onMarkPickedUp={(id) => handleAdvanceOrder(id, 'picked-up')}
-              onCancel={(id) => handleAdvanceOrder(id, 'cancel')}
-            />
-          </>
+          <OrderList
+            orders={payload.orders}
+            nurseries={payload.nurseries}
+            onView={(id) => setSelectedOrderId(id)}
+            onProcess={(id) => handleAdvanceOrder(id, 'process')}
+            onMarkReady={(id) => handleAdvanceOrder(id, 'ready')}
+            onMarkPickedUp={(id) => handleAdvanceOrder(id, 'picked-up')}
+            onCancel={(id) => handleAdvanceOrder(id, 'cancel')}
+          />
         )}
 
         {view === 'orders' && selectedOrder && (
@@ -272,14 +312,6 @@ export default function NurseryIndex() {
           </>
         )}
 
-        {view === 'catalog' && (
-          <Catalog
-            nurseries={payload.nurseries}
-            batches={payload.stockBatches}
-            containers={payload.containers}
-          />
-        )}
-
         {view === 'transfers' && (
           <>
             <InactiveFeatureCallout title="Transferts — pas encore actif">
@@ -292,22 +324,49 @@ export default function NurseryIndex() {
           </>
         )}
 
-        {view === 'nurseries' && (
-          <NurseryList
-            nurseries={payload.nurseries}
-            onCreate={() => setNurseryForm('new')}
-            onEdit={(id) => setNurseryForm(payload.nurseries.find((n) => n.id === id) || 'new')}
-            onDelete={handleDeleteNursery}
-          />
-        )}
+        {view === 'settings' && (
+          <div className="space-y-4">
+            <div className="border-b border-stone-200">
+              <nav className="-mb-px flex gap-1" aria-label="Onglets paramètres">
+                {SETTINGS_TABS.map((tab) => {
+                  const active = settingsTab === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSettingsTab(tab.id)}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                        active
+                          ? 'border-[#EF9B0D] text-[#EF9B0D]'
+                          : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
+                      }`}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </nav>
+            </div>
 
-        {view === 'containers' && (
-          <ContainerList
-            containers={payload.containers}
-            onCreate={() => setContainerForm('new')}
-            onEdit={(c) => setContainerForm(c)}
-            onDelete={handleDeleteContainer}
-          />
+            {settingsTab === 'nurseries' && (
+              <NurseryList
+                nurseries={payload.nurseries}
+                onCreate={() => setNurseryForm('new')}
+                onEdit={(id) => setNurseryForm(payload.nurseries.find((n) => n.id === id) || 'new')}
+                onDelete={handleDeleteNursery}
+              />
+            )}
+
+            {settingsTab === 'containers' && (
+              <ContainerList
+                containers={payload.containers}
+                onCreate={() => setContainerForm('new')}
+                onEdit={(c) => setContainerForm(c)}
+                onDelete={handleDeleteContainer}
+              />
+            )}
+          </div>
         )}
 
         {nurseryForm && (

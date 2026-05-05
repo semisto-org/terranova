@@ -26,6 +26,9 @@ interface GenusDetailWithFiltersProps extends GenusDetailProps {
   onAddSpecies?: () => void
   /** Called when user wants to edit this genus */
   onEdit?: () => void
+  /** Render without page-level wrappers (min-h-screen, max-w-4xl) so the
+   *  fiche fits inside a drawer or other constrained container. */
+  embedded?: boolean
 }
 
 export function GenusDetail({
@@ -49,6 +52,7 @@ export function GenusDetail({
   onGenusSelect,
   onAddSpecies,
   onEdit,
+  embedded = false,
 }: GenusDetailWithFiltersProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
@@ -173,10 +177,10 @@ export function GenusDetail({
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className={embedded ? '' : 'min-h-screen bg-stone-50'}>
       {/* Header */}
       <div className="bg-white border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+        <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 sm:px-6 py-6`}>
           <div className="mb-4">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-2">
               <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -315,7 +319,7 @@ export function GenusDetail({
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className={`${embedded ? 'w-full' : 'max-w-4xl mx-auto'} px-4 sm:px-6 py-6 space-y-6`}>
         {/* Species List */}
         {species.length > 0 ? (
           <CollapsibleSection title="Espèces" icon="🌿" badge={species.length} defaultOpen={true}>
