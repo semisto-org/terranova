@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify'
 import type {
   SpeciesDetailProps,
   FilterOptions,
@@ -193,6 +194,11 @@ export function SpeciesDetail({
     varieties: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+    ),
+    info: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     )
   }
@@ -680,6 +686,18 @@ export function SpeciesDetail({
               )}
             </CollapsibleSection>
           </div>
+
+          {/* Additional Notes */}
+          {species.additionalNotes && species.additionalNotes.trim() !== '' && species.additionalNotes !== '<p></p>' && (
+            <div className="px-4 md:px-6">
+              <CollapsibleSection title="Informations complémentaires" icon={icons.info} defaultOpen={true}>
+                <div
+                  className="prose prose-stone prose-sm max-w-none text-stone-700"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(species.additionalNotes) }}
+                />
+              </CollapsibleSection>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="px-4 md:px-6">

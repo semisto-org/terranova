@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify'
 import type { VarietyDetailProps, FilterOptions } from '../types'
 import { PhotoGallery } from './PhotoGallery'
 import { NoteCard } from './NoteCard'
@@ -274,6 +275,16 @@ export function VarietyDetail({
                 />
               ))}
             </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Additional Notes */}
+        {variety.additionalNotes && variety.additionalNotes.trim() !== '' && variety.additionalNotes !== '<p></p>' && (
+          <CollapsibleSection title="Informations complémentaires" icon="📝" defaultOpen={true}>
+            <div
+              className="prose prose-stone prose-sm max-w-none text-stone-700"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(variety.additionalNotes) }}
+            />
           </CollapsibleSection>
         )}
 
