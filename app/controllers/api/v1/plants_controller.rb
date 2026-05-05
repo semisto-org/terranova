@@ -429,6 +429,25 @@ module Api
         render json: serialize_variety(variety)
       end
 
+      def destroy_variety
+        variety = Plant::Variety.find(params.require(:id))
+
+        Plant::CommonName.where(target_type: 'variety', target_id: variety.id).destroy_all
+        Plant::Photo.where(target_type: 'variety', target_id: variety.id).destroy_all
+        Plant::Note.where(target_type: 'variety', target_id: variety.id).destroy_all
+        Plant::Reference.where(target_type: 'variety', target_id: variety.id).destroy_all
+        Plant::ActivityItem.where(target_type: 'variety', target_id: variety.id).destroy_all
+        Plant::PaletteItem.where(item_type: 'variety', item_id: variety.id).find_each(&:soft_delete!)
+
+        variety.destroy!
+        head :no_content
+      rescue ActiveRecord::InvalidForeignKey => e
+        render json: {
+          error: "Impossible de supprimer la variété : encore référencée par des stocks de pépinière ou des plantations.",
+          detail: e.message
+        }, status: :unprocessable_entity
+      end
+
       def create_note
         item = Plant::Note.create!(note_params)
         increment_contributor_counter(item.contributor, :notes_written)
