@@ -1,0 +1,26 @@
+Merci pour votre commande !
+============================
+
+Bonjour <%= @order.customer_name %>,
+
+Nous avons bien reçu votre commande passée sur le catalogue Semisto.
+La pépinière "<%= @nursery.name %>" vous recontactera prochainement
+pour confirmer la disponibilité et organiser le retrait.
+
+Numéro       : <%= @order.order_number %>
+Pickup       : <%= @nursery.name %><% if @nursery.city.present? %> (<%= @nursery.city %>)<% end %>
+Total        : <%= number_with_precision(@order.total_euros, precision: 2) %> € (paiement sur place)
+
+Récapitulatif :
+<% @lines.each do |line| %>
+- <%= line.species_name %><% if line.variety_name.present? %> · <%= line.variety_name %><% end %>
+  <%= line.container_name %> · <%= line.quantity %> × <%= number_with_precision(line.unit_price_euros, precision: 2) %> € = <%= number_with_precision(line.total_euros, precision: 2) %> €
+<% end %>
+
+Cette commande est une demande de réservation. La pépinière confirme la
+disponibilité et fixe avec vous une date de retrait. Le paiement se fait
+sur place.
+
+Vous recevrez un autre email quand la commande sera prête à être retirée.
+
+Une question ? Répondez à cet email, votre message arrivera à la pépinière.

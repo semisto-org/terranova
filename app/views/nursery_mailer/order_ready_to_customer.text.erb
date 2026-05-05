@@ -1,0 +1,22 @@
+Votre commande est prête !
+===========================
+
+Bonjour <%= @order.customer_name %>,
+
+Bonne nouvelle : votre commande <%= @order.order_number %> est prête
+et vous attend à la pépinière "<%= @nursery.name %>".
+
+Point de retrait : <%= @nursery.name %>
+<% if @nursery.address.present? || @nursery.city.present? %>Adresse          : <%= [@nursery.address.presence, @nursery.postal_code.presence, @nursery.city.presence].compact.join(", ") %>
+<% end %><% if @nursery.contact_phone.present? %>Téléphone        : <%= @nursery.contact_phone %>
+<% end %>Total à régler    : <%= number_with_precision(@order.total_euros, precision: 2) %> € (sur place)
+
+Votre commande :
+<% @lines.each do |line| %>
+- <%= line.species_name %><% if line.variety_name.present? %> · <%= line.variety_name %><% end %>
+  <%= line.container_name %> · <%= line.quantity %> exemplaire(s)
+<% end %>
+
+Pour organiser le retrait, contactez la pépinière (ou répondez à cet email).
+
+Merci de soutenir nos pépinières-écoles.

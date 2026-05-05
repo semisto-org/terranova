@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Search, X, Leaf, Sprout, MapPin } from 'lucide-react'
+import { Search, Leaf, Sprout, MapPin, ShoppingBasket, Check, Plus } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import { PlantDrawer } from '@/components/public/PlantDrawer'
+import { CartDrawer } from '@/components/public/CartDrawer'
+import { useCart } from '@/components/public/useCart'
 
 /**
  * /catalogue — public catalogue de la pépinière.
@@ -16,6 +18,9 @@ export default function PublicCatalog() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all') // all | available | in_production
   const [drawer, setDrawer] = useState(null) // { kind: 'species'|'variety', id }
+  const [cartOpen, setCartOpen] = useState(false)
+
+  const cart = useCart()
 
   // ── Load data
   const load = useCallback(async () => {
@@ -23,12 +28,13 @@ export default function PublicCatalog() {
     try {
       const catalog = await apiRequest('/api/v1/nursery/catalog')
       setBatches(catalog || [])
+      cart.reconcile(catalog || [])
     } catch (e) {
       setError(e.message || 'Erreur de chargement')
     } finally { setLoading(false) }
-  }, [])
+  }, [cart])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Group batches by species/variety
   const groups = useMemo(() => {
@@ -133,7 +139,13 @@ export default function PublicCatalog() {
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {groups.map((g) => (
-                  <SpecimenCard key={g.key} group={g} onOpen={() => setDrawer({ kind: g.kind, id: g.targetId })} />
+                  <SpecimenCard
+                    key={g.key}
+                    group={g}
+                    cartItems={cart.items}
+                    onOpen={() => setDrawer({ kind: g.kind, id: g.targetId })}
+                    onAddToCart={(batch) => cart.addItem(batch, 1)}
+                  />
                 ))}
               </div>
             )}
@@ -156,6 +168,36 @@ export default function PublicCatalog() {
           onClose={() => setDrawer(null)}
         />
       )}
+
+      {/* ── Floating cart button */}
+      {cart.count > 0 && !cartOpen && (
+        <button
+          onClick={() => setCartOpen(true)}
+          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-3 rounded-full bg-[#2f4a3a] px-5 py-3 text-[#fbf6ec] shadow-xl transition hover:-translate-y-0.5 hover:bg-[#1d2e23]"
+          aria-label={`Voir le panier (${cart.count})`}
+        >
+          <ShoppingBasket className="h-5 w-5" aria-hidden />
+          <span className="text-sm font-semibold uppercase tracking-[0.18em]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+            Panier · {cart.count}
+          </span>
+          <span className="ml-1 rounded-full bg-[#EF9B0D] px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+            {cart.totalEuros.toFixed(2)} €
+          </span>
+        </button>
+      )}
+
+      {/* ── Cart drawer */}
+      {cartOpen && (
+        <CartDrawer
+          items={cart.items}
+          totalEuros={cart.totalEuros}
+          count={cart.count}
+          setQuantity={cart.setQuantity}
+          removeItem={cart.removeItem}
+          clear={cart.clear}
+          onClose={() => setCartOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -176,16 +218,18 @@ function FilterChip({ active, onClick, children }) {
   )
 }
 
-function SpecimenCard({ group, onOpen }) {
+function SpecimenCard({ group, cartItems, onOpen, onAddToCart }) {
   const availableBatches = group.batches.filter((b) => b.status === 'available' && b.availableQuantity > 0)
   const productionBatches = group.batches.filter((b) => b.status === 'in_production')
   const minPrice = availableBatches.length ? Math.min(...availableBatches.map((b) => b.priceEuros)) : null
+  const cartByBatchId = useMemo(() => {
+    const m = new Map()
+    for (const it of cartItems || []) m.set(it.stockBatchId, it.quantity)
+    return m
+  }, [cartItems])
 
   return (
-    <button
-      onClick={onOpen}
-      className="group relative block w-full overflow-hidden rounded-lg border border-[#2f4a3a]/15 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#EF9B0D]/50 hover:shadow-md"
-    >
+    <article className="group relative block w-full overflow-hidden rounded-lg border border-[#2f4a3a]/15 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#EF9B0D]/50 hover:shadow-md">
       {/* corner pin (herbarium) */}
       <span aria-hidden className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[#EF9B0D]" />
 
@@ -200,7 +244,7 @@ function SpecimenCard({ group, onOpen }) {
         )}
       </div>
 
-      <div className="px-6 pb-5 pt-14">
+      <button onClick={onOpen} className="block w-full text-left px-6 pb-2 pt-14" aria-label={`Voir la fiche de ${group.speciesName}`}>
         <Leaf className="mb-3 h-5 w-5 text-[#2f4a3a]/60" aria-hidden />
         <h3 className="font-serif text-2xl italic leading-tight text-[#1d2e23]" style={{ fontFamily: 'Sole Serif Small, serif' }}>
           {group.speciesName}
@@ -214,18 +258,41 @@ function SpecimenCard({ group, onOpen }) {
         {group.varietyNotes && (
           <p className="mt-3 line-clamp-2 text-sm italic text-stone-600">"{group.varietyNotes}"</p>
         )}
+      </button>
 
-        <div className="my-4 h-px w-full bg-gradient-to-r from-transparent via-[#2f4a3a]/20 to-transparent" />
+      <div className="px-6 pb-5">
+        <div className="my-3 h-px w-full bg-gradient-to-r from-transparent via-[#2f4a3a]/20 to-transparent" />
 
         {availableBatches.length > 0 && (
-          <ul className="space-y-1.5">
-            {availableBatches.slice(0, 3).map((b) => (
-              <li key={b.stockBatchId} className="flex items-baseline justify-between text-sm">
-                <span className="text-stone-700"><span className="font-mono text-xs uppercase tracking-wider text-stone-500">{b.containerName}</span> · {b.availableQuantity ?? '—'} {b.availableQuantity ? 'disponibles' : ''}</span>
-                <span className="font-medium text-[#1d2e23]">{b.priceEuros.toFixed(2)} €</span>
-              </li>
-            ))}
-            {availableBatches.length > 3 && <li className="pt-1 text-xs italic text-stone-500">…et {availableBatches.length - 3} autre(s) format(s)</li>}
+          <ul className="space-y-2">
+            {availableBatches.slice(0, 3).map((b) => {
+              const inCart = cartByBatchId.get(b.stockBatchId) || 0
+              const remaining = (b.availableQuantity ?? Infinity) - inCart
+              return (
+                <li key={b.stockBatchId} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 flex-1 text-stone-700">
+                    <span className="font-mono text-xs uppercase tracking-wider text-stone-500">{b.containerName}</span>
+                    {' · '}
+                    <span className="font-medium text-[#1d2e23]">{b.priceEuros.toFixed(2)} €</span>
+                    {inCart > 0 && (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-800" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                        <Check className="h-3 w-3" /> {inCart} au panier
+                      </span>
+                    )}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAddToCart(b) }}
+                    disabled={remaining <= 0}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#2f4a3a]/30 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#2f4a3a] transition hover:border-[#EF9B0D] hover:bg-[#EF9B0D] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#2f4a3a]"
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                    aria-label={`Ajouter ${b.containerName} au panier`}
+                  >
+                    <Plus className="h-3 w-3" /> Ajouter
+                  </button>
+                </li>
+              )
+            })}
+            {availableBatches.length > 3 && <li className="pt-1 text-xs italic text-stone-500">…et {availableBatches.length - 3} autre(s) format(s) — voir la fiche</li>}
           </ul>
         )}
 
@@ -244,7 +311,7 @@ function SpecimenCard({ group, onOpen }) {
           </p>
         )}
       </div>
-    </button>
+    </article>
   )
 }
 

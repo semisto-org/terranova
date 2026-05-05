@@ -1,8 +1,10 @@
 module Api
   module V1
     class NurseryController < BaseController
-      skip_before_action :require_authentication, only: [:catalog]
-      before_action :require_effective_member, except: [:catalog]
+      PUBLIC_ACTIONS = %i[catalog public_pickup_points submit_public_order].freeze
+
+      skip_before_action :require_authentication, only: PUBLIC_ACTIONS
+      before_action :require_effective_member, except: PUBLIC_ACTIONS
 
       def index
         render json: nursery_payload(filters: filter_params)
@@ -14,6 +16,58 @@ module Api
 
       def catalog
         render json: build_catalog(filters: catalog_filter_params)
+      end
+
+      def public_pickup_points
+        nurseries = Nursery::Nursery.where(is_pickup_point: true).order(:name)
+        render json: nurseries.map { |n| serialize_pickup_point(n) }
+      end
+
+      def submit_public_order
+        payload = public_order_payload
+        return render(json: { error: payload[:error] }, status: :unprocessable_entity) if payload[:error]
+
+        pickup = Nursery::Nursery.find_by(id: payload[:pickup_nursery_id], is_pickup_point: true)
+        unless pickup
+          return render json: { error: "Point de retrait invalide." }, status: :unprocessable_entity
+        end
+
+        shortages = stock_shortages_for(payload[:lines])
+        if shortages.any?
+          return render json: { error: "Stock insuffisant pour : #{shortages.join(', ')}." }, status: :unprocessable_entity
+        end
+
+        order = Nursery::Order.transaction do
+          new_order = Nursery::Order.create!(
+            customer_id: '',
+            customer_name: payload[:customer_name],
+            customer_email: payload[:customer_email],
+            customer_phone: payload[:customer_phone],
+            is_member: false,
+            price_level: 'standard',
+            notes: payload[:notes],
+            pickup_nursery: pickup,
+            status: 'new',
+            order_number: next_order_number
+          )
+          payload[:lines].each do |line|
+            create_order_line!(new_order, line.stringify_keys.merge('pay_in_semos' => false))
+          end
+          recalculate_order_totals!(new_order)
+          new_order.reload
+        end
+
+        deliver_public_order_emails(order)
+
+        render json: {
+          orderNumber: order.order_number,
+          totalEuros: order.total_euros.to_f,
+          pickupNurseryName: pickup.name,
+          customerEmail: order.customer_email,
+          lines: order.lines.order(:id).map { |line| serialize_order_line(line) }
+        }, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages.to_sentence.presence || e.message }, status: :unprocessable_entity
       end
 
       def create_stock_batch
@@ -71,6 +125,7 @@ module Api
       def mark_order_ready
         order = Nursery::Order.find(params.require(:order_id))
         order.update!(status: 'ready', ready_at: Time.current)
+        safe_deliver { NurseryMailer.order_ready_to_customer(order).deliver_later } if order.customer_email.present?
         render json: serialize_order(order)
       end
 
@@ -787,6 +842,89 @@ module Api
           description: item.description.presence,
           createdAt: item.created_at.iso8601
         }
+      end
+
+      def serialize_pickup_point(item)
+        {
+          id: item.id.to_s,
+          name: item.name,
+          address: item.address.presence,
+          city: item.city.presence,
+          postalCode: item.postal_code.presence
+        }
+      end
+
+      EMAIL_REGEX = /\A[^\s@]+@[^\s@]+\.[^\s@]+\z/.freeze
+      PHONE_REGEX = /\A[\d+()\s.\-]{6,30}\z/.freeze
+
+      def public_order_payload
+        permitted = params.permit(
+          :customer_name, :customer_email, :customer_phone, :pickup_nursery_id, :notes,
+          lines: [:stock_batch_id, :quantity]
+        )
+
+        name = permitted[:customer_name].to_s.strip
+        email = permitted[:customer_email].to_s.strip
+        phone = permitted[:customer_phone].to_s.strip
+        notes = permitted[:notes].to_s.strip
+        pickup_id = permitted[:pickup_nursery_id]
+        lines = Array(permitted[:lines]).map { |l| l.to_h.symbolize_keys }
+
+        return { error: "Nom requis (max 200 caractères)." } if name.blank? || name.length > 200
+        return { error: "Email invalide." } unless email.match?(EMAIL_REGEX)
+        return { error: "Téléphone invalide." } if phone.present? && !phone.match?(PHONE_REGEX)
+        return { error: "Notes trop longues (max 1000 caractères)." } if notes.length > 1000
+        return { error: "Point de retrait requis." } if pickup_id.blank?
+        return { error: "Le panier est vide." } if lines.empty?
+        return { error: "Trop de lignes (max 50)." } if lines.length > 50
+
+        normalized = lines.map do |line|
+          batch_id = line[:stock_batch_id]
+          qty = line[:quantity].to_i
+          return { error: "Quantité invalide (1–200)." } if batch_id.blank? || qty < 1 || qty > 200
+
+          { stock_batch_id: batch_id.to_s, quantity: qty }
+        end
+
+        {
+          customer_name: name,
+          customer_email: email,
+          customer_phone: phone,
+          notes: notes,
+          pickup_nursery_id: pickup_id,
+          lines: normalized
+        }
+      end
+
+      def deliver_public_order_emails(order)
+        if order.pickup_nursery&.contact_email.present?
+          safe_deliver { NurseryMailer.order_received_to_nursery(order).deliver_later }
+        end
+        if order.customer_email.present?
+          safe_deliver { NurseryMailer.order_confirmation_to_customer(order).deliver_later }
+        end
+      end
+
+      def safe_deliver
+        yield
+      rescue StandardError => e
+        Rails.logger.warn("[NurseryMailer] delivery failed: #{e.class} #{e.message}")
+        Sentry.capture_exception(e) if defined?(Sentry)
+      end
+
+      def stock_shortages_for(lines)
+        shortages = []
+        batches = Nursery::StockBatch.where(id: lines.map { |l| l[:stock_batch_id] }).index_by { |b| b.id.to_s }
+
+        lines.each do |line|
+          batch = batches[line[:stock_batch_id].to_s]
+          if batch.nil?
+            shortages << "lot ##{line[:stock_batch_id]} introuvable"
+          elsif batch.status != 'available' || batch.available_quantity.to_i < line[:quantity]
+            shortages << "#{batch.species_name} (#{batch.available_quantity} disponible(s))"
+          end
+        end
+        shortages
       end
     end
   end

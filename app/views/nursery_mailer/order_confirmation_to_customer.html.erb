@@ -1,0 +1,74 @@
+<h2 style="margin: 0 0 16px; font-size: 20px; color: #234766;">
+  Merci pour votre commande !
+</h2>
+
+<p>Bonjour <%= @order.customer_name %>,</p>
+
+<p>
+  Nous avons bien reçu votre commande passée sur le catalogue Semisto.
+  La pépinière <strong><%= @nursery.name %></strong> vous recontactera
+  prochainement pour confirmer la disponibilité et organiser le retrait.
+</p>
+
+<table style="width: 100%; margin: 24px 0; border-collapse: collapse; font-size: 14px;">
+  <tr>
+    <td style="padding: 6px 0; color: #666666; width: 160px;">Numéro de commande</td>
+    <td style="padding: 6px 0;"><strong><%= @order.order_number %></strong></td>
+  </tr>
+  <tr>
+    <td style="padding: 6px 0; color: #666666;">Point de retrait</td>
+    <td style="padding: 6px 0;">
+      <%= @nursery.name %>
+      <% if @nursery.city.present? %>
+        <span style="color: #999;"> · <%= [@nursery.address.presence, @nursery.postal_code.presence, @nursery.city.presence].compact.join(", ") %></span>
+      <% end %>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 6px 0; color: #666666;">Total</td>
+    <td style="padding: 6px 0;"><strong><%= number_to_currency(@order.total_euros, unit: "€", separator: ",", delimiter: " ", format: "%n %u") %></strong> <span style="color: #999;">(paiement sur place)</span></td>
+  </tr>
+</table>
+
+<h3 style="font-size: 16px; color: #234766; margin: 24px 0 8px;">Récapitulatif</h3>
+<table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #eaeaea;">
+  <thead>
+    <tr style="background-color: #f6f6f3;">
+      <th style="text-align: left; padding: 8px; border-bottom: 1px solid #eaeaea;">Plante</th>
+      <th style="text-align: left; padding: 8px; border-bottom: 1px solid #eaeaea;">Format</th>
+      <th style="text-align: right; padding: 8px; border-bottom: 1px solid #eaeaea;">Qté</th>
+      <th style="text-align: right; padding: 8px; border-bottom: 1px solid #eaeaea;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @lines.each do |line| %>
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #f4f4f4;">
+          <em><%= line.species_name %></em>
+          <% if line.variety_name.present? %>
+            <br><span style="color: #666; font-size: 12px;"><%= line.variety_name %></span>
+          <% end %>
+        </td>
+        <td style="padding: 8px; border-bottom: 1px solid #f4f4f4;"><%= line.container_name %></td>
+        <td style="padding: 8px; border-bottom: 1px solid #f4f4f4; text-align: right;"><%= line.quantity %></td>
+        <td style="padding: 8px; border-bottom: 1px solid #f4f4f4; text-align: right;"><%= number_to_currency(line.total_euros, unit: "€", separator: ",", delimiter: " ", format: "%n %u") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p style="font-size: 13px; color: #666666; margin-top: 24px;">
+  Cette commande est une <strong>demande de réservation</strong>. La pépinière
+  confirme la disponibilité finale et fixe avec vous une date de retrait.
+  Le paiement se fait sur place au moment du retrait.
+</p>
+
+<p style="font-size: 13px; color: #666666;">
+  Vous recevrez un nouvel email lorsque votre commande sera prête à être
+  retirée.
+</p>
+
+<p style="font-size: 13px; color: #666666;">
+  Une question ? Répondez simplement à cet email, votre message arrivera à la
+  pépinière.
+</p>

@@ -547,6 +547,8 @@ Rails.application.routes.draw do
       get "nursery", to: "nursery#index"
       get "nursery/dashboard", to: "nursery#dashboard"
       get "nursery/catalog", to: "nursery#catalog"
+      get "nursery/public-pickup-points", to: "nursery#public_pickup_points"
+      post "nursery/public-orders", to: "nursery#submit_public_order"
 
       # Nurseries CRUD
       post "nursery/nurseries", to: "nursery#create_nursery"

@@ -1,0 +1,26 @@
+Nouvelle commande — <%= @order.order_number %>
+========================================
+
+Une nouvelle commande vient d'être passée sur le catalogue public,
+avec <%= @nursery.name %> comme point de retrait.
+
+Client : <%= @order.customer_name %>
+Email  : <%= @order.customer_email %>
+<% if @order.customer_phone.present? %>Tél    : <%= @order.customer_phone %>
+<% end %>Total  : <%= number_with_precision(@order.total_euros, precision: 2) %> € (à régler au retrait)
+
+Lignes :
+<% @lines.each do |line| %>
+- <%= line.species_name %><% if line.variety_name.present? %> · <%= line.variety_name %><% end %>
+  <%= line.container_name %> · <%= line.quantity %> × <%= number_with_precision(line.unit_price_euros, precision: 2) %> € = <%= number_with_precision(line.total_euros, precision: 2) %> €
+  Lieu : <%= line.nursery_name %>
+<% end %>
+<% if @order.notes.present? %>
+Notes du client :
+<%= @order.notes %>
+<% end %>
+
+Connectez-vous à Terranova pour traiter cette commande.
+
+Le stock n'a pas encore été réservé : il le sera quand vous passerez la
+commande en « Préparation » dans l'interface.
