@@ -440,6 +440,15 @@ module Api
         Plant::ActivityItem.where(target_type: 'variety', target_id: variety.id).destroy_all
         Plant::PaletteItem.where(item_type: 'variety', item_id: variety.id).find_each(&:soft_delete!)
 
+        # Soft-deleted stock batches still hold a FK reference even though they
+        # are invisible to API consumers — Postgres rejects the variety delete
+        # otherwise. Nullify variety_id (variety_name is kept as denormalized
+        # history) so the FK is satisfied without resurrecting deleted batches.
+        Nursery::StockBatch.unscoped
+          .where(variety_id: variety.id)
+          .where.not(deleted_at: nil)
+          .update_all(variety_id: nil)
+
         variety.destroy!
         head :no_content
       rescue ActiveRecord::InvalidForeignKey => e

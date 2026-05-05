@@ -241,6 +241,7 @@ Si doublons détectés :
    curl -s -X DELETE "https://terranova.semisto.org/api/v1/plants/varieties/{DUPLICATE_ID}" \
      -H "Authorization: Bearer $KNOWLEDGE_API_KEY"
    ```
+   Le contrôleur cascade les associations polymorphiques (common_names, photos, notes, references, palette_items) et **nullifie automatiquement le `variety_id` des `nursery_stock_batches` soft-deleted** (`deleted_at NOT NULL`) qui pointent vers la variété — le `variety_name` dénormalisé est préservé pour l'historique. Tu n'as donc à gérer que les batches **actifs** (étapes 1-2 ci-dessus). Si tu reçois un 422, c'est qu'un batch actif a échappé à la réassignation — re-lister via `/api/v1/nursery` et corriger.
 
 ### Mise à jour des variétés gardées
 
