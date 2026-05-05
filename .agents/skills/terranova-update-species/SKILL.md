@@ -107,9 +107,24 @@ Lire **`references/filling-rules.md`** pour le détail complet des règles par c
 
 Lire **`references/verification-rules.md`** pour le détail des 5 catégories de checks.
 
-### Comment lancer le verifier
+### Mode 1 — Verifier inline (par défaut)
 
-Spawn un sous-agent `general-purpose` avec ce prompt :
+Les sous-agents `general-purpose` lancés via le Task/Agent tool **n'ont PAS accès au Task/Agent tool eux-mêmes** — ils ne peuvent donc pas spawner un verifier indépendant. Dans ce cas (le plus fréquent quand on traite plusieurs espèces en parallèle), fais la vérification toi-même comme une étape distincte AVANT de produire ton rapport final :
+
+1. Une fois tous les PATCH/POST terminés, **change explicitement de posture** : "je passe en mode verifier critique, j'ai fini de remplir, je cherche maintenant les erreurs"
+2. Re-fetch la fiche complète via `GET /api/v1/plants/species/{ID}`
+3. Applique les 5 catégories de checks de `references/verification-rules.md` une par une
+4. Re-WebFetch 1-2 sources principales (PFAF + Wikipédia) pour cross-validation
+5. Produis un mini-rapport JSON (verdict + errors/warnings/missing) dans la section "Verifier" de ton rapport final
+
+⚠️ **Risque connu** : le verifier inline peut être complaisant avec son propre travail. Pour compenser :
+- Sois explicitement critique et accepte un verdict `needs_review` dès qu'un warning réel existe
+- Ne valide pas un champ rempli juste parce que tu l'as rempli — re-vérifie sa source maintenant
+- Si tu as fait une approximation pour remplir, marque-la `low_confidence` dans le rapport
+
+### Mode 2 — Verifier sub-agent (uniquement quand l'agent principal a accès au Task/Agent tool)
+
+Quand tu es l'agent principal de la conversation (pas un sous-agent), tu peux spawner un verifier indépendant :
 
 ```
 Tu es botaniste expert et fact-checker. Audite la fiche de l'espèce {ID} dans Terranova.
@@ -117,7 +132,7 @@ Tu ne dois rien écrire — uniquement chercher des erreurs, contradictions, et 
 
 API : `curl -s https://terranova.semisto.org/api/v1/plants/species/{ID} -H "Authorization: Bearer $KNOWLEDGE_API_KEY"`
 
-Vérifie selon les 5 catégories définies dans /Users/michael/.claude/skills/terranova-update-species/references/verification-rules.md :
+Vérifie selon les 5 catégories définies dans .agents/skills/terranova-update-species/references/verification-rules.md :
 1. Cohérence interne
 2. Cross-source validation (re-fetch PFAF, Wikipédia, Kew POWO, Tela Botanica)
 3. Complétude par catégorie

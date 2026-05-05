@@ -43,6 +43,46 @@ Output JSON strict suivant le schéma défini.
 - **`interests` contient `edible`** mais `edible_parts` vide → ERROR
 - **`interests` contient `medicinal`** mais `therapeutic_properties` vide ou null → warning
 
+### Cohérence fertility pour fruitiers (priorité haute)
+
+⚠️ Beaucoup d'espèces ont la valeur par défaut `self-fertile` qui est **fréquemment incorrecte** pour les fruitiers. Les seed defaults sont à challenger systématiquement quand on traite un fruitier.
+
+Référence pomologique pour les genres courants :
+
+| Genre / espèce | Fertilité réelle |
+|---|---|
+| **Malus pumila** (pommier) | self-sterile (sauf rares variétés autofertiles) |
+| **Pyrus communis** (poirier) | self-sterile (sauf "Conférence" partiellement autofertile) |
+| **Prunus avium** (cerisier doux) | self-sterile majoritairement |
+| **Prunus cerasus** (cerisier acide / griotte) | self-fertile |
+| **Prunus domestica** (prunier) | mixte selon variété |
+| **Prunus persica** (pêcher) | self-fertile majoritairement |
+| **Prunus armeniaca** (abricotier) | self-fertile majoritairement |
+| **Prunus dulcis** (amandier) | self-sterile (sauf variétés modernes) |
+| **Castanea sativa** (châtaignier) | self-sterile (pollinisation croisée obligatoire) |
+| **Juglans regia** (noyer) | partially-self-fertile (autofertile mais protandre/protogyne, mieux avec pollinisateur) |
+| **Corylus avellana** (noisetier) | self-sterile |
+| **Diospyros kaki** (kaki) | mixte selon variété (parthenocarpiques courantes) |
+| **Actinidia deliciosa / chinensis** (kiwi) | dioïque — `fertility` non applicable, marquer `dioecious` dans notes |
+| **Hippophae rhamnoides** (argousier) | dioïque |
+| **Vitis vinifera** (vigne) | self-fertile majoritairement (cépages cultivés) |
+| **Ribes** (groseillier, cassis) | self-fertile majoritairement |
+| **Rubus** (framboisier, mûrier) | self-fertile majoritairement |
+| **Fragaria** (fraisier) | self-fertile |
+| **Amelanchier** (amélanchier) | self-fertile |
+| **Sambucus nigra** (sureau noir) | self-fertile |
+| **Punica granatum** (grenadier) | self-fertile |
+| **Olea europaea** (olivier) | partially-self-fertile (souvent monovariétal stérile, mieux avec pollinisateur) |
+| **Cydonia oblonga** (cognassier) | self-fertile |
+| **Mespilus germanica** (néflier) | self-fertile |
+| **Sorbus** (sorbier) | self-fertile |
+| **Morus** (mûrier blanc/noir) | self-fertile (souvent monoïque) |
+| **Ficus carica** (figuier) | parthenocarpique pour variétés communes (fruits sans fécondation) — marquer `self-fertile` |
+
+**Règle de check** : si une espèce de la table ci-dessus a une valeur de `fertility` qui ne correspond pas → ERROR avec autofix possible (corriger vers la valeur de référence).
+
+**Pour les espèces hors table** : flagger `low_confidence` si la valeur vient du seed default (`self-fertile`) sans confirmation source.
+
 ---
 
 ## 2. Cross-source validation

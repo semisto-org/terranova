@@ -33,6 +33,7 @@ module Api
           fragranceLevels: build_options(%w[none light medium strong], { 'medium' => 'Moyen' }),
           transformations: build_options(%w[jam jelly compote juice syrup liqueur dried frozen vinegar chutney]),
           fodderQualities: build_options(%w[sheep goats pigs cattle poultry rabbits]),
+          growthHabits: build_options(Plant::Species::GROWTH_HABITS),
           strates: build_options(STRATE_KEYS)
         }
       end
@@ -584,6 +585,11 @@ module Api
         'liqueur' => 'Liqueur', 'dried' => 'Séché', 'frozen' => 'Congelé', 'vinegar' => 'Vinaigre', 'chutney' => 'Chutney',
         # Fodder qualities
         'sheep' => 'Moutons', 'goats' => 'Chèvres', 'pigs' => 'Porcs', 'cattle' => 'Bovins', 'poultry' => 'Volailles', 'rabbits' => 'Lapins',
+        # Growth habits (port)
+        'arbustif-elance' => 'Arbustif élancé', 'arbustif-arrondi' => 'Arbustif arrondi',
+        'buissonnant-elance' => 'Buissonnant élancé', 'buissonnant-arrondi' => 'Buissonnant arrondi',
+        'grimpant' => 'Grimpant', 'tige' => 'Tige', 'touffe' => 'Touffe',
+        'acaule' => 'Acaule', 'tapissant' => 'Tapissant',
         # Strates
         'aquatic' => 'Aquatique', 'groundCover' => 'Couvre-sol', 'herbaceous' => 'Herbacée',
         'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres'

@@ -1,5 +1,61 @@
 # Règles de remplissage par catégorie
 
+---
+
+## ⚠️ Cheatsheet — noms exacts des champs API
+
+Le PATCH species ignore silencieusement les clés inconnues (`params.permit`). Toujours utiliser EXACTEMENT ces noms (snake_case en input, camelCase en sortie GET) :
+
+### Champs simples
+| Input PATCH | Output GET | Notes |
+|---|---|---|
+| `plant_type` | `type` | ⚠️ noté `type` en sortie, `plant_type` en input |
+| `life_cycle` | `lifeCycle` | annual / biennial / perennial |
+| `foliage_type` | `foliageType` | deciduous / evergreen / semi-evergreen / marcescent |
+| `foliage_color` | `foliageColor` | green / dark-green / light-green / purple / variegated / silver / golden |
+| `growth_habit` | `growthHabit` | arbustif-elance / arbustif-arrondi / buissonnant-elance / buissonnant-arrondi / grimpant / tige / touffe / acaule / tapissant |
+| `growth_rate` | `growthRate` | slow / medium / fast / slow-start / fast-start |
+| `hardiness` | `hardiness` | zone-5 .. zone-9 (string) |
+| `root_system` | `rootSystem` | taproot / fibrous / spreading / shallow / deep |
+| `forest_garden_zone` | `forestGardenZone` | edge / light-shade / full-sun / understory / canopy |
+| `pollination_type` | `pollinationType` | insect / wind / self / bird |
+| `fertility` | `fertility` | self-fertile / self-sterile / partially-self-fertile |
+| `fragrance` | `fragrance` | none / light / medium / strong |
+| `soil_moisture` | `soilMoisture` | dry / moist / wet / waterlogged |
+| `soil_richness` | `soilRichness` | poor / moderate / rich / very-rich |
+| `watering_need` | `wateringNeed` | "1" .. "5" (string !) |
+| `is_invasive` | `isInvasive` | boolean |
+| `origin` | `origin` | texte libre |
+| `therapeutic_properties` | `therapeuticProperties` | texte libre, peut être null |
+| `toxic_elements` | `toxicElements` | texte libre, peut être null |
+| `additional_notes` | `additionalNotes` | texte libre, peut être null |
+| `edible_rating` | `edibleRating` | int 1-5 ou null |
+| `medicinal_rating` | `medicinalRating` | int 1-5 ou null |
+
+### Dimensions (entiers en cm)
+| Input PATCH | Output GET |
+|---|---|
+| `height_min_cm` | `heightMinCm` |
+| `height_max_cm` | `heightMaxCm` |
+| `height_description` | `heightDescription` |
+| `spread_min_cm` | `spreadMinCm` |
+| `spread_max_cm` | `spreadMaxCm` |
+| `spread_description` | `spreadDescription` |
+
+⚠️ **N'UTILISE PAS** : `common_height_cm`, `max_height_cm`, `common_width_cm`, `max_width_cm`, `frenchName` — ces clés n'existent pas et seront ignorées silencieusement.
+
+### Tableaux (envoyer toujours la liste complète, replace-all)
+- `edible_parts: []`, `interests: []`, `ecosystem_needs: []`, `exposures: []`
+- `flower_colors: []`, `flowering_months: []`, `fruiting_months: []`, `harvest_months: []`, `pruning_months: []`, `planting_seasons: []`
+- `propagation_methods: []`, `native_countries: []`, `soil_types: []`, `fodder_qualities: []`, `transformations: []`
+- `common_names: [{ language, name }, ...]` — **REMPLACE TOUS les noms communs existants**
+
+### Champs dérivés / non patchables
+- `frenchName` (sortie GET, dérivée — ne pas tenter de patch)
+- `genusId` (FK vers Plant::Genus — set via création initiale uniquement)
+
+---
+
 ## Détection automatique de catégorie
 
 Combiner ces signaux pour classer une espèce dans une catégorie :
