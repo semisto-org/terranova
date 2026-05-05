@@ -287,6 +287,18 @@ export interface SearchResult {
   type: 'genus' | 'species' | 'variety'
   latinName: string
   commonName: string | null
+  /** Parent genus latin name (species only) */
+  genusName?: string | null
+  /** Parent species latin name (variety only) */
+  speciesName?: string | null
+  /** Parent species id (variety only) */
+  speciesId?: string
+  /** Plant type / strate (species only) */
+  plantType?: string | null
+  /** Exposure ids (species only) */
+  exposures?: string[]
+  /** Hardiness zone string (species only) */
+  hardiness?: string | null
 }
 
 // =============================================================================
