@@ -610,7 +610,7 @@ module Api
           :edible_rating, :medicinal_rating,
           edible_parts: [], interests: [], ecosystem_needs: [], exposures: [],
           flower_colors: [], flowering_months: [], fruiting_months: [],
-          harvest_months: [], planting_seasons: [], propagation_methods: [],
+          harvest_months: [], pruning_months: [], planting_seasons: [], propagation_methods: [],
           native_countries: [], soil_types: [], fodder_qualities: [],
           transformations: []
         )
@@ -895,6 +895,7 @@ module Api
           flowerColors: item.flower_colors,
           plantingSeasons: item.planting_seasons,
           harvestMonths: item.harvest_months,
+          pruningMonths: item.pruning_months,
           exposures: item.exposures,
           hardiness: item.hardiness,
           fruitingMonths: item.fruiting_months,
@@ -961,6 +962,7 @@ module Api
           floweringMonths: item.flowering_months,
           fruitingMonths: item.fruiting_months,
           harvestMonths: item.harvest_months,
+          pruningMonths: item.pruning_months,
           lifeCycle: item.life_cycle,
           foliageType: item.foliage_type,
           forestGardenZone: item.forest_garden_zone,

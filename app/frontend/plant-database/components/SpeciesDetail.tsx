@@ -456,6 +456,7 @@ export function SpeciesDetail({
                 floweringMonths={species.floweringMonths}
                 fruitingMonths={species.fruitingMonths}
                 harvestMonths={species.harvestMonths}
+                pruningMonths={species.pruningMonths}
                 plantingSeasons={species.plantingSeasons}
                 plantingSeasonsOptions={filterOptions.plantingSeasons}
               />

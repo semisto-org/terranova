@@ -60,6 +60,7 @@ export interface Species {
   flowerColors: string[]
   plantingSeasons: string[]
   harvestMonths: string[]
+  pruningMonths: string[]
   exposures: string[]
   hardiness: string
   fruitingMonths: string[]
@@ -126,7 +127,7 @@ export interface Reference {
   id: string
   targetId: string
   targetType: TargetType
-  type: 'link' | 'pdf'
+  type: string
   title: string
   url: string
   source: string

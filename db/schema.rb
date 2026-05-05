@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_03_225642) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_05_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1851,6 +1851,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_03_225642) do
     t.jsonb "planting_seasons", default: [], null: false
     t.string "pollination_type", default: "insect", null: false
     t.jsonb "propagation_methods", default: [], null: false
+    t.jsonb "pruning_months", default: [], null: false
     t.string "root_system", default: "fibrous", null: false
     t.string "soil_moisture", default: "moist", null: false
     t.string "soil_richness", default: "moderate", null: false

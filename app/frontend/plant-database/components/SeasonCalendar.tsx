@@ -4,6 +4,7 @@ interface SeasonCalendarProps {
   floweringMonths: string[]
   fruitingMonths: string[]
   harvestMonths: string[]
+  pruningMonths?: string[]
   plantingSeasons: string[]
   plantingSeasonsOptions?: FilterOption[]
 }
@@ -53,6 +54,7 @@ export function SeasonCalendar({
   floweringMonths,
   fruitingMonths,
   harvestMonths,
+  pruningMonths = [],
   plantingSeasons,
 }: SeasonCalendarProps) {
   // Build planting months from seasons
@@ -87,6 +89,13 @@ export function SeasonCalendar({
       months: harvestMonths,
       color: '#22c55e',
       gradient: 'from-emerald-400 to-green-600',
+    },
+    {
+      key: 'pruning',
+      label: 'Taille',
+      months: pruningMonths,
+      color: '#0ea5e9',
+      gradient: 'from-sky-400 to-blue-600',
     },
   ]
 

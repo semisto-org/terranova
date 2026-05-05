@@ -376,6 +376,7 @@ export function SpeciesFormModal({
   const [floweringMonths, setFloweringMonths] = useState<string[]>(species?.floweringMonths ?? [])
   const [fruitingMonths, setFruitingMonths] = useState<string[]>(species?.fruitingMonths ?? [])
   const [harvestMonths, setHarvestMonths] = useState<string[]>(species?.harvestMonths ?? [])
+  const [pruningMonths, setPruningMonths] = useState<string[]>(species?.pruningMonths ?? [])
   const [plantingSeasons, setPlantingSeasons] = useState<string[]>(species?.plantingSeasons ?? [])
 
   // Uses
@@ -512,7 +513,7 @@ export function SpeciesFormModal({
       exposures, hardiness, root_system: rootSystem, forest_garden_zone: forestGardenZones[0] || 'edge',
       fragrance, flower_colors: flowerColors, soil_types: soilTypes, soil_moisture: soilMoisture,
       soil_richness: soilRichness, watering_need: wateringNeed, flowering_months: floweringMonths,
-      fruiting_months: fruitingMonths, harvest_months: harvestMonths, planting_seasons: plantingSeasons,
+      fruiting_months: fruitingMonths, harvest_months: harvestMonths, pruning_months: pruningMonths, planting_seasons: plantingSeasons,
       edible_parts: edibleParts, interests, ecosystem_needs: ecosystemNeeds,
       propagation_methods: propagationMethods, transformations, fodder_qualities: fodderQualities,
       fertility, pollination_type: pollinationType,
@@ -888,6 +889,10 @@ export function SpeciesFormModal({
                   <div>
                     <label className={labelBase}><span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Récolte</span></label>
                     <MonthPicker selected={harvestMonths} onChange={setHarvestMonths} color="#4caf50" />
+                  </div>
+                  <div>
+                    <label className={labelBase}><span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sky-500" />Taille</span></label>
+                    <MonthPicker selected={pruningMonths} onChange={setPruningMonths} color="#0ea5e9" />
                   </div>
                   <div>
                     <label className={labelBase}>Saisons de plantation</label>
