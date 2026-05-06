@@ -8,11 +8,14 @@ module Plant
       grimpant tige touffe acaule tapissant
     ].freeze
 
+    STRATES = %w[low medium shrub tree canopy vine aquatic subterranean].freeze
+
     belongs_to :genus, class_name: 'Plant::Genus', optional: true
     has_many :varieties, class_name: 'Plant::Variety', foreign_key: :species_id, dependent: :destroy
 
     validates :latin_name, :plant_type, presence: true
     validates :growth_habit, inclusion: { in: GROWTH_HABITS }, allow_nil: true
+    validates :strate, inclusion: { in: STRATES }, allow_nil: true
     validates :edible_rating, inclusion: { in: 1..5 }, allow_nil: true
     validates :medicinal_rating, inclusion: { in: 1..5 }, allow_nil: true
   end
