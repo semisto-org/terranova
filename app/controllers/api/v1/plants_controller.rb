@@ -27,14 +27,24 @@ module Api
           soilTypes: build_options(%w[clay loam sandy chalky peaty]),
           soilMoistures: build_options(%w[dry moist wet waterlogged]),
           soilRichness: build_options(%w[poor moderate rich very-rich]),
-          wateringNeeds: build_options(%w[1 2 3 4 5]),
+          wateringNeeds: build_options(%w[0 1 2 3 4 5]),
           lifeCycles: build_options(%w[annual biennial perennial]),
           foliageColors: build_options(%w[green dark-green light-green purple variegated silver golden]),
           fragranceLevels: build_options(%w[none light medium strong], { 'medium' => 'Moyen' }),
           transformations: build_options(%w[jam jelly compote juice syrup liqueur dried frozen vinegar chutney]),
           fodderQualities: build_options(%w[sheep goats pigs cattle poultry rabbits]),
           growthHabits: build_options(Plant::Species::GROWTH_HABITS),
-          strates: build_options(STRATE_KEYS)
+          strates: build_options(Plant::Species::STRATES),
+          successionalRoles: build_options(Plant::Species::SUCCESSIONAL_ROLES),
+          ecoServices: build_options(Plant::Species::ECO_SERVICES),
+          resourceCategories: build_options(Plant::Species::RESOURCE_CATEGORIES),
+          plantParts: build_options(Plant::Species::PLANT_PARTS),
+          sensorySubtypes: build_options(Plant::Species::SENSORY_SUBTYPES),
+          animalSubtypes: build_options(Plant::Species::ANIMAL_SUBTYPES),
+          toxicityTargets: build_options(Plant::Species::TOXICITY_TARGETS),
+          specificPollinators: build_options(Plant::Species::SPECIFIC_POLLINATORS),
+          soilPhValues: build_options(%w[acid neutral basic]),
+          soilTextures: build_options(%w[light balanced heavy])
         }
       end
 
@@ -583,7 +593,7 @@ module Api
         # Soil richness
         'poor' => 'Pauvre', 'moderate' => 'Modéré', 'rich' => 'Riche', 'very-rich' => 'Très riche',
         # Watering needs
-        '1' => '1 - Très peu', '2' => '2 - Peu', '3' => '3 - Modéré', '4' => '4 - Régulier', '5' => '5 - Abondant',
+        '0' => '0 - >4 mois secs', '1' => '1 - Très peu', '2' => '2 - Peu', '3' => '3 - Modéré', '4' => '4 - Régulier', '5' => '5 - Abondant',
         # Life cycles
         'annual' => 'Annuelle', 'biennial' => 'Bisannuelle', 'perennial' => 'Vivace',
         # Foliage colors
@@ -600,9 +610,35 @@ module Api
         'buissonnant-elance' => 'Buissonnant élancé', 'buissonnant-arrondi' => 'Buissonnant arrondi',
         'grimpant' => 'Grimpant', 'tige' => 'Tige', 'touffe' => 'Touffe',
         'acaule' => 'Acaule', 'tapissant' => 'Tapissant',
-        # Strates
+        # Strates (camelCase legacy keys kept, plus correct string keys)
         'aquatic' => 'Aquatique', 'groundCover' => 'Couvre-sol', 'herbaceous' => 'Herbacée',
-        'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres'
+        'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres',
+        'low' => 'Basse', 'vine' => 'Grimpante', 'subterranean' => 'Racinaire',
+        # Successional roles
+        'nurse' => 'Nourricier',
+        # Eco services
+        'windbreak' => 'Brise-vent', 'mellifere' => 'Mellifère', 'birds' => 'Oiseaux',
+        'beneficial-insects' => 'Insectes auxiliaires',
+        'nitrogen' => 'Azote', 'cross-pollination' => 'Pollin. croisée',
+        'organic-matter' => 'Matière organique', 'minerals' => 'Minéraux',
+        'weed-suppression' => 'Suppression herbe',
+        # Resource categories
+        'aromatic' => 'Aromatique', 'fiber' => 'Fibre', 'sensory' => 'Sensorielle', 'animal' => 'Animale',
+        # Plant parts
+        'stem' => 'Tige',
+        # Sensory subtypes
+        'dye' => 'Tinctoriale', 'fragrant' => 'Odorante',
+        # Animal subtypes
+        'pecked' => 'Picorée', 'browsed' => 'Broutée',
+        # Toxicity targets
+        'humans' => 'Humains', 'dogs' => 'Chiens', 'horses' => 'Chevaux',
+        # Specific pollinators
+        'bees' => 'Abeilles', 'bumblebees' => 'Bourdons',
+        'butterflies' => 'Papillons', 'hoverflies' => 'Syrphes', 'beetles' => 'Coléoptères',
+        # Soil pH
+        'acid' => 'Acide', 'neutral' => 'Neutre', 'basic' => 'Basique',
+        # Soil texture
+        'balanced' => 'Équilibré', 'heavy' => 'Lourd'
       }.freeze
 
       def build_options(values, overrides = {})
@@ -624,11 +660,22 @@ module Api
           :height_min_cm, :height_max_cm, :height_description,
           :spread_min_cm, :spread_max_cm, :spread_description,
           :edible_rating, :medicinal_rating,
+          # Card fields
+          :strate, :successional_role,
+          :lifespan_min_years, :lifespan_max_years,
+          :planting_spacing_cm,
+          :pollination_distance_m,
+          :is_drageonnant, :allelopathy,
           edible_parts: [], interests: [], ecosystem_needs: [], exposures: [],
           flower_colors: [], flowering_months: [], fruiting_months: [],
           harvest_months: [], pruning_months: [], planting_seasons: [], propagation_methods: [],
           native_countries: [], soil_types: [], fodder_qualities: [],
-          transformations: []
+          transformations: [],
+          # Card-related arrays
+          soil_ph: [], soil_texture: [], specific_pollinators: [],
+          eco_services_provided: [], eco_services_needed: [],
+          # Hash params (jsonb)
+          resource_parts: {}, toxicity: {}
         )
       end
 
@@ -900,6 +947,7 @@ module Api
       def serialize_species(item)
         {
           id: item.id.to_s,
+          slug: item.slug,
           genusId: item.genus_id&.to_s,
           latinName: item.latin_name,
           type: item.plant_type,
@@ -944,7 +992,23 @@ module Api
           spreadMaxCm: item.spread_max_cm,
           spreadDescription: item.spread_description.presence,
           edibleRating: item.edible_rating,
-          medicinalRating: item.medicinal_rating
+          medicinalRating: item.medicinal_rating,
+          # Card fields
+          strate: item.strate,
+          successionalRole: item.successional_role,
+          lifespanMinYears: item.lifespan_min_years,
+          lifespanMaxYears: item.lifespan_max_years,
+          plantingSpacingCm: item.planting_spacing_cm,
+          soilPh: item.soil_ph,
+          soilTexture: item.soil_texture,
+          pollinationDistanceM: item.pollination_distance_m,
+          specificPollinators: item.specific_pollinators,
+          isDrageonnant: item.is_drageonnant,
+          toxicity: item.toxicity,
+          allelopathy: item.allelopathy,
+          ecoServicesProvided: item.eco_services_provided,
+          ecoServicesNeeded: item.eco_services_needed,
+          resourceParts: item.resource_parts
         }
       end
 

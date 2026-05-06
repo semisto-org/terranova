@@ -36,3 +36,5 @@ Thumbs.db
 .worktrees/
 
 .playwright-mcp/
+.superpowers/
+.superset/attachments/

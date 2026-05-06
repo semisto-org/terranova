@@ -39,6 +39,16 @@ const EMPTY_FILTER_OPTIONS: FilterOptions = {
   transformations: [],
   fodderQualities: [],
   strates: [],
+  successionalRoles: [],
+  ecoServices: [],
+  resourceCategories: [],
+  plantParts: [],
+  sensorySubtypes: [],
+  animalSubtypes: [],
+  toxicityTargets: [],
+  specificPollinators: [],
+  soilPhValues: [],
+  soilTextures: [],
 }
 
 export function SpeciesDrawer({ speciesId, onClose, onSpeciesSelect }: SpeciesDrawerProps) {
