@@ -190,4 +190,20 @@ class PlantCardsHelperTest < ActionView::TestCase
     assert_equal 'Mellifère',   eco_label('mellifere')
     assert_nil eco_icon('unknown')
   end
+
+  test 'resource_icon and resource_label map id to symbol/FR' do
+    assert_equal 'r-edible', resource_icon('edible')
+    assert_equal 'r-fodder', resource_icon('animal')
+    assert_equal 'Comestible', resource_label('edible')
+    assert_equal 'Animale', resource_label('animal')
+  end
+
+  test 'parts_label joins parts in French' do
+    assert_equal 'fruit, fleur', parts_label(['fruit', 'flower'])
+    assert_equal 'écorce, fruit', parts_label(['bark', 'fruit'])
+    assert_equal 'ornementale', parts_label(['ornamental'])
+    assert_equal 'picorée', parts_label(['pecked'])
+    assert_nil parts_label([])
+    assert_nil parts_label(nil)
+  end
 end

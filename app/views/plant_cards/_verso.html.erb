@@ -69,6 +69,20 @@
         </div>
       <% end %>
     </div>
-    <%# Tasks B-15 to B-16: resources, warnings, qr/signature %>
+    <div class="section-title"><span>Ressources</span></div>
+    <div class="resource-grid-c">
+      <% Plant::Species::RESOURCE_CATEGORIES.each do |cat| %>
+        <% parts = species.resource_parts.is_a?(Hash) ? species.resource_parts[cat] : nil %>
+        <% pl = parts_label(parts) %>
+        <div class="resource-c <%= 'off' unless pl %>">
+          <span class="icn"><svg viewBox="0 0 24 24"><use href="#<%= resource_icon(cat) %>"/></svg></span>
+          <div class="info">
+            <span class="name"><%= resource_label(cat) %></span>
+            <span class="parts <%= 'empty' unless pl %>"><%= pl || '—' %></span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <%# Task B-16: warnings, qr/signature %>
   </div>
 </div>

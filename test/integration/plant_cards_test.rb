@@ -162,4 +162,16 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'Brise-vent', response.body
     assert_match 'Mellifère', response.body
   end
+
+  test 'resources grid renders 6 categories with parts' do
+    @species.update!(resource_parts: { 'edible' => ['fruit', 'flower'], 'medicinal' => ['bark', 'fruit'] })
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="resource-grid-c"', response.body
+    assert_match 'Comestible', response.body
+    assert_match 'fruit, fleur', response.body
+    assert_match 'écorce, fruit', response.body
+    # Empty categories show '—'
+    assert_match 'Aromatique', response.body
+    assert_match 'class="resource-c off"', response.body
+  end
 end

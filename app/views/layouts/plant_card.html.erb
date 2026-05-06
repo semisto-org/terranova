@@ -459,6 +459,39 @@
     -webkit-background-clip: text; background-clip: text;
     color: transparent; font-weight: 800;
   }
+
+  .resource-grid-c {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 5px 12px; margin-top: 4px;
+  }
+  .resource-c {
+    display: flex; align-items: flex-start;
+    gap: 6px; padding: 3px 0;
+  }
+  .resource-c .icn {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #234766;
+  }
+  .resource-c.off .icn { color: #cbd5e1; }
+  .resource-c .icn svg { width: 100%; height: 100%; display: block; }
+  .resource-c .info {
+    display: flex; flex-direction: column;
+    gap: 1px; min-width: 0;
+  }
+  .resource-c .name {
+    font-size: 8.5px; font-weight: 800;
+    color: #234766; letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .resource-c.off .name { color: #cbd5e1; }
+  .resource-c .parts {
+    font-size: 9px; color: #4b5563;
+    line-height: 1.25;
+  }
+  .resource-c.off .parts { color: #d1d5db; }
+  .resource-c .parts.empty { font-style: italic; color: #cbd5e1; }
   </style>
 </head>
 <body>

@@ -224,4 +224,31 @@ module PlantCardsHelper
 
   def eco_icon(eco_id); ECO_ICONS[eco_id]; end
   def eco_label(eco_id); ECO_FR_LABELS[eco_id]; end
+
+  RESOURCE_ICONS = {
+    'edible' => 'r-edible', 'aromatic' => 'r-aromatic', 'medicinal' => 'r-medicinal',
+    'fiber' => 'r-fiber', 'sensory' => 'r-sensory', 'animal' => 'r-fodder'
+  }.freeze
+
+  RESOURCE_FR = {
+    'edible' => 'Comestible', 'aromatic' => 'Aromatique', 'medicinal' => 'Médicinale',
+    'fiber' => 'Fibre', 'sensory' => 'Sensorielle', 'animal' => 'Animale'
+  }.freeze
+
+  PART_FR = {
+    # plant parts
+    'fruit' => 'fruit', 'flower' => 'fleur', 'leaf' => 'feuille', 'seed' => 'graine',
+    'root' => 'racine', 'bark' => 'écorce', 'sap' => 'sève', 'stem' => 'tige',
+    # sensory subtypes
+    'ornamental' => 'ornementale', 'dye' => 'tinctoriale', 'fragrant' => 'odorante',
+    # animal subtypes
+    'pecked' => 'picorée', 'browsed' => 'broutée'
+  }.freeze
+
+  def resource_icon(cat); RESOURCE_ICONS[cat]; end
+  def resource_label(cat); RESOURCE_FR[cat]; end
+
+  def parts_label(parts)
+    Array(parts).map { |p| PART_FR[p] || p }.join(', ').presence
+  end
 end
