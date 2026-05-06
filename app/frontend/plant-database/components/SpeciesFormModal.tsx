@@ -410,6 +410,8 @@ export function SpeciesFormModal({
   const [plantingSpacingCm, setPlantingSpacingCm] = useState<number | ''>(species?.plantingSpacingCm ?? '')
   const [soilPh, setSoilPh] = useState<string[]>(species?.soilPh ?? [])
   const [soilTexture, setSoilTexture] = useState<string[]>(species?.soilTexture ?? [])
+  const [pollinationDistanceM, setPollinationDistanceM] = useState<number | ''>(species?.pollinationDistanceM ?? '')
+  const [specificPollinators, setSpecificPollinators] = useState<string[]>(species?.specificPollinators ?? [])
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -556,6 +558,15 @@ export function SpeciesFormModal({
       spread_description: spreadDescription.trim() || null,
       edible_rating: edibleRating,
       medicinal_rating: medicinalRating,
+      strate: strate || null,
+      successional_role: successionalRole || null,
+      lifespan_min_years: lifespanMinYears ? Number(lifespanMinYears) : null,
+      lifespan_max_years: lifespanMaxYears ? Number(lifespanMaxYears) : null,
+      planting_spacing_cm: plantingSpacingCm ? Number(plantingSpacingCm) : null,
+      soil_ph: soilPh,
+      soil_texture: soilTexture,
+      pollination_distance_m: pollinationDistanceM ? Number(pollinationDistanceM) : null,
+      specific_pollinators: specificPollinators,
     })
   }
 
@@ -900,6 +911,20 @@ export function SpeciesFormModal({
                   <div>
                     <label className={labelBase}>Texture de sol tolérée</label>
                     <ChipGroup options={opts.soilTextures} selected={soilTexture} onChange={setSoilTexture} color="#5B5781" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className={labelBase}>Distance de pollinisation croisée (m)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={pollinationDistanceM}
+                      onChange={(e) => setPollinationDistanceM(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className={labelBase}>Pollinisateurs spécifiques</label>
+                    <ChipGroup options={opts.specificPollinators} selected={specificPollinators} onChange={setSpecificPollinators} color="#5B5781" />
                   </div>
                 </div>
               </div>

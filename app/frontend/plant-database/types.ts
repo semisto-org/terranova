@@ -111,6 +111,8 @@ export interface Species {
   plantingSpacingCm?: number | null
   soilPh?: string[] | null
   soilTexture?: string[] | null
+  pollinationDistanceM?: number | null
+  specificPollinators?: string[] | null
 }
 
 export interface Variety {
