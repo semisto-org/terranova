@@ -64,6 +64,33 @@
         <div class="roots">
           <%= render roots_partial(species), species: species %>
         </div>
+        <div class="soil-scales">
+          <% texture_segs = soil_scale_segments(species.soil_texture, PlantCardsHelper::TEXTURE_ORDER) %>
+          <% humus_segs   = soil_scale_segments([species.soil_richness], PlantCardsHelper::HUMUS_ORDER) %>
+          <% ph_segs      = soil_scale_segments(species.soil_ph, PlantCardsHelper::PH_ORDER) %>
+          <% [
+            ['Texture', %w[Léger Équil. Lourd], texture_segs],
+            ['Humus',   %w[Pauvre Moyen Riche], humus_segs],
+            ['pH',      %w[Acide Neutre Basique], ph_segs]
+          ].each do |label, ticks, segs| %>
+            <div class="soil-scale">
+              <span class="axis-label"><%= label %></span>
+              <div class="axis-stack">
+                <div class="axis">
+                  <% segs.each do |on| %>
+                    <div class="seg <%= 'on' if on %>"></div>
+                  <% end %>
+                </div>
+                <div class="axis-ticks">
+                  <% ticks.each do |t| %><span><%= t %></span><% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <% if species.root_system %>
+          <div class="root-type-label">Racines<strong><%= root_label(species.root_system) %></strong></div>
+        <% end %>
       </div>
       <div class="ground-line"></div>
       <div class="grass"></div>

@@ -226,6 +226,44 @@
     stroke-linecap: round;
     opacity: .85;
   }
+  .soil-scales {
+    position: absolute;
+    right: 12px; top: 8px; bottom: 22px;
+    width: 200px;
+    display: flex; flex-direction: column;
+    justify-content: space-around;
+    z-index: 4;
+  }
+  .soil-scale {
+    display: grid; grid-template-columns: 44px 1fr;
+    gap: 8px; align-items: center;
+  }
+  .soil-scale .axis-label {
+    font-size: 8.5px; color: #f5e6c8;
+    text-transform: uppercase; letter-spacing: .12em;
+    font-weight: 800;
+  }
+  .soil-scale .axis-stack { display: flex; flex-direction: column; gap: 2px; }
+  .soil-scale .axis {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 3px; height: 7px;
+  }
+  .soil-scale .axis .seg { background: rgba(255,255,255,.13); border-radius: 1px; }
+  .soil-scale .axis .seg.on { background: #f5e6c8; }
+  .soil-scale .axis-ticks {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    font-size: 7px; color: #b89870; letter-spacing: .03em;
+  }
+  .soil-scale .axis-ticks span:nth-child(1) { text-align: left; }
+  .soil-scale .axis-ticks span:nth-child(2) { text-align: center; }
+  .soil-scale .axis-ticks span:nth-child(3) { text-align: right; }
+  .root-type-label {
+    position: absolute; left: 14px; bottom: 6px;
+    font-size: 7.5px; color: #d4b896;
+    text-transform: uppercase; letter-spacing: .14em;
+    font-weight: 700; z-index: 5;
+  }
+  .root-type-label strong { color: #f5e6c8; font-size: 9.5px; margin-left: 4px; }
   </style>
 </head>
 <body>

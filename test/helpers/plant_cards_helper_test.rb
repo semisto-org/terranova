@@ -116,4 +116,18 @@ class PlantCardsHelperTest < ActionView::TestCase
     s_nil = OpenStruct.new(root_system: nil)
     assert_equal 'plant_cards/roots/default', roots_partial(s_nil)
   end
+
+  test 'soil_scale_segments returns booleans for active values' do
+    assert_equal [false, true, true],
+      soil_scale_segments(['balanced', 'heavy'], PlantCardsHelper::TEXTURE_ORDER)
+    assert_equal [false, true, false],
+      soil_scale_segments(['moderate'], PlantCardsHelper::HUMUS_ORDER)
+    assert_equal [true, true, false],
+      soil_scale_segments(['acid', 'neutral'], PlantCardsHelper::PH_ORDER)
+  end
+
+  test 'soil_scale_segments handles nil/empty' do
+    assert_equal [false, false, false], soil_scale_segments(nil, PlantCardsHelper::TEXTURE_ORDER)
+    assert_equal [false, false, false], soil_scale_segments([], PlantCardsHelper::PH_ORDER)
+  end
 end

@@ -87,4 +87,19 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     # spreading has many curved paths
     assert_match 'M120 22 Q70 26', response.body
   end
+
+  test 'soil scales render with active segments and root type label' do
+    @species.update!(
+      soil_texture: ['balanced', 'heavy'],
+      soil_richness: 'moderate',
+      soil_ph: ['acid', 'neutral'],
+      root_system: 'spreading'
+    )
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="soil-scales"', response.body
+    assert_match 'Texture', response.body
+    assert_match 'Humus', response.body
+    assert_match 'pH', response.body
+    assert_match 'Traçant', response.body  # root_type-label
+  end
 end

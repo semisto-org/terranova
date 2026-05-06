@@ -55,6 +55,16 @@ module PlantCardsHelper
     'deep'      => 'Profond'
   }.freeze
 
+  TEXTURE_ORDER = %w[light balanced heavy].freeze
+  HUMUS_ORDER   = %w[poor moderate rich].freeze
+  PH_ORDER      = %w[acid neutral basic].freeze
+
+  # Returns array of booleans, one per segment, indicating which are "active"
+  def soil_scale_segments(values, order)
+    active = Array(values).map(&:to_s)
+    order.map { |id| active.include?(id) }
+  end
+
   PIXELS_PER_METER = 33  # 1 m = 33 px (matches v30 mockup: 1m70 human = 56 px)
 
   def strate_label(strate); STRATE_LABELS[strate]; end
