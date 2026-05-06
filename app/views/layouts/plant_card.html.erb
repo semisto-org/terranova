@@ -7,8 +7,104 @@
   <%= csp_meta_tag %>
   <style>
     @page { size: A6; margin: 0; }
-    @media print { body { margin: 0; } }
-    body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+    @media print {
+      body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card-stage { gap: 0; }
+      .a6 { page-break-after: always; box-shadow: none; }
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f0f0f0; padding: 24px; }
+    .card-stage { display: flex; flex-direction: column; gap: 24px; align-items: center; }
+
+    /* Strate palette */
+    .strate-low          { --strate: #C8E6A0; --strate-fg: #2d4a1f; --plant: #6b9b3a; }
+    .strate-medium       { --strate: #8FBC4F; --strate-fg: #fff;    --plant: #5a9a2f; }
+    .strate-shrub        { --strate: #5A9A2F; --strate-fg: #fff;    --plant: #3d7a1f; }
+    .strate-tree         { --strate: #2D7A1F; --strate-fg: #fff;    --plant: #1f5a14; }
+    .strate-canopy       { --strate: #1B4D14; --strate-fg: #fff;    --plant: #143d0e; }
+    .strate-vine         { --strate: #B45F8E; --strate-fg: #fff;    --plant: #8a4a6e; }
+    .strate-aquatic      { --strate: #4A90C2; --strate-fg: #fff;    --plant: #357494; }
+    .strate-subterranean { --strate: #8B5A3C; --strate-fg: #fff;    --plant: #6e4630; }
+
+    .a6 {
+      width: 396px; height: 558px;
+      background: #FFFFFF;
+      color: #1f2937;
+      border-radius: 6px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.08);
+      position: relative;
+      overflow: hidden;
+      font-size: 11px;
+    }
+    .strate-bar {
+      position: absolute; top: 0; left: 0; right: 0; height: 6px;
+      background: var(--strate, #ddd); z-index: 6;
+    }
+
+    .a6 .body {
+      padding: 22px 18px 0;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex; flex-direction: column;
+      position: relative; z-index: 3;
+    }
+
+    .a6 h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 27px; line-height: 1; margin: 0;
+      letter-spacing: -0.01em; color: #1f2937;
+    }
+    .a6 .latin {
+      font-style: italic; font-size: 12px; color: #6b7280;
+      letter-spacing: 0.01em; margin-top: 3px;
+    }
+
+    .header-row { display: flex; align-items: flex-start; gap: 8px; }
+    .header-row > div:first-child { flex: 1; }
+
+    .hardiness-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700; color: #234766;
+      background: #dde4ec; padding: 4px 10px; border-radius: 999px;
+      white-space: nowrap;
+    }
+    .hardiness-tag .ic { font-size: 13px; }
+
+    .badge-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 7px; }
+    .strate-badge {
+      display: inline-flex; align-items: center;
+      padding: 4px 11px; border-radius: 999px;
+      font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase;
+      background: var(--strate, #888); color: var(--strate-fg, #fff);
+    }
+    .cycle-chip {
+      display: inline-flex; align-items: center;
+      padding: 4px 11px; border-radius: 999px;
+      font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .cycle-annual    { background: #F4D35E; color: #5C4500; }
+    .cycle-biennial  { background: #EE964B; color: #fff; }
+    .cycle-perennial { background: #274C77; color: #fff; }
+
+    .role-chip {
+      display: inline-flex; align-items: center;
+      padding: 4px 11px; border-radius: 999px;
+      font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .role-pioneer { background: #E07A47; color: #fff; }
+    .role-nurse   { background: #B8916A; color: #fff; }
+    .role-climax  { background: #1B4D52; color: #fff; }
+
+    .dim-line {
+      margin-top: 6px; font-size: 10px; color: #6b7280;
+      display: flex; gap: 9px; align-items: center; flex-wrap: wrap;
+      line-height: 1.3;
+    }
+    .dim-line .item { display: inline-flex; align-items: center; gap: 4px; }
+    .dim-line .ic { color: #234766; font-weight: 700; font-size: 11px; }
+    .dim-line .sep { color: #cbd5e1; }
   </style>
 </head>
 <body>

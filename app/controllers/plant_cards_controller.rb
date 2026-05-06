@@ -4,5 +4,6 @@ class PlantCardsController < ApplicationController
 
   def show
     @species = Plant::Species.find(params[:id])
+    @photos = Plant::Photo.where(target_type: 'species', target_id: @species.id)
   end
 end

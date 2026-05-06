@@ -1,0 +1,40 @@
+<div class="a6 strate-<%= species.strate %>" data-face="recto">
+  <div class="strate-bar"></div>
+  <div class="body">
+    <div class="header-row">
+      <div>
+        <h1><%= species.common_names_fr.presence || species.latin_name %></h1>
+        <div class="latin"><%= species.latin_name %></div>
+        <div class="badge-row">
+          <% if species.strate %>
+            <span class="strate-badge"><%= strate_label(species.strate) %></span>
+          <% end %>
+          <% if species.life_cycle %>
+            <span class="cycle-chip <%= cycle_class(species.life_cycle) %>"><%= cycle_label(species.life_cycle) %></span>
+          <% end %>
+          <% if species.successional_role %>
+            <span class="role-chip <%= role_class(species.successional_role) %>"><%= role_label(species.successional_role) %></span>
+          <% end %>
+        </div>
+        <div class="dim-line">
+          <% if species.height_min_cm && species.height_max_cm %>
+            <span class="item"><span class="ic">↕</span> <%= species.height_min_cm/100.0 %>–<%= species.height_max_cm/100.0 %> m</span>
+          <% end %>
+          <% if species.height_min_cm && species.height_max_cm && (species.spread_min_cm && species.spread_max_cm) %>
+            <span class="sep">·</span>
+          <% end %>
+          <% if species.spread_min_cm && species.spread_max_cm %>
+            <span class="item"><span class="ic">↔</span> <%= species.spread_min_cm/100.0 %>–<%= species.spread_max_cm/100.0 %> m</span>
+          <% end %>
+          <% if species.planting_spacing_cm %>
+            <span class="sep">·</span>
+            <span class="item"><span class="ic">⇿</span> Espacement <%= species.planting_spacing_cm/100.0 %> m</span>
+          <% end %>
+        </div>
+      </div>
+      <% if hardiness_celsius(species.hardiness) %>
+        <span class="hardiness-tag"><span class="ic">❄</span><%= hardiness_celsius(species.hardiness) %></span>
+      <% end %>
+    </div>
+  </div>
+</div>

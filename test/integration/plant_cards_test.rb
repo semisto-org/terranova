@@ -28,4 +28,11 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match 'Amelanchier canadensis', response.body
   end
+
+  test 'GET card renders strate badge when set' do
+    @species.update!(strate: 'shrub')
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'strate-badge', response.body
+    assert_match 'Arbrisseau', response.body
+  end
 end
