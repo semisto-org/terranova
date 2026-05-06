@@ -1,0 +1,5 @@
+<svg viewBox="0 0 240 <%= height_px %>" preserveAspectRatio="xMidYEnd meet">
+  <% leaf_h = [height_px * 0.3, 40].min %>
+  <ellipse cx="120" cy="<%= leaf_h * 0.5 %>" rx="40" ry="<%= leaf_h * 0.5 %>" fill="var(--plant)" opacity=".85"/>
+  <rect x="118" y="<%= leaf_h %>" width="4" height="<%= height_px - leaf_h %>" fill="#5a8a36"/>
+</svg>

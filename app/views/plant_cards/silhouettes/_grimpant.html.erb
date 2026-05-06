@@ -1,0 +1,10 @@
+<svg viewBox="0 0 240 <%= height_px %>" preserveAspectRatio="xMidYEnd meet">
+  <line x1="120" y1="0" x2="120" y2="<%= height_px %>" stroke="#a08c75" stroke-width="2"/>
+  <% step = [height_px / 5.0, 22].max %>
+  <% (0..3).each do |i| %>
+    <% y = i * step + step * 0.4 %>
+    <ellipse cx="<%= 100 + (i.even? ? -25 : 25) %>" cy="<%= y %>" rx="22" ry="14" fill="var(--plant)" opacity=".82"/>
+  <% end %>
+  <path d="M120 5 Q 100 15 95 25" stroke="var(--plant)" stroke-width="2" fill="none"/>
+  <path d="M120 30 Q 140 40 145 50" stroke="var(--plant)" stroke-width="2" fill="none"/>
+</svg>

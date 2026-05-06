@@ -1,0 +1,105 @@
+<div class="a6 strate-<%= species.strate %>" data-face="verso">
+  <div class="strate-bar"></div>
+  <div class="verso-top">
+    <div class="verso-name-row">
+      <h2><%= species.common_names_fr.presence || species.latin_name %></h2>
+      <span class="latin-mini"><%= species.latin_name %></span>
+    </div>
+    <% letters = %w[J F M A M J J A S O N D] %>
+    <% months  = %w[jan feb mar apr may jun jul aug sep oct nov dec] %>
+    <div class="cal-line">
+      <% months.each_with_index do |m, i| %>
+        <% state = cell_state(m, species) %>
+        <span class="cell <%= state %>"><%= letters[i] %></span>
+      <% end %>
+    </div>
+    <div class="cal-legend">
+      <span><span class="dot flow"></span>Floraison</span>
+      <span><span class="dot harv"></span>Récolte</span>
+    </div>
+  </div>
+  <div class="body" style="padding-top: 10px; padding-bottom: 30px">
+    <% if species.fertility.present? || species.pollination_distance_m.present? || species.specific_pollinators.any? %>
+      <div class="section-title"><span>Pollinisation</span></div>
+      <div class="pollin-section">
+        <div class="pollin-main">
+          <span class="icn-big"><svg viewBox="0 0 24 24"><use href="#<%= fertility_symbol(species.fertility) %>"/></svg></span>
+          <div class="status">
+            <span class="lbl">Statut</span>
+            <span class="val"><%= fertility_label(species.fertility) || '—' %></span>
+          </div>
+        </div>
+        <div class="pollin-extras">
+          <% if (vec_label = pollinators_label(species.specific_pollinators)) %>
+            <div class="extra">
+              <span class="ic"><svg viewBox="0 0 24 24"><use href="#vec-insect"/></svg></span>
+              <span><strong>Insectes</strong> — <%= vec_label %></span>
+            </div>
+          <% end %>
+          <% if species.pollination_distance_m.present? %>
+            <div class="extra">
+              <span class="ic"><svg viewBox="0 0 24 24"><use href="#vec-distance"/></svg></span>
+              <span>Croisement <strong>&lt; <%= species.pollination_distance_m %> m</strong> bénéfique</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    <div class="section-title">
+      <span>Système écosystémique</span>
+      <span class="legend">
+        <span><span class="dot service"></span>Service</span>
+        <span><span class="dot need"></span>Besoin</span>
+        <span><span class="dot both"></span>2 en 1</span>
+      </span>
+    </div>
+    <div class="eco-grid">
+      <% Plant::Species::ECO_SERVICES.each do |eco_id| %>
+        <% state = eco_state(species, eco_id) %>
+        <div class="eco-item <%= state %>">
+          <span class="pic">
+            <% if state == 'both' %>
+              <svg class="half left" viewBox="0 0 24 24"><use href="#<%= eco_icon(eco_id) %>"/></svg>
+              <svg class="half right" viewBox="0 0 24 24"><use href="#<%= eco_icon(eco_id) %>"/></svg>
+            <% else %>
+              <svg viewBox="0 0 24 24"><use href="#<%= eco_icon(eco_id) %>"/></svg>
+            <% end %>
+          </span>
+          <span class="lbl"><%= eco_label(eco_id) %></span>
+        </div>
+      <% end %>
+    </div>
+    <div class="section-title"><span>Ressources</span></div>
+    <div class="resource-grid-c">
+      <% Plant::Species::RESOURCE_CATEGORIES.each do |cat| %>
+        <% parts = species.resource_parts.is_a?(Hash) ? species.resource_parts[cat] : nil %>
+        <% pl = parts_label(parts) %>
+        <div class="resource-c <%= 'off' unless pl %>">
+          <span class="icn"><svg viewBox="0 0 24 24"><use href="#<%= resource_icon(cat) %>"/></svg></span>
+          <div class="info">
+            <span class="name"><%= resource_label(cat) %></span>
+            <span class="parts <%= 'empty' unless pl %>"><%= pl || '—' %></span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <% warnings = card_warnings(species) %>
+    <% if warnings.any? %>
+      <div class="warnings-banner">
+        <span class="label-icon">⚠</span>
+        <% warnings.each_with_index do |w, i| %>
+          <% if i > 0 %><span class="sep">·</span><% end %>
+          <span class="warning-item"><%= w %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+  <div class="qr-corner">
+    <% public_url = "https://#{ENV.fetch('PLANTS_HOST', 'plantes.semisto.org')}/s/#{species.slug}" %>
+    <%= qr_svg(public_url) %>
+  </div>
+  <div class="signature">
+    <div class="line1">Fiche réalisée par <strong>Semisto</strong></div>
+    <div class="line2">plantes.semisto.org</div>
+  </div>
+</div>
