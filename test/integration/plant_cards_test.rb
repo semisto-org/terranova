@@ -55,4 +55,12 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'Floraison', response.body
     assert_match 'Photo manquante', response.body  # fruit placeholder
   end
+
+  test 'cross-section frame renders with human silhouette' do
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="cross-section"', response.body
+    assert_match 'class="above-ground"', response.body
+    assert_match 'class="below-ground"', response.body
+    assert_match 'href="#human-1m70"', response.body
+  end
 end
