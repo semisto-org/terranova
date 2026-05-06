@@ -118,6 +118,7 @@ export interface Species {
   toxicity?: Record<string, string[]> | null
   ecoServicesProvided?: string[] | null
   ecoServicesNeeded?: string[] | null
+  resourceParts?: Record<string, string[]> | null
 }
 
 export interface Variety {

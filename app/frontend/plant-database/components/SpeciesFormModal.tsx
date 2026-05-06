@@ -417,6 +417,7 @@ export function SpeciesFormModal({
   const [toxicity, setToxicity] = useState<Record<string, string[]>>(species?.toxicity ?? {})
   const [ecoServicesProvided, setEcoServicesProvided] = useState<string[]>(species?.ecoServicesProvided ?? [])
   const [ecoServicesNeeded, setEcoServicesNeeded] = useState<string[]>(species?.ecoServicesNeeded ?? [])
+  const [resourceParts, setResourceParts] = useState<Record<string, string[]>>(species?.resourceParts ?? {})
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -577,6 +578,7 @@ export function SpeciesFormModal({
       toxicity,
       eco_services_provided: ecoServicesProvided,
       eco_services_needed: ecoServicesNeeded,
+      resource_parts: resourceParts,
     })
   }
 
@@ -982,6 +984,30 @@ export function SpeciesFormModal({
                       <label className={labelBase}>Services écosystémiques nécessaires</label>
                       <ChipGroup options={opts.ecoServices} selected={ecoServicesNeeded} onChange={setEcoServicesNeeded} color="#5B5781" />
                     </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-3">Ressources (parties par usage)</h4>
+                  <div className="space-y-2">
+                    {opts.resourceCategories.map((cat) => {
+                      let optsForCategory = opts.plantParts
+                      if (cat.id === 'sensory') optsForCategory = opts.sensorySubtypes
+                      if (cat.id === 'animal') optsForCategory = opts.animalSubtypes
+                      return (
+                        <div key={cat.id} className="flex items-start gap-3">
+                          <span className="text-xs font-medium text-stone-600 w-24 pt-1">{cat.label}</span>
+                          <div className="flex-1">
+                            <ChipGroup
+                              options={optsForCategory}
+                              selected={resourceParts[cat.id] ?? []}
+                              onChange={(next) => setResourceParts({ ...resourceParts, [cat.id]: next })}
+                              color="#234766"
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
