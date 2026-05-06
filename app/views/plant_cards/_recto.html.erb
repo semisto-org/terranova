@@ -36,5 +36,21 @@
         <span class="hardiness-tag"><span class="ic">❄</span><%= hardiness_celsius(species.hardiness) %></span>
       <% end %>
     </div>
+    <div class="hero-split">
+      <% flower = pick_photo(photos, 'flower') %>
+      <% fruit = pick_photo(photos, 'fruit') %>
+      <div class="photo-tile <%= flower ? 'has-img' : 'empty' %>">
+        <% if flower %>
+          <img src="<%= flower.url %>" alt="<%= flower.caption.presence || 'Floraison' %>">
+        <% end %>
+        <span class="role-tag">Floraison</span>
+      </div>
+      <div class="photo-tile <%= fruit ? 'has-img' : 'empty' %>">
+        <% if fruit %>
+          <img src="<%= fruit.url %>" alt="<%= fruit.caption.presence || 'Fruit' %>">
+        <% end %>
+        <span class="role-tag">Fruit</span>
+      </div>
+    </div>
   </div>
 </div>

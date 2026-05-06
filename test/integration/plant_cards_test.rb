@@ -35,4 +35,24 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'strate-badge', response.body
     assert_match 'Arbrisseau', response.body
   end
+
+  test 'photos render with role tags and placeholder fallback' do
+    contributor = Plant::Contributor.create!(
+      name: 'Test',
+      avatar_url: '',
+      joined_at: Date.current,
+      lab_id: 'lab-test'
+    )
+    Plant::Photo.create!(
+      target_type: 'species',
+      target_id: @species.id,
+      role: 'flower',
+      url: 'https://example.org/flower.jpg',
+      contributor_id: contributor.id
+    )
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'https://example.org/flower.jpg', response.body
+    assert_match 'Floraison', response.body
+    assert_match 'Photo manquante', response.body  # fruit placeholder
+  end
 end
