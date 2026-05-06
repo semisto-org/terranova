@@ -20,4 +20,17 @@ class Plant::SpeciesTest < ActiveSupport::TestCase
     species = Plant::Species.new(base_attrs.merge(strate: nil))
     assert species.valid?
   end
+
+  test 'successional_role accepts pioneer/nurse/climax' do
+    %w[pioneer nurse climax].each do |role|
+      species = Plant::Species.new(base_attrs.merge(successional_role: role))
+      assert species.valid?, "expected #{role} to be valid"
+    end
+  end
+
+  test 'successional_role rejects unknown value' do
+    species = Plant::Species.new(base_attrs.merge(successional_role: 'middle'))
+    assert_not species.valid?
+    assert_includes species.errors[:successional_role], 'is not included in the list'
+  end
 end
