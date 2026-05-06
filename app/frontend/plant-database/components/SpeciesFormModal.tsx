@@ -346,6 +346,17 @@ export function SpeciesFormModal({
     fodderQualities: filterOptions.fodderQualities.map(fr),
     fertilityTypes: filterOptions.fertilityTypes.map(fr),
     pollinationTypes: filterOptions.pollinationTypes.map(fr),
+    strates: filterOptions.strates?.map(fr) ?? [],
+    successionalRoles: filterOptions.successionalRoles?.map(fr) ?? [],
+    ecoServices: filterOptions.ecoServices?.map(fr) ?? [],
+    resourceCategories: filterOptions.resourceCategories?.map(fr) ?? [],
+    plantParts: filterOptions.plantParts?.map(fr) ?? [],
+    sensorySubtypes: filterOptions.sensorySubtypes?.map(fr) ?? [],
+    animalSubtypes: filterOptions.animalSubtypes?.map(fr) ?? [],
+    toxicityTargets: filterOptions.toxicityTargets?.map(fr) ?? [],
+    specificPollinators: filterOptions.specificPollinators?.map(fr) ?? [],
+    soilPhValues: filterOptions.soilPhValues?.map(fr) ?? [],
+    soilTextures: filterOptions.soilTextures?.map(fr) ?? [],
   }), [filterOptions])
 
   // Identity
@@ -390,6 +401,13 @@ export function SpeciesFormModal({
   const [propagationMethods, setPropagationMethods] = useState<string[]>(species?.propagationMethods ?? [])
   const [transformations, setTransformations] = useState<string[]>(species?.transformations ?? [])
   const [fodderQualities, setFodderQualities] = useState<string[]>(species?.fodderQualities ?? [])
+
+  // Conception
+  const [strate, setStrate] = useState(species?.strate ?? '')
+  const [successionalRole, setSuccessionalRole] = useState(species?.successionalRole ?? '')
+  const [lifespanMinYears, setLifespanMinYears] = useState<number | ''>(species?.lifespanMinYears ?? '')
+  const [lifespanMaxYears, setLifespanMaxYears] = useState<number | ''>(species?.lifespanMaxYears ?? '')
+  const [plantingSpacingCm, setPlantingSpacingCm] = useState<number | ''>(species?.plantingSpacingCm ?? '')
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -838,6 +856,40 @@ export function SpeciesFormModal({
                   </span>
                   Conception
                 </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelBase}>Strate</label>
+                    <select className={inputBase} value={strate} onChange={(e) => setStrate(e.target.value)}>
+                      <option value="">—</option>
+                      {opts.strates.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelBase}>Rôle successionnel</label>
+                    <select className={inputBase} value={successionalRole} onChange={(e) => setSuccessionalRole(e.target.value)}>
+                      <option value="">—</option>
+                      {opts.successionalRoles.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelBase}>Longévité min (années)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={lifespanMinYears}
+                      onChange={(e) => setLifespanMinYears(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className={labelBase}>Longévité max (années)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={lifespanMaxYears}
+                      onChange={(e) => setLifespanMaxYears(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className={labelBase}>Espacement de plantation (cm)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={plantingSpacingCm}
+                      onChange={(e) => setPlantingSpacingCm(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                </div>
               </div>
 
               <div className="border-t border-stone-100" />

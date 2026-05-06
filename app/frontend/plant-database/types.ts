@@ -35,6 +35,16 @@ export interface FilterOptions {
   transformations: FilterOption[]
   fodderQualities: FilterOption[]
   strates: FilterOption[]
+  successionalRoles: FilterOption[]
+  ecoServices: FilterOption[]
+  resourceCategories: FilterOption[]
+  plantParts: FilterOption[]
+  sensorySubtypes: FilterOption[]
+  animalSubtypes: FilterOption[]
+  toxicityTargets: FilterOption[]
+  specificPollinators: FilterOption[]
+  soilPhValues: FilterOption[]
+  soilTextures: FilterOption[]
 }
 
 // =============================================================================
@@ -94,6 +104,11 @@ export interface Species {
   spreadDescription?: string | null
   edibleRating?: 1 | 2 | 3 | 4 | 5 | null
   medicinalRating?: 1 | 2 | 3 | 4 | 5 | null
+  strate?: string | null
+  successionalRole?: string | null
+  lifespanMinYears?: number | null
+  lifespanMaxYears?: number | null
+  plantingSpacingCm?: number | null
 }
 
 export interface Variety {
