@@ -1,0 +1,6 @@
+<svg viewBox="0 0 240 <%= height_px %>" preserveAspectRatio="xMidYEnd meet">
+  <% canopy_h = [height_px * 0.6, 80].min %>
+  <ellipse cx="120" cy="<%= canopy_h * 0.5 %>" rx="80" ry="<%= canopy_h * 0.45 %>" fill="var(--plant)" opacity=".82"/>
+  <% trunk_top = canopy_h %>
+  <rect x="118" y="<%= trunk_top %>" width="4" height="<%= [height_px - trunk_top, 0].max %>" fill="#5a4a36"/>
+</svg>

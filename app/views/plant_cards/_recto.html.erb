@@ -54,6 +54,10 @@
     </div>
     <div class="cross-section">
       <div class="above-ground">
+        <% height_px = plant_height_px(species.height_max_cm) || 100 %>
+        <div class="plant-bg" style="bottom: 110px; height: <%= height_px %>px;">
+          <%= render silhouette_partial(species), species: species, height_px: height_px %>
+        </div>
         <div class="human"><svg viewBox="0 0 28 56"><use href="#human-1m70"/></svg></div>
       </div>
       <div class="below-ground"></div>

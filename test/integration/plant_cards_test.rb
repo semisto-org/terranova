@@ -63,4 +63,20 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'class="below-ground"', response.body
     assert_match 'href="#human-1m70"', response.body
   end
+
+  test 'silhouette partial selected by growth_habit' do
+    @species.update!(growth_habit: 'arbustif-arrondi', height_max_cm: 500)
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="plant-bg"', response.body
+    # The silhouette renders its trunk
+    assert_match 'fill="#5a4a36"', response.body
+  end
+
+  test 'silhouette default partial when growth_habit is nil' do
+    @species.update!(growth_habit: nil, height_max_cm: 200)
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="plant-bg"', response.body
+    # default uses thin 4px trunk
+    assert_match 'width="4"', response.body
+  end
 end
