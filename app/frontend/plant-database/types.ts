@@ -116,6 +116,8 @@ export interface Species {
   isDrageonnant?: boolean | null
   allelopathy?: string | null
   toxicity?: Record<string, string[]> | null
+  ecoServicesProvided?: string[] | null
+  ecoServicesNeeded?: string[] | null
 }
 
 export interface Variety {

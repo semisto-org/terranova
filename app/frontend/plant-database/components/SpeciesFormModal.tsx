@@ -415,6 +415,8 @@ export function SpeciesFormModal({
   const [isDrageonnant, setIsDrageonnant] = useState<boolean>(species?.isDrageonnant ?? false)
   const [allelopathy, setAllelopathy] = useState(species?.allelopathy ?? '')
   const [toxicity, setToxicity] = useState<Record<string, string[]>>(species?.toxicity ?? {})
+  const [ecoServicesProvided, setEcoServicesProvided] = useState<string[]>(species?.ecoServicesProvided ?? [])
+  const [ecoServicesNeeded, setEcoServicesNeeded] = useState<string[]>(species?.ecoServicesNeeded ?? [])
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -573,6 +575,8 @@ export function SpeciesFormModal({
       is_drageonnant: isDrageonnant,
       allelopathy: allelopathy.trim() || null,
       toxicity,
+      eco_services_provided: ecoServicesProvided,
+      eco_services_needed: ecoServicesNeeded,
     })
   }
 
@@ -963,6 +967,20 @@ export function SpeciesFormModal({
                           />
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-3">Système écosystémique</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelBase}>Services écosystémiques fournis</label>
+                      <ChipGroup options={opts.ecoServices} selected={ecoServicesProvided} onChange={setEcoServicesProvided} color="#2e7d32" />
+                    </div>
+                    <div>
+                      <label className={labelBase}>Services écosystémiques nécessaires</label>
+                      <ChipGroup options={opts.ecoServices} selected={ecoServicesNeeded} onChange={setEcoServicesNeeded} color="#2e7d32" />
                     </div>
                   </div>
                 </div>
