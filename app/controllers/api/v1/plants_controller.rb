@@ -3,8 +3,6 @@ module Api
     class PlantsController < BaseController
       skip_before_action :require_authentication, only: [:filter_options, :search, :genus, :species, :variety, :public_species, :public_variety]
 
-      STRATE_KEYS = %w[aquatic groundCover herbaceous climbers shrubs trees].freeze
-
       def filter_options
         render json: {
           types: build_options(%w[tree shrub small-shrub climber herbaceous ground-cover]),
@@ -34,7 +32,17 @@ module Api
           transformations: build_options(%w[jam jelly compote juice syrup liqueur dried frozen vinegar chutney]),
           fodderQualities: build_options(%w[sheep goats pigs cattle poultry rabbits]),
           growthHabits: build_options(Plant::Species::GROWTH_HABITS),
-          strates: build_options(STRATE_KEYS)
+          strates: build_options(Plant::Species::STRATES),
+          successionalRoles: build_options(Plant::Species::SUCCESSIONAL_ROLES),
+          ecoServices: build_options(Plant::Species::ECO_SERVICES),
+          resourceCategories: build_options(Plant::Species::RESOURCE_CATEGORIES),
+          plantParts: build_options(Plant::Species::PLANT_PARTS),
+          sensorySubtypes: build_options(Plant::Species::SENSORY_SUBTYPES),
+          animalSubtypes: build_options(Plant::Species::ANIMAL_SUBTYPES),
+          toxicityTargets: build_options(Plant::Species::TOXICITY_TARGETS),
+          specificPollinators: build_options(Plant::Species::SPECIFIC_POLLINATORS),
+          soilPhValues: build_options(%w[acid neutral basic]),
+          soilTextures: build_options(%w[light balanced heavy])
         }
       end
 
@@ -1055,7 +1063,7 @@ module Api
           description: item.description,
           createdBy: item.created_by,
           createdAt: item.created_at.iso8601,
-          strates: STRATE_KEYS.index_with do |key|
+          strates: Plant::Species::STRATES.index_with do |key|
             Array(grouped[key]).map do |palette_item|
               {
                 id: palette_item.item_id.to_s,
@@ -1079,7 +1087,7 @@ module Api
         lines << ""
 
         grouped = palette.items.order(:position, :id).group_by(&:strate_key)
-        STRATE_KEYS.each do |key|
+        Plant::Species::STRATES.each do |key|
           items = Array(grouped[key])
           lines << "#{key}: #{items.count}"
           items.each do |item|
