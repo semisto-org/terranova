@@ -33,4 +33,14 @@ class Plant::SpeciesTest < ActiveSupport::TestCase
     assert_not species.valid?
     assert_includes species.errors[:successional_role], 'is not included in the list'
   end
+
+  test 'slug returns parameterized latin_name' do
+    species = Plant::Species.new(base_attrs.merge(latin_name: 'Amelanchier canadensis'))
+    assert_equal 'amelanchier-canadensis', species.slug
+  end
+
+  test 'slug handles uppercase and accented characters' do
+    species = Plant::Species.new(base_attrs.merge(latin_name: 'Quercus rôbur'))
+    assert_equal 'quercus-robur', species.slug
+  end
 end

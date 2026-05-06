@@ -20,5 +20,9 @@ module Plant
     validates :successional_role, inclusion: { in: SUCCESSIONAL_ROLES }, allow_nil: true
     validates :edible_rating, inclusion: { in: 1..5 }, allow_nil: true
     validates :medicinal_rating, inclusion: { in: 1..5 }, allow_nil: true
+
+    def slug
+      latin_name.parameterize
+    end
   end
 end
