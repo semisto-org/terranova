@@ -408,6 +408,8 @@ export function SpeciesFormModal({
   const [lifespanMinYears, setLifespanMinYears] = useState<number | ''>(species?.lifespanMinYears ?? '')
   const [lifespanMaxYears, setLifespanMaxYears] = useState<number | ''>(species?.lifespanMaxYears ?? '')
   const [plantingSpacingCm, setPlantingSpacingCm] = useState<number | ''>(species?.plantingSpacingCm ?? '')
+  const [soilPh, setSoilPh] = useState<string[]>(species?.soilPh ?? [])
+  const [soilTexture, setSoilTexture] = useState<string[]>(species?.soilTexture ?? [])
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -888,6 +890,16 @@ export function SpeciesFormModal({
                     <input type="number" min="0" className={inputBase}
                       value={plantingSpacingCm}
                       onChange={(e) => setPlantingSpacingCm(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className={labelBase}>pH du sol toléré</label>
+                    <ChipGroup options={opts.soilPhValues} selected={soilPh} onChange={setSoilPh} color="#5B5781" />
+                  </div>
+                  <div>
+                    <label className={labelBase}>Texture de sol tolérée</label>
+                    <ChipGroup options={opts.soilTextures} selected={soilTexture} onChange={setSoilTexture} color="#5B5781" />
                   </div>
                 </div>
               </div>

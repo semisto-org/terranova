@@ -109,6 +109,8 @@ export interface Species {
   lifespanMinYears?: number | null
   lifespanMaxYears?: number | null
   plantingSpacingCm?: number | null
+  soilPh?: string[] | null
+  soilTexture?: string[] | null
 }
 
 export interface Variety {
