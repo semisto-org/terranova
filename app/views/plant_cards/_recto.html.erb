@@ -60,7 +60,11 @@
         </div>
         <div class="human"><svg viewBox="0 0 28 56"><use href="#human-1m70"/></svg></div>
       </div>
-      <div class="below-ground"></div>
+      <div class="below-ground">
+        <div class="roots">
+          <%= render roots_partial(species), species: species %>
+        </div>
+      </div>
       <div class="ground-line"></div>
       <div class="grass"></div>
     </div>

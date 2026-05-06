@@ -79,4 +79,12 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     # default uses thin 4px trunk
     assert_match 'width="4"', response.body
   end
+
+  test 'roots partial selected by root_system' do
+    @species.update!(root_system: 'spreading')
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="roots"', response.body
+    # spreading has many curved paths
+    assert_match 'M120 22 Q70 26', response.body
+  end
 end
