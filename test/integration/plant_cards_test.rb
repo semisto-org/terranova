@@ -115,4 +115,18 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'Modéré', response.body
     assert_match '#sun-full', response.body
   end
+
+  test 'verso calendar marks flowering and harvest months' do
+    @species.update!(flowering_months: ['mar', 'apr'], harvest_months: ['jun', 'jul'])
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="cal-line"', response.body
+    assert_match 'class="cell flow"', response.body
+    assert_match 'class="cell harv"', response.body
+  end
+
+  test 'verso calendar shows both class for overlapping months' do
+    @species.update!(flowering_months: ['aug'], harvest_months: ['aug'])
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="cell both"', response.body
+  end
 end
