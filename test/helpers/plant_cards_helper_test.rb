@@ -155,4 +155,23 @@ class PlantCardsHelperTest < ActionView::TestCase
     assert_nil water_level_int('')
     assert_nil water_level_int('abc')
   end
+
+  test 'fertility_label and fertility_symbol map to FR + symbol id' do
+    assert_equal 'Auto-fertile', fertility_label('self-fertile')
+    assert_equal 'Pollin. croisée', fertility_label('self-sterile')
+    assert_equal 'Part. auto-fertile', fertility_label('partially-self-fertile')
+    assert_equal 'Dioïque', fertility_label('dioecious')
+    assert_nil fertility_label(nil)
+    assert_equal 'pollin-self', fertility_symbol('self-fertile')
+    assert_equal 'pollin-cross', fertility_symbol('self-sterile')
+    assert_equal 'pollin-partial', fertility_symbol('partially-self-fertile')
+    assert_equal 'pollin-dio', fertility_symbol('dioecious')
+    assert_equal 'pollin-self', fertility_symbol(nil)  # fallback
+  end
+
+  test 'pollinators_label joins french names' do
+    assert_equal 'abeilles, syrphes', pollinators_label(['bees', 'hoverflies'])
+    assert_nil pollinators_label([])
+    assert_nil pollinators_label(nil)
+  end
 end

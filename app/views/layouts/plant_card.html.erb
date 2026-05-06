@@ -364,6 +364,47 @@
   }
   .cal-legend .dot.flow { background: #AFBD00; }
   .cal-legend .dot.harv { background: #EF9B0D; }
+
+  .section-title {
+    font-size: 8.5px; font-weight: 700; color: #234766;
+    letter-spacing: .14em; text-transform: uppercase;
+    margin: 10px 0 6px;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+
+  .pollin-section {
+    display: flex; align-items: stretch; gap: 14px;
+    margin-top: 4px;
+    padding: 10px 12px;
+    background: #fdf2f8;
+    border-radius: 6px;
+    border-left: 3px solid #EC4899;
+  }
+  .pollin-main { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .pollin-main .icn-big { width: 38px; height: 38px; flex-shrink: 0; }
+  .pollin-main .icn-big svg { width: 100%; height: 100%; display: block; }
+  .pollin-main .status { display: flex; flex-direction: column; line-height: 1.1; }
+  .pollin-main .status .lbl {
+    font-size: 7.5px; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: .1em; font-weight: 700;
+  }
+  .pollin-main .status .val { font-size: 11.5px; font-weight: 700; color: #1f2937; }
+  .pollin-extras {
+    flex: 1;
+    display: flex; flex-direction: column;
+    justify-content: center; gap: 5px;
+    border-left: 1px solid #f9c5d8;
+    padding-left: 12px;
+    font-size: 9.5px; color: #4b5563;
+  }
+  .pollin-extras .extra { display: flex; align-items: center; gap: 6px; }
+  .pollin-extras .extra .ic {
+    width: 16px; height: 16px;
+    flex-shrink: 0; color: #BE185D;
+  }
+  .pollin-extras .extra .ic svg { width: 100%; height: 100%; display: block; }
+  .pollin-extras .extra strong { color: #1f2937; font-weight: 700; }
   </style>
 </head>
 <body>

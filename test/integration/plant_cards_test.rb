@@ -129,4 +129,23 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     get "/plants/species/#{@species.id}/card"
     assert_match 'class="cell both"', response.body
   end
+
+  test 'pollination section renders when fertility or pollinators present' do
+    @species.update!(
+      fertility: 'partially-self-fertile',
+      specific_pollinators: ['bees', 'hoverflies'],
+      pollination_distance_m: 30
+    )
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="pollin-section"', response.body
+    assert_match 'Part. auto-fertile', response.body
+    assert_match 'abeilles, syrphes', response.body
+    assert_match '&lt; 30 m', response.body
+  end
+
+  test 'pollination section hidden when no pollination data' do
+    @species.update!(fertility: '', specific_pollinators: [], pollination_distance_m: nil)
+    get "/plants/species/#{@species.id}/card"
+    assert_no_match 'class="pollin-section"', response.body
+  end
 end

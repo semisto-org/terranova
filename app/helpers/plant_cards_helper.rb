@@ -100,6 +100,33 @@ module PlantCardsHelper
     nil
   end
 
+  FERTILITY_LABELS = {
+    'self-fertile'           => 'Auto-fertile',
+    'self-sterile'           => 'Pollin. croisée',
+    'partially-self-fertile' => 'Part. auto-fertile',
+    'dioecious'              => 'Dioïque'
+  }.freeze
+
+  FERTILITY_SYMBOLS = {
+    'self-fertile'           => 'pollin-self',
+    'self-sterile'           => 'pollin-cross',
+    'partially-self-fertile' => 'pollin-partial',
+    'dioecious'              => 'pollin-dio'
+  }.freeze
+
+  POLLINATOR_LABELS = {
+    'bees' => 'abeilles', 'bumblebees' => 'bourdons',
+    'butterflies' => 'papillons', 'hoverflies' => 'syrphes',
+    'beetles' => 'coléoptères', 'wind' => 'vent', 'birds' => 'oiseaux'
+  }.freeze
+
+  def fertility_label(fertility); FERTILITY_LABELS[fertility]; end
+  def fertility_symbol(fertility); FERTILITY_SYMBOLS[fertility] || 'pollin-self'; end
+
+  def pollinators_label(list)
+    Array(list).map { |p| POLLINATOR_LABELS[p] || p }.join(', ').presence
+  end
+
   TOXICITY_TARGET_FR = {
     'humans' => 'humains', 'sheep' => 'brebis', 'dogs' => 'chiens',
     'horses' => 'chevaux', 'poultry' => 'volaille', 'cattle' => 'bovins'
