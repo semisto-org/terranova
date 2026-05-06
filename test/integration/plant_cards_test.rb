@@ -148,4 +148,18 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     get "/plants/species/#{@species.id}/card"
     assert_no_match 'class="pollin-section"', response.body
   end
+
+  test 'eco services grid renders 12 items with state classes' do
+    @species.update!(
+      eco_services_provided: ['windbreak', 'mellifere'],
+      eco_services_needed: ['nitrogen', 'windbreak']
+    )
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="eco-grid"', response.body
+    assert_match 'class="eco-item service"', response.body
+    assert_match 'class="eco-item need"', response.body
+    assert_match 'class="eco-item both"', response.body
+    assert_match 'Brise-vent', response.body
+    assert_match 'Mellifère', response.body
+  end
 end

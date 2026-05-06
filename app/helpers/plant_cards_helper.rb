@@ -194,4 +194,34 @@ module PlantCardsHelper
     return 'plant_cards/roots/default' if rs.empty?
     "plant_cards/roots/#{rs}"
   end
+
+  ECO_ICONS = {
+    'windbreak' => 'e-windbreak', 'mellifere' => 'e-melli', 'birds' => 'e-bird',
+    'beneficial-insects' => 'e-aux', 'erosion-control' => 'e-erosion',
+    'light-shade' => 'e-shade', 'nitrogen' => 'e-nitrogen',
+    'ground-cover' => 'e-groundcover', 'cross-pollination' => 'e-pollination',
+    'organic-matter' => 'e-orgmatter', 'minerals' => 'e-mineral',
+    'weed-suppression' => 'e-grass'
+  }.freeze
+
+  ECO_FR_LABELS = {
+    'windbreak' => 'Brise-vent', 'mellifere' => 'Mellifère', 'birds' => 'Oiseaux',
+    'beneficial-insects' => 'Auxiliaires', 'erosion-control' => 'Anti-érosion',
+    'light-shade' => 'Ombre lég.', 'nitrogen' => 'Azote',
+    'ground-cover' => 'Tapissant', 'cross-pollination' => 'Pollin.',
+    'organic-matter' => 'Mat. org.', 'minerals' => 'Minéraux',
+    'weed-suppression' => 'Herbe−'
+  }.freeze
+
+  def eco_state(species, eco_id)
+    provided = Array(species.eco_services_provided).include?(eco_id)
+    needed   = Array(species.eco_services_needed).include?(eco_id)
+    return 'both'    if provided && needed
+    return 'service' if provided
+    return 'need'    if needed
+    ''
+  end
+
+  def eco_icon(eco_id); ECO_ICONS[eco_id]; end
+  def eco_label(eco_id); ECO_FR_LABELS[eco_id]; end
 end

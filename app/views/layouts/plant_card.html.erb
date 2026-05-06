@@ -405,6 +405,60 @@
   }
   .pollin-extras .extra .ic svg { width: 100%; height: 100%; display: block; }
   .pollin-extras .extra strong { color: #1f2937; font-weight: 700; }
+
+  .section-title .legend {
+    display: inline-flex; gap: 8px;
+    font-size: 7.5px; font-weight: 700;
+    letter-spacing: .1em; flex-wrap: wrap;
+  }
+  .section-title .legend span {
+    display: inline-flex; align-items: center;
+    gap: 3px; text-transform: uppercase; color: #6b7280;
+  }
+  .section-title .legend .dot {
+    width: 9px; height: 9px;
+    border-radius: 2px; display: inline-block;
+  }
+  .section-title .legend .dot.service { background: #5A9A2F; }
+  .section-title .legend .dot.need { background: #5B5781; }
+  .section-title .legend .dot.both {
+    background: linear-gradient(to right, #5A9A2F 50%, #5B5781 50%);
+  }
+
+  .eco-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 8px 4px; margin-top: 6px;
+  }
+  .eco-item {
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+    padding: 2px; gap: 3px;
+    color: #cbd5e1;
+  }
+  .eco-item .pic {
+    width: 26px; height: 26px;
+    color: #cbd5e1; position: relative;
+  }
+  .eco-item .pic > svg { width: 100%; height: 100%; display: block; }
+  .eco-item .pic .half {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; display: block;
+  }
+  .eco-item .pic .half.left  { color: #5A9A2F; clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); }
+  .eco-item .pic .half.right { color: #5B5781; clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%); }
+  .eco-item .lbl {
+    font-size: 7px; font-weight: 700;
+    line-height: 1.05; letter-spacing: .02em;
+  }
+  .eco-item.service .pic { color: #5A9A2F; }
+  .eco-item.service .lbl { color: #166534; }
+  .eco-item.need .pic { color: #5B5781; }
+  .eco-item.need .lbl { color: #4c1d95; }
+  .eco-item.both .lbl {
+    background: linear-gradient(to right, #166534 50%, #4c1d95 50%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; font-weight: 800;
+  }
   </style>
 </head>
 <body>

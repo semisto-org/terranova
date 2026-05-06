@@ -174,4 +174,20 @@ class PlantCardsHelperTest < ActionView::TestCase
     assert_nil pollinators_label([])
     assert_nil pollinators_label(nil)
   end
+
+  test 'eco_state classifies a service' do
+    s = OpenStruct.new(eco_services_provided: ['windbreak', 'mellifere'], eco_services_needed: ['nitrogen', 'windbreak'])
+    assert_equal 'service', eco_state(s, 'mellifere')
+    assert_equal 'need',    eco_state(s, 'nitrogen')
+    assert_equal 'both',    eco_state(s, 'windbreak')
+    assert_equal '',        eco_state(s, 'birds')
+  end
+
+  test 'eco_icon and eco_label map ids to symbol and FR label' do
+    assert_equal 'e-windbreak', eco_icon('windbreak')
+    assert_equal 'e-nitrogen',  eco_icon('nitrogen')
+    assert_equal 'Brise-vent',  eco_label('windbreak')
+    assert_equal 'Mellifère',   eco_label('mellifere')
+    assert_nil eco_icon('unknown')
+  end
 end

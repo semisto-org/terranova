@@ -45,6 +45,30 @@
         </div>
       </div>
     <% end %>
-    <%# Tasks B-14 to B-16: eco grid, resources, warnings, qr/signature %>
+    <div class="section-title">
+      <span>Système écosystémique</span>
+      <span class="legend">
+        <span><span class="dot service"></span>Service</span>
+        <span><span class="dot need"></span>Besoin</span>
+        <span><span class="dot both"></span>2 en 1</span>
+      </span>
+    </div>
+    <div class="eco-grid">
+      <% Plant::Species::ECO_SERVICES.each do |eco_id| %>
+        <% state = eco_state(species, eco_id) %>
+        <div class="eco-item <%= state %>">
+          <span class="pic">
+            <% if state == 'both' %>
+              <svg class="half left" viewBox="0 0 24 24"><use href="#<%= eco_icon(eco_id) %>"/></svg>
+              <svg class="half right" viewBox="0 0 24 24"><use href="#<%= eco_icon(eco_id) %>"/></svg>
+            <% else %>
+              <svg viewBox="0 0 24 24"><use href="#<%= eco_icon(eco_id) %>"/></svg>
+            <% end %>
+          </span>
+          <span class="lbl"><%= eco_label(eco_id) %></span>
+        </div>
+      <% end %>
+    </div>
+    <%# Tasks B-15 to B-16: resources, warnings, qr/signature %>
   </div>
 </div>
