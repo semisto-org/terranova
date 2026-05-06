@@ -83,6 +83,23 @@
         </div>
       <% end %>
     </div>
-    <%# Task B-16: warnings, qr/signature %>
+    <% warnings = card_warnings(species) %>
+    <% if warnings.any? %>
+      <div class="warnings-banner">
+        <span class="label-icon">⚠</span>
+        <% warnings.each_with_index do |w, i| %>
+          <% if i > 0 %><span class="sep">·</span><% end %>
+          <span class="warning-item"><%= w %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+  <div class="qr-corner">
+    <% public_url = "https://#{ENV.fetch('PLANTS_HOST', 'plantes.semisto.org')}/s/#{species.slug}" %>
+    <%= qr_svg(public_url) %>
+  </div>
+  <div class="signature">
+    <div class="line1">Fiche réalisée par <strong>Semisto</strong></div>
+    <div class="line2">plantes.semisto.org</div>
   </div>
 </div>

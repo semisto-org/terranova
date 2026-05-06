@@ -492,6 +492,45 @@
   }
   .resource-c.off .parts { color: #d1d5db; }
   .resource-c .parts.empty { font-style: italic; color: #cbd5e1; }
+
+  .warnings-banner {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #FEF3C7;
+    border-left: 3px solid #F59E0B;
+    border-radius: 3px;
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+    font-size: 9px; color: #92400E;
+  }
+  .warnings-banner .label-icon { font-size: 13px; line-height: 1; }
+  .warnings-banner .warning-item {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-weight: 600; letter-spacing: .02em;
+  }
+  .warnings-banner .sep { color: #d97706; }
+
+  .qr-corner {
+    position: absolute;
+    bottom: 12px; right: 14px;
+    width: 50px; height: 50px;
+    z-index: 5;
+  }
+  .qr-corner svg { width: 100%; height: 100%; }
+  .signature {
+    position: absolute;
+    bottom: 12px; left: 18px; right: 76px;
+    text-align: left; font-size: 9px;
+    color: #b5b9bf;
+    letter-spacing: .02em; font-weight: 400;
+    z-index: 4; line-height: 1.35;
+  }
+  .signature .line1 { font-style: italic; }
+  .signature .line1 strong { font-weight: 600; font-style: normal; color: #6b7280; }
+  .signature .line2 {
+    font-style: normal; color: #6b7280;
+    font-weight: 600; letter-spacing: .04em; font-size: 9px;
+  }
   </style>
 </head>
 <body>

@@ -174,4 +174,25 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'Aromatique', response.body
     assert_match 'class="resource-c off"', response.body
   end
+
+  test 'warnings banner shows when species has flags' do
+    @species.update!(is_drageonnant: true, toxicity: { 'sheep' => ['seeds'] })
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="warnings-banner"', response.body
+    assert_match 'Drageonne', response.body
+    assert_match 'Toxique brebis', response.body
+  end
+
+  test 'warnings banner hidden when species has no flags' do
+    get "/plants/species/#{@species.id}/card"
+    assert_no_match 'class="warnings-banner"', response.body
+  end
+
+  test 'qr code embeds public slug url and signature renders' do
+    @species.update!(latin_name: 'Amelanchier canadensis')
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'qr-corner', response.body
+    assert_match 'Fiche réalisée par', response.body
+    assert_match 'plantes.semisto.org', response.body
+  end
 end
