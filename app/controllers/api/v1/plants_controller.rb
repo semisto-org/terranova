@@ -27,7 +27,7 @@ module Api
           soilTypes: build_options(%w[clay loam sandy chalky peaty]),
           soilMoistures: build_options(%w[dry moist wet waterlogged]),
           soilRichness: build_options(%w[poor moderate rich very-rich]),
-          wateringNeeds: build_options(%w[1 2 3 4 5]),
+          wateringNeeds: build_options(%w[0 1 2 3 4 5]),
           lifeCycles: build_options(%w[annual biennial perennial]),
           foliageColors: build_options(%w[green dark-green light-green purple variegated silver golden]),
           fragranceLevels: build_options(%w[none light medium strong], { 'medium' => 'Moyen' }),
@@ -583,7 +583,7 @@ module Api
         # Soil richness
         'poor' => 'Pauvre', 'moderate' => 'Modéré', 'rich' => 'Riche', 'very-rich' => 'Très riche',
         # Watering needs
-        '1' => '1 - Très peu', '2' => '2 - Peu', '3' => '3 - Modéré', '4' => '4 - Régulier', '5' => '5 - Abondant',
+        '0' => '0 - >4 mois secs', '1' => '1 - Très peu', '2' => '2 - Peu', '3' => '3 - Modéré', '4' => '4 - Régulier', '5' => '5 - Abondant',
         # Life cycles
         'annual' => 'Annuelle', 'biennial' => 'Bisannuelle', 'perennial' => 'Vivace',
         # Foliage colors
