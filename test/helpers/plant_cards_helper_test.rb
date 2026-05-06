@@ -130,4 +130,29 @@ class PlantCardsHelperTest < ActionView::TestCase
     assert_equal [false, false, false], soil_scale_segments(nil, PlantCardsHelper::TEXTURE_ORDER)
     assert_equal [false, false, false], soil_scale_segments([], PlantCardsHelper::PH_ORDER)
   end
+
+  test 'sun_state_id maps exposures to icon symbol' do
+    assert_equal 'sun-empty', sun_state_id([])
+    assert_equal 'sun-empty', sun_state_id(['shade'])
+    assert_equal 'sun-half',  sun_state_id(['partial-shade'])
+    assert_equal 'sun-half',  sun_state_id(['partial-shade', 'shade'])
+    assert_equal 'sun-full',  sun_state_id(['sun'])
+    assert_equal 'sun-full',  sun_state_id(['sun', 'partial-shade'])
+  end
+
+  test 'leaf_symbol_id maps foliage_type to leaf symbol' do
+    assert_equal 'leaf-deciduous',  leaf_symbol_id('deciduous')
+    assert_equal 'leaf-marcescent', leaf_symbol_id('marcescent')
+    assert_equal 'leaf-semi',       leaf_symbol_id('semi-evergreen')
+    assert_equal 'leaf-evergreen',  leaf_symbol_id('evergreen')
+    assert_equal 'leaf-deciduous',  leaf_symbol_id(nil)  # fallback
+  end
+
+  test 'water_level_int parses watering_need to integer' do
+    assert_equal 3, water_level_int('3')
+    assert_equal 0, water_level_int('0')
+    assert_nil water_level_int(nil)
+    assert_nil water_level_int('')
+    assert_nil water_level_int('abc')
+  end
 end

@@ -127,6 +127,30 @@ module PlantCardsHelper
     ).html_safe
   end
 
+  def sun_state_id(exposures)
+    ex = Array(exposures).map(&:to_s)
+    return 'sun-empty' if ex.empty? || ex == ['shade']
+    return 'sun-full'  if ex.include?('sun')
+    'sun-half'
+  end
+
+  def leaf_symbol_id(foliage_type)
+    case foliage_type
+    when 'deciduous'      then 'leaf-deciduous'
+    when 'marcescent'     then 'leaf-marcescent'
+    when 'semi-evergreen' then 'leaf-semi'
+    when 'evergreen'      then 'leaf-evergreen'
+    else 'leaf-deciduous'
+    end
+  end
+
+  def water_level_int(watering_need)
+    return nil if watering_need.blank?
+    Integer(watering_need)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
   def plant_height_px(height_cm)
     return nil if height_cm.nil? || height_cm.zero?
     (height_cm.to_i * PIXELS_PER_METER / 100.0).round

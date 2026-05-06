@@ -102,4 +102,17 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'pH', response.body
     assert_match 'Traçant', response.body  # root_type-label
   end
+
+  test 'sky tiles render with foliage, sun, water' do
+    @species.update!(
+      foliage_type: 'deciduous',
+      exposures: ['sun', 'partial-shade'],
+      watering_need: '3'
+    )
+    get "/plants/species/#{@species.id}/card"
+    assert_match 'class="sky-tiles"', response.body
+    assert_match 'Caduc', response.body
+    assert_match 'Modéré', response.body
+    assert_match '#sun-full', response.body
+  end
 end

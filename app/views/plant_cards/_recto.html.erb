@@ -59,6 +59,62 @@
           <%= render silhouette_partial(species), species: species, height_px: height_px %>
         </div>
         <div class="human"><svg viewBox="0 0 28 56"><use href="#human-1m70"/></svg></div>
+        <div class="sky-tiles">
+          <div class="sky-tile">
+            <span class="icon-side">
+              <span class="leaf-icon"><svg viewBox="0 0 24 24"><use href="#<%= leaf_symbol_id(species.foliage_type) %>"/></svg></span>
+            </span>
+            <div class="text-side">
+              <span class="lbl">Feuillage</span>
+              <span class="val"><%= foliage_label(species.foliage_type) || '—' %></span>
+            </div>
+          </div>
+          <div class="sky-tile">
+            <span class="icon-side">
+              <span class="sun-icon"><svg viewBox="0 0 24 24"><use href="#<%= sun_state_id(species.exposures) %>"/></svg></span>
+            </span>
+            <div class="text-side">
+              <span class="lbl">Soleil</span>
+              <span class="val">
+                <%= case sun_state_id(species.exposures)
+                    when 'sun-full'  then 'Plein soleil'
+                    when 'sun-half'  then 'Mi-ombre'
+                    when 'sun-empty' then 'Ombre'
+                    end %>
+              </span>
+            </div>
+          </div>
+          <div class="sky-tile">
+            <span class="icon-side">
+              <% level = water_level_int(species.watering_need) %>
+              <% fill_y = level ? (24 - (level * 4) - 0.5) : 24 %>
+              <span class="drop-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2 C 7 9 4 13 4 16.5 C 4 20 7 22 12 22 C 17 22 20 20 20 16.5 C 20 13 17 9 12 2 Z"
+                        fill="none" stroke="#2563eb" stroke-width="1.5"/>
+                  <% if level && level > 0 %>
+                    <g clip-path="url(#drop-clip)">
+                      <rect x="0" y="<%= fill_y %>" width="24" height="<%= 24 - fill_y %>" fill="#2563eb"/>
+                    </g>
+                  <% end %>
+                  <text x="12" y="18" font-size="10" font-weight="800"
+                        fill="<%= level && level >= 2 ? '#fff' : '#2563eb' %>"
+                        text-anchor="middle" font-family="Inter, sans-serif"><%= level || 0 %></text>
+                </svg>
+              </span>
+            </span>
+            <div class="text-side">
+              <span class="lbl">Eau</span>
+              <span class="val">
+                <%= case level
+                    when 0 then 'Sec' when 1 then 'Très sec'
+                    when 2 then 'Faible' when 3 then 'Modéré'
+                    when 4 then 'Régulier' when 5 then 'Humide'
+                    else '—' end %>
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="below-ground">
         <div class="roots">
