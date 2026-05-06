@@ -3,6 +3,8 @@ module Api
     class PlantsController < BaseController
       skip_before_action :require_authentication, only: [:filter_options, :search, :genus, :species, :variety, :public_species, :public_variety]
 
+      STRATE_KEYS = %w[aquatic groundCover herbaceous climbers shrubs trees].freeze
+
       def filter_options
         render json: {
           types: build_options(%w[tree shrub small-shrub climber herbaceous ground-cover]),
@@ -1063,7 +1065,7 @@ module Api
           description: item.description,
           createdBy: item.created_by,
           createdAt: item.created_at.iso8601,
-          strates: Plant::Species::STRATES.index_with do |key|
+          strates: STRATE_KEYS.index_with do |key|
             Array(grouped[key]).map do |palette_item|
               {
                 id: palette_item.item_id.to_s,
@@ -1087,7 +1089,7 @@ module Api
         lines << ""
 
         grouped = palette.items.order(:position, :id).group_by(&:strate_key)
-        Plant::Species::STRATES.each do |key|
+        STRATE_KEYS.each do |key|
           items = Array(grouped[key])
           lines << "#{key}: #{items.count}"
           items.each do |item|
