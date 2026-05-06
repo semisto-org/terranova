@@ -88,6 +88,16 @@ const EMPTY_FILTER_OPTIONS: FilterOptions = {
   transformations: [],
   fodderQualities: [],
   strates: [],
+  successionalRoles: [],
+  ecoServices: [],
+  resourceCategories: [],
+  plantParts: [],
+  sensorySubtypes: [],
+  animalSubtypes: [],
+  toxicityTargets: [],
+  specificPollinators: [],
+  soilPhValues: [],
+  soilTextures: [],
 }
 
 const ORDER: Record<PlantKind, number> = { genus: 0, species: 1, variety: 2 }
