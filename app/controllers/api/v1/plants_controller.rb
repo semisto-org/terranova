@@ -634,11 +634,22 @@ module Api
           :height_min_cm, :height_max_cm, :height_description,
           :spread_min_cm, :spread_max_cm, :spread_description,
           :edible_rating, :medicinal_rating,
+          # Card fields
+          :strate, :successional_role,
+          :lifespan_min_years, :lifespan_max_years,
+          :planting_spacing_cm,
+          :pollination_distance_m,
+          :is_drageonnant, :allelopathy,
           edible_parts: [], interests: [], ecosystem_needs: [], exposures: [],
           flower_colors: [], flowering_months: [], fruiting_months: [],
           harvest_months: [], pruning_months: [], planting_seasons: [], propagation_methods: [],
           native_countries: [], soil_types: [], fodder_qualities: [],
-          transformations: []
+          transformations: [],
+          # Card-related arrays
+          soil_ph: [], soil_texture: [], specific_pollinators: [],
+          eco_services_provided: [], eco_services_needed: [],
+          # Hash params (jsonb)
+          resource_parts: {}, toxicity: {}
         )
       end
 
@@ -910,6 +921,7 @@ module Api
       def serialize_species(item)
         {
           id: item.id.to_s,
+          slug: item.slug,
           genusId: item.genus_id&.to_s,
           latinName: item.latin_name,
           type: item.plant_type,
@@ -954,7 +966,23 @@ module Api
           spreadMaxCm: item.spread_max_cm,
           spreadDescription: item.spread_description.presence,
           edibleRating: item.edible_rating,
-          medicinalRating: item.medicinal_rating
+          medicinalRating: item.medicinal_rating,
+          # Card fields
+          strate: item.strate,
+          successionalRole: item.successional_role,
+          lifespanMinYears: item.lifespan_min_years,
+          lifespanMaxYears: item.lifespan_max_years,
+          plantingSpacingCm: item.planting_spacing_cm,
+          soilPh: item.soil_ph,
+          soilTexture: item.soil_texture,
+          pollinationDistanceM: item.pollination_distance_m,
+          specificPollinators: item.specific_pollinators,
+          isDrageonnant: item.is_drageonnant,
+          toxicity: item.toxicity,
+          allelopathy: item.allelopathy,
+          ecoServicesProvided: item.eco_services_provided,
+          ecoServicesNeeded: item.eco_services_needed,
+          resourceParts: item.resource_parts
         }
       end
 

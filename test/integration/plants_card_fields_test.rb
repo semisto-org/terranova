@@ -31,4 +31,52 @@ class PlantsCardFieldsTest < ActionDispatch::IntegrationTest
     assert_includes eco_ids, 'windbreak'
     assert_includes eco_ids, 'nitrogen'
   end
+
+  test 'PATCH and GET roundtrip the card fields' do
+    species = Plant::Species.create!(
+      latin_name: 'Amelanchier canadensis',
+      plant_type: 'shrub'
+    )
+
+    patch "/api/v1/plants/species/#{species.id}", params: {
+      strate: 'shrub',
+      successional_role: 'nurse',
+      lifespan_min_years: 30,
+      lifespan_max_years: 50,
+      planting_spacing_cm: 300,
+      pollination_distance_m: 30,
+      is_drageonnant: true,
+      allelopathy: '',
+      soil_ph: ['acid', 'neutral'],
+      soil_texture: ['balanced', 'heavy'],
+      specific_pollinators: ['bees', 'hoverflies'],
+      eco_services_provided: ['windbreak', 'mellifere', 'birds'],
+      eco_services_needed: ['nitrogen', 'cross-pollination'],
+      resource_parts: { edible: ['fruit', 'flower'], medicinal: ['bark'] },
+      toxicity: { sheep: ['seeds'] }
+    }
+
+    assert_response :success
+
+    get "/api/v1/plants/species/#{species.id}"
+    assert_response :success
+    payload = JSON.parse(response.body)['species']
+
+    assert_equal 'shrub', payload['strate']
+    assert_equal 'nurse', payload['successionalRole']
+    assert_equal 30, payload['lifespanMinYears']
+    assert_equal 50, payload['lifespanMaxYears']
+    assert_equal 300, payload['plantingSpacingCm']
+    assert_equal 30, payload['pollinationDistanceM']
+    assert_equal true, payload['isDrageonnant']
+    assert_equal ['acid', 'neutral'], payload['soilPh']
+    assert_equal ['balanced', 'heavy'], payload['soilTexture']
+    assert_equal ['bees', 'hoverflies'], payload['specificPollinators']
+    assert_equal ['windbreak', 'mellifere', 'birds'], payload['ecoServicesProvided']
+    assert_equal ['nitrogen', 'cross-pollination'], payload['ecoServicesNeeded']
+    assert_equal({ 'edible' => ['fruit', 'flower'], 'medicinal' => ['bark'] }, payload['resourceParts'])
+    assert_equal({ 'sheep' => ['seeds'] }, payload['toxicity'])
+    assert_equal '', payload['allelopathy']
+    assert_equal 'amelanchier-canadensis', payload['slug']
+  end
 end
