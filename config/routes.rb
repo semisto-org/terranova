@@ -81,6 +81,7 @@ Rails.application.routes.draw do
   get "projects", to: "app#projects"
   get "projects/:type/:id", to: "app#projects"
   get "plants", to: "app#plants"
+  get "plants/species/:id/card", to: "plant_cards#show", as: :plant_card
   get "plants/*path", to: "app#plants"
   get "guilds", to: "app#guilds"
   get "guilds/:id", to: "app#guilds"
