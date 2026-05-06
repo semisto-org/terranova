@@ -103,7 +103,7 @@ const inputBase =
 
 const labelBase = 'block text-sm font-semibold text-stone-700 mb-2'
 
-type SectionId = 'identity' | 'characteristics' | 'soil' | 'calendar' | 'ecosystem' | 'uses' | 'propagation' | 'extra'
+type SectionId = 'identity' | 'characteristics' | 'conception' | 'soil' | 'calendar' | 'ecosystem' | 'uses' | 'propagation' | 'extra'
 
 interface Section {
   id: SectionId
@@ -114,6 +114,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: 'identity', label: 'Identité', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
   { id: 'characteristics', label: 'Caractéristiques', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' },
+  { id: 'conception', label: 'Conception', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z' },
   { id: 'soil', label: 'Sol & eau', icon: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z' },
   { id: 'calendar', label: 'Calendrier', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { id: 'ecosystem', label: 'Écosystème', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -121,6 +122,9 @@ const SECTIONS: Section[] = [
   { id: 'propagation', label: 'Multiplication', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
   { id: 'extra', label: 'Avancé', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
+
+const sectionIcon = (id: SectionId): string =>
+  SECTIONS.find((s) => s.id === id)!.icon
 
 const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 const MONTH_VALUES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
@@ -598,7 +602,7 @@ export function SpeciesFormModal({
               <div id="section-identity">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[0].icon} /></svg>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('identity')} /></svg>
                   </span>
                   Identité
                 </h4>
@@ -703,7 +707,7 @@ export function SpeciesFormModal({
               {/* SECTION: Characteristics */}
               <div id="section-characteristics">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[1].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('characteristics')} /></svg></span>
                   Caractéristiques
                 </h4>
                 <div className="space-y-4">
@@ -826,10 +830,22 @@ export function SpeciesFormModal({
 
               <div className="border-t border-stone-100" />
 
+              {/* SECTION: Conception */}
+              <div id="section-conception">
+                <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('conception')} /></svg>
+                  </span>
+                  Conception
+                </h4>
+              </div>
+
+              <div className="border-t border-stone-100" />
+
               {/* SECTION: Soil & Water */}
               <div id="section-soil">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[2].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('soil')} /></svg></span>
                   Sol & eau
                 </h4>
                 <div className="space-y-4">
@@ -874,7 +890,7 @@ export function SpeciesFormModal({
               {/* SECTION: Calendar */}
               <div id="section-calendar">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[3].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('calendar')} /></svg></span>
                   Calendrier
                 </h4>
                 <div className="space-y-5">
@@ -906,7 +922,7 @@ export function SpeciesFormModal({
               {/* SECTION: Ecosystem */}
               <div id="section-ecosystem">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[4].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('ecosystem')} /></svg></span>
                   Écosystème
                 </h4>
                 <div className="space-y-4">
@@ -920,7 +936,7 @@ export function SpeciesFormModal({
               {/* SECTION: Uses */}
               <div id="section-uses">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[5].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('uses')} /></svg></span>
                   Usages
                 </h4>
                 <div className="space-y-4">
@@ -943,7 +959,7 @@ export function SpeciesFormModal({
               {/* SECTION: Propagation */}
               <div id="section-propagation">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[6].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('propagation')} /></svg></span>
                   Multiplication
                 </h4>
                 <div className="space-y-4">
@@ -970,7 +986,7 @@ export function SpeciesFormModal({
               {/* SECTION: Extra */}
               <div id="section-extra">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[7].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('extra')} /></svg></span>
                   Avancé
                 </h4>
                 <div className="space-y-4">
