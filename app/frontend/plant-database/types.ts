@@ -85,7 +85,7 @@ export interface Species {
   soilTypes: string[]
   soilMoisture: 'dry' | 'moist' | 'wet' | 'waterlogged'
   soilRichness: 'poor' | 'moderate' | 'rich' | 'very-rich'
-  wateringNeed: '1' | '2' | '3' | '4' | '5'
+  wateringNeed: '0' | '1' | '2' | '3' | '4' | '5'
   toxicElements: string | null
   isInvasive: boolean
   therapeuticProperties: string | null

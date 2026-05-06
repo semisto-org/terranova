@@ -610,9 +610,35 @@ module Api
         'buissonnant-elance' => 'Buissonnant élancé', 'buissonnant-arrondi' => 'Buissonnant arrondi',
         'grimpant' => 'Grimpant', 'tige' => 'Tige', 'touffe' => 'Touffe',
         'acaule' => 'Acaule', 'tapissant' => 'Tapissant',
-        # Strates
+        # Strates (camelCase legacy keys kept, plus correct string keys)
         'aquatic' => 'Aquatique', 'groundCover' => 'Couvre-sol', 'herbaceous' => 'Herbacée',
-        'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres'
+        'climbers' => 'Grimpantes', 'shrubs' => 'Arbustes', 'trees' => 'Arbres',
+        'low' => 'Basse', 'vine' => 'Grimpante', 'subterranean' => 'Racinaire',
+        # Successional roles
+        'nurse' => 'Nourricier',
+        # Eco services
+        'windbreak' => 'Brise-vent', 'mellifere' => 'Mellifère', 'birds' => 'Oiseaux',
+        'beneficial-insects' => 'Insectes auxiliaires',
+        'nitrogen' => 'Azote', 'cross-pollination' => 'Pollin. croisée',
+        'organic-matter' => 'Matière organique', 'minerals' => 'Minéraux',
+        'weed-suppression' => 'Suppression herbe',
+        # Resource categories
+        'aromatic' => 'Aromatique', 'fiber' => 'Fibre', 'sensory' => 'Sensorielle', 'animal' => 'Animale',
+        # Plant parts
+        'stem' => 'Tige',
+        # Sensory subtypes
+        'dye' => 'Tinctoriale', 'fragrant' => 'Odorante',
+        # Animal subtypes
+        'pecked' => 'Picorée', 'browsed' => 'Broutée',
+        # Toxicity targets
+        'humans' => 'Humains', 'dogs' => 'Chiens', 'horses' => 'Chevaux',
+        # Specific pollinators
+        'bees' => 'Abeilles', 'bumblebees' => 'Bourdons',
+        'butterflies' => 'Papillons', 'hoverflies' => 'Syrphes', 'beetles' => 'Coléoptères',
+        # Soil pH
+        'acid' => 'Acide', 'neutral' => 'Neutre', 'basic' => 'Basique',
+        # Soil texture
+        'balanced' => 'Équilibré', 'heavy' => 'Lourd'
       }.freeze
 
       def build_options(values, overrides = {})
