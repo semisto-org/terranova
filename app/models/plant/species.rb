@@ -11,6 +11,24 @@ module Plant
     STRATES = %w[low medium shrub tree canopy vine aquatic subterranean].freeze
     SUCCESSIONAL_ROLES = %w[pioneer nurse climax].freeze
 
+    ECO_SERVICES = %w[
+      windbreak mellifere birds beneficial-insects erosion-control light-shade
+      nitrogen ground-cover cross-pollination organic-matter minerals
+      weed-suppression
+    ].freeze
+
+    RESOURCE_CATEGORIES = %w[edible aromatic medicinal fiber sensory animal].freeze
+
+    PLANT_PARTS = %w[fruit flower leaf seed root bark sap stem].freeze
+
+    SENSORY_SUBTYPES = %w[ornamental dye fragrant].freeze
+
+    ANIMAL_SUBTYPES = %w[pecked browsed].freeze
+
+    TOXICITY_TARGETS = %w[humans sheep dogs horses poultry cattle].freeze
+
+    SPECIFIC_POLLINATORS = %w[bees bumblebees butterflies hoverflies beetles wind birds].freeze
+
     belongs_to :genus, class_name: 'Plant::Genus', optional: true
     has_many :varieties, class_name: 'Plant::Variety', foreign_key: :species_id, dependent: :destroy
 
