@@ -113,6 +113,9 @@ export interface Species {
   soilTexture?: string[] | null
   pollinationDistanceM?: number | null
   specificPollinators?: string[] | null
+  isDrageonnant?: boolean | null
+  allelopathy?: string | null
+  toxicity?: Record<string, string[]> | null
 }
 
 export interface Variety {

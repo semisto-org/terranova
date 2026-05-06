@@ -412,6 +412,9 @@ export function SpeciesFormModal({
   const [soilTexture, setSoilTexture] = useState<string[]>(species?.soilTexture ?? [])
   const [pollinationDistanceM, setPollinationDistanceM] = useState<number | ''>(species?.pollinationDistanceM ?? '')
   const [specificPollinators, setSpecificPollinators] = useState<string[]>(species?.specificPollinators ?? [])
+  const [isDrageonnant, setIsDrageonnant] = useState<boolean>(species?.isDrageonnant ?? false)
+  const [allelopathy, setAllelopathy] = useState(species?.allelopathy ?? '')
+  const [toxicity, setToxicity] = useState<Record<string, string[]>>(species?.toxicity ?? {})
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -567,6 +570,9 @@ export function SpeciesFormModal({
       soil_texture: soilTexture,
       pollination_distance_m: pollinationDistanceM ? Number(pollinationDistanceM) : null,
       specific_pollinators: specificPollinators,
+      is_drageonnant: isDrageonnant,
+      allelopathy: allelopathy.trim() || null,
+      toxicity,
     })
   }
 
@@ -925,6 +931,39 @@ export function SpeciesFormModal({
                   <div>
                     <label className={labelBase}>Pollinisateurs spécifiques</label>
                     <ChipGroup options={opts.specificPollinators} selected={specificPollinators} onChange={setSpecificPollinators} color="#5B5781" />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-3">Précautions</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={isDrageonnant} onChange={(e) => setIsDrageonnant(e.target.checked)} />
+                      <span className="text-sm text-stone-700">Drageonnant</span>
+                    </label>
+                  </div>
+                  <div className="mt-3">
+                    <label className={labelBase}>Allélopathie (notes courtes)</label>
+                    <input type="text" className={inputBase}
+                      placeholder="Ex. Juglone (incompatible Solanacées)"
+                      value={allelopathy}
+                      onChange={(e) => setAllelopathy(e.target.value)} />
+                  </div>
+                  <div className="mt-4">
+                    <label className={labelBase}>Toxicité (parties toxiques par cible)</label>
+                    <div className="space-y-2">
+                      {opts.toxicityTargets.map((tgt) => (
+                        <div key={tgt.id} className="flex items-center gap-3">
+                          <span className="text-xs font-medium text-stone-600 w-20">{tgt.label}</span>
+                          <ChipGroup
+                            options={opts.plantParts}
+                            selected={toxicity[tgt.id] ?? []}
+                            onChange={(next) => setToxicity({ ...toxicity, [tgt.id]: next })}
+                            color="#D97706"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
