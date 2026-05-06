@@ -976,11 +976,11 @@ export function SpeciesFormModal({
                   <div className="space-y-3">
                     <div>
                       <label className={labelBase}>Services écosystémiques fournis</label>
-                      <ChipGroup options={opts.ecoServices} selected={ecoServicesProvided} onChange={setEcoServicesProvided} color="#2e7d32" />
+                      <ChipGroup options={opts.ecoServices} selected={ecoServicesProvided} onChange={setEcoServicesProvided} color="#5A9A2F" />
                     </div>
                     <div>
                       <label className={labelBase}>Services écosystémiques nécessaires</label>
-                      <ChipGroup options={opts.ecoServices} selected={ecoServicesNeeded} onChange={setEcoServicesNeeded} color="#2e7d32" />
+                      <ChipGroup options={opts.ecoServices} selected={ecoServicesNeeded} onChange={setEcoServicesNeeded} color="#5B5781" />
                     </div>
                   </div>
                 </div>
