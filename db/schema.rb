@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_05_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_06_143841) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1812,9 +1812,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_150000) do
 
   create_table "plant_species", force: :cascade do |t|
     t.text "additional_notes"
+    t.string "allelopathy", default: "", null: false
     t.string "common_names_fr", default: "", null: false
     t.datetime "created_at", null: false
     t.text "description", default: "", null: false
+    t.jsonb "eco_services_needed", default: [], null: false
+    t.jsonb "eco_services_provided", default: [], null: false
     t.jsonb "ecosystem_needs", default: [], null: false
     t.jsonb "edible_parts", default: [], null: false
     t.integer "edible_rating"
@@ -1837,10 +1840,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_150000) do
     t.integer "height_max_cm"
     t.integer "height_min_cm"
     t.jsonb "interests", default: [], null: false
+    t.boolean "is_drageonnant", default: false, null: false
     t.boolean "is_invasive", default: false, null: false
     t.boolean "is_native_belgium", default: false, null: false
     t.string "latin_name", null: false
     t.string "life_cycle", default: "perennial", null: false
+    t.integer "lifespan_max_years"
+    t.integer "lifespan_min_years"
     t.integer "medicinal_rating"
     t.jsonb "native_countries", default: [], null: false
     t.datetime "notion_created_at"
@@ -1849,25 +1855,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_150000) do
     t.string "origin", default: "", null: false
     t.string "plant_type", null: false
     t.jsonb "planting_seasons", default: [], null: false
+    t.integer "planting_spacing_cm"
+    t.integer "pollination_distance_m"
     t.string "pollination_type", default: "insect", null: false
     t.jsonb "propagation_methods", default: [], null: false
     t.jsonb "pruning_months", default: [], null: false
+    t.jsonb "resource_parts", default: {}, null: false
     t.string "root_system", default: "fibrous", null: false
     t.string "soil_moisture", default: "moist", null: false
+    t.jsonb "soil_ph", default: [], null: false
     t.string "soil_richness", default: "moderate", null: false
+    t.jsonb "soil_texture", default: [], null: false
     t.jsonb "soil_types", default: [], null: false
+    t.jsonb "specific_pollinators", default: [], null: false
     t.string "spread_description", default: "", null: false
     t.integer "spread_max_cm"
     t.integer "spread_min_cm"
+    t.string "strate"
+    t.string "successional_role"
     t.text "therapeutic_properties"
     t.text "toxic_elements"
+    t.jsonb "toxicity", default: {}, null: false
     t.jsonb "transformations", default: [], null: false
     t.datetime "updated_at", null: false
     t.string "watering_need", default: "3", null: false
+    t.index "lower(replace((latin_name)::text, ' '::text, '-'::text))", name: "index_plant_species_on_slug"
     t.index ["genus_id"], name: "index_plant_species_on_genus_id"
     t.index ["latin_name"], name: "idx_plant_species_latin_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["latin_name"], name: "index_plant_species_on_latin_name", unique: true
     t.index ["notion_id"], name: "index_plant_species_on_notion_id", unique: true
+    t.index ["strate"], name: "index_plant_species_on_strate"
+    t.index ["successional_role"], name: "index_plant_species_on_successional_role"
   end
 
   create_table "plant_varieties", force: :cascade do |t|
