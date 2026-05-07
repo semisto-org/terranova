@@ -222,4 +222,23 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match 'Amelanchier canadensis', response.body
   end
+
+  test 'batch print includes both recto and verso pages' do
+    s2 = Plant::Species.create!(latin_name: 'Quercus robur', plant_type: 'tree')
+    get "/plants/cards?ids=#{@species.id},#{s2.id}"
+    assert_response :success
+    pages_count = response.body.scan(/class="a4-page"/).size
+    assert_equal 2, pages_count  # 1 recto page + 1 verso page
+  end
+
+  test 'batch print 5 cards produces 4 pages (2 rectos + 2 versos)' do
+    s2 = Plant::Species.create!(latin_name: 'Quercus robur', plant_type: 'tree')
+    s3 = Plant::Species.create!(latin_name: 'Ribes nigrum', plant_type: 'shrub')
+    s4 = Plant::Species.create!(latin_name: 'Malus domestica', plant_type: 'tree')
+    s5 = Plant::Species.create!(latin_name: 'Prunus avium', plant_type: 'tree')
+    get "/plants/cards?ids=#{@species.id},#{s2.id},#{s3.id},#{s4.id},#{s5.id}"
+    assert_response :success
+    pages_count = response.body.scan(/class="a4-page"/).size
+    assert_equal 4, pages_count
+  end
 end
