@@ -55,6 +55,7 @@ export interface Genus {
   id: string
   latinName: string
   description: string
+  auditedAt?: string | null
 }
 
 export interface Species {
@@ -119,6 +120,7 @@ export interface Species {
   ecoServicesProvided?: string[] | null
   ecoServicesNeeded?: string[] | null
   resourceParts?: Record<string, string[]> | null
+  auditedAt?: string | null
 }
 
 export interface Variety {
@@ -132,6 +134,7 @@ export interface Variety {
   maturity: string
   diseaseResistance: string
   additionalNotes?: string
+  auditedAt?: string | null
 }
 
 // =============================================================================

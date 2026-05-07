@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_06_143841) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_07_215804) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1679,6 +1679,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_143841) do
   end
 
   create_table "plant_genera", force: :cascade do |t|
+    t.datetime "audited_at"
     t.string "common_name", default: "", null: false
     t.datetime "created_at", null: false
     t.text "description", default: "", null: false
@@ -1813,6 +1814,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_143841) do
   create_table "plant_species", force: :cascade do |t|
     t.text "additional_notes"
     t.string "allelopathy", default: "", null: false
+    t.datetime "audited_at"
     t.string "common_names_fr", default: "", null: false
     t.datetime "created_at", null: false
     t.text "description", default: "", null: false
@@ -1890,6 +1892,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_143841) do
 
   create_table "plant_varieties", force: :cascade do |t|
     t.text "additional_notes", default: "", null: false
+    t.datetime "audited_at"
     t.jsonb "characteristics", default: [], null: false
     t.string "common_names_fr", default: "", null: false
     t.datetime "created_at", null: false

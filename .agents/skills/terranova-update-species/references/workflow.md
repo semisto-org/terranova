@@ -58,7 +58,8 @@ curl -s -X PATCH https://terranova.semisto.org/api/v1/plants/genera/{GENUS_ID} \
   -H "Content-Type: application/json" \
   -d '{
     "description": "...",
-    "common_names": [{"language": "fr", "name": "..."}, ...]
+    "common_names": [{"language": "fr", "name": "..."}, ...],
+    "mark_as_audited": true
   }'
 ```
 
@@ -166,6 +167,8 @@ curl -s -X PATCH "https://terranova.semisto.org/api/v1/plants/species/{ID}" \
 
 Le champ `common_names` dans le payload **remplace tous les noms communs existants** — fournir la liste complète à chaque fois.
 
+**Toujours inclure `"mark_as_audited": true`** dans `species_update.json` pour que `audited_at` soit mis à jour avec la date de cet audit. Ce timestamp s'affiche en bas de la fiche dans l'UI.
+
 ---
 
 ## Étape 9 — POST photos (avec contributor_id Nova)
@@ -257,7 +260,8 @@ curl -s -X PATCH "https://terranova.semisto.org/api/v1/plants/varieties/{ID}" \
     "maturity": "...",
     "storage_life": "...",
     "disease_resistance": "...",
-    "additional_notes": "..."
+    "additional_notes": "...",
+    "mark_as_audited": true
   }'
 ```
 

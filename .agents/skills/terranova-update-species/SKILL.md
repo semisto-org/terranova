@@ -58,6 +58,7 @@ Lire **`references/workflow.md`** pour les 13 étapes détaillées avec endpoint
    - Construire payload selon les **règles de catégorie** (cf `references/filling-rules.md`)
    - Vérifier URLs photos avec WebFetch
    - PATCH species + POST common_names + POST photos + POST references (avec `contributor_id: 1`)
+   - **Toujours inclure `mark_as_audited: true` dans le payload du PATCH final** (genre, espèce ou variété) pour que la fiche enregistre la date de cet audit IA. Ce timestamp s'affiche en bas de chaque fiche dans l'UI ("Dernière audit IA de cette fiche : il y a X jours") et permet de détecter les fiches obsolètes.
    - Pour chaque variété : appliquer règles + détecter doublons
    - **Lancer le verifier** (cf section "Verifier" ci-dessous)
    - Refine si erreurs auto-corrigeables, sinon collecter pour rapport

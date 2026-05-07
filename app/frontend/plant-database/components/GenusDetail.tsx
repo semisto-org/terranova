@@ -6,6 +6,7 @@ import { CollapsibleSection } from './CollapsibleSection'
 import { AISummaryCallout } from './AISummaryCallout'
 import { ReferenceList } from './ReferenceList'
 import { PropertyBadge } from './PropertyBadge'
+import { AuditFooter } from './AuditFooter'
 import {
   TreeIcon,
   ShrubIcon,
@@ -463,6 +464,8 @@ export function GenusDetail({
             targetName={genus.latinName}
           />
         )}
+
+        <AuditFooter auditedAt={genus.auditedAt} />
       </div>
     </div>
   )

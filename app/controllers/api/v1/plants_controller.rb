@@ -314,7 +314,9 @@ module Api
 
       def update_genus
         genus = Plant::Genus.find(params.require(:id))
-        genus.update!(genus_params)
+        attrs = genus_params.to_h
+        attrs[:audited_at] = Time.current if ActiveModel::Type::Boolean.new.cast(params[:mark_as_audited])
+        genus.update!(attrs)
 
         # Replace common names if provided
         if params.key?(:common_names)
@@ -362,7 +364,9 @@ module Api
 
       def update_species
         species = Plant::Species.find(params.require(:id))
-        species.update!(species_params)
+        attrs = species_params.to_h
+        attrs[:audited_at] = Time.current if ActiveModel::Type::Boolean.new.cast(params[:mark_as_audited])
+        species.update!(attrs)
 
         if params.key?(:common_names)
           Plant::CommonName.where(target_type: 'species', target_id: species.id).destroy_all
@@ -423,7 +427,9 @@ module Api
 
       def update_variety
         variety = Plant::Variety.find(params.require(:id))
-        variety.update!(variety_params)
+        attrs = variety_params.to_h
+        attrs[:audited_at] = Time.current if ActiveModel::Type::Boolean.new.cast(params[:mark_as_audited])
+        variety.update!(attrs)
 
         if params.key?(:common_names)
           Plant::CommonName.where(target_type: 'variety', target_id: variety.id).destroy_all
@@ -929,7 +935,8 @@ module Api
         {
           id: item.id.to_s,
           latinName: item.latin_name,
-          description: item.description
+          description: item.description,
+          auditedAt: item.audited_at&.iso8601
         }
       end
 
@@ -1008,7 +1015,8 @@ module Api
           allelopathy: item.allelopathy,
           ecoServicesProvided: item.eco_services_provided,
           ecoServicesNeeded: item.eco_services_needed,
-          resourceParts: item.resource_parts
+          resourceParts: item.resource_parts,
+          auditedAt: item.audited_at&.iso8601
         }
       end
 
@@ -1023,7 +1031,8 @@ module Api
           storageLife: item.storage_life,
           maturity: item.maturity,
           diseaseResistance: item.disease_resistance,
-          additionalNotes: item.additional_notes
+          additionalNotes: item.additional_notes,
+          auditedAt: item.audited_at&.iso8601
         }
       end
 

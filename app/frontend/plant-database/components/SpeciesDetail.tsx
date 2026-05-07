@@ -18,6 +18,7 @@ import { PropertyBadge } from './PropertyBadge'
 import { AddToPaletteButton } from './AddToPaletteButton'
 import { SpeciesBreadcrumb } from './SpeciesBreadcrumb'
 import { CharacteristicCard } from './CharacteristicCard'
+import { AuditFooter } from './AuditFooter'
 import {
   SunIcon,
   PartialShadeIcon,
@@ -765,6 +766,10 @@ export function SpeciesDetail({
             aiSummary={aiSummary}
             onGenerate={onGenerateAISummary}
           />
+        </div>
+
+        <div className="px-4 md:px-6">
+          <AuditFooter auditedAt={species.auditedAt} />
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { PlantLocationMap } from './PlantLocationMap'
 import { ReferenceList } from './ReferenceList'
 import { AddToPaletteButton } from './AddToPaletteButton'
 import { VarietyBreadcrumb } from './VarietyBreadcrumb'
+import { AuditFooter } from './AuditFooter'
 
 export function VarietyDetail({
   variety,
@@ -314,6 +315,8 @@ export function VarietyDetail({
               </p>
             </div>
           )}
+
+        <AuditFooter auditedAt={variety.auditedAt} />
       </div>
     </div>
   )
