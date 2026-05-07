@@ -1,5 +1,5 @@
 class AppController < ApplicationController
-  before_action :require_authentication, except: [:design_client_portal, :academy_registration, :public_catalog]
+  before_action :require_authentication, except: [:design_client_portal, :academy_registration, :public_catalog, :public_species_page]
   before_action :verify_client_portal_token!, only: [:design_client_portal]
   before_action :require_effective_for_strategy, only: [:strategy]
 
@@ -92,6 +92,23 @@ class AppController < ApplicationController
   def public_catalog
     render inertia: "Public/Catalog", props: {
       milestone: "Public Catalog"
+    }
+  end
+
+  def public_species_page
+    slug = params[:slug].to_s.downcase
+    species = Plant::Species.where("lower(replace(latin_name, ' ', '-')) = ?", slug).first
+    raise ActiveRecord::RecordNotFound unless species
+
+    render inertia: 'Plants/PublicSpecies', props: {
+      species: serialize_public_species_full(species),
+      photos: photos_for_species(species),
+      commonNames: common_names_for_species(species),
+      varieties: species.varieties.order(:latin_name).map { |v|
+        { id: v.id.to_s, latinName: v.latin_name, additionalNotes: v.additional_notes.presence }
+      },
+      genus: species.genus ? { id: species.genus.id.to_s, latinName: species.genus.latin_name } : nil,
+      isAdmin: !!current_member
     }
   end
 
@@ -223,5 +240,83 @@ class AppController < ApplicationController
   def require_effective_for_strategy
     return if current_member&.can_access_strategy?
     redirect_to root_path, alert: "Accès réservé aux membres effectifs"
+  end
+
+  def serialize_public_species_full(s)
+    {
+      id: s.id.to_s,
+      slug: s.slug,
+      latinName: s.latin_name,
+      commonNamesFr: s.common_names_fr.presence,
+      plantType: s.plant_type,
+      strate: s.strate,
+      successionalRole: s.successional_role,
+      lifeCycle: s.life_cycle,
+      growthHabit: s.growth_habit,
+      growthRate: s.growth_rate,
+      foliageType: s.foliage_type,
+      foliageColor: s.foliage_color,
+      fragrance: s.fragrance,
+      fertility: s.fertility,
+      pollinationType: s.pollination_type,
+      rootSystem: s.root_system,
+      forestGardenZone: s.forest_garden_zone,
+      hardiness: s.hardiness,
+      wateringNeed: s.watering_need,
+      soilMoisture: s.soil_moisture,
+      soilRichness: s.soil_richness,
+      isInvasive: s.is_invasive,
+      isDrageonnant: s.is_drageonnant,
+      allelopathy: s.allelopathy.presence,
+      heightMinCm: s.height_min_cm,
+      heightMaxCm: s.height_max_cm,
+      heightDescription: s.height_description.presence,
+      spreadMinCm: s.spread_min_cm,
+      spreadMaxCm: s.spread_max_cm,
+      spreadDescription: s.spread_description.presence,
+      plantingSpacingCm: s.planting_spacing_cm,
+      lifespanMinYears: s.lifespan_min_years,
+      lifespanMaxYears: s.lifespan_max_years,
+      pollinationDistanceM: s.pollination_distance_m,
+      flowerColors: s.flower_colors,
+      floweringMonths: s.flowering_months,
+      fruitingMonths: s.fruiting_months,
+      harvestMonths: s.harvest_months,
+      pruningMonths: s.pruning_months,
+      plantingSeasons: s.planting_seasons,
+      propagationMethods: s.propagation_methods,
+      transformations: s.transformations,
+      fodderQualities: s.fodder_qualities,
+      edibleParts: s.edible_parts,
+      interests: s.interests,
+      ecosystemNeeds: s.ecosystem_needs,
+      nativeCountries: s.native_countries,
+      soilTypes: s.soil_types,
+      exposures: s.exposures,
+      soilPh: s.soil_ph,
+      soilTexture: s.soil_texture,
+      specificPollinators: s.specific_pollinators,
+      toxicity: s.toxicity,
+      ecoServicesProvided: s.eco_services_provided,
+      ecoServicesNeeded: s.eco_services_needed,
+      resourceParts: s.resource_parts,
+      therapeuticProperties: s.therapeutic_properties.presence,
+      additionalNotes: s.additional_notes.presence,
+      edibleRating: s.edible_rating,
+      medicinalRating: s.medicinal_rating
+    }
+  end
+
+  def photos_for_species(species)
+    Plant::Photo
+      .where(target_type: 'species', target_id: species.id)
+      .order(:created_at)
+      .map { |p| { id: p.id.to_s, url: p.url, role: p.role, caption: p.caption.presence } }
+  end
+
+  def common_names_for_species(species)
+    Plant::CommonName
+      .where(target_type: 'species', target_id: species.id)
+      .map { |cn| { name: cn.name, language: cn.language } }
   end
 end
