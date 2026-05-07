@@ -195,4 +195,50 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'Fiche réalisée par', response.body
     assert_match 'plantes.semisto.org', response.body
   end
+
+  test 'batch print returns 200 with multiple species' do
+    s2 = Plant::Species.create!(latin_name: 'Quercus robur', plant_type: 'tree')
+    s3 = Plant::Species.create!(latin_name: 'Ribes nigrum', plant_type: 'shrub')
+    get "/plants/cards?ids=#{@species.id},#{s2.id},#{s3.id}"
+    assert_response :success
+    assert_match 'Amelanchier canadensis', response.body
+    assert_match 'Quercus robur', response.body
+    assert_match 'Ribes nigrum', response.body
+  end
+
+  test 'batch print rejects more than 24 ids' do
+    ids = (1..25).map(&:to_s).join(',')
+    get "/plants/cards?ids=#{ids}"
+    assert_response :unprocessable_entity
+  end
+
+  test 'batch print rejects empty ids' do
+    get '/plants/cards?ids='
+    assert_response :unprocessable_entity
+  end
+
+  test 'batch print silently drops unknown ids' do
+    get "/plants/cards?ids=#{@species.id},999999"
+    assert_response :success
+    assert_match 'Amelanchier canadensis', response.body
+  end
+
+  test 'batch print includes both recto and verso pages' do
+    s2 = Plant::Species.create!(latin_name: 'Quercus robur', plant_type: 'tree')
+    get "/plants/cards?ids=#{@species.id},#{s2.id}"
+    assert_response :success
+    pages_count = response.body.scan(/class="a4-page"/).size
+    assert_equal 2, pages_count  # 1 recto page + 1 verso page
+  end
+
+  test 'batch print 5 cards produces 4 pages (2 rectos + 2 versos)' do
+    s2 = Plant::Species.create!(latin_name: 'Quercus robur', plant_type: 'tree')
+    s3 = Plant::Species.create!(latin_name: 'Ribes nigrum', plant_type: 'shrub')
+    s4 = Plant::Species.create!(latin_name: 'Malus domestica', plant_type: 'tree')
+    s5 = Plant::Species.create!(latin_name: 'Prunus avium', plant_type: 'tree')
+    get "/plants/cards?ids=#{@species.id},#{s2.id},#{s3.id},#{s4.id},#{s5.id}"
+    assert_response :success
+    pages_count = response.body.scan(/class="a4-page"/).size
+    assert_equal 4, pages_count
+  end
 end
