@@ -189,9 +189,19 @@ module PlantCardsHelper
     "plant_cards/silhouettes/#{habit}"
   end
 
+  ROOT_SYSTEM_NORMALIZE = {
+    'Pivotante' => 'taproot',
+    'Fasciculées' => 'fibrous',
+    'Traçante' => 'spreading',
+    'Drageonnante' => 'spreading',
+    'Flat' => 'shallow',
+    'mixte' => 'default'
+  }.freeze
+  ROOT_PARTIALS = %w[deep fibrous shallow spreading taproot].freeze
+
   def roots_partial(species)
-    rs = species.root_system.to_s
-    return 'plant_cards/roots/default' if rs.empty?
+    rs = ROOT_SYSTEM_NORMALIZE[species.root_system.to_s] || species.root_system.to_s
+    return 'plant_cards/roots/default' unless ROOT_PARTIALS.include?(rs)
     "plant_cards/roots/#{rs}"
   end
 
