@@ -1,5 +1,5 @@
 class AppController < ApplicationController
-  before_action :require_authentication, except: [:design_client_portal, :academy_registration, :public_catalog]
+  before_action :require_authentication, except: [:design_client_portal, :academy_registration, :public_catalog, :public_species_page]
   before_action :verify_client_portal_token!, only: [:design_client_portal]
   before_action :require_effective_for_strategy, only: [:strategy]
 
@@ -92,6 +92,16 @@ class AppController < ApplicationController
   def public_catalog
     render inertia: "Public/Catalog", props: {
       milestone: "Public Catalog"
+    }
+  end
+
+  def public_species_page
+    slug = params[:slug].to_s.downcase
+    species = Plant::Species.where("lower(replace(latin_name, ' ', '-')) = ?", slug).first
+    raise ActiveRecord::RecordNotFound unless species
+
+    render inertia: 'Plants/PublicSpecies', props: {
+      species: { id: species.id.to_s, latinName: species.latin_name, slug: species.slug }
     }
   end
 
