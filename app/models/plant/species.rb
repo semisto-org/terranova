@@ -29,6 +29,17 @@ module Plant
 
     SPECIFIC_POLLINATORS = %w[bees bumblebees butterflies hoverflies beetles wind birds].freeze
 
+    # Legacy attributes — deprecated since Phase E (Plant Cards, 2026-05-07).
+    # The following columns are preserved for backwards compatibility but new
+    # code should read/write the card fields instead. They were migrated by
+    # `rake plants:migrate_legacy` (lib/tasks/plants_migrate_legacy.rake).
+    #
+    #   interests          → eco_services_provided + resource_parts
+    #   ecosystem_needs    → successional_role + eco_services_provided
+    #   edible_parts       → resource_parts['edible']
+    #   fragrance          → resource_parts['sensory'] (when strong/medium)
+    #   fodder_qualities   → resource_parts['animal'] (when present)
+
     belongs_to :genus, class_name: 'Plant::Genus', optional: true
     has_many :varieties, class_name: 'Plant::Variety', foreign_key: :species_id, dependent: :destroy
 
