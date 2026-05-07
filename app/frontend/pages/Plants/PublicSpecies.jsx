@@ -5,6 +5,7 @@ import { SoilBlock } from '@/plant-database/components/public/SoilBlock'
 import { CalendarBlock } from '@/plant-database/components/public/CalendarBlock'
 import { PollinationBlock } from '@/plant-database/components/public/PollinationBlock'
 import { EcosystemBlock } from '@/plant-database/components/public/EcosystemBlock'
+import { ResourcesBlock } from '@/plant-database/components/public/ResourcesBlock'
 
 export default function PublicSpecies({ species, photos = [] }) {
   return (
@@ -20,6 +21,7 @@ export default function PublicSpecies({ species, photos = [] }) {
         <CalendarBlock species={species} />
         <PollinationBlock species={species} />
         <EcosystemBlock species={species} />
+        <ResourcesBlock species={species} />
       </main>
     </>
   )
