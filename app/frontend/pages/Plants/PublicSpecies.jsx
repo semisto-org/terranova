@@ -6,8 +6,11 @@ import { CalendarBlock } from '@/plant-database/components/public/CalendarBlock'
 import { PollinationBlock } from '@/plant-database/components/public/PollinationBlock'
 import { EcosystemBlock } from '@/plant-database/components/public/EcosystemBlock'
 import { ResourcesBlock } from '@/plant-database/components/public/ResourcesBlock'
+import { CautionsBlock } from '@/plant-database/components/public/CautionsBlock'
+import { VarietiesBlock } from '@/plant-database/components/public/VarietiesBlock'
+import { PublicFooter } from '@/plant-database/components/public/PublicFooter'
 
-export default function PublicSpecies({ species, photos = [] }) {
+export default function PublicSpecies({ species, photos = [], varieties = [] }) {
   return (
     <>
       <Head>
@@ -22,6 +25,9 @@ export default function PublicSpecies({ species, photos = [] }) {
         <PollinationBlock species={species} />
         <EcosystemBlock species={species} />
         <ResourcesBlock species={species} />
+        <CautionsBlock species={species} />
+        <VarietiesBlock varieties={varieties} />
+        <PublicFooter />
       </main>
     </>
   )
