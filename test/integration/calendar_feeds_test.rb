@@ -13,7 +13,7 @@ class CalendarFeedsTest < ActionDispatch::IntegrationTest
     )
 
     training_type = Academy::TrainingType.create!(name: "Permaculture")
-    training = Academy::Training.create!(training_type: training_type, title: "Formation Design", status: "published")
+    training = Academy::Training.create!(training_type: training_type, title: "Formation Design", status: "registrations_open")
     training.sessions.create!(start_date: Date.new(2026, 3, 20), end_date: Date.new(2026, 3, 22), description: "Immersion")
   end
 

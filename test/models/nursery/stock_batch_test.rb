@@ -11,29 +11,28 @@ class Nursery::StockBatchTest < ActiveSupport::TestCase
       city: 'LLN', postal_code: '1348', country: 'Belgique'
     )
     @container = Nursery::Container.create!(name: 'Godet 9cm', short_name: 'G9', sort_order: 1)
+    @species = Plant::Species.create!(latin_name: 'Malus domestica', plant_type: 'Arbre fruitier')
   end
 
   test 'valid stock batch' do
     batch = Nursery::StockBatch.new(
-      nursery: @nursery, container: @container,
-      species_id: 'sp-1', species_name: 'Malus domestica',
+      nursery: @nursery, container: @container, species: @species,
       quantity: 50, available_quantity: 50, reserved_quantity: 0,
       growth_stage: 'young', price_euros: 12.50
     )
     assert batch.valid?
   end
 
-  test 'requires species_id and species_name' do
+  test 'requires species' do
     batch = Nursery::StockBatch.new(nursery: @nursery, container: @container, growth_stage: 'young')
     assert_not batch.valid?
-    assert_includes batch.errors[:species_id], "can't be blank"
-    assert_includes batch.errors[:species_name], "can't be blank"
+    assert_includes batch.errors[:species], "must exist"
   end
 
   test 'validates growth_stage inclusion' do
     batch = Nursery::StockBatch.new(
-      nursery: @nursery, container: @container,
-      species_id: 'sp-1', species_name: 'Test', growth_stage: 'giant'
+      nursery: @nursery, container: @container, species: @species,
+      growth_stage: 'giant'
     )
     assert_not batch.valid?
     assert_includes batch.errors[:growth_stage], 'is not included in the list'
@@ -41,8 +40,7 @@ class Nursery::StockBatchTest < ActiveSupport::TestCase
 
   test 'belongs to nursery and container' do
     batch = Nursery::StockBatch.create!(
-      nursery: @nursery, container: @container,
-      species_id: 'sp-1', species_name: 'Malus domestica',
+      nursery: @nursery, container: @container, species: @species,
       quantity: 10, available_quantity: 10, reserved_quantity: 0,
       growth_stage: 'seedling', price_euros: 5
     )

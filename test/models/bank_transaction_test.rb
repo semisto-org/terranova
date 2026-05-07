@@ -9,12 +9,15 @@ class BankTransactionTest < ActiveSupport::TestCase
       m.last_name = "Test"
       m.password = "password123"
       m.is_admin = true
+      m.joined_at = Date.current
     end
+    @organization = Organization.find_or_create_by!(name: "Test Org")
     @connection = BankConnection.create!(
       provider: "gocardless",
       bank_name: "Triodos",
       status: "linked",
-      connected_by: @admin
+      connected_by: @admin,
+      organization: @organization
     )
   end
 

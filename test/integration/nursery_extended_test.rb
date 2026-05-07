@@ -20,6 +20,13 @@ class NurseryExtendedTest < ActionDispatch::IntegrationTest
     @container = Nursery::Container.create!(
       name: 'Godet 9cm', short_name: 'G9', sort_order: 1
     )
+
+    @species = Plant::Species.find_or_create_by!(latin_name: 'Malus domestica') do |s|
+      s.plant_type = 'Arbre fruitier'
+    end
+    @edge_species = Plant::Species.find_or_create_by!(latin_name: 'Edge Species') do |s|
+      s.plant_type = 'Arbre fruitier'
+    end
   end
 
   # --- Nurseries CRUD ---
@@ -76,8 +83,7 @@ class NurseryExtendedTest < ActionDispatch::IntegrationTest
 
   test 'show order returns order with lines' do
     batch = Nursery::StockBatch.create!(
-      nursery: @nursery, container: @container,
-      species_id: 'sp-1', species_name: 'Malus domestica',
+      nursery: @nursery, container: @container, species: @species,
       quantity: 20, available_quantity: 20, reserved_quantity: 0,
       growth_stage: 'young', price_euros: 10
     )
@@ -277,8 +283,7 @@ class NurseryExtendedTest < ActionDispatch::IntegrationTest
 
   test 'order cancellation releases reserved stock' do
     batch = Nursery::StockBatch.create!(
-      nursery: @nursery, container: @container,
-      species_id: 'sp-edge', species_name: 'Edge Species',
+      nursery: @nursery, container: @container, species: @edge_species,
       quantity: 20, available_quantity: 20, reserved_quantity: 0,
       growth_stage: 'young', price_euros: 5
     )

@@ -349,7 +349,7 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
           <WikiTab typeKey={typeKey} projectId={projectId} />
         )}
         {activeTab === 'bucket' && (
-          <BucketSection projectType={typeKey} projectId={projectId} />
+          <BucketSection projectType={typeKey as 'lab-project' | 'training' | 'design-project' | 'guild'} projectId={projectId} />
         )}
       </div>
 

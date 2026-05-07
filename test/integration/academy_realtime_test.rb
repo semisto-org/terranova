@@ -9,7 +9,7 @@ class AcademyRealtimeTest < ActionDispatch::IntegrationTest
     @training = Academy::Training.create!(
       training_type: @training_type,
       title: "Formation live",
-      status: "draft",
+      status: "idea",
       price: 100,
       vat_rate: 21,
       deposit_amount: 0
@@ -24,9 +24,10 @@ class AcademyRealtimeTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    payload = broadcasts("academy_trainings").last
-    assert_equal "training", payload[:type]
-    assert_equal "updated", payload[:action]
-    assert_equal @training.id.to_s, payload[:training][:id]
+    raw = broadcasts("academy_trainings").last
+    payload = raw.is_a?(String) ? JSON.parse(raw) : raw.deep_stringify_keys
+    assert_equal "training", payload["type"]
+    assert_equal "updated", payload["action"]
+    assert_equal @training.id.to_s, payload["training"]["id"]
   end
 end

@@ -416,10 +416,7 @@ class DesignStudioProjectDetailTest < ActionDispatch::IntegrationTest
     assert_response :created
     quote_id = JSON.parse(response.body)['id']
 
-    client_token = Rails.application.message_verifier(:client_portal).generate(
-      { project_id: @project.id.to_s },
-      purpose: :client_portal_access
-    )
+    client_token = @project.ensure_client_portal_token!
     client_headers = { "X-Client-Token" => client_token }
 
     patch "/api/v1/design/client/quotes/#{quote_id}/approve",
