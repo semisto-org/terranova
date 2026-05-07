@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react'
 import { HeroSection } from '@/plant-database/components/public/HeroSection'
+import { ConditionsBlock } from '@/plant-database/components/public/ConditionsBlock'
 
 export default function PublicSpecies({ species, photos = [] }) {
   return (
@@ -10,6 +11,7 @@ export default function PublicSpecies({ species, photos = [] }) {
       </Head>
       <main className="min-h-screen bg-stone-50">
         <HeroSection species={species} photos={photos} />
+        <ConditionsBlock species={species} />
       </main>
     </>
   )
