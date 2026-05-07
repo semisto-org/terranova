@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react'
 import { HeroSection } from '@/plant-database/components/public/HeroSection'
 import { ConditionsBlock } from '@/plant-database/components/public/ConditionsBlock'
 import { SoilBlock } from '@/plant-database/components/public/SoilBlock'
+import { CalendarBlock } from '@/plant-database/components/public/CalendarBlock'
 
 export default function PublicSpecies({ species, photos = [] }) {
   return (
@@ -14,6 +15,7 @@ export default function PublicSpecies({ species, photos = [] }) {
         <HeroSection species={species} photos={photos} />
         <ConditionsBlock species={species} />
         <SoilBlock species={species} />
+        <CalendarBlock species={species} />
       </main>
     </>
   )
