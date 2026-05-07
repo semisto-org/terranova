@@ -1,0 +1,6 @@
+<%= render 'plant_cards/svg_defs' %>
+<% @species_list.each do |species| %>
+  <div data-species-id="<%= species.id %>">
+    <h2><%= species.latin_name %></h2>
+  </div>
+<% end %>
