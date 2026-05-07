@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Search, X, ChevronDown, Check, SlidersHorizontal, Plus } from 'lucide-react'
+import { Search, X, ChevronDown, Check, SlidersHorizontal, Plus, Printer } from 'lucide-react'
 import type { SearchViewProps, SearchResult, StrateKey } from '../types'
 import { FilterPanel } from './FilterPanel'
 
@@ -35,6 +35,19 @@ export function SearchView({
   const [advancedShowMore, setAdvancedShowMore] = useState(false)
   const [kindFilter, setKindFilter] = useState<Kind[]>([])
   const [focusedIndex, setFocusedIndex] = useState(-1)
+  const [printSelection, setPrintSelection] = useState<Set<string>>(new Set())
+
+  const togglePrintSelection = (id: string) => {
+    setPrintSelection((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else if (next.size < 12) {
+        next.add(id)
+      }
+      return next
+    })
+  }
   const inputRef = useRef<HTMLInputElement>(null)
   const tableRef = useRef<HTMLTableSectionElement>(null)
 
@@ -304,6 +317,7 @@ export function SearchView({
               <table className="w-full text-[12px]">
                 <thead className="border-b border-stone-200 bg-stone-50/60">
                   <tr className="text-left font-mono text-[10px] uppercase tracking-[0.14em] text-stone-500">
+                    <th className="w-[32px] px-3 py-2"></th>
                     <th className="w-[44px] px-3 py-2 text-center">Type</th>
                     <th className="px-3 py-2">Nom latin</th>
                     <th className="px-3 py-2">Nom commun</th>
@@ -327,6 +341,10 @@ export function SearchView({
                           : paletteItemIds.includes(result.id)
                       }
                       onSelect={() => onResultSelect?.(result.id, result.type)}
+                      selectable={result.type === 'species'}
+                      selected={printSelection.has(result.id)}
+                      selectionAtMax={printSelection.size >= 12}
+                      onToggleSelect={() => togglePrintSelection(result.id)}
                       onAddToPalette={
                         onAddToPalette && result.type !== 'genus'
                           ? (strate) =>
@@ -351,6 +369,27 @@ export function SearchView({
           <kbd className="px-1 py-0.5 bg-stone-100 rounded">↵</kbd> ouvrir
         </div>
       </div>
+
+      {printSelection.size > 0 && (
+        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-stone-200 shadow-lg p-3 flex items-center justify-between gap-3 z-50">
+          <button
+            type="button"
+            onClick={() => setPrintSelection(new Set())}
+            className="text-sm text-stone-600 hover:text-stone-900"
+          >
+            Désélectionner ({printSelection.size})
+          </button>
+          <a
+            href={`/plants/cards?ids=${Array.from(printSelection).join(',')}`}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-md hover:bg-stone-800 text-sm font-medium"
+          >
+            <Printer className="w-4 h-4" />
+            Imprimer {printSelection.size} fiche{printSelection.size > 1 ? 's' : ''}
+          </a>
+        </div>
+      )}
     </div>
   )
 }
@@ -361,6 +400,10 @@ interface ResultRowProps {
   isFocused: boolean
   isInPalette: boolean
   onSelect: () => void
+  selectable?: boolean
+  selected?: boolean
+  selectionAtMax?: boolean
+  onToggleSelect?: () => void
   onAddToPalette?: (strate: StrateKey) => void
 }
 
@@ -370,6 +413,10 @@ function ResultRow({
   isFocused,
   isInPalette,
   onSelect,
+  selectable,
+  selected,
+  selectionAtMax,
+  onToggleSelect,
   onAddToPalette,
 }: ResultRowProps) {
   const [showStrateMenu, setShowStrateMenu] = useState(false)
@@ -395,6 +442,21 @@ function ResultRow({
             : 'hover:bg-stone-50/60'
       }`}
     >
+      <td className="px-3 py-2 text-center w-[32px]">
+        {selectable ? (
+          <input
+            type="checkbox"
+            className="cursor-pointer"
+            checked={selected ?? false}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => { e.stopPropagation(); onToggleSelect?.() }}
+            aria-label="Sélectionner pour impression"
+            title={!selected && selectionAtMax ? 'Maximum 12 fiches par batch' : 'Sélectionner pour impression'}
+          />
+        ) : (
+          <span />
+        )}
+      </td>
       <td className="px-3 py-2 text-center">
         <span
           className={`inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${kindMeta.color}`}

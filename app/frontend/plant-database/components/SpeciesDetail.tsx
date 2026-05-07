@@ -1,3 +1,4 @@
+import { Printer } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import type {
   SpeciesDetailProps,
@@ -288,6 +289,16 @@ export function SpeciesDetail({
                   onRemoveFromPalette={onRemoveFromPalette}
                   isInPalette={isInPalette}
                 />
+                <a
+                  href={`/plants/species/${species.id}/card`}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-stone-200 hover:bg-stone-50 text-xs font-medium text-stone-700 transition"
+                  title="Ouvrir la fiche imprimable"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Imprimer la fiche
+                </a>
               </div>
             </div>
           </div>

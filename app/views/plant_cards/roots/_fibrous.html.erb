@@ -1,0 +1,5 @@
+<svg viewBox="0 0 240 110" preserveAspectRatio="xMidYStart meet">
+  <% (-5..5).each do |i| %>
+    <line x1="120" y1="0" x2="<%= 120 + i*10 %>" y2="<%= 70 + (i.abs * 4) %>"/>
+  <% end %>
+</svg>

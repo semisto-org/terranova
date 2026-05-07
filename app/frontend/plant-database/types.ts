@@ -35,6 +35,16 @@ export interface FilterOptions {
   transformations: FilterOption[]
   fodderQualities: FilterOption[]
   strates: FilterOption[]
+  successionalRoles: FilterOption[]
+  ecoServices: FilterOption[]
+  resourceCategories: FilterOption[]
+  plantParts: FilterOption[]
+  sensorySubtypes: FilterOption[]
+  animalSubtypes: FilterOption[]
+  toxicityTargets: FilterOption[]
+  specificPollinators: FilterOption[]
+  soilPhValues: FilterOption[]
+  soilTextures: FilterOption[]
 }
 
 // =============================================================================
@@ -75,7 +85,7 @@ export interface Species {
   soilTypes: string[]
   soilMoisture: 'dry' | 'moist' | 'wet' | 'waterlogged'
   soilRichness: 'poor' | 'moderate' | 'rich' | 'very-rich'
-  wateringNeed: '1' | '2' | '3' | '4' | '5'
+  wateringNeed: '0' | '1' | '2' | '3' | '4' | '5'
   toxicElements: string | null
   isInvasive: boolean
   therapeuticProperties: string | null
@@ -94,6 +104,21 @@ export interface Species {
   spreadDescription?: string | null
   edibleRating?: 1 | 2 | 3 | 4 | 5 | null
   medicinalRating?: 1 | 2 | 3 | 4 | 5 | null
+  strate?: string | null
+  successionalRole?: string | null
+  lifespanMinYears?: number | null
+  lifespanMaxYears?: number | null
+  plantingSpacingCm?: number | null
+  soilPh?: string[] | null
+  soilTexture?: string[] | null
+  pollinationDistanceM?: number | null
+  specificPollinators?: string[] | null
+  isDrageonnant?: boolean | null
+  allelopathy?: string | null
+  toxicity?: Record<string, string[]> | null
+  ecoServicesProvided?: string[] | null
+  ecoServicesNeeded?: string[] | null
+  resourceParts?: Record<string, string[]> | null
 }
 
 export interface Variety {

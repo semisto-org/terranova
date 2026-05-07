@@ -1,0 +1,144 @@
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Sun states (3 fill levels for exposures) -->
+    <symbol id="sun-empty" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5" fill="none" stroke="#F59E0B" stroke-width="1.7"/>
+      <g stroke="#F59E0B" stroke-width="1.7" stroke-linecap="round">
+        <line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/>
+        <line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/>
+        <line x1="5.4" y1="5.4" x2="7.2" y2="7.2"/><line x1="16.8" y1="16.8" x2="18.6" y2="18.6"/>
+        <line x1="5.4" y1="18.6" x2="7.2" y2="16.8"/><line x1="16.8" y1="7.2" x2="18.6" y2="5.4"/>
+      </g>
+    </symbol>
+    <symbol id="sun-half" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5" fill="none" stroke="#F59E0B" stroke-width="1.7"/>
+      <path d="M 12 7 A 5 5 0 0 1 12 17 Z" fill="#F59E0B"/>
+      <g stroke="#F59E0B" stroke-width="1.7" stroke-linecap="round">
+        <line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/>
+        <line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/>
+        <line x1="5.4" y1="5.4" x2="7.2" y2="7.2"/><line x1="16.8" y1="16.8" x2="18.6" y2="18.6"/>
+        <line x1="5.4" y1="18.6" x2="7.2" y2="16.8"/><line x1="16.8" y1="7.2" x2="18.6" y2="5.4"/>
+      </g>
+    </symbol>
+    <symbol id="sun-full" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5" fill="#F59E0B"/>
+      <g stroke="#F59E0B" stroke-width="1.7" stroke-linecap="round">
+        <line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/>
+        <line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/>
+        <line x1="5.4" y1="5.4" x2="7.2" y2="7.2"/><line x1="16.8" y1="16.8" x2="18.6" y2="18.6"/>
+        <line x1="5.4" y1="18.6" x2="7.2" y2="16.8"/><line x1="16.8" y1="7.2" x2="18.6" y2="5.4"/>
+      </g>
+    </symbol>
+
+    <!-- Drop clip path (used by water level rendering with digit inside) -->
+    <clipPath id="drop-clip" clipPathUnits="userSpaceOnUse">
+      <path d="M12 2 C 7 9 4 13 4 16.5 C 4 20 7 22 12 22 C 17 22 20 20 20 16.5 C 20 13 17 9 12 2 Z"/>
+    </clipPath>
+
+    <!-- Leaf states (4 fill modes for foliage_type) -->
+    <pattern id="leaf-hatch" patternUnits="userSpaceOnUse" width="3" height="3" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="3" stroke="#5A9A2F" stroke-width="1.2"/>
+    </pattern>
+    <symbol id="leaf-deciduous" viewBox="0 0 24 24">
+      <path d="M12 2 C 4 4 2 11 5 17 C 8 22 12 22 12 22 C 12 22 16 22 19 17 C 22 11 20 4 12 2 Z"
+            stroke="#5A9A2F" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+      <line x1="12" y1="3" x2="12" y2="22" stroke="#5A9A2F" stroke-width="1" stroke-dasharray="2 2"/>
+    </symbol>
+    <symbol id="leaf-marcescent" viewBox="0 0 24 24">
+      <path d="M12 2 C 4 4 2 11 5 17 C 8 22 12 22 12 22 C 12 22 16 22 19 17 C 22 11 20 4 12 2 Z"
+            stroke="#5A9A2F" stroke-width="1.6" fill="url(#leaf-hatch)" stroke-linejoin="round"/>
+      <line x1="12" y1="3" x2="12" y2="22" stroke="#5A9A2F" stroke-width="1"/>
+    </symbol>
+    <symbol id="leaf-semi" viewBox="0 0 24 24">
+      <path d="M12 2 C 4 4 2 11 5 17 C 8 22 12 22 12 22 L 12 2 Z"
+            stroke="#5A9A2F" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+      <path d="M12 2 C 12 22 12 22 12 22 C 12 22 16 22 19 17 C 22 11 20 4 12 2 Z"
+            stroke="#5A9A2F" stroke-width="1.6" fill="#5A9A2F" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="leaf-evergreen" viewBox="0 0 24 24">
+      <path d="M12 2 C 4 4 2 11 5 17 C 8 22 12 22 12 22 C 12 22 16 22 19 17 C 22 11 20 4 12 2 Z"
+            stroke="#5A9A2F" stroke-width="1.6" fill="#5A9A2F" stroke-linejoin="round"/>
+      <line x1="12" y1="3" x2="12" y2="22" stroke="#fff" stroke-width="1"/>
+    </symbol>
+
+    <!-- Human silhouette: 1m70 = 56 px (constant scale across all cards) -->
+    <symbol id="human-1m70" viewBox="0 0 28 56">
+      <circle cx="14" cy="6" r="4.5" fill="#1f2937"/>
+      <path d="M14 11 L14 30" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/>
+      <path d="M14 17 L7 25" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 17 L21 25" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 30 L8 54" stroke="#1f2937" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M14 30 L20 54" stroke="#1f2937" stroke-width="2.8" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Fertility icons (Pollinisation status) -->
+    <symbol id="pollin-self" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" fill="#EC4899"/>
+      <g stroke="#EC4899" stroke-width="1.4" fill="none" stroke-linecap="round">
+        <circle cx="12" cy="6" r="2.2"/>
+        <circle cx="12" cy="18" r="2.2"/>
+        <circle cx="6"  cy="12" r="2.2"/>
+        <circle cx="18" cy="12" r="2.2"/>
+      </g>
+      <path d="M 19 5 A 8 8 0 0 1 19 19" stroke="#9333EA" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="2.5 2"/>
+      <path d="M 18.5 19 L 19 19 L 19 18" stroke="#9333EA" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="pollin-cross" viewBox="0 0 24 24">
+      <circle cx="6" cy="9" r="3" fill="#EC4899"/>
+      <circle cx="18" cy="15" r="3" fill="#EC4899"/>
+      <path d="M9 11 Q 12 6 15 13" stroke="#9333EA" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-dasharray="2 1.5"/>
+      <path d="M14.2 13 L 15 13 L 15 12.2" stroke="#9333EA" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="pollin-partial" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" fill="#EC4899"/>
+      <path d="M 19 5 A 8 8 0 0 1 21 12" stroke="#9333EA" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="2 2"/>
+    </symbol>
+    <symbol id="pollin-dio" viewBox="0 0 24 24">
+      <g transform="translate(2 2)">
+        <circle cx="6" cy="6" r="3.5" stroke="#EC4899" stroke-width="1.6" fill="none"/>
+        <line x1="6" y1="9.5" x2="6" y2="13" stroke="#EC4899" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="4" y1="11.5" x2="8" y2="11.5" stroke="#EC4899" stroke-width="1.6" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(11 11)">
+        <circle cx="3.5" cy="6" r="3" stroke="#3B82F6" stroke-width="1.6" fill="none"/>
+        <line x1="6" y1="3.5" x2="9.5" y2="0" stroke="#3B82F6" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="9.5" y1="0" x2="9.5" y2="2.5" stroke="#3B82F6" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="9.5" y1="0" x2="7" y2="0" stroke="#3B82F6" stroke-width="1.6" stroke-linecap="round"/>
+      </g>
+    </symbol>
+
+    <!-- Vector icons (insect for pollinator type, distance for pollination range) -->
+    <symbol id="vec-insect" viewBox="0 0 24 24">
+      <ellipse cx="12" cy="14" rx="3.5" ry="4.5" fill="currentColor"/>
+      <path d="M12 11 Q 8 6 4 8 L 5 11 Z" fill="currentColor" opacity=".5"/>
+      <path d="M12 11 Q 16 6 20 8 L 19 11 Z" fill="currentColor" opacity=".5"/>
+    </symbol>
+    <symbol id="vec-distance" viewBox="0 0 24 24">
+      <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M5 10 L 3 12 L 5 14" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M19 10 L 21 12 L 19 14" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Eco service icons (12 services using currentColor for state-based coloring) -->
+    <symbol id="e-windbreak" viewBox="0 0 24 24"><path d="M3 8 L18 8 M3 12 L21 12 M3 16 L17 16" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M19 4 L21 8 L19 8 L20 12 L18 12 L19 16" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="e-melli" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="6" ry="5" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M12 9 Q 9 4 5 5 M12 9 Q 15 4 19 5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+    <symbol id="e-bird" viewBox="0 0 24 24"><path d="M5 14 Q 8 10 14 12 L 19 9 L 18 13 Q 17 17 12 18 Q 7 18 5 14 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><circle cx="16" cy="10" r="0.8" fill="currentColor"/></symbol>
+    <symbol id="e-aux" viewBox="0 0 24 24"><circle cx="12" cy="13" r="5" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="12" y1="6" x2="12" y2="20" stroke="currentColor" stroke-width="1"/><circle cx="11" cy="6" r="1" fill="currentColor"/><circle cx="13" cy="6" r="1" fill="currentColor"/></symbol>
+    <symbol id="e-erosion" viewBox="0 0 24 24"><path d="M3 18 Q 6 14 9 16 Q 12 18 15 14 Q 18 12 21 14" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="e-shade" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M3 17 Q 7 13 11 14 L 17 14 Q 21 16 21 19 L 3 19 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="e-nitrogen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4" fill="none"/><text x="12" y="16" font-size="11" font-weight="800" fill="currentColor" text-anchor="middle" font-family="Inter">N</text></symbol>
+    <symbol id="e-groundcover" viewBox="0 0 24 24"><path d="M3 16 Q 7 13 11 16 Q 15 13 19 16 Q 21 14 21 18 L 3 18 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="e-pollination" viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="16" cy="15" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M11 11 L 13 13" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.5 1.5"/></symbol>
+    <symbol id="e-orgmatter" viewBox="0 0 24 24"><path d="M5 18 Q 5 14 9 13 L 9 8 Q 12 6 14 8 L 14 12 Q 18 13 18 18 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="e-mineral" viewBox="0 0 24 24"><path d="M12 4 L18 9 L15 18 L9 18 L6 9 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="e-grass" viewBox="0 0 24 24"><path d="M5 14 L5 8 M9 14 L9 5 M13 14 L13 7 M17 14 L17 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/><line x1="6" y1="3" x2="20" y2="11" stroke="currentColor" stroke-width="1.4"/></symbol>
+
+    <!-- Resource category icons -->
+    <symbol id="r-edible" viewBox="0 0 24 24"><path d="M5 3 L5 11 M9 3 L9 11 M5 11 Q5 14 7 14 Q9 14 9 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 14 L7 22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M16 3 Q14 4 14 8 Q14 11 17 11 Q19 11 19 8 Q19 4 17 3 L17 22" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="r-aromatic" viewBox="0 0 24 24"><path d="M12 3 C 8 6 6 11 8 16 C 9 19 12 21 12 21 C 12 21 15 19 16 16 C 18 11 16 6 12 3 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 8 L12 19" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></symbol>
+    <symbol id="r-medicinal" viewBox="0 0 24 24"><path d="M12 3 L12 21 M8 7 Q 12 7 12 11 Q 12 7 16 7 M9 13 Q 12 13 12 16 Q 12 13 15 13" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="12" cy="3.5" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="r-fiber" viewBox="0 0 24 24"><path d="M6 4 L6 22 M10 4 L10 22 M14 4 L14 22 M18 4 L18 22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="r-sensory" viewBox="0 0 24 24"><circle cx="12" cy="13" r="6" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="12" cy="13" r="2" fill="currentColor"/></symbol>
+    <symbol id="r-fodder" viewBox="0 0 24 24"><path d="M5 16 Q 6 10 9 9 Q 11 8 11 6 Q 11 4 13 4 Q 16 4 16 8 Q 16 11 18 12 Q 20 14 19 17 L 17 19 L 8 19 Q 5 19 5 16 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>

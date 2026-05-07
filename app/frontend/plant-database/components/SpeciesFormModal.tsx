@@ -91,6 +91,33 @@ const FR_LABELS: Record<string, string> = {
   'self-fertile': 'Autofertile', 'self-sterile': 'Autostérile', 'partially-self-fertile': 'Partiellement autofertile', 'dioecious': 'Dioïque',
   // Pollination
   'insect': 'Insectes', 'wind': 'Vent', 'self': 'Autopollinisation', 'bird': 'Oiseaux',
+  // Strates (additional keys)
+  'low': 'Basse', 'vine': 'Grimpante', 'subterranean': 'Racinaire',
+  // Successional roles
+  'nurse': 'Nourricier',
+  // Eco services
+  'windbreak': 'Brise-vent', 'mellifere': 'Mellifère', 'birds': 'Oiseaux',
+  'beneficial-insects': 'Insectes auxiliaires',
+  'nitrogen': 'Azote', 'cross-pollination': 'Pollin. croisée',
+  'organic-matter': 'Matière organique', 'minerals': 'Minéraux',
+  'weed-suppression': 'Suppression herbe',
+  // Resource categories
+  'aromatic': 'Aromatique', 'fiber': 'Fibre', 'sensory': 'Sensorielle', 'animal': 'Animale',
+  // Plant parts
+  'stem': 'Tige',
+  // Sensory subtypes
+  'dye': 'Tinctoriale', 'fragrant': 'Odorante',
+  // Animal subtypes
+  'pecked': 'Picorée', 'browsed': 'Broutée',
+  // Toxicity targets
+  'humans': 'Humains', 'dogs': 'Chiens', 'horses': 'Chevaux',
+  // Specific pollinators
+  'bees': 'Abeilles', 'bumblebees': 'Bourdons',
+  'butterflies': 'Papillons', 'hoverflies': 'Syrphes', 'beetles': 'Coléoptères',
+  // Soil pH
+  'acid': 'Acide', 'neutral': 'Neutre', 'basic': 'Basique',
+  // Soil texture
+  'balanced': 'Équilibré', 'heavy': 'Lourd',
 }
 
 /** Translate a filter option to French */
@@ -103,7 +130,7 @@ const inputBase =
 
 const labelBase = 'block text-sm font-semibold text-stone-700 mb-2'
 
-type SectionId = 'identity' | 'characteristics' | 'soil' | 'calendar' | 'ecosystem' | 'uses' | 'propagation' | 'extra'
+type SectionId = 'identity' | 'characteristics' | 'conception' | 'soil' | 'calendar' | 'ecosystem' | 'uses' | 'propagation' | 'extra'
 
 interface Section {
   id: SectionId
@@ -114,6 +141,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: 'identity', label: 'Identité', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
   { id: 'characteristics', label: 'Caractéristiques', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' },
+  { id: 'conception', label: 'Conception', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z' },
   { id: 'soil', label: 'Sol & eau', icon: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z' },
   { id: 'calendar', label: 'Calendrier', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { id: 'ecosystem', label: 'Écosystème', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -121,6 +149,9 @@ const SECTIONS: Section[] = [
   { id: 'propagation', label: 'Multiplication', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
   { id: 'extra', label: 'Avancé', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
+
+const sectionIcon = (id: SectionId): string =>
+  SECTIONS.find((s) => s.id === id)!.icon
 
 const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 const MONTH_VALUES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
@@ -342,6 +373,17 @@ export function SpeciesFormModal({
     fodderQualities: filterOptions.fodderQualities.map(fr),
     fertilityTypes: filterOptions.fertilityTypes.map(fr),
     pollinationTypes: filterOptions.pollinationTypes.map(fr),
+    strates: filterOptions.strates?.map(fr) ?? [],
+    successionalRoles: filterOptions.successionalRoles?.map(fr) ?? [],
+    ecoServices: filterOptions.ecoServices?.map(fr) ?? [],
+    resourceCategories: filterOptions.resourceCategories?.map(fr) ?? [],
+    plantParts: filterOptions.plantParts?.map(fr) ?? [],
+    sensorySubtypes: filterOptions.sensorySubtypes?.map(fr) ?? [],
+    animalSubtypes: filterOptions.animalSubtypes?.map(fr) ?? [],
+    toxicityTargets: filterOptions.toxicityTargets?.map(fr) ?? [],
+    specificPollinators: filterOptions.specificPollinators?.map(fr) ?? [],
+    soilPhValues: filterOptions.soilPhValues?.map(fr) ?? [],
+    soilTextures: filterOptions.soilTextures?.map(fr) ?? [],
   }), [filterOptions])
 
   // Identity
@@ -386,6 +428,23 @@ export function SpeciesFormModal({
   const [propagationMethods, setPropagationMethods] = useState<string[]>(species?.propagationMethods ?? [])
   const [transformations, setTransformations] = useState<string[]>(species?.transformations ?? [])
   const [fodderQualities, setFodderQualities] = useState<string[]>(species?.fodderQualities ?? [])
+
+  // Conception
+  const [strate, setStrate] = useState(species?.strate ?? '')
+  const [successionalRole, setSuccessionalRole] = useState(species?.successionalRole ?? '')
+  const [lifespanMinYears, setLifespanMinYears] = useState<number | ''>(species?.lifespanMinYears ?? '')
+  const [lifespanMaxYears, setLifespanMaxYears] = useState<number | ''>(species?.lifespanMaxYears ?? '')
+  const [plantingSpacingCm, setPlantingSpacingCm] = useState<number | ''>(species?.plantingSpacingCm ?? '')
+  const [soilPh, setSoilPh] = useState<string[]>(species?.soilPh ?? [])
+  const [soilTexture, setSoilTexture] = useState<string[]>(species?.soilTexture ?? [])
+  const [pollinationDistanceM, setPollinationDistanceM] = useState<number | ''>(species?.pollinationDistanceM ?? '')
+  const [specificPollinators, setSpecificPollinators] = useState<string[]>(species?.specificPollinators ?? [])
+  const [isDrageonnant, setIsDrageonnant] = useState<boolean>(species?.isDrageonnant ?? false)
+  const [allelopathy, setAllelopathy] = useState(species?.allelopathy ?? '')
+  const [toxicity, setToxicity] = useState<Record<string, string[]>>(species?.toxicity ?? {})
+  const [ecoServicesProvided, setEcoServicesProvided] = useState<string[]>(species?.ecoServicesProvided ?? [])
+  const [ecoServicesNeeded, setEcoServicesNeeded] = useState<string[]>(species?.ecoServicesNeeded ?? [])
+  const [resourceParts, setResourceParts] = useState<Record<string, string[]>>(species?.resourceParts ?? {})
 
   // Extra
   const [fertility, setFertility] = useState(species?.fertility ?? 'self-fertile')
@@ -532,6 +591,21 @@ export function SpeciesFormModal({
       spread_description: spreadDescription.trim() || null,
       edible_rating: edibleRating,
       medicinal_rating: medicinalRating,
+      strate: strate || null,
+      successional_role: successionalRole || null,
+      lifespan_min_years: lifespanMinYears ? Number(lifespanMinYears) : null,
+      lifespan_max_years: lifespanMaxYears ? Number(lifespanMaxYears) : null,
+      planting_spacing_cm: plantingSpacingCm ? Number(plantingSpacingCm) : null,
+      soil_ph: soilPh,
+      soil_texture: soilTexture,
+      pollination_distance_m: pollinationDistanceM ? Number(pollinationDistanceM) : null,
+      specific_pollinators: specificPollinators,
+      is_drageonnant: isDrageonnant,
+      allelopathy: allelopathy.trim() || null,
+      toxicity,
+      eco_services_provided: ecoServicesProvided,
+      eco_services_needed: ecoServicesNeeded,
+      resource_parts: resourceParts,
     })
   }
 
@@ -598,7 +672,7 @@ export function SpeciesFormModal({
               <div id="section-identity">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[0].icon} /></svg>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('identity')} /></svg>
                   </span>
                   Identité
                 </h4>
@@ -703,7 +777,7 @@ export function SpeciesFormModal({
               {/* SECTION: Characteristics */}
               <div id="section-characteristics">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[1].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('characteristics')} /></svg></span>
                   Caractéristiques
                 </h4>
                 <div className="space-y-4">
@@ -826,10 +900,151 @@ export function SpeciesFormModal({
 
               <div className="border-t border-stone-100" />
 
+              {/* SECTION: Conception */}
+              <div id="section-conception">
+                <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('conception')} /></svg>
+                  </span>
+                  Conception
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelBase}>Strate</label>
+                    <select className={inputBase} value={strate} onChange={(e) => setStrate(e.target.value)}>
+                      <option value="">—</option>
+                      {opts.strates.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelBase}>Rôle successionnel</label>
+                    <select className={inputBase} value={successionalRole} onChange={(e) => setSuccessionalRole(e.target.value)}>
+                      <option value="">—</option>
+                      {opts.successionalRoles.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelBase}>Longévité min (années)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={lifespanMinYears}
+                      onChange={(e) => setLifespanMinYears(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className={labelBase}>Longévité max (années)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={lifespanMaxYears}
+                      onChange={(e) => setLifespanMaxYears(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className={labelBase}>Espacement de plantation (cm)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={plantingSpacingCm}
+                      onChange={(e) => setPlantingSpacingCm(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className={labelBase}>pH du sol toléré</label>
+                    <ChipGroup options={opts.soilPhValues} selected={soilPh} onChange={setSoilPh} color="#5B5781" />
+                  </div>
+                  <div>
+                    <label className={labelBase}>Texture de sol tolérée</label>
+                    <ChipGroup options={opts.soilTextures} selected={soilTexture} onChange={setSoilTexture} color="#5B5781" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className={labelBase}>Distance de pollinisation croisée (m)</label>
+                    <input type="number" min="0" className={inputBase}
+                      value={pollinationDistanceM}
+                      onChange={(e) => setPollinationDistanceM(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className={labelBase}>Pollinisateurs spécifiques</label>
+                    <ChipGroup options={opts.specificPollinators} selected={specificPollinators} onChange={setSpecificPollinators} color="#5B5781" />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-3">Précautions</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={isDrageonnant} onChange={(e) => setIsDrageonnant(e.target.checked)} />
+                      <span className="text-sm text-stone-700">Drageonnant</span>
+                    </label>
+                  </div>
+                  <div className="mt-3">
+                    <label className={labelBase}>Allélopathie (notes courtes)</label>
+                    <input type="text" className={inputBase}
+                      placeholder="Ex. Juglone (incompatible Solanacées)"
+                      value={allelopathy}
+                      onChange={(e) => setAllelopathy(e.target.value)} />
+                  </div>
+                  <div className="mt-4">
+                    <label className={labelBase}>Toxicité (parties toxiques par cible)</label>
+                    <div className="space-y-2">
+                      {opts.toxicityTargets.map((tgt) => (
+                        <div key={tgt.id} className="flex items-center gap-3">
+                          <span className="text-xs font-medium text-stone-600 w-20">{tgt.label}</span>
+                          <ChipGroup
+                            options={opts.plantParts}
+                            selected={toxicity[tgt.id] ?? []}
+                            onChange={(next) => setToxicity({ ...toxicity, [tgt.id]: next })}
+                            color="#D97706"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-3">Système écosystémique</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelBase}>Services écosystémiques fournis</label>
+                      <ChipGroup options={opts.ecoServices} selected={ecoServicesProvided} onChange={setEcoServicesProvided} color="#5A9A2F" />
+                    </div>
+                    <div>
+                      <label className={labelBase}>Services écosystémiques nécessaires</label>
+                      <ChipGroup options={opts.ecoServices} selected={ecoServicesNeeded} onChange={setEcoServicesNeeded} color="#5B5781" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-3">Ressources (parties par usage)</h4>
+                  <div className="space-y-2">
+                    {opts.resourceCategories.map((cat) => {
+                      let optsForCategory = opts.plantParts
+                      if (cat.id === 'sensory') optsForCategory = opts.sensorySubtypes
+                      if (cat.id === 'animal') optsForCategory = opts.animalSubtypes
+                      return (
+                        <div key={cat.id} className="flex items-start gap-3">
+                          <span className="text-xs font-medium text-stone-600 w-24 pt-1">{cat.label}</span>
+                          <div className="flex-1">
+                            <ChipGroup
+                              options={optsForCategory}
+                              selected={resourceParts[cat.id] ?? []}
+                              onChange={(next) => setResourceParts({ ...resourceParts, [cat.id]: next })}
+                              color="#234766"
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-stone-100" />
+
               {/* SECTION: Soil & Water */}
               <div id="section-soil">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[2].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('soil')} /></svg></span>
                   Sol & eau
                 </h4>
                 <div className="space-y-4">
@@ -874,7 +1089,7 @@ export function SpeciesFormModal({
               {/* SECTION: Calendar */}
               <div id="section-calendar">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[3].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('calendar')} /></svg></span>
                   Calendrier
                 </h4>
                 <div className="space-y-5">
@@ -906,7 +1121,7 @@ export function SpeciesFormModal({
               {/* SECTION: Ecosystem */}
               <div id="section-ecosystem">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[4].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('ecosystem')} /></svg></span>
                   Écosystème
                 </h4>
                 <div className="space-y-4">
@@ -920,7 +1135,7 @@ export function SpeciesFormModal({
               {/* SECTION: Uses */}
               <div id="section-uses">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[5].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('uses')} /></svg></span>
                   Usages
                 </h4>
                 <div className="space-y-4">
@@ -943,7 +1158,7 @@ export function SpeciesFormModal({
               {/* SECTION: Propagation */}
               <div id="section-propagation">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[6].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('propagation')} /></svg></span>
                   Multiplication
                 </h4>
                 <div className="space-y-4">
@@ -970,7 +1185,7 @@ export function SpeciesFormModal({
               {/* SECTION: Extra */}
               <div id="section-extra">
                 <h4 className="text-sm font-bold text-stone-800 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={SECTIONS[7].icon} /></svg></span>
+                  <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-500"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sectionIcon('extra')} /></svg></span>
                   Avancé
                 </h4>
                 <div className="space-y-4">

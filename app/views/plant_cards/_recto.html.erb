@@ -1,0 +1,155 @@
+<div class="a6 strate-<%= species.strate %>" data-face="recto">
+  <div class="strate-bar"></div>
+  <div class="body">
+    <div class="header-row">
+      <div>
+        <h1><%= species.common_names_fr.presence || species.latin_name %></h1>
+        <div class="latin"><%= species.latin_name %></div>
+        <div class="badge-row">
+          <% if species.strate %>
+            <span class="strate-badge"><%= strate_label(species.strate) %></span>
+          <% end %>
+          <% if species.life_cycle %>
+            <span class="cycle-chip <%= cycle_class(species.life_cycle) %>"><%= cycle_label(species.life_cycle) %></span>
+          <% end %>
+          <% if species.successional_role %>
+            <span class="role-chip <%= role_class(species.successional_role) %>"><%= role_label(species.successional_role) %></span>
+          <% end %>
+        </div>
+        <div class="dim-line">
+          <% if species.height_min_cm && species.height_max_cm %>
+            <span class="item"><span class="ic">↕</span> <%= species.height_min_cm/100.0 %>–<%= species.height_max_cm/100.0 %> m</span>
+          <% end %>
+          <% if species.height_min_cm && species.height_max_cm && (species.spread_min_cm && species.spread_max_cm) %>
+            <span class="sep">·</span>
+          <% end %>
+          <% if species.spread_min_cm && species.spread_max_cm %>
+            <span class="item"><span class="ic">↔</span> <%= species.spread_min_cm/100.0 %>–<%= species.spread_max_cm/100.0 %> m</span>
+          <% end %>
+          <% if species.planting_spacing_cm %>
+            <span class="sep">·</span>
+            <span class="item"><span class="ic">⇿</span> Espacement <%= species.planting_spacing_cm/100.0 %> m</span>
+          <% end %>
+        </div>
+      </div>
+      <% if hardiness_celsius(species.hardiness) %>
+        <span class="hardiness-tag"><span class="ic">❄</span><%= hardiness_celsius(species.hardiness) %></span>
+      <% end %>
+    </div>
+    <div class="hero-split">
+      <% flower = pick_photo(photos, 'flower') %>
+      <% fruit = pick_photo(photos, 'fruit') %>
+      <div class="photo-tile <%= flower ? 'has-img' : 'empty' %>">
+        <% if flower %>
+          <img src="<%= flower.url %>" alt="<%= flower.caption.presence || 'Floraison' %>">
+        <% end %>
+        <span class="role-tag">Floraison</span>
+      </div>
+      <div class="photo-tile <%= fruit ? 'has-img' : 'empty' %>">
+        <% if fruit %>
+          <img src="<%= fruit.url %>" alt="<%= fruit.caption.presence || 'Fruit' %>">
+        <% end %>
+        <span class="role-tag">Fruit</span>
+      </div>
+    </div>
+    <div class="cross-section">
+      <div class="above-ground">
+        <% height_px = plant_height_px(species.height_max_cm) || 100 %>
+        <div class="plant-bg" style="bottom: 0; height: <%= height_px %>px;">
+          <%= render silhouette_partial(species), species: species, height_px: height_px %>
+        </div>
+        <div class="human"><svg viewBox="0 0 28 56"><use href="#human-1m70"/></svg></div>
+        <div class="sky-tiles">
+          <div class="sky-tile">
+            <span class="icon-side">
+              <span class="leaf-icon"><svg viewBox="0 0 24 24"><use href="#<%= leaf_symbol_id(species.foliage_type) %>"/></svg></span>
+            </span>
+            <div class="text-side">
+              <span class="lbl">Feuillage</span>
+              <span class="val"><%= foliage_label(species.foliage_type) || '—' %></span>
+            </div>
+          </div>
+          <div class="sky-tile">
+            <span class="icon-side">
+              <span class="sun-icon"><svg viewBox="0 0 24 24"><use href="#<%= sun_state_id(species.exposures) %>"/></svg></span>
+            </span>
+            <div class="text-side">
+              <span class="lbl">Soleil</span>
+              <span class="val">
+                <%= case sun_state_id(species.exposures)
+                    when 'sun-full'  then 'Plein soleil'
+                    when 'sun-half'  then 'Mi-ombre'
+                    when 'sun-empty' then 'Ombre'
+                    end %>
+              </span>
+            </div>
+          </div>
+          <div class="sky-tile">
+            <span class="icon-side">
+              <% level = water_level_int(species.watering_need) %>
+              <% fill_y = level ? (24 - (level * 4) - 0.5) : 24 %>
+              <span class="drop-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2 C 7 9 4 13 4 16.5 C 4 20 7 22 12 22 C 17 22 20 20 20 16.5 C 20 13 17 9 12 2 Z"
+                        fill="none" stroke="#2563eb" stroke-width="1.5"/>
+                  <% if level && level > 0 %>
+                    <g clip-path="url(#drop-clip)">
+                      <rect x="0" y="<%= fill_y %>" width="24" height="<%= 24 - fill_y %>" fill="#2563eb"/>
+                    </g>
+                  <% end %>
+                  <text x="12" y="18" font-size="10" font-weight="800"
+                        fill="<%= level && level >= 2 ? '#fff' : '#2563eb' %>"
+                        text-anchor="middle" font-family="Inter, sans-serif"><%= level || 0 %></text>
+                </svg>
+              </span>
+            </span>
+            <div class="text-side">
+              <span class="lbl">Eau</span>
+              <span class="val">
+                <%= case level
+                    when 0 then 'Sec' when 1 then 'Très sec'
+                    when 2 then 'Faible' when 3 then 'Modéré'
+                    when 4 then 'Régulier' when 5 then 'Humide'
+                    else '—' end %>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="below-ground">
+        <div class="roots">
+          <%= render roots_partial(species), species: species %>
+        </div>
+        <div class="soil-scales">
+          <% texture_segs = soil_scale_segments(species.soil_texture, PlantCardsHelper::TEXTURE_ORDER) %>
+          <% humus_segs   = soil_scale_segments([species.soil_richness], PlantCardsHelper::HUMUS_ORDER) %>
+          <% ph_segs      = soil_scale_segments(species.soil_ph, PlantCardsHelper::PH_ORDER) %>
+          <% [
+            ['Texture', %w[Léger Équil. Lourd], texture_segs],
+            ['Humus',   %w[Pauvre Moyen Riche], humus_segs],
+            ['pH',      %w[Acide Neutre Basique], ph_segs]
+          ].each do |label, ticks, segs| %>
+            <div class="soil-scale">
+              <span class="axis-label"><%= label %></span>
+              <div class="axis-stack">
+                <div class="axis">
+                  <% segs.each do |on| %>
+                    <div class="seg <%= 'on' if on %>"></div>
+                  <% end %>
+                </div>
+                <div class="axis-ticks">
+                  <% ticks.each do |t| %><span><%= t %></span><% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <% if species.root_system %>
+          <div class="root-type-label">Racines<strong><%= root_label(species.root_system) %></strong></div>
+        <% end %>
+      </div>
+      <div class="ground-line"></div>
+      <div class="grass"></div>
+    </div>
+  </div>
+</div>

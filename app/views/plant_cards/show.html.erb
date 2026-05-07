@@ -1,0 +1,5 @@
+<%= render 'plant_cards/svg_defs' %>
+<div class="card-stage">
+  <%= render 'plant_cards/recto', species: @species, photos: @photos %>
+  <%= render 'plant_cards/verso', species: @species %>
+</div>

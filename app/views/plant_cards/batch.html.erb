@@ -1,0 +1,32 @@
+<%= render 'plant_cards/svg_defs' %>
+
+<% @species_list.each_slice(4) do |group| %>
+  <%# RECTO PAGE — natural reading order: 1 2 / 3 4 %>
+  <section class="a4-page">
+    <% group.each do |species| %>
+      <div class="a4-cell">
+        <%= render 'plant_cards/recto', species: species, photos: (@photos_by_species[species.id] || []) %>
+      </div>
+    <% end %>
+    <% (4 - group.size).times do %>
+      <div class="a4-cell empty"></div>
+    <% end %>
+    <div class="cut-marks"></div>
+  </section>
+
+  <%# VERSO PAGE — mirrored order: 2 1 / 4 3 (so long-edge duplex aligns with recto) %>
+  <% padded = group + Array.new(4 - group.size, nil) %>
+  <% mirrored = [padded[1], padded[0], padded[3], padded[2]] %>
+  <section class="a4-page">
+    <% mirrored.each do |species| %>
+      <% if species %>
+        <div class="a4-cell">
+          <%= render 'plant_cards/verso', species: species %>
+        </div>
+      <% else %>
+        <div class="a4-cell empty"></div>
+      <% end %>
+    <% end %>
+    <div class="cut-marks"></div>
+  </section>
+<% end %>
