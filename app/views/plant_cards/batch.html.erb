@@ -1,6 +1,15 @@
 <%= render 'plant_cards/svg_defs' %>
-<% @species_list.each do |species| %>
-  <div data-species-id="<%= species.id %>">
-    <h2><%= species.latin_name %></h2>
-  </div>
+
+<% @species_list.each_slice(4) do |group| %>
+  <section class="a4-page">
+    <% group.each do |species| %>
+      <div class="a4-cell">
+        <%= render 'plant_cards/recto', species: species, photos: (@photos_by_species[species.id] || []) %>
+      </div>
+    <% end %>
+    <% (4 - group.size).times do %>
+      <div class="a4-cell empty"></div>
+    <% end %>
+    <div class="cut-marks"></div>
+  </section>
 <% end %>

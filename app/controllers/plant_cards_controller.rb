@@ -21,6 +21,6 @@ class PlantCardsController < ApplicationController
       .where(target_type: 'species', target_id: ids)
       .group_by(&:target_id)
 
-    render :batch
+    render :batch, layout: 'plant_card_batch'
   end
 end
