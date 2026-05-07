@@ -3,6 +3,7 @@ import { HeroSection } from '@/plant-database/components/public/HeroSection'
 import { ConditionsBlock } from '@/plant-database/components/public/ConditionsBlock'
 import { SoilBlock } from '@/plant-database/components/public/SoilBlock'
 import { CalendarBlock } from '@/plant-database/components/public/CalendarBlock'
+import { PollinationBlock } from '@/plant-database/components/public/PollinationBlock'
 
 export default function PublicSpecies({ species, photos = [] }) {
   return (
@@ -16,6 +17,7 @@ export default function PublicSpecies({ species, photos = [] }) {
         <ConditionsBlock species={species} />
         <SoilBlock species={species} />
         <CalendarBlock species={species} />
+        <PollinationBlock species={species} />
       </main>
     </>
   )
