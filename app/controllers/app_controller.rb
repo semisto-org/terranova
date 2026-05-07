@@ -107,7 +107,8 @@ class AppController < ApplicationController
       varieties: species.varieties.order(:latin_name).map { |v|
         { id: v.id.to_s, latinName: v.latin_name, additionalNotes: v.additional_notes.presence }
       },
-      genus: species.genus ? { id: species.genus.id.to_s, latinName: species.genus.latin_name } : nil
+      genus: species.genus ? { id: species.genus.id.to_s, latinName: species.genus.latin_name } : nil,
+      isAdmin: !!current_member
     }
   end
 

@@ -10,7 +10,7 @@ import { CautionsBlock } from '@/plant-database/components/public/CautionsBlock'
 import { VarietiesBlock } from '@/plant-database/components/public/VarietiesBlock'
 import { PublicFooter } from '@/plant-database/components/public/PublicFooter'
 
-export default function PublicSpecies({ species, photos = [], varieties = [] }) {
+export default function PublicSpecies({ species, photos = [], varieties = [], isAdmin = false }) {
   return (
     <>
       <Head>
@@ -28,6 +28,18 @@ export default function PublicSpecies({ species, photos = [], varieties = [] }) 
         <CautionsBlock species={species} />
         <VarietiesBlock varieties={varieties} />
         <PublicFooter />
+        {isAdmin && (
+          <div className="text-center pb-8">
+            <a
+              href={`/plants/species/${species.id}/card`}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-stone-300 hover:bg-stone-100 text-sm text-stone-700"
+            >
+              Imprimer la fiche A6
+            </a>
+          </div>
+        )}
       </main>
     </>
   )
