@@ -22,9 +22,13 @@ namespace :plants do
 
     stats = Hash.new(0)
     Plant::Species.find_each do |s|
-      provided = Array(s.eco_services_provided).dup
-      role     = s.successional_role
-      parts    = s.resource_parts.is_a?(Hash) ? s.resource_parts.dup : {}
+      original_provided = Array(s.eco_services_provided)
+      original_role     = s.successional_role
+      original_parts    = s.resource_parts.is_a?(Hash) ? s.resource_parts : {}
+
+      provided = original_provided.dup
+      role     = original_role
+      parts    = original_parts.dup
 
       # interests → eco_services_provided + resource_parts
       Array(s.interests).each do |interest|
@@ -65,9 +69,9 @@ namespace :plants do
         parts['animal'] = (parts['animal'] || []) | ['browsed']
       end
 
-      changed = (provided != s.eco_services_provided) ||
-                (role != s.successional_role) ||
-                (parts != s.resource_parts)
+      changed = provided != original_provided ||
+                role != original_role ||
+                parts != original_parts
 
       if changed
         s.update_columns(

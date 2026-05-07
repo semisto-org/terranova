@@ -2,6 +2,7 @@ require 'test_helper'
 require 'rake'
 
 class PlantsMigrateLegacyTest < ActiveSupport::TestCase
+  include ActiveSupport::Testing::TimeHelpers
   setup do
     Rails.application.load_tasks if Rake::Task.tasks.empty?
     Rake::Task['plants:migrate_legacy'].reenable
@@ -98,6 +99,17 @@ class PlantsMigrateLegacyTest < ActiveSupport::TestCase
                                 successional_role: 'climax')
     Rake::Task['plants:migrate_legacy'].invoke
     assert_equal 'climax', sp.reload.successional_role
+  end
+
+  test 'does not write to species with no legacy data and nil columns' do
+    sp = Plant::Species.create!(latin_name: 'Empty species', plant_type: 'tree')
+    before = sp.updated_at
+    travel 1.second do
+      Rake::Task['plants:migrate_legacy'].reenable
+      Rake::Task['plants:migrate_legacy'].invoke
+    end
+    sp.reload
+    assert_equal before.to_i, sp.updated_at.to_i, 'updated_at should not change for clean species'
   end
 
   test 'preserves existing eco_services_provided values when adding' do
