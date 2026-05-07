@@ -23,7 +23,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     @training = Academy::Training.create!(
       training_type: @training_type,
       title: "Forêt comestible 101",
-      status: "planned",
+      status: "registrations_open",
       description: "Apprenez les bases"
     )
 
@@ -70,7 +70,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     )
 
     get "/api/v1/my/auth/verify", params: { token: token }
-    assert_redirected_to "/my"
+    assert_redirected_to "/my/"
   end
 
   test "GET /api/v1/my/auth/verify with expired token redirects to login" do
@@ -127,7 +127,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     other_training = Academy::Training.create!(
       training_type: @training_type,
       title: "Autre formation",
-      status: "draft"
+      status: "idea"
     )
 
     get "/api/v1/my/academy/#{other_training.id}", as: :json, headers: auth_headers
@@ -145,7 +145,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     other_training = Academy::Training.create!(
       training_type: @training_type,
       title: "Formation email",
-      status: "planned"
+      status: "registrations_open"
     )
 
     Academy::TrainingRegistration.create!(
@@ -266,7 +266,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     other_training = Academy::Training.create!(
       training_type: @training_type,
       title: "Autre formation",
-      status: "draft"
+      status: "idea"
     )
 
     get "/api/v1/my/academy/#{other_training.id}/carpooling", as: :json, headers: auth_headers
@@ -346,7 +346,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     )
 
     get "/api/v1/my/auth/verify", params: { token: token }
-    assert_redirected_to "/my"
+    assert_redirected_to "/my/"
 
     # Session should now be set — can access academy
     get "/api/v1/my/academy", as: :json

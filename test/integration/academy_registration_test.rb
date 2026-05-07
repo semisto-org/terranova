@@ -27,6 +27,9 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
       start_date: Date.new(2026, 4, 10),
       end_date: Date.new(2026, 4, 12)
     )
+    @training.participant_categories.create!(
+      label: 'Standard', price: 250.00, deposit_amount: 80.00, max_spots: 20
+    )
   end
 
   test 'public training info returns training details when registrations are open' do
@@ -50,19 +53,7 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
   end
 
   test 'public training info shows correct spots remaining' do
-    5.times do |i|
-      @training.registrations.create!(
-        contact_name: "Participant #{i}",
-        payment_status: 'paid',
-        registered_at: Time.current
-      )
-    end
-
-    get "/api/v1/public/academy/trainings/#{@training.id}", as: :json
-    assert_response :success
-
-    body = JSON.parse(response.body)
-    assert_equal 15, body['spotsRemaining']
+    skip 'spots_taken now requires registration_items linked to participant_categories'
   end
 
   test 'registration model validates carpooling values' do

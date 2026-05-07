@@ -28,6 +28,6 @@ class CyclePeriod < ApplicationRecord
 
   def apply_defaults
     self.color = '#5B5781' if color.blank?
-    self.active = true if active.nil? || active == false
+    self.active = true if active.nil?
   end
 end

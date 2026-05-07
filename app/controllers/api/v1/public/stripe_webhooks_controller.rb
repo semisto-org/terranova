@@ -60,7 +60,7 @@ module Api
               departure_country: metadata["departure_country"] || "",
               carpooling: metadata["carpooling"] || "none",
               amount_paid: amount_paid,
-              payment_amount: amount_paid,
+              payment_amount: training.price.to_f.positive? ? training.price : amount_paid,
               payment_status: "pending",
               stripe_payment_intent_id: payment_intent.id,
               registered_at: Time.current
@@ -134,8 +134,8 @@ module Api
             amount_excl_vat: amount_paid,
             label: "Inscription Stripe · #{registration.training&.title || 'activité'}",
             description: "Paiement Stripe de #{registration.contact_name}",
-            date: Time.at(payment_intent.created.to_i).to_date,
-            paid_at: Time.at(payment_intent.created.to_i).to_date,
+            date: payment_intent_created_at(payment_intent).to_date,
+            paid_at: payment_intent_created_at(payment_intent).to_date,
             status: "received",
             pole: "academy",
             payment_method: "stripe",
@@ -145,6 +145,11 @@ module Api
           )
         rescue ActiveRecord::RecordInvalid => e
           Rails.logger.warn("Failed to create Revenue for Stripe PI #{payment_intent.id}: #{e.message}")
+        end
+
+        def payment_intent_created_at(payment_intent)
+          ts = payment_intent.respond_to?(:created) ? payment_intent.created : nil
+          ts.present? ? Time.at(ts.to_i) : Time.current
         end
 
         def notify_slack(registration, payment_intent)

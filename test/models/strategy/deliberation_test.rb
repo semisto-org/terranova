@@ -25,6 +25,14 @@ class Strategy::DeliberationTest < ActiveSupport::TestCase
   test "publish! sets status to open and opened_at" do
     delib = Strategy::Deliberation.create!(title: "Sujet", created_by_id: @member.id)
     delib.proposals.create!(content: "<p>Proposition</p>", author: @member)
+    Strategy::Deliberation::MIN_DECIDERS.times do |i|
+      m = Member.create!(
+        first_name: "Decider#{i}", last_name: "Test",
+        email: "decider#{i}@semisto.org",
+        status: "active", joined_at: Date.today, password: "terranova2026"
+      )
+      delib.decider_memberships.create!(member: m)
+    end
     freeze_time = Time.zone.parse("2026-04-13 10:00:00")
     travel_to(freeze_time) do
       delib.publish!

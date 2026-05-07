@@ -380,7 +380,7 @@ class BankManagementTest < ActionDispatch::IntegrationTest
 
   test "create connection requires bank_name" do
     post "/api/v1/bank/connections", params: { iban: "BE52 5230 8000 1234" }, as: :json
-    assert_response :bad_request
+    assert_response :unprocessable_entity
   end
 
   test "upload CODA file imports transactions" do

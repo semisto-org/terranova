@@ -562,7 +562,7 @@ module Api
 
         euros = params_hash['unit_price_euros'].presence || batch.price_euros
         semos = params_hash['unit_price_semos'].presence || batch.price_semos
-        pay_in_semos = ActiveModel::Type::Boolean.new.cast(params_hash['pay_in_semos'])
+        pay_in_semos = ActiveModel::Type::Boolean.new.cast(params_hash['pay_in_semos']) || false
 
         order.lines.create!(
           stock_batch: batch,
