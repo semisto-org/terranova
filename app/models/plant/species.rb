@@ -34,11 +34,11 @@ module Plant
     # code should read/write the card fields instead. They were migrated by
     # `rake plants:migrate_legacy` (lib/tasks/plants_migrate_legacy.rake).
     #
-    #   interests          → eco_services_provided + resource_parts
-    #   ecosystem_needs    → successional_role + eco_services_provided
-    #   edible_parts       → resource_parts['edible']
-    #   fragrance          → resource_parts['sensory'] (when strong/medium)
-    #   fodder_qualities   → resource_parts['animal'] (when present)
+    #   interests        → eco_services_provided + resource_parts (sensory/edible/animal/medicinal/aromatic)
+    #   ecosystem_needs  → eco_services_needed
+    #   edible_parts     → resource_parts['edible'] (FR labels translated to PLANT_PARTS keys)
+    #   fragrance        → resource_parts['sensory'] (when light/medium/strong)
+    #   fodder_qualities → resource_parts['animal'] (when present, → 'browsed')
 
     belongs_to :genus, class_name: 'Plant::Genus', optional: true
     has_many :varieties, class_name: 'Plant::Variety', foreign_key: :species_id, dependent: :destroy
