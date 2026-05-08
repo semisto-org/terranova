@@ -431,6 +431,14 @@ Rails.application.routes.draw do
       post "plants/photos", to: "plants#create_photo"
       post "plants/references", to: "plants#create_reference"
 
+      # Illustrations management
+      post "plants/illustrations/generate",       to: "plants#generate_illustrations"
+      get  "plants/illustrations",                to: "plants#list_illustrations"
+      get  "plants/illustrations/stats",          to: "plants#illustration_stats"
+      get  "plants/illustrations/jobs",           to: "plants#list_illustration_jobs"
+      get  "plants/illustrations/jobs/:id",       to: "plants#show_illustration_job"
+      post "plants/illustrations/jobs/:id/retry", to: "plants#retry_illustration_job"
+
       get "design", to: "design_studio#index"
       get "design/reporting", to: "design_studio#reporting"
       get "design_studio/reporting", to: "design_studio#reporting"

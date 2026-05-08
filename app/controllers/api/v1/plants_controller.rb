@@ -2,6 +2,7 @@ module Api
   module V1
     class PlantsController < BaseController
       skip_before_action :require_authentication, only: [:filter_options, :search, :genus, :species, :variety, :public_species, :public_variety]
+      before_action :require_admin!, only: %i[generate_illustrations retry_illustration_job show_illustration_job]
 
       STRATE_KEYS = %w[aquatic groundCover herbaceous climbers shrubs trees].freeze
 
@@ -406,6 +407,130 @@ module Api
         head :no_content
       end
 
+      def generate_illustrations
+        species_ids = Array(params[:species_ids]).map(&:to_i).reject(&:zero?)
+        return render(json: { error: "species_ids requis" }, status: :unprocessable_entity) if species_ids.empty?
+
+        in_flight_count = Plant::IllustrationJob.where(status: %w[pending running]).count
+        if in_flight_count >= 100
+          return render json: { error: "Queue saturée (100+ jobs en cours), attendre la fin" }, status: :unprocessable_entity
+        end
+
+        feedback = params[:feedback].presence
+        kind_param = params[:kind].presence
+
+        species = Plant::Species.where(id: species_ids).index_by(&:id)
+        skipped = []
+        created_jobs = []
+
+        species_ids.each do |sid|
+          sp = species[sid]
+          next unless sp
+
+          if Plant::IllustrationJob.where(species_id: sid, status: %w[pending running]).exists?
+            skipped << sid
+            next
+          end
+
+          inferred_kind = sp.silhouette_illustration.attached? ? "regeneration" : "initial"
+          job = Plant::IllustrationJob.create!(
+            species: sp,
+            triggered_by: current_member,
+            kind: kind_param || inferred_kind,
+            feedback: feedback,
+            triggered_at: Time.current,
+            status: "pending"
+          )
+          created_jobs << job
+          IllustrationGenerationJob.perform_later(job.id)
+        end
+
+        render json: {
+          created_jobs: created_jobs.size,
+          skipped: skipped,
+          estimated_duration_seconds: (created_jobs.size / 3.0 * 30).round,
+          jobs: created_jobs.map { |j| { id: j.id, species_id: j.species_id, status: j.status } }
+        }
+      end
+
+      def illustration_stats
+        stats = Rails.cache.fetch("plant_illustration_stats", expires_in: 30.seconds) do
+          total = Plant::Species.count
+          with_illustration = Plant::Species.with_illustration.count
+          {
+            total: total,
+            withIllustration: with_illustration,
+            withoutIllustration: total - with_illustration,
+            running: Plant::IllustrationJob.running.count,
+            failedRecently: Plant::IllustrationJob.failed.where("triggered_at > ?", 24.hours.ago).count,
+            completionPct: total > 0 ? (with_illustration * 100.0 / total).round(1) : 0.0
+          }
+        end
+        render json: stats
+      end
+
+      def list_illustrations
+        per_page = [params[:per_page]&.to_i || 24, 100].min
+        page = [params[:page]&.to_i || 1, 1].max
+
+        scope = Plant::Species.includes(:genus, silhouette_illustration_attachment: :blob)
+        scope = case params[:filter]
+                when "with"    then scope.with_illustration
+                when "without" then scope.without_illustration
+                else                scope
+                end
+        scope = scope.where(genus_id: params[:genus_id])     if params[:genus_id].present?
+        scope = scope.where(strate: params[:strate])         if params[:strate].present?
+        scope = scope.where(plant_type: params[:plant_type]) if params[:plant_type].present?
+
+        case params[:sort]
+        when "recently_generated"
+          scope = scope.joins(:silhouette_illustration_attachment).order("active_storage_attachments.created_at DESC")
+        else
+          scope = scope.order(:latin_name)
+        end
+
+        total_count = scope.count
+        items = scope.offset((page - 1) * per_page).limit(per_page).map { |sp| serialize_illustration_item(sp) }
+
+        render json: {
+          items: items,
+          page: page,
+          totalPages: (total_count.to_f / per_page).ceil,
+          totalCount: total_count
+        }
+      end
+
+      def list_illustration_jobs
+        limit = [params[:limit]&.to_i || 50, 200].min
+        scope = Plant::IllustrationJob.includes(:species).recent
+        if params[:status].present?
+          statuses = params[:status].split(",").map(&:strip)
+          scope = scope.where(status: statuses)
+        end
+        jobs = scope.limit(limit).map { |j| serialize_illustration_job(j) }
+        render json: { jobs: jobs }
+      end
+
+      def show_illustration_job
+        job = Plant::IllustrationJob.includes(:species, :triggered_by).find(params[:id])
+        render json: serialize_illustration_job(job, full: true)
+      end
+
+      def retry_illustration_job
+        original = Plant::IllustrationJob.find(params[:id])
+        new_job = Plant::IllustrationJob.create!(
+          species: original.species,
+          triggered_by: current_member,
+          kind: "regeneration",
+          feedback: original.feedback,
+          status: "pending",
+          triggered_at: Time.current
+        )
+        IllustrationGenerationJob.perform_later(new_job.id)
+        render json: serialize_illustration_job(new_job)
+      end
+
       def create_variety
         # Idempotent on (species_id, latin_name): if a variety with that exact
         # pair already exists, return it instead of creating a duplicate. This
@@ -568,6 +693,43 @@ module Api
       end
 
       private
+
+      def require_admin!
+        return if current_member&.is_admin?
+        render json: { error: "Admin uniquement" }, status: :forbidden
+      end
+
+      def serialize_illustration_item(species)
+        attachment = species.silhouette_illustration if species.silhouette_illustration.attached?
+        last_job = species.illustration_jobs.order(triggered_at: :desc).first
+        {
+          id: species.id.to_s,
+          latinName: species.latin_name,
+          commonName: species.common_names_fr,
+          thumbnailUrl: attachment ? rails_representation_path(attachment.variant(resize_to_limit: [200, 280]).processed) : nil,
+          fullUrl: attachment ? rails_blob_path(attachment) : nil,
+          lastJobStatus: last_job&.status,
+          lastJobAt: last_job&.triggered_at&.iso8601,
+          totalJobs: species.illustration_jobs.count
+        }
+      end
+
+      def serialize_illustration_job(job, full: false)
+        base = {
+          id: job.id,
+          speciesId: job.species_id,
+          speciesLatinName: job.species.latin_name,
+          status: job.status,
+          kind: job.kind,
+          triggeredAt: job.triggered_at&.iso8601,
+          startedAt: job.started_at&.iso8601,
+          finishedAt: job.finished_at&.iso8601,
+          errorMessage: job.error_message,
+          feedback: job.feedback
+        }
+        base.merge!(promptUsed: job.prompt_used, vdsVersion: job.vds_version, geminiAttempts: job.gemini_attempts) if full
+        base
+      end
 
       FRENCH_LABELS = {
         # Plant types
