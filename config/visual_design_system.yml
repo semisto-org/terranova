@@ -1,0 +1,63 @@
+version: "1.2"
+last_updated: "2026-05-08"
+
+styles:
+  a2s:
+    name: "Silhouette plant card"
+    background: "#ffffff"
+    template: |
+      Generate a botanical illustration of [SPECIES_LATIN] ([SPECIES_COMMON]) showing
+      the WHOLE plant in its mature form. Hand-drawn watercolor with fine ink linework.
+      PURE WHITE background (#ffffff, no cream tint, no off-white, no texture).
+
+      Canvas aspect ratio: derived from real spread:height of the species
+      (e.g. 4m wide × 6m tall plant → 2:3 portrait ; 1m wide × 0.3m tall ground
+      cover → 10:3 landscape ; 1m wide × 8m climber → 1:8 very narrow portrait).
+
+      Composition: the plant FILLS the canvas vertically — base of the trunks
+      touches the BOTTOM EDGE of the image with no white space below ; topmost
+      foliage touches the TOP EDGE of the image with no white space above.
+      Horizontal centering with minimal breathing room on the sides.
+
+      Subject: [SPECIES_LATIN]. Real height: [HEIGHT_RANGE]. Real spread:
+      [SPREAD_RANGE]. Growth habit: [GROWTH_HABIT]. Show characteristic
+      mature features: leaves, flowers (if seasonal), fruits (if seasonal),
+      bark texture, branching pattern.
+
+      Color palette: muted greens, warm earthy browns, soft accent colors
+      (flowers/fruits) — drawn from the Semisto fruit palette. Never oversaturated.
+
+      Style: observational botanical drawing, hand-painted watercolor, never
+      flat vector. Ink contour with loose watercolor wash.
+
+  a1:
+    name: "Planche complète"
+    background: "#faf8f1"
+    template: "(see ~/.claude/skills/semisto-imagegen/visual-design-system.md)"
+  a2:
+    name: "Carte pédagogique flashcard"
+    background: "#faf8f1"
+    template: "(see ~/.claude/skills/semisto-imagegen/visual-design-system.md)"
+  a3:
+    name: "Picto carré"
+    background: "#faf8f1"
+    template: "(see ~/.claude/skills/semisto-imagegen/visual-design-system.md)"
+  b:
+    name: "Aquarelle paysagère narrative"
+    background: "natural watercolor cream paper"
+    template: "(see ~/.claude/skills/semisto-imagegen/visual-design-system.md)"
+
+important_rules: |
+  IMPORTANT RULES:
+  - Background MUST be pure white #ffffff for A2s (silhouette plant card use case).
+    No cream, no off-white, no texture.
+  - Plant occupies the FULL vertical extent — base at bottom edge, top at top edge.
+  - NO scale figure (no human, no other organism), NO ground line, NO sky, NO landscape, NO shadow.
+  - Plant is the ONLY visible element. Everything else is empty white.
+  - NO TEXT integrated in the image. No Latin name, no scale bar, no annotation.
+  - Plant must be edible/useful — no purely ornamental.
+  - NO chemical products visible.
+  - NO commercial logos.
+  - NO doom imagery — show ABUNDANCE.
+  - NO "AI generic" rendering — no perfectly symmetrical faces, no 6-fingered hands, no unrealistic turquoise/purple lighting.
+  - NO aggressive militant imagery.
