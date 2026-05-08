@@ -21,6 +21,10 @@ const STRATE_OPTIONS: { id: StrateKey; label: string }[] = [
   { id: 'aquatic', label: 'Aquatique' },
 ]
 
+// Print is capped at 12 (existing constraint); illustration generation is
+// capped at 200 to keep server-side queue dispatch sane.
+const SELECTION_HARD_CAP = 200
+
 export function SearchView({
   filterOptions,
   results,
@@ -31,21 +35,21 @@ export function SearchView({
   onFiltersChange,
   onResultSelect,
   onAddToPalette,
-  isAdmin: _isAdmin = false,
+  isAdmin = false,
 }: SearchViewProps) {
-  void _isAdmin // wired to bulk-generation flow in Task 21
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [advancedShowMore, setAdvancedShowMore] = useState(false)
   const [kindFilter, setKindFilter] = useState<Kind[]>([])
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const [printSelection, setPrintSelection] = useState<Set<string>>(new Set())
+  const [generatingBulk, setGeneratingBulk] = useState(false)
 
   const togglePrintSelection = (id: string) => {
     setPrintSelection((prev) => {
       const next = new Set(prev)
       if (next.has(id)) {
         next.delete(id)
-      } else if (next.size < 12) {
+      } else if (next.size < SELECTION_HARD_CAP) {
         next.add(id)
       }
       return next
@@ -145,6 +149,67 @@ export function SearchView({
 
   const totalActiveFilters =
     kindFilter.length + filters.types.length + advancedFilterCount
+
+  // Species rows currently visible (post-kind-filter). The "Tout sélectionner du
+  // filtre courant" affordance reaches into this list — anything not visible
+  // (because of an active filter) is intentionally left out.
+  const visibleSpeciesIds = useMemo(
+    () => visibleResults.filter((r) => r.type === 'species').map((r) => r.id),
+    [visibleResults],
+  )
+
+  const selectAllVisibleSpecies = () => {
+    setPrintSelection(() => {
+      const next = new Set<string>()
+      for (const id of visibleSpeciesIds) {
+        if (next.size >= SELECTION_HARD_CAP) break
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  // Selection composition (illustrated vs. missing) — drives the dynamic label
+  // on the "Générer / Régénérer" button so admins know what they're queueing.
+  const selectionComposition = useMemo(() => {
+    let withIllu = 0
+    let withoutIllu = 0
+    for (const id of printSelection) {
+      const item = results.find((r) => r.id === id && r.type === 'species')
+      if (!item) continue
+      if (item.hasIllustration) withIllu += 1
+      else withoutIllu += 1
+    }
+    return { withIllu, withoutIllu }
+  }, [printSelection, results])
+
+  const generateLabel = (() => {
+    const n = printSelection.size
+    if (n === 0) return 'Générer 0 illustration'
+    const { withIllu, withoutIllu } = selectionComposition
+    if (withIllu === 0) return `Générer ${n} illustration${n > 1 ? 's' : ''}`
+    if (withoutIllu === 0) return `Régénérer ${n} illustration${n > 1 ? 's' : ''}`
+    return `Générer / Régénérer ${n} illustrations`
+  })()
+
+  const handleBulkGenerate = async () => {
+    if (printSelection.size === 0 || printSelection.size > SELECTION_HARD_CAP) return
+    setGeneratingBulk(true)
+    try {
+      const ids = Array.from(printSelection)
+        .map((id) => parseInt(id, 10))
+        .filter((n) => Number.isFinite(n))
+      const { apiRequest } = await import('@/lib/api')
+      await apiRequest('/api/v1/plants/illustrations/generate', {
+        method: 'POST',
+        body: JSON.stringify({ species_ids: ids }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      setPrintSelection(new Set())
+    } finally {
+      setGeneratingBulk(false)
+    }
+  }
 
   return (
     <div className="px-4 py-4">
@@ -302,6 +367,36 @@ export function SearchView({
           </div>
         )}
 
+        {/* Bulk-select helper — admin-only, only when species rows exist. Lets
+            the admin grab the entire current filter result in one click
+            (capped at SELECTION_HARD_CAP). */}
+        {isAdmin && visibleSpeciesIds.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+            <button
+              type="button"
+              onClick={selectAllVisibleSpecies}
+              className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-stone-700 transition hover:border-stone-300 hover:bg-stone-50"
+              title={
+                visibleSpeciesIds.length > SELECTION_HARD_CAP
+                  ? `Limité à ${SELECTION_HARD_CAP} espèces — sélectionnez moins ou affinez le filtre.`
+                  : undefined
+              }
+            >
+              <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-400">
+                Sélection
+              </span>
+              <span className="font-medium">
+                Tout sélectionner du filtre courant ({Math.min(visibleSpeciesIds.length, SELECTION_HARD_CAP)})
+              </span>
+            </button>
+            {filters.illustrationStatus && filters.illustrationStatus !== 'all' && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400">
+                · filtre illustration : {filters.illustrationStatus === 'with' ? 'avec' : 'sans'}
+              </span>
+            )}
+          </div>
+        )}
+
 
         {/* Table */}
         <div className="pt-4">
@@ -382,7 +477,7 @@ export function SearchView({
       </div>
 
       {printSelection.size > 0 && (
-        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-stone-200 shadow-lg p-3 flex items-center justify-between gap-3 z-50">
+        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-stone-200 shadow-lg p-3 flex flex-wrap items-center justify-between gap-3 z-50">
           <button
             type="button"
             onClick={() => setPrintSelection(new Set())}
@@ -390,15 +485,53 @@ export function SearchView({
           >
             Désélectionner ({printSelection.size})
           </button>
-          <a
-            href={`/plants/cards?ids=${Array.from(printSelection).join(',')}`}
-            target="_blank"
-            rel="noopener"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-md hover:bg-stone-800 text-sm font-medium"
-          >
-            <Printer className="w-4 h-4" />
-            Imprimer {printSelection.size} fiche{printSelection.size > 1 ? 's' : ''}
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Print stays capped at 12 — disabled when over the print limit so
+                admins know the bulk is for illustrations, not for printing. */}
+            <a
+              href={
+                printSelection.size <= 12
+                  ? `/plants/cards?ids=${Array.from(printSelection).slice(0, 12).join(',')}`
+                  : undefined
+              }
+              target="_blank"
+              rel="noopener"
+              aria-disabled={printSelection.size > 12}
+              title={printSelection.size > 12 ? 'Limite de 12 fiches par impression' : undefined}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
+                printSelection.size > 12
+                  ? 'bg-stone-200 text-stone-400 cursor-not-allowed pointer-events-none'
+                  : 'bg-stone-900 text-white hover:bg-stone-800'
+              }`}
+            >
+              <Printer className="w-4 h-4" />
+              Imprimer {Math.min(printSelection.size, 12)} fiche{Math.min(printSelection.size, 12) > 1 ? 's' : ''}
+              {printSelection.size > 12 && (
+                <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.14em] opacity-70">
+                  max 12
+                </span>
+              )}
+            </a>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleBulkGenerate}
+                disabled={
+                  generatingBulk ||
+                  printSelection.size === 0 ||
+                  printSelection.size > SELECTION_HARD_CAP
+                }
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#AFBD00] text-white rounded-md hover:bg-[#9aab00] text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span
+                  className="inline-block w-2 h-2 rounded-full bg-white"
+                  aria-hidden
+                />
+                {generatingBulk ? 'Lancement…' : generateLabel}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
