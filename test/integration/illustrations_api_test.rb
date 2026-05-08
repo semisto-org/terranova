@@ -96,6 +96,20 @@ class IllustrationsApiTest < ActionDispatch::IntegrationTest
     assert_includes latin_names, @s2.latin_name
   end
 
+  test "GET /illustrations/jobs returns recent jobs" do
+    member = admin_member
+    Plant::IllustrationJob.create!(species: @s1, triggered_by: member, kind: "initial", status: "running", triggered_at: 5.minutes.ago, started_at: 5.minutes.ago)
+    Plant::IllustrationJob.create!(species: @s2, triggered_by: member, kind: "initial", status: "completed", triggered_at: 1.hour.ago, finished_at: 50.minutes.ago)
+
+    get "/api/v1/plants/illustrations/jobs", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 2, body["jobs"].size
+    statuses = body["jobs"].map { |j| j["status"] }
+    assert_includes statuses, "running"
+    assert_includes statuses, "completed"
+  end
+
   private
 
   def admin_member
