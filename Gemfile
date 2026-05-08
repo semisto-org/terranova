@@ -17,6 +17,10 @@ group :development, :test do
   gem "dotenv-rails"
 end
 
+group :test do
+  gem "mocha", "~> 2.4", require: false
+end
+
 group :development do
   gem "letter_opener", "~> 1.10"
 end

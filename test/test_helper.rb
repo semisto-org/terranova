@@ -1,6 +1,7 @@
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 require 'rails/test_help'
+require 'mocha/minitest'
 
 # Configure deterministic ActiveRecord encryption keys for the test environment.
 ActiveRecord::Encryption.configure(
