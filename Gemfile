@@ -30,3 +30,9 @@ gem "prawn", "~> 2.5"
 gem "prawn-table", "~> 0.2"
 
 gem "rqrcode", "~> 2.2"
+
+# Anthropic Claude API client (used by Plants::IllustrationPromptComposer)
+gem "anthropic", "~> 1.10"
+
+# Job queue with database backend (Rails 8 default companion)
+gem "solid_queue", "~> 1.2"
