@@ -6,6 +6,7 @@ interface CollapsibleSectionProps {
   defaultOpen?: boolean
   children: ReactNode
   badge?: string | number
+  badgeTone?: 'default' | 'positive'
 }
 
 export function CollapsibleSection({
@@ -13,7 +14,8 @@ export function CollapsibleSection({
   icon,
   defaultOpen = true,
   children,
-  badge
+  badge,
+  badgeTone = 'default',
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
@@ -33,7 +35,13 @@ export function CollapsibleSection({
             {title}
           </span>
           {badge !== undefined && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-stone-100 text-stone-600 rounded-full">
+            <span
+              className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                badgeTone === 'positive'
+                  ? 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200'
+                  : 'bg-stone-100 text-stone-600'
+              }`}
+            >
               {badge}
             </span>
           )}

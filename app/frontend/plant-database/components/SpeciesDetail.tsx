@@ -59,6 +59,13 @@ interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
   /** Render without page-level wrappers (min-h-screen, max-w-4xl) so the
    *  fiche fits inside a drawer or other constrained container. */
   embedded?: boolean
+  /** Optional caller-provided block rendered at the top of the
+   *  "Disponibilité pépinières" section (e.g. nursery admin's matching lots). */
+  extraNurseryContent?: React.ReactNode
+  /** Optional sub-heading for the extraNurseryContent block. */
+  extraNurseryTitle?: string
+  /** Number of items in the extra block — added to the section badge. */
+  extraNurseryCount?: number
 }
 
 export function SpeciesDetail({
@@ -89,6 +96,9 @@ export function SpeciesDetail({
   onAddVariety,
   onEdit,
   embedded = false,
+  extraNurseryContent,
+  extraNurseryTitle,
+  extraNurseryCount = 0,
 }: SpeciesDetailWithFiltersProps & { onSpeciesSelect?: (id: string) => void }) {
   const primaryCommonName = commonNames.find(cn => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter(cn => cn.language !== 'fr')
@@ -684,7 +694,26 @@ export function SpeciesDetail({
 
           {/* Nursery Availability */}
           <div className="px-4 md:px-6">
-            <CollapsibleSection title="Disponibilité pépinières" icon={icons.nursery} badge={nurseryStocks.length} defaultOpen={nurseryStocks.length > 0}>
+            <CollapsibleSection
+              title="Disponibilité pépinières"
+              icon={icons.nursery}
+              badge={nurseryStocks.length + extraNurseryCount}
+              badgeTone={nurseryStocks.length + extraNurseryCount > 0 ? 'positive' : 'default'}
+              defaultOpen={nurseryStocks.length > 0 || !!extraNurseryContent}
+            >
+              {extraNurseryContent && (
+                <div className="mb-4 pb-4 border-b border-stone-200">
+                  {extraNurseryTitle && (
+                    <h4
+                      className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#5B5781]"
+                      style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                    >
+                      {extraNurseryTitle}
+                    </h4>
+                  )}
+                  {extraNurseryContent}
+                </div>
+              )}
               {nurseryStocks.length > 0 ? (
                 <div className="grid md:grid-cols-2 gap-3">
                   {nurseryStocks.map(stock => (
@@ -696,9 +725,11 @@ export function SpeciesDetail({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-stone-500 italic">
-                  Non disponible dans les pépinières du réseau
-                </p>
+                !extraNurseryContent && (
+                  <p className="text-sm text-stone-500 italic">
+                    Non disponible dans les pépinières du réseau
+                  </p>
+                )
               )}
             </CollapsibleSection>
           </div>

@@ -18,6 +18,9 @@ interface ExtraSection {
   title: string
   /** Content to render. Receives the resolved payload of the entry it sits on. */
   render: (payload: any, entry: StackEntry) => React.ReactNode
+  /** Optional contributor to the host section's badge count (e.g. number of
+   *  matching local lots) — when defined, gets added to the section badge. */
+  count?: (payload: any, entry: StackEntry) => number
   /** Restrict the extra section to specific kinds. Defaults to all. */
   forKinds?: PlantKind[]
 }
@@ -539,20 +542,12 @@ function FicheBody({
   const showExtra =
     extraSection &&
     (!extraSection.forKinds || extraSection.forKinds.includes(entry.kind))
+  const extraNurseryContent = showExtra ? extraSection!.render(payload, entry) : null
+  const extraNurseryTitle = showExtra ? extraSection!.title : undefined
+  const extraNurseryCount = showExtra && extraSection!.count ? extraSection!.count(payload, entry) : 0
 
   return (
     <div>
-      {showExtra && (
-        <section className="border-b border-stone-200 bg-white/70 px-5 py-4">
-          <h3
-            className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#5B5781]"
-            style={{ fontFamily: 'JetBrains Mono, monospace' }}
-          >
-            {extraSection!.title}
-          </h3>
-          {extraSection!.render(payload, entry)}
-        </section>
-      )}
 
       {entry.kind === 'genus' && (
         <GenusDetail
@@ -647,6 +642,9 @@ function FicheBody({
             onAddVariety ? () => onAddVariety(payload.species.id) : undefined
           }
           onEdit={onEdit ? () => onEdit('species', payload) : undefined}
+          extraNurseryContent={extraNurseryContent}
+          extraNurseryTitle={extraNurseryTitle}
+          extraNurseryCount={extraNurseryCount}
         />
       )}
 
@@ -700,6 +698,9 @@ function FicheBody({
               : undefined
           }
           onEdit={onEdit ? () => onEdit('variety', payload) : undefined}
+          extraNurseryContent={extraNurseryContent}
+          extraNurseryTitle={extraNurseryTitle}
+          extraNurseryCount={extraNurseryCount}
         />
       )}
     </div>

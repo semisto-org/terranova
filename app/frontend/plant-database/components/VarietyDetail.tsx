@@ -38,6 +38,9 @@ export function VarietyDetail({
   isInPalette = false,
   onRemoveFromPalette,
   embedded = false,
+  extraNurseryContent,
+  extraNurseryTitle,
+  extraNurseryCount = 0,
 }: VarietyDetailProps & {
   filterOptions: FilterOptions
   varieties?: any[]
@@ -48,6 +51,9 @@ export function VarietyDetail({
   /** Render without page-level wrappers (min-h-screen, max-w-4xl) so the
    *  fiche fits inside a drawer or other constrained container. */
   embedded?: boolean
+  extraNurseryContent?: React.ReactNode
+  extraNurseryTitle?: string
+  extraNurseryCount?: number
 }) {
   const primaryCommonName = commonNames.find((cn) => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter((cn) => cn.language !== 'fr')
@@ -269,17 +275,38 @@ export function VarietyDetail({
         )}
 
         {/* Nursery Stock */}
-        {nurseryStocks.length > 0 && (
-          <CollapsibleSection title="Disponibilité en pépinières" icon="🏪" badge={nurseryStocks.length} defaultOpen={false}>
-            <div className="space-y-3">
-              {nurseryStocks.map((stock) => (
-                <NurseryStockCard
-                  key={stock.id}
-                  stock={stock}
-                  onNurserySelect={() => onNurserySelect?.(stock.nurseryId)}
-                />
-              ))}
-            </div>
+        {(nurseryStocks.length > 0 || extraNurseryContent) && (
+          <CollapsibleSection
+            title="Disponibilité en pépinières"
+            icon="🏪"
+            badge={nurseryStocks.length + extraNurseryCount}
+            badgeTone={nurseryStocks.length + extraNurseryCount > 0 ? 'positive' : 'default'}
+            defaultOpen={!!extraNurseryContent}
+          >
+            {extraNurseryContent && (
+              <div className={`${nurseryStocks.length > 0 ? 'mb-4 pb-4 border-b border-stone-200' : ''}`}>
+                {extraNurseryTitle && (
+                  <h4
+                    className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#5B5781]"
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    {extraNurseryTitle}
+                  </h4>
+                )}
+                {extraNurseryContent}
+              </div>
+            )}
+            {nurseryStocks.length > 0 && (
+              <div className="space-y-3">
+                {nurseryStocks.map((stock) => (
+                  <NurseryStockCard
+                    key={stock.id}
+                    stock={stock}
+                    onNurserySelect={() => onNurserySelect?.(stock.nurseryId)}
+                  />
+                ))}
+              </div>
+            )}
           </CollapsibleSection>
         )}
 
@@ -305,6 +332,7 @@ export function VarietyDetail({
           notes.length === 0 &&
           plantLocations.length === 0 &&
           nurseryStocks.length === 0 &&
+          !extraNurseryContent &&
           references.length === 0 && (
             <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
               <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-3xl mx-auto mb-4">

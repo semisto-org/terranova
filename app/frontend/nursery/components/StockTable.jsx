@@ -70,54 +70,98 @@ export function StockTable({ batches, nurseries, containers, onPatch, onEdit, on
 
   // Local-context "lots dans ce stock" section injected at the top of each
   // fiche by the PlantSheetDrawer.
+  const matchedBatchesFor = (entry) =>
+    entry.kind === 'variety'
+      ? batches.filter((b) => b.varietyId === entry.id)
+      : batches.filter((b) => b.speciesId === entry.id)
+
   const localBatchesSection = {
     title: 'Lots dans ce stock',
     forKinds: ['species', 'variety'],
+    count: (_payload, entry) => matchedBatchesFor(entry).length,
     render: (_payload, entry) => {
-      const matched =
-        entry.kind === 'variety'
-          ? batches.filter((b) => b.varietyId === entry.id)
-          : batches.filter((b) => b.speciesId === entry.id && !b.varietyId)
+      // For a species fiche, show every batch attached to the species — including
+      // those tied to a specific variety — so the admin sees the full stock at a
+      // glance. For a variety fiche, restrict to batches of that variety.
+      const matched = matchedBatchesFor(entry)
       if (matched.length === 0) {
         return <p className="text-sm italic text-stone-500">Aucun lot dans la sélection courante.</p>
       }
+
+      // Group by nursery, preserving first-seen order.
+      const groups = []
+      const groupIndex = new Map()
+      for (const b of matched) {
+        if (!groupIndex.has(b.nurseryId)) {
+          groupIndex.set(b.nurseryId, groups.length)
+          groups.push({ nurseryId: b.nurseryId, batches: [] })
+        }
+        groups[groupIndex.get(b.nurseryId)].batches.push(b)
+      }
+
       return (
-        <ul className="space-y-1.5">
-          {matched.map((b) => {
-            const nursery = nurseries.find((n) => n.id === b.nurseryId)
-            const container = containers.find((c) => c.id === b.containerId)
-            const status = b.status || 'available'
-            const statusMeta = STATUSES.find((s) => s.value === status) || STATUSES[0]
+        <div className="space-y-4">
+          {groups.map((g) => {
+            const nursery = nurseries.find((n) => n.id === g.nurseryId)
+            const totalAvailable = g.batches.reduce((s, b) => s + (b.availableQuantity || 0), 0)
             return (
-              <li
-                key={b.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[12px]"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
-                    <span className={`${statusMeta.text} font-medium`}>{statusMeta.label}</span>
-                    {container && (
-                      <span className="rounded bg-stone-100 px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-wider text-stone-700">
-                        {container.shortName}
-                      </span>
-                    )}
+              <div key={g.nurseryId} className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+                <div className="flex items-baseline justify-between gap-3 border-b border-stone-100 bg-stone-50/70 px-4 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin className="h-4 w-4 shrink-0 text-[#5B5781]" />
+                    <span className="truncate text-sm font-semibold text-stone-900">
+                      {nursery?.name || g.nurseryId}
+                    </span>
                   </div>
-                  {nursery && (
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-stone-500">
-                      <MapPin className="h-3 w-3" />
-                      {nursery.name}
-                    </p>
-                  )}
+                  <span className="shrink-0 text-[11px] uppercase tracking-[0.18em] text-stone-500" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                    {totalAvailable} dispo · {g.batches.length} lot{g.batches.length > 1 ? 's' : ''}
+                  </span>
                 </div>
-                <div className="text-right font-mono tabular-nums">
-                  <p className="text-stone-900">{b.availableQuantity}/{b.quantity}</p>
-                  <p className="text-[11px] text-stone-500">{Number(b.priceEuros).toFixed(2)} €</p>
-                </div>
-              </li>
+                <ul className="divide-y divide-stone-100">
+                  {g.batches.map((b) => {
+                    const container = containers.find((c) => c.id === b.containerId)
+                    const status = b.status || 'available'
+                    const statusMeta = STATUSES.find((s) => s.value === status) || STATUSES[0]
+                    return (
+                      <li
+                        key={b.id}
+                        className="flex items-center justify-between gap-4 px-4 py-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          {entry.kind === 'species' && b.varietyName && (
+                            <p className="mb-1 text-sm italic font-medium text-stone-900">
+                              {b.varietyName}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className={`h-2 w-2 rounded-full ${statusMeta.dot}`} />
+                              <span className={`${statusMeta.text} text-sm font-medium`}>{statusMeta.label}</span>
+                            </span>
+                            {container && (
+                              <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-stone-700">
+                                {container.shortName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-mono text-base tabular-nums font-semibold text-stone-900">
+                            {b.availableQuantity}
+                            <span className="text-stone-400">/{b.quantity}</span>
+                          </p>
+                          <p className="font-mono text-xs tabular-nums text-stone-500">
+                            {Number(b.priceEuros).toFixed(2)} €
+                          </p>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
             )
           })}
-        </ul>
+        </div>
       )
     },
   }
