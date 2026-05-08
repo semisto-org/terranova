@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Lock, RotateCcw, Sparkles, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
 
 interface SpeciesShape {
@@ -69,6 +70,11 @@ export function RegenerateIllustrationModal({ open, species, onClose, onSuccess 
         }),
         headers: { 'Content-Type': 'application/json' },
       })
+      toast.success(
+        isFirstGeneration
+          ? "Génération lancée — l'image sera disponible automatiquement."
+          : "Régénération lancée — l'image sera mise à jour automatiquement."
+      )
       onSuccess?.()
       onClose()
     } catch (e) {

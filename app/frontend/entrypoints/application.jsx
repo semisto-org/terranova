@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/react'
 import { createRoot } from 'react-dom/client'
 import React from 'react'
 import * as Sentry from '@sentry/react'
+import { Toaster } from 'sonner'
 import AppShell from '../components/shell/AppShell'
 import '../styles/application.css'
 
@@ -36,6 +37,12 @@ createInertiaApp({
     }
 
     const app = React.createElement(App, props)
+    const toaster = React.createElement(Toaster, {
+      position: 'top-right',
+      richColors: true,
+      closeButton: true,
+      duration: 5000,
+    })
     createRoot(el).render(
       React.createElement(Sentry.ErrorBoundary, {
         fallback: ({ error }) => (
@@ -49,7 +56,7 @@ createInertiaApp({
           )
         ),
         showDialog: false,
-      }, app)
+      }, React.createElement(React.Fragment, null, app, toaster))
     )
   },
 })

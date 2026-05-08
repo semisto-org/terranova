@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useShellNav } from '@/components/shell/ShellContext'
 import { apiRequest } from '@/lib/api'
 import { IllustrationStatsTile } from '@/plant-database/components/IllustrationStatsTile'
@@ -55,18 +56,24 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
 
   const handleLaunchBulk = async () => {
     if (!stats) return
-    const data = await apiRequest('/api/v1/plants/illustrations?filter=without&per_page=1500')
-    const ids = (data?.items || []).map((i: { id: string }) => parseInt(i.id, 10)).filter(Boolean)
-    if (ids.length === 0) {
+    try {
+      const data = await apiRequest('/api/v1/plants/illustrations?filter=without&per_page=1500')
+      const ids = (data?.items || []).map((i: { id: string }) => parseInt(i.id, 10)).filter(Boolean)
+      if (ids.length === 0) {
+        setConfirmOpen(false)
+        toast.info('Aucune espèce à générer — la base est complète.')
+        return
+      }
+      await apiRequest('/api/v1/plants/illustrations/generate', {
+        method: 'POST',
+        body: JSON.stringify({ species_ids: ids })
+      })
       setConfirmOpen(false)
-      return
+      refreshStats()
+      toast.success(`${ids.length} génération${ids.length > 1 ? 's' : ''} lancée${ids.length > 1 ? 's' : ''}.`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Échec du rattrapage')
     }
-    await apiRequest('/api/v1/plants/illustrations/generate', {
-      method: 'POST',
-      body: JSON.stringify({ species_ids: ids })
-    })
-    setConfirmOpen(false)
-    refreshStats()
   }
 
   return (

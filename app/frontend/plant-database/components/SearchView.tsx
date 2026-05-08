@@ -1,5 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { router } from '@inertiajs/react'
 import { Search, X, ChevronDown, Check, SlidersHorizontal, Plus, Printer } from 'lucide-react'
+import { toast } from 'sonner'
+import { apiRequest } from '@/lib/api'
 import type { SearchViewProps, SearchResult, StrateKey } from '../types'
 import { FilterPanel } from './FilterPanel'
 import { IllustrationStatusBadge } from './IllustrationStatusBadge'
@@ -199,13 +202,21 @@ export function SearchView({
       const ids = Array.from(printSelection)
         .map((id) => parseInt(id, 10))
         .filter((n) => Number.isFinite(n))
-      const { apiRequest } = await import('@/lib/api')
       await apiRequest('/api/v1/plants/illustrations/generate', {
         method: 'POST',
         body: JSON.stringify({ species_ids: ids }),
         headers: { 'Content-Type': 'application/json' },
       })
+      const count = printSelection.size
       setPrintSelection(new Set())
+      toast.success(`${count} génération${count > 1 ? 's' : ''} lancée${count > 1 ? 's' : ''}.`, {
+        action: {
+          label: 'Atelier',
+          onClick: () => router.visit('/plants/illustrations'),
+        },
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Échec du lancement des générations')
     } finally {
       setGeneratingBulk(false)
     }
