@@ -1,0 +1,15 @@
+<div id="<%= dom_id(job) %>" class="job-row job-row-<%= job.status %>">
+  <span class="status-icon"><%= job.status %></span>
+  <span class="species-name"><em><%= job.species.latin_name %></em></span>
+  <span class="status-label">
+    <% case job.status %>
+    <% when 'pending' %>En queue
+    <% when 'running' %>Génération…
+    <% when 'completed' %>✓ Terminé
+    <% when 'failed' %>✗ Erreur
+    <% end %>
+  </span>
+  <% if job.failed? %>
+    <span class="error-text"><%= job.error_message&.truncate(80) %></span>
+  <% end %>
+</div>
