@@ -44,6 +44,15 @@ module Plant
     has_many :varieties, class_name: 'Plant::Variety', foreign_key: :species_id, dependent: :destroy
 
     has_one_attached :silhouette_illustration
+    has_many :illustration_jobs, class_name: 'Plant::IllustrationJob', dependent: :destroy
+
+    scope :with_illustration, -> {
+      joins(:silhouette_illustration_attachment)
+    }
+    scope :without_illustration, -> {
+      left_joins(:silhouette_illustration_attachment)
+        .where(active_storage_attachments: { id: nil })
+    }
 
     validates :latin_name, :plant_type, presence: true
     validates :growth_habit, inclusion: { in: GROWTH_HABITS }, allow_nil: true
@@ -54,6 +63,10 @@ module Plant
 
     def slug
       latin_name.parameterize
+    end
+
+    def last_illustration_job
+      illustration_jobs.order(triggered_at: :desc).first
     end
   end
 end
