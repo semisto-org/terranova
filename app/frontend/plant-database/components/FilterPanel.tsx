@@ -6,6 +6,53 @@ interface FilterPanelProps {
   showAdvanced: boolean
   onShowAdvancedChange: (show: boolean) => void
   onFilterChange: (key: keyof SearchFilters, value: string[]) => void
+  onIllustrationStatusChange?: (value: 'all' | 'with' | 'without') => void
+}
+
+const ILLUSTRATION_STATUS_OPTIONS: { id: 'all' | 'with' | 'without'; label: string; helper: string }[] = [
+  { id: 'all', label: 'Toutes', helper: 'Pas de filtre' },
+  { id: 'with', label: 'Avec illustration', helper: 'Silhouette attachée' },
+  { id: 'without', label: 'Sans illustration', helper: 'À générer' },
+]
+
+function IllustrationStatusGroup({
+  value,
+  onChange,
+}: {
+  value: 'all' | 'with' | 'without'
+  onChange: (value: 'all' | 'with' | 'without') => void
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+        <span
+          className="inline-block w-3 h-3 rounded-full border-2 border-[#AFBD00] bg-[#AFBD00]"
+          aria-hidden
+        />
+        Statut illustration
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {ILLUSTRATION_STATUS_OPTIONS.map((option) => {
+          const isSelected = value === option.id
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => onChange(option.id)}
+              title={option.helper}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 ${
+                isSelected
+                  ? 'bg-[#AFBD00] text-white shadow-md shadow-[#AFBD00]/20'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 interface FilterChipGroupProps {
@@ -59,11 +106,20 @@ export function FilterPanel({
   showAdvanced,
   onShowAdvancedChange,
   onFilterChange,
+  onIllustrationStatusChange,
 }: FilterPanelProps) {
   return (
     <div className="mt-4 p-5 bg-white rounded-2xl shadow-lg border border-stone-200/50 animate-in fade-in slide-in-from-top-2 duration-300">
       {/* Primary Filters */}
       <div className="space-y-5">
+        {/* Illustration status */}
+        {onIllustrationStatusChange && (
+          <IllustrationStatusGroup
+            value={filters.illustrationStatus || 'all'}
+            onChange={onIllustrationStatusChange}
+          />
+        )}
+
         {/* Type */}
         <FilterChipGroup
           label="Type"

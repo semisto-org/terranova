@@ -308,6 +308,8 @@ export interface SearchFilters {
   soilTypes: string[]
   soilMoisture: string[]
   wateringNeed: string[]
+  /** 'all' | 'with' | 'without' — illustration filter status */
+  illustrationStatus?: 'all' | 'with' | 'without'
 }
 
 export interface SearchResult {
@@ -327,6 +329,8 @@ export interface SearchResult {
   exposures?: string[]
   /** Hardiness zone string (species only) */
   hardiness?: string | null
+  /** Whether this species has an attached silhouette illustration (species only) */
+  hasIllustration?: boolean
 }
 
 // =============================================================================
@@ -389,6 +393,8 @@ export interface SearchViewProps {
   onResultSelect?: (id: string, type: 'genus' | 'species' | 'variety') => void
   /** Called when user adds item to palette */
   onAddToPalette?: (id: string, type: 'species' | 'variety', strate: StrateKey) => void
+  /** Whether the current member is admin (gates illustration bulk actions) */
+  isAdmin?: boolean
 }
 
 // =============================================================================

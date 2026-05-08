@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { Search, X, ChevronDown, Check, SlidersHorizontal, Plus, Printer } from 'lucide-react'
 import type { SearchViewProps, SearchResult, StrateKey } from '../types'
 import { FilterPanel } from './FilterPanel'
+import { IllustrationStatusBadge } from './IllustrationStatusBadge'
 
 type Kind = 'genus' | 'species' | 'variety'
 
@@ -30,7 +31,9 @@ export function SearchView({
   onFiltersChange,
   onResultSelect,
   onAddToPalette,
+  isAdmin: _isAdmin = false,
 }: SearchViewProps) {
+  void _isAdmin // wired to bulk-generation flow in Task 21
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [advancedShowMore, setAdvancedShowMore] = useState(false)
   const [kindFilter, setKindFilter] = useState<Kind[]>([])
@@ -112,6 +115,10 @@ export function SearchView({
     onFiltersChange?.({ ...filters, [key]: value })
   }
 
+  const handleIllustrationStatusChange = (value: 'all' | 'with' | 'without') => {
+    onFiltersChange?.({ ...filters, illustrationStatus: value })
+  }
+
   const toggleKind = (kind: Kind) => {
     setKindFilter((prev) =>
       prev.includes(kind) ? prev.filter((k) => k !== kind) : [...prev, kind]
@@ -131,8 +138,10 @@ export function SearchView({
       soilTypes: [],
       soilMoisture: [],
       wateringNeed: [],
+      illustrationStatus: 'all',
     })
   }
+
 
   const totalActiveFilters =
     kindFilter.length + filters.types.length + advancedFilterCount
@@ -288,9 +297,11 @@ export function SearchView({
               showAdvanced={advancedShowMore}
               onShowAdvancedChange={setAdvancedShowMore}
               onFilterChange={handleFilterChange}
+              onIllustrationStatusChange={handleIllustrationStatusChange}
             />
           </div>
         )}
+
 
         {/* Table */}
         <div className="pt-4">
@@ -465,10 +476,15 @@ function ResultRow({
         </span>
       </td>
       <td className="px-3 py-2">
-        <span
-          className={`italic font-medium ${isInPalette ? 'text-[#AFBD00]' : 'text-stone-900'}`}
-        >
-          {result.latinName}
+        <span className="inline-flex items-center gap-1.5">
+          {result.type === 'species' && (
+            <IllustrationStatusBadge hasIllustration={!!result.hasIllustration} />
+          )}
+          <span
+            className={`italic font-medium ${isInPalette ? 'text-[#AFBD00]' : 'text-stone-900'}`}
+          >
+            {result.latinName}
+          </span>
         </span>
       </td>
       <td className="px-3 py-2 text-stone-600">

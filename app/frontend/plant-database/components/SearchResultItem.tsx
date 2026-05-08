@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SearchResult, StrateKey } from '../types'
+import { IllustrationStatusBadge } from './IllustrationStatusBadge'
 
 interface SearchResultItemProps {
   result: SearchResult
@@ -85,6 +86,12 @@ export function SearchResultItem({
 
         {/* Plant info - single line */}
         <span className="flex-1 min-w-0 flex items-baseline gap-2 truncate">
+          {result.type === 'species' && (
+            <IllustrationStatusBadge
+              hasIllustration={!!result.hasIllustration}
+              className="self-center"
+            />
+          )}
           <span className={`font-medium italic truncate transition-colors ${
             isInPalette
               ? 'text-[#AFBD00]'

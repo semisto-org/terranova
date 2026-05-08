@@ -921,7 +921,7 @@ module Api
       end
 
       def build_species_search(query)
-        scope = filter_species_scope(Plant::Species.includes(:genus))
+        scope = filter_species_scope(Plant::Species.includes(:genus, silhouette_illustration_attachment: :blob))
 
         if query.present?
           name_match_ids = Plant::CommonName.where(target_type: 'species').where('name ILIKE ?', "%#{query}%").select(:target_id)
@@ -937,7 +937,8 @@ module Api
             genusName: item.genus&.latin_name,
             plantType: item.plant_type,
             exposures: item.exposures,
-            hardiness: item.hardiness
+            hardiness: item.hardiness,
+            hasIllustration: item.silhouette_illustration.attached?
           }
         end
       end
@@ -1005,6 +1006,11 @@ module Api
 
         result = result.where(soil_moisture: params[:soilMoisture]) if params[:soilMoisture].present?
         result = result.where(watering_need: params[:wateringNeed]) if params[:wateringNeed].present?
+
+        case params[:illustration_status]
+        when 'with'    then result = result.with_illustration
+        when 'without' then result = result.without_illustration
+        end
 
         result
       end
@@ -1132,7 +1138,8 @@ module Api
           latinName: item.latin_name,
           type: item.plant_type,
           exposures: item.exposures,
-          hardiness: item.hardiness
+          hardiness: item.hardiness,
+          hasIllustration: item.silhouette_illustration.attached?
         }
       end
 

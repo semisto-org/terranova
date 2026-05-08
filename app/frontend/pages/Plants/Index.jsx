@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePage } from '@inertiajs/react'
 import { apiRequest } from '@/lib/api'
 import { useShellNav } from '../../components/shell/ShellContext'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
@@ -26,6 +27,7 @@ const EMPTY_FILTERS = {
   soilTypes: [],
   soilMoisture: [],
   wateringNeed: [],
+  illustrationStatus: 'all',
 }
 
 function routeFromPath(pathname) {
@@ -430,6 +432,8 @@ const PLANT_SECTIONS = [
 ]
 
 export default function PlantsIndex({ currentContributorId, initialPaletteId }) {
+  const { auth } = usePage().props
+  const isAdmin = !!auth?.member?.isAdmin
   const [route, setRoute] = useState(() => routeFromPath(window.location.pathname))
   const shellSection = ['genus', 'species', 'variety', 'contributor'].includes(route.view) ? 'search' : route.view
   const handleShellNav = useCallback((id) => {
@@ -530,6 +534,10 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
       const values = nextFilters[key] || []
       values.forEach((value) => params.append(`${key}[]`, value))
     })
+
+    if (nextFilters.illustrationStatus && nextFilters.illustrationStatus !== 'all') {
+      params.set('illustration_status', nextFilters.illustrationStatus)
+    }
 
     const queryString = params.toString()
     const payload = await apiRequest(`/api/v1/plants/search${queryString ? `?${queryString}` : ''}`)
@@ -1099,6 +1107,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
             onFiltersChange={setFilters}
             onResultSelect={(id, type) => navigateTo(type === 'genus' ? 'genus' : type, id)}
             onAddToPalette={addToPalette}
+            isAdmin={isAdmin}
           />
           {/* Floating Add Button — hidden while a fiche drawer is open. */}
           {drawerStack.length === 0 && (
