@@ -28,6 +28,8 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "terranova.semisto.org") }
   config.action_mailer.raise_delivery_errors = true
 
+  config.active_job.queue_adapter = :solid_queue
+
   config.i18n.fallbacks = true
   config.active_support.report_deprecations = false
 
