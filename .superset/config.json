@@ -1,8 +1,9 @@
 {
   "setup": [
-    "yarn install",
-    "bundle install"
+    "yarn install\nbundle install"
   ],
   "teardown": [],
-  "run": []
+  "run": [
+    "bin/dev"
+  ]
 }
