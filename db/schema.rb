@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_08_155904) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_08_155905) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1693,6 +1693,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_155904) do
     t.index ["notion_id"], name: "index_plant_genera_on_notion_id", unique: true
   end
 
+  create_table "plant_illustration_jobs", force: :cascade do |t|
+    t.bigint "byte_size"
+    t.datetime "created_at", null: false
+    t.string "error_class"
+    t.text "error_message"
+    t.text "feedback"
+    t.datetime "finished_at", precision: nil
+    t.integer "gemini_attempts", default: 0, null: false
+    t.string "kind", null: false
+    t.text "prompt_used"
+    t.bigint "species_id", null: false
+    t.datetime "started_at", precision: nil
+    t.string "status", default: "pending", null: false
+    t.datetime "triggered_at", precision: nil, null: false
+    t.bigint "triggered_by_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "vds_version"
+    t.index ["species_id"], name: "index_plant_illustration_jobs_on_species_id"
+    t.index ["status"], name: "index_plant_illustration_jobs_on_status"
+    t.index ["triggered_at"], name: "index_plant_illustration_jobs_on_triggered_at", order: :desc
+    t.index ["triggered_by_id"], name: "index_plant_illustration_jobs_on_triggered_by_id"
+  end
+
   create_table "plant_locations", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "is_mother_plant", default: false, null: false
@@ -2580,6 +2603,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_155904) do
   add_foreign_key "nursery_transfers", "nursery_orders", column: "order_id"
   add_foreign_key "pitches", "members", column: "author_id"
   add_foreign_key "plant_activity_items", "plant_contributors", column: "contributor_id"
+  add_foreign_key "plant_illustration_jobs", "members", column: "triggered_by_id"
+  add_foreign_key "plant_illustration_jobs", "plant_species", column: "species_id"
   add_foreign_key "plant_notes", "plant_contributors", column: "contributor_id"
   add_foreign_key "plant_palette_items", "plant_palettes", column: "palette_id"
   add_foreign_key "plant_photos", "plant_contributors", column: "contributor_id"
