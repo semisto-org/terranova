@@ -110,6 +110,30 @@ class IllustrationsApiTest < ActionDispatch::IntegrationTest
     assert_includes statuses, "completed"
   end
 
+  test "POST /illustrations/jobs/:id/retry creates new job for same species" do
+    member = admin_member
+    failed_job = Plant::IllustrationJob.create!(
+      species: @s1, triggered_by: member, kind: "regeneration",
+      status: "failed", feedback: "less dense",
+      triggered_at: 1.hour.ago, finished_at: 30.minutes.ago,
+      error_message: "Gemini timeout", error_class: "Plants::GeminiImageClient::GenerationError"
+    )
+
+    assert_enqueued_jobs 1, only: IllustrationGenerationJob do
+      post "/api/v1/plants/illustrations/jobs/#{failed_job.id}/retry", as: :json
+    end
+
+    assert_response :success
+    new_job = Plant::IllustrationJob.recent.first
+    assert_equal @s1.id, new_job.species_id
+    assert_equal "regeneration", new_job.kind
+    assert_equal "less dense", new_job.feedback
+    assert_equal "pending", new_job.status
+
+    failed_job.reload
+    assert_equal "failed", failed_job.status
+  end
+
   private
 
   def admin_member
