@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/api'
 import { IllustrationStatsTile } from '@/plant-database/components/IllustrationStatsTile'
 import { IllustrationFilterBar } from '@/plant-database/components/IllustrationFilterBar'
 import { IllustrationGalleryGrid } from '@/plant-database/components/IllustrationGalleryGrid'
+import { IllustrationQueuePanel } from '@/plant-database/components/IllustrationQueuePanel'
 
 type Filter = 'all' | 'with' | 'without' | 'running' | 'failed'
 
@@ -42,6 +43,10 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
     apiRequest('/api/v1/plants/illustrations/stats').then(setStats).catch(() => setStats(null))
   }, [])
 
+  const handleRetry = async (jobId: number) => {
+    await apiRequest(`/api/v1/plants/illustrations/jobs/${jobId}/retry`, { method: 'POST' })
+  }
+
   return (
     <div className="min-h-screen bg-[#fbf7ee]">
       <div className="max-w-6xl mx-auto px-6 py-10">
@@ -63,16 +68,20 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
 
         {stats && <IllustrationStatsTile stats={stats} isAdmin={isAdmin} />}
 
-        <IllustrationFilterBar
-          filter={filter}
-          onFilterChange={setFilter}
-          showCardContext={showCardContext}
-          onShowCardContextChange={setShowCardContext}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 lg:gap-8">
+          <div className="min-w-0">
+            <IllustrationFilterBar
+              filter={filter}
+              onFilterChange={setFilter}
+              showCardContext={showCardContext}
+              onShowCardContextChange={setShowCardContext}
+            />
 
-        <IllustrationGalleryGrid filter={filter} />
+            <IllustrationGalleryGrid filter={filter} />
+          </div>
 
-        {/* Queue panel — Task 18 */}
+          <IllustrationQueuePanel isAdmin={isAdmin} onRetry={handleRetry} />
+        </div>
       </div>
     </div>
   )
