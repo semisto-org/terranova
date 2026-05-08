@@ -121,6 +121,10 @@ export interface Species {
   ecoServicesNeeded?: string[] | null
   resourceParts?: Record<string, string[]> | null
   auditedAt?: string | null
+  /** Whether a silhouette illustration is currently attached. */
+  hasIllustration?: boolean
+  /** Direct blob path to the silhouette illustration, when attached. */
+  silhouetteUrl?: string | null
 }
 
 export interface Variety {

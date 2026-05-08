@@ -1208,7 +1208,10 @@ module Api
           ecoServicesProvided: item.eco_services_provided,
           ecoServicesNeeded: item.eco_services_needed,
           resourceParts: item.resource_parts,
-          auditedAt: item.audited_at&.iso8601
+          auditedAt: item.audited_at&.iso8601,
+          # Illustrations
+          hasIllustration: item.silhouette_illustration.attached?,
+          silhouetteUrl: item.silhouette_illustration.attached? ? rails_blob_path(item.silhouette_illustration) : nil
         }
       end
 

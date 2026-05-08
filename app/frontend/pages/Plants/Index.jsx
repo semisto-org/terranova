@@ -1240,6 +1240,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
       )}
 
       <PlantSheetDrawer
+        isAdmin={isAdmin}
         stack={drawerStack}
         onStackChange={(next) => {
           const previousTop = drawerStack[drawerStack.length - 1]

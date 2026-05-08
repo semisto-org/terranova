@@ -55,6 +55,9 @@ interface PlantSheetDrawerProps {
    *  every visible layer. Used by callers after a mutation that may have
    *  changed the rendered fiches (notes, photos, edits). */
   refreshSignal?: number
+  /** Whether the current member is admin — propagated to embedded fiches so
+   *  admin-only controls (e.g. illustration regeneration) appear. */
+  isAdmin?: boolean
 }
 
 const PATH_BY_KIND: Record<PlantKind, (id: string) => string> = {
@@ -136,6 +139,7 @@ export function PlantSheetDrawer({
   extraSection,
   autoResolveParents = true,
   refreshSignal = 0,
+  isAdmin = false,
 }: PlantSheetDrawerProps) {
   const [cache, setCache] = useState<Map<string, any>>(new Map())
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
@@ -645,6 +649,7 @@ function FicheBody({
           extraNurseryContent={extraNurseryContent}
           extraNurseryTitle={extraNurseryTitle}
           extraNurseryCount={extraNurseryCount}
+          isAdmin={isAdmin}
         />
       )}
 

@@ -1,4 +1,5 @@
-import { Printer } from 'lucide-react'
+import { useState } from 'react'
+import { Lock, Printer, RotateCcw, Sparkles } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import type {
   SpeciesDetailProps,
@@ -19,6 +20,7 @@ import { AddToPaletteButton } from './AddToPaletteButton'
 import { SpeciesBreadcrumb } from './SpeciesBreadcrumb'
 import { CharacteristicCard } from './CharacteristicCard'
 import { AuditFooter } from './AuditFooter'
+import { RegenerateIllustrationModal } from './RegenerateIllustrationModal'
 import {
   SunIcon,
   PartialShadeIcon,
@@ -66,6 +68,8 @@ interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
   extraNurseryTitle?: string
   /** Number of items in the extra block — added to the section badge. */
   extraNurseryCount?: number
+  /** Whether the current member is admin (gates illustration controls). */
+  isAdmin?: boolean
 }
 
 export function SpeciesDetail({
@@ -99,9 +103,13 @@ export function SpeciesDetail({
   extraNurseryContent,
   extraNurseryTitle,
   extraNurseryCount = 0,
+  isAdmin = false,
 }: SpeciesDetailWithFiltersProps & { onSpeciesSelect?: (id: string) => void }) {
   const primaryCommonName = commonNames.find(cn => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter(cn => cn.language !== 'fr')
+
+  const [regenOpen, setRegenOpen] = useState(false)
+  const hasIllustration = !!species.silhouetteUrl
 
   const typeLabel = filterOptions.types.find(t => t.id === species.type)?.label
 
@@ -311,6 +319,32 @@ export function SpeciesDetail({
                   Imprimer la fiche
                 </a>
               </div>
+
+              {/* Admin-only: launch a fresh image generation or regen with
+                  free-text feedback. The dashed amber callout is the project's
+                  conventional treatment for admin-restricted inline content. */}
+              {isAdmin && (
+                <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3 mb-6">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <button
+                      type="button"
+                      onClick={() => setRegenOpen(true)}
+                      className="inline-flex items-center gap-2 text-sm font-medium text-stone-800 hover:text-[#5B5781] transition"
+                    >
+                      {hasIllustration ? (
+                        <RotateCcw className="w-3.5 h-3.5 text-[#5B5781]" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 text-[#5B5781]" />
+                      )}
+                      {hasIllustration ? 'Régénérer' : 'Générer'} l'illustration
+                    </button>
+                    <span className="ml-auto text-[10px] uppercase tracking-[0.16em] text-amber-700">
+                      {hasIllustration ? 'avec retour libre' : 'première génération'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -803,6 +837,17 @@ export function SpeciesDetail({
           <AuditFooter auditedAt={species.auditedAt} />
         </div>
       </div>
+
+      <RegenerateIllustrationModal
+        open={regenOpen}
+        species={{
+          id: species.id,
+          latinName: species.latinName,
+          commonName: primaryCommonName || null,
+          silhouetteUrl: species.silhouetteUrl,
+        }}
+        onClose={() => setRegenOpen(false)}
+      />
     </div>
   )
 }
