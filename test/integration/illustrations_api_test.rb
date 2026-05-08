@@ -62,6 +62,17 @@ class IllustrationsApiTest < ActionDispatch::IntegrationTest
     assert_match(/Queue saturée/, JSON.parse(response.body)["error"])
   end
 
+  test "GET /illustrations/stats returns counts and percent" do
+    @s1.silhouette_illustration.attach(io: StringIO.new("\x89PNG\r\n\x1a\n" + "x" * 2000), filename: "f.png", content_type: "image/png")
+
+    get "/api/v1/plants/illustrations/stats", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["total"] >= 2
+    assert body["withIllustration"] >= 1
+    assert body["completionPct"].is_a?(Numeric)
+  end
+
   private
 
   def admin_member
