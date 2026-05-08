@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useShellNav } from '@/components/shell/ShellContext'
 import { apiRequest } from '@/lib/api'
+import { IllustrationStatsTile } from '@/plant-database/components/IllustrationStatsTile'
 
 interface Stats {
   total: number
@@ -54,16 +55,11 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
           </p>
         </header>
 
-        {/* Stats banner — Task 15 */}
+        {stats && <IllustrationStatsTile stats={stats} isAdmin={isAdmin} />}
+
         {/* Filter bar — Task 16 */}
         {/* Gallery — Task 17 */}
         {/* Queue panel — Task 18 */}
-
-        {stats && (
-          <div className="text-sm text-stone-500">
-            {stats.withIllustration} / {stats.total} illustrées
-          </div>
-        )}
       </div>
     </div>
   )
