@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { useShellNav } from '@/components/shell/ShellContext'
 import { apiRequest } from '@/lib/api'
 import { IllustrationStatsTile } from '@/plant-database/components/IllustrationStatsTile'
+import { IllustrationFilterBar } from '@/plant-database/components/IllustrationFilterBar'
+
+type Filter = 'all' | 'with' | 'without' | 'running' | 'failed'
 
 interface Stats {
   total: number
@@ -23,6 +26,8 @@ const PLANT_SECTIONS = [
 
 export default function PlantsIllustrations({ isAdmin }: Props) {
   const [stats, setStats] = useState<Stats | null>(null)
+  const [filter, setFilter] = useState<Filter>('without')
+  const [showCardContext, setShowCardContext] = useState(false)
 
   useShellNav({
     sections: PLANT_SECTIONS,
@@ -57,7 +62,13 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
 
         {stats && <IllustrationStatsTile stats={stats} isAdmin={isAdmin} />}
 
-        {/* Filter bar — Task 16 */}
+        <IllustrationFilterBar
+          filter={filter}
+          onFilterChange={setFilter}
+          showCardContext={showCardContext}
+          onShowCardContextChange={setShowCardContext}
+        />
+
         {/* Gallery — Task 17 */}
         {/* Queue panel — Task 18 */}
       </div>
