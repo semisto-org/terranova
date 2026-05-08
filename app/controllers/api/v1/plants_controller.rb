@@ -706,7 +706,7 @@ module Api
           id: species.id.to_s,
           latinName: species.latin_name,
           commonName: species.common_names_fr,
-          thumbnailUrl: attachment ? rails_representation_path(attachment.variant(resize_to_limit: [200, 280]).processed) : nil,
+          thumbnailUrl: attachment ? rails_representation_path(attachment.variant(resize_to_limit: [200, 280])) : nil,
           fullUrl: attachment ? rails_blob_path(attachment) : nil,
           lastJobStatus: last_job&.status,
           lastJobAt: last_job&.triggered_at&.iso8601,

@@ -73,6 +73,29 @@ class IllustrationsApiTest < ActionDispatch::IntegrationTest
     assert body["completionPct"].is_a?(Numeric)
   end
 
+  test "GET /illustrations returns paginated species with thumbnails" do
+    @s1.silhouette_illustration.attach(io: StringIO.new("\x89PNG\r\n\x1a\n" + "x" * 2000), filename: "f.png", content_type: "image/png")
+
+    get "/api/v1/plants/illustrations", params: { filter: "with", per_page: 10 }, as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["items"].is_a?(Array)
+    assert body["items"].any? { |i| i["latinName"] == @s1.latin_name }
+    item = body["items"].find { |i| i["latinName"] == @s1.latin_name }
+    assert item["thumbnailUrl"].present?
+    assert item["fullUrl"].present?
+  end
+
+  test "GET /illustrations filter=without excludes attached species" do
+    @s1.silhouette_illustration.attach(io: StringIO.new("\x89PNG\r\n\x1a\n" + "x" * 2000), filename: "f.png", content_type: "image/png")
+
+    get "/api/v1/plants/illustrations", params: { filter: "without" }, as: :json
+    body = JSON.parse(response.body)
+    latin_names = body["items"].map { |i| i["latinName"] }
+    refute_includes latin_names, @s1.latin_name
+    assert_includes latin_names, @s2.latin_name
+  end
+
   private
 
   def admin_member
