@@ -422,6 +422,8 @@ Rails.application.routes.draw do
       patch "plants/genera/:id", to: "plants#update_genus"
       post "plants/species", to: "plants#create_species"
       patch "plants/species/:id", to: "plants#update_species"
+      post "plants/species/:id/silhouette-illustration", to: "plants#attach_silhouette_illustration"
+      delete "plants/species/:id/silhouette-illustration", to: "plants#detach_silhouette_illustration"
       post "plants/varieties", to: "plants#create_variety"
       patch "plants/varieties/:id", to: "plants#update_variety"
       delete "plants/varieties/:id", to: "plants#destroy_variety"

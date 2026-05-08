@@ -43,6 +43,8 @@ module Plant
     belongs_to :genus, class_name: 'Plant::Genus', optional: true
     has_many :varieties, class_name: 'Plant::Variety', foreign_key: :species_id, dependent: :destroy
 
+    has_one_attached :silhouette_illustration
+
     validates :latin_name, :plant_type, presence: true
     validates :growth_habit, inclusion: { in: GROWTH_HABITS }, allow_nil: true
     validates :strate, inclusion: { in: STRATES }, allow_nil: true

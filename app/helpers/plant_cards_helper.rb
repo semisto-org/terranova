@@ -189,6 +189,12 @@ module PlantCardsHelper
     "plant_cards/silhouettes/#{habit}"
   end
 
+  # Returns true when the species has a generated silhouette illustration
+  # attached, which should be rendered in place of the SVG silhouette partial.
+  def species_has_silhouette_illustration?(species)
+    species.silhouette_illustration.attached?
+  end
+
   ROOT_SYSTEM_NORMALIZE = {
     'Pivotante' => 'taproot',
     'Fasciculées' => 'fibrous',

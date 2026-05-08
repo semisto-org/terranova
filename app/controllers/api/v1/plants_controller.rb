@@ -383,6 +383,29 @@ module Api
         render json: serialize_species(species)
       end
 
+      def attach_silhouette_illustration
+        species = Plant::Species.find(params.require(:id))
+        file = params[:file] || params[:image]
+        return render json: { error: 'file param required (multipart upload)' }, status: :unprocessable_entity if file.blank?
+
+        species.silhouette_illustration.purge_later if species.silhouette_illustration.attached?
+        species.silhouette_illustration.attach(file)
+
+        render json: {
+          species_id: species.id,
+          latin_name: species.latin_name,
+          attached: species.silhouette_illustration.attached?,
+          url: species.silhouette_illustration.attached? ? rails_blob_url(species.silhouette_illustration, only_path: false) : nil,
+          byte_size: species.silhouette_illustration.attached? ? species.silhouette_illustration.byte_size : nil
+        }
+      end
+
+      def detach_silhouette_illustration
+        species = Plant::Species.find(params.require(:id))
+        species.silhouette_illustration.purge_later if species.silhouette_illustration.attached?
+        head :no_content
+      end
+
       def create_variety
         # Idempotent on (species_id, latin_name): if a variety with that exact
         # pair already exists, return it instead of creating a duplicate. This

@@ -55,8 +55,14 @@
     <div class="cross-section">
       <div class="above-ground">
         <% height_px = plant_height_px(species.height_max_cm) || 100 %>
-        <div class="plant-bg" style="bottom: 0; height: <%= height_px %>px;">
-          <%= render silhouette_partial(species), species: species, height_px: height_px %>
+        <div class="plant-bg<%= ' has-illustration' if species_has_silhouette_illustration?(species) %>" style="bottom: 0; height: <%= height_px %>px;">
+          <% if species_has_silhouette_illustration?(species) %>
+            <img src="<%= url_for(species.silhouette_illustration) %>"
+                 alt="<%= species.common_names_fr.presence || species.latin_name %>"
+                 class="silhouette-illustration">
+          <% else %>
+            <%= render silhouette_partial(species), species: species, height_px: height_px %>
+          <% end %>
         </div>
         <div class="human"><svg viewBox="0 0 28 56"><use href="#human-1m70"/></svg></div>
         <div class="sky-tiles">
