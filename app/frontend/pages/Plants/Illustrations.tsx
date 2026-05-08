@@ -5,6 +5,7 @@ import { IllustrationStatsTile } from '@/plant-database/components/IllustrationS
 import { IllustrationFilterBar } from '@/plant-database/components/IllustrationFilterBar'
 import { IllustrationGalleryGrid } from '@/plant-database/components/IllustrationGalleryGrid'
 import { IllustrationQueuePanel } from '@/plant-database/components/IllustrationQueuePanel'
+import { ConfirmBulkGenerationModal } from '@/plant-database/components/ConfirmBulkGenerationModal'
 
 type Filter = 'all' | 'with' | 'without' | 'running' | 'failed'
 
@@ -30,6 +31,7 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [filter, setFilter] = useState<Filter>('without')
   const [showCardContext, setShowCardContext] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   useShellNav({
     sections: PLANT_SECTIONS,
@@ -45,6 +47,26 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
 
   const handleRetry = async (jobId: number) => {
     await apiRequest(`/api/v1/plants/illustrations/jobs/${jobId}/retry`, { method: 'POST' })
+  }
+
+  const refreshStats = () => {
+    apiRequest('/api/v1/plants/illustrations/stats').then(setStats).catch(() => {})
+  }
+
+  const handleLaunchBulk = async () => {
+    if (!stats) return
+    const data = await apiRequest('/api/v1/plants/illustrations?filter=without&per_page=1500')
+    const ids = (data?.items || []).map((i: { id: string }) => parseInt(i.id, 10)).filter(Boolean)
+    if (ids.length === 0) {
+      setConfirmOpen(false)
+      return
+    }
+    await apiRequest('/api/v1/plants/illustrations/generate', {
+      method: 'POST',
+      body: JSON.stringify({ species_ids: ids })
+    })
+    setConfirmOpen(false)
+    refreshStats()
   }
 
   return (
@@ -66,7 +88,13 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
           </p>
         </header>
 
-        {stats && <IllustrationStatsTile stats={stats} isAdmin={isAdmin} />}
+        {stats && (
+          <IllustrationStatsTile
+            stats={stats}
+            isAdmin={isAdmin}
+            onLaunchBulk={() => setConfirmOpen(true)}
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 lg:gap-8">
           <div className="min-w-0">
@@ -83,6 +111,16 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
           <IllustrationQueuePanel isAdmin={isAdmin} onRetry={handleRetry} />
         </div>
       </div>
+
+      {stats && (
+        <ConfirmBulkGenerationModal
+          open={confirmOpen}
+          count={stats.withoutIllustration}
+          estimatedSeconds={Math.round((stats.withoutIllustration / 3) * 30)}
+          onConfirm={handleLaunchBulk}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      )}
     </div>
   )
 }
