@@ -3,6 +3,7 @@ import { useShellNav } from '@/components/shell/ShellContext'
 import { apiRequest } from '@/lib/api'
 import { IllustrationStatsTile } from '@/plant-database/components/IllustrationStatsTile'
 import { IllustrationFilterBar } from '@/plant-database/components/IllustrationFilterBar'
+import { IllustrationGalleryGrid } from '@/plant-database/components/IllustrationGalleryGrid'
 
 type Filter = 'all' | 'with' | 'without' | 'running' | 'failed'
 
@@ -69,7 +70,8 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
           onShowCardContextChange={setShowCardContext}
         />
 
-        {/* Gallery — Task 17 */}
+        <IllustrationGalleryGrid filter={filter} />
+
         {/* Queue panel — Task 18 */}
       </div>
     </div>
