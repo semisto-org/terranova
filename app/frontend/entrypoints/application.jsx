@@ -21,8 +21,8 @@ const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPas
 
 createInertiaApp({
   resolve: (name) => {
-    const pages = import.meta.glob('../pages/**/*.jsx', { eager: true })
-    const page = pages[`../pages/${name}.jsx`]
+    const pages = import.meta.glob('../pages/**/*.{jsx,tsx}', { eager: true })
+    const page = pages[`../pages/${name}.jsx`] || pages[`../pages/${name}.tsx`]
     if (!PAGES_WITHOUT_SHELL.includes(name) && page.default) {
       page.default.layout = page.default.layout || ((page) => <AppShell>{page}</AppShell>)
     }
