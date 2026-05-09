@@ -35,6 +35,9 @@ gem "prawn-table", "~> 0.2"
 
 gem "rqrcode", "~> 2.2"
 
+# Image transformation backend for ActiveStorage variants (silhouette thumbnails)
+gem "image_processing", "~> 1.13"
+
 # Anthropic Claude API client (used by Plants::IllustrationPromptComposer)
 gem "anthropic", "~> 1.10"
 
