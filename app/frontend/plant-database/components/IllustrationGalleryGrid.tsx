@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { ChevronLeft, ChevronRight, Sprout } from 'lucide-react'
 
-interface Item {
+export interface IllustrationItem {
   id: string
   latinName: string
   commonName: string | null
@@ -13,18 +13,18 @@ interface Item {
 }
 
 interface ApiResponse {
-  items: Item[]
+  items: IllustrationItem[]
   totalPages: number
   total?: number
 }
 
 interface Props {
   filter: string
-  onSpeciesClick?: (id: string) => void
+  onItemClick?: (item: IllustrationItem) => void
 }
 
-export function IllustrationGalleryGrid({ filter, onSpeciesClick }: Props) {
-  const [items, setItems] = useState<Item[]>([])
+export function IllustrationGalleryGrid({ filter, onItemClick }: Props) {
+  const [items, setItems] = useState<IllustrationItem[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState<number | null>(null)
@@ -101,7 +101,7 @@ export function IllustrationGalleryGrid({ filter, onSpeciesClick }: Props) {
         {items.map(item => (
           <button
             key={item.id}
-            onClick={() => onSpeciesClick?.(item.id)}
+            onClick={() => onItemClick?.(item)}
             className="group relative aspect-[3/4] bg-[#fdfaf2] border border-stone-200 rounded-sm overflow-hidden text-left transition-all duration-200 hover:border-[#AFBD00] hover:-translate-y-0.5 hover:shadow-[0_8px_18px_-10px_rgba(91,87,129,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5781]"
             title={item.latinName}
           >

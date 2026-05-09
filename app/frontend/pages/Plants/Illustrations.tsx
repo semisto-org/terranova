@@ -4,9 +4,10 @@ import { useShellNav } from '@/components/shell/ShellContext'
 import { apiRequest } from '@/lib/api'
 import { IllustrationStatsTile } from '@/plant-database/components/IllustrationStatsTile'
 import { IllustrationFilterBar } from '@/plant-database/components/IllustrationFilterBar'
-import { IllustrationGalleryGrid } from '@/plant-database/components/IllustrationGalleryGrid'
+import { IllustrationGalleryGrid, type IllustrationItem } from '@/plant-database/components/IllustrationGalleryGrid'
 import { IllustrationQueuePanel } from '@/plant-database/components/IllustrationQueuePanel'
 import { ConfirmBulkGenerationModal } from '@/plant-database/components/ConfirmBulkGenerationModal'
+import { IllustrationLightbox } from '@/plant-database/components/IllustrationLightbox'
 
 type Filter = 'all' | 'with' | 'without' | 'running' | 'failed'
 
@@ -33,6 +34,7 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
   const [filter, setFilter] = useState<Filter>('without')
   const [showCardContext, setShowCardContext] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [lightboxItem, setLightboxItem] = useState<IllustrationItem | null>(null)
 
   useShellNav({
     sections: PLANT_SECTIONS,
@@ -112,7 +114,7 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
               onShowCardContextChange={setShowCardContext}
             />
 
-            <IllustrationGalleryGrid filter={filter} />
+            <IllustrationGalleryGrid filter={filter} onItemClick={setLightboxItem} />
           </div>
 
           <IllustrationQueuePanel isAdmin={isAdmin} onRetry={handleRetry} />
@@ -128,6 +130,8 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
           onCancel={() => setConfirmOpen(false)}
         />
       )}
+
+      <IllustrationLightbox item={lightboxItem} onClose={() => setLightboxItem(null)} />
     </div>
   )
 }
