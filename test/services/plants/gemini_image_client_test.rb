@@ -28,13 +28,23 @@ class Plants::GeminiImageClientTest < ActiveSupport::TestCase
     assert result.bytesize > 1000
   end
 
-  test "generate raises RateLimitError after 2 failed 503s" do
+  test "generate raises RateLimitError after 3 failed 503s" do
     Plants::GeminiImageClient.any_instance.stubs(:sleep)
     Net::HTTP.any_instance.stubs(:request).returns(build_response(503, "{}"))
 
     assert_raises(Plants::GeminiImageClient::RateLimitError) do
       Plants::GeminiImageClient.new(api_key: "fake").generate(prompt: "anything")
     end
+  end
+
+  test "generate raises GenerationError after 3 Net::ReadTimeout" do
+    Plants::GeminiImageClient.any_instance.stubs(:sleep)
+    Net::HTTP.any_instance.stubs(:request).raises(Net::ReadTimeout.new("timeout"))
+
+    err = assert_raises(Plants::GeminiImageClient::GenerationError) do
+      Plants::GeminiImageClient.new(api_key: "fake").generate(prompt: "anything")
+    end
+    assert_match(/network failure after 3 attempts/, err.message)
   end
 
   test "generate raises InvalidImageError on non-image bytes" do

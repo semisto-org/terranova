@@ -9,7 +9,18 @@ module Plants
     RateLimitError = Class.new(GenerationError)
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent".freeze
-    MAX_ATTEMPTS = 2
+    MAX_ATTEMPTS = 3
+    RETRYABLE_NETWORK_ERRORS = [
+      Net::ReadTimeout,
+      Net::OpenTimeout,
+      Net::WriteTimeout,
+      Errno::ECONNRESET,
+      Errno::ECONNREFUSED,
+      Errno::EPIPE,
+      EOFError,
+      OpenSSL::SSL::SSLError,
+      IOError
+    ].freeze
 
     def initialize(api_key: ENV.fetch("GEMINI_API_KEY"))
       @api_key = api_key
@@ -26,15 +37,21 @@ module Plants
           validate_image!(bytes)
           bytes
         when 503
-          raise GenerationError, "Gemini 503"
+          raise GenerationError, "Gemini 503 (overloaded)"
         when 429
           raise RateLimitError, "Gemini 429 (rate limited)"
         else
           raise GenerationError, "Gemini #{response.code}: #{response.body[0..500]}"
         end
+      rescue *RETRYABLE_NETWORK_ERRORS => e
+        if attempt < MAX_ATTEMPTS
+          sleep backoff_seconds(attempt)
+          retry
+        end
+        raise GenerationError, "Gemini network failure after #{MAX_ATTEMPTS} attempts: #{e.class}: #{e.message}"
       rescue GenerationError => e
         if attempt < MAX_ATTEMPTS && e.message.include?("503")
-          sleep 10
+          sleep backoff_seconds(attempt)
           retry
         end
         raise RateLimitError, "Gemini 503 after #{MAX_ATTEMPTS} attempts" if e.message.include?("503")
@@ -44,6 +61,11 @@ module Plants
 
     private
 
+    def backoff_seconds(attempt)
+      # 10s, 30s, 60s
+      [10 * (3 ** (attempt - 1)), 60].min
+    end
+
     def post_request(prompt)
       uri = URI("#{BASE_URL}?key=#{@api_key}")
       payload = {
@@ -52,7 +74,9 @@ module Plants
       }
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
-      http.read_timeout = 120
+      http.open_timeout = 30
+      http.read_timeout = 240
+      http.write_timeout = 30
       req = Net::HTTP::Post.new(uri)
       req["Content-Type"] = "application/json"
       req.body = payload.to_json
