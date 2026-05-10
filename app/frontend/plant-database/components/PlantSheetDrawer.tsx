@@ -492,6 +492,7 @@ export function PlantSheetDrawer({
                   onSelectGenus={handleSelectGenus}
                   onSelectSpecies={handleSelectSpecies}
                   onSelectVariety={handleSelectVariety}
+                  isAdmin={isAdmin}
                 />
               )}
             </div>
@@ -521,6 +522,7 @@ interface FicheBodyProps {
   onSelectGenus: (id: string) => void
   onSelectSpecies: (id: string) => void
   onSelectVariety: (id: string) => void
+  isAdmin?: boolean
 }
 
 function FicheBody({
@@ -542,6 +544,7 @@ function FicheBody({
   onSelectGenus,
   onSelectSpecies,
   onSelectVariety,
+  isAdmin = false,
 }: FicheBodyProps) {
   const showExtra =
     extraSection &&
