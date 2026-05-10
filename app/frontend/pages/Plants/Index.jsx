@@ -429,6 +429,7 @@ const PLANT_SECTIONS = [
   { id: 'search', label: 'Recherche' },
   { id: 'palette', label: 'Palette' },
   { id: 'activity', label: 'Activité' },
+  { id: 'illustrations', label: 'Illustrations' },
 ]
 
 export default function PlantsIndex({ currentContributorId, initialPaletteId }) {
@@ -437,6 +438,10 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
   const [route, setRoute] = useState(() => routeFromPath(window.location.pathname))
   const shellSection = ['genus', 'species', 'variety', 'contributor'].includes(route.view) ? 'search' : route.view
   const handleShellNav = useCallback((id) => {
+    if (id === 'illustrations') {
+      window.location.href = '/plants/illustrations'
+      return
+    }
     const path = pathForView(id)
     window.history.pushState({}, '', path)
     setRoute({ view: id })

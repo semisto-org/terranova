@@ -25,8 +25,10 @@ interface Props {
 }
 
 const PLANT_SECTIONS = [
-  { id: 'list', label: 'Catalogue' },
-  { id: 'illustrations', label: 'Atelier illustrations' }
+  { id: 'search', label: 'Recherche' },
+  { id: 'palette', label: 'Palette' },
+  { id: 'activity', label: 'Activité' },
+  { id: 'illustrations', label: 'Illustrations' }
 ]
 
 export default function PlantsIllustrations({ isAdmin }: Props) {
@@ -40,7 +42,12 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
     sections: PLANT_SECTIONS,
     activeSection: 'illustrations',
     onSectionChange: (id: string) => {
-      if (id === 'list') window.location.href = '/plants'
+      if (id === 'illustrations') return
+      const path =
+        id === 'palette'  ? '/plants/palette'  :
+        id === 'activity' ? '/plants/activity' :
+                            '/plants'
+      window.location.href = path
     }
   })
 
