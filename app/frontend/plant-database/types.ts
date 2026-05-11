@@ -335,6 +335,8 @@ export interface SearchResult {
   hardiness?: string | null
   /** Whether this species has an attached silhouette illustration (species only) */
   hasIllustration?: boolean
+  /** ISO timestamp of the last AI audit on this record */
+  auditedAt?: string | null
 }
 
 // =============================================================================

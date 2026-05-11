@@ -28,6 +28,18 @@ const STRATE_OPTIONS: { id: StrateKey; label: string }[] = [
 // capped at 200 to keep server-side queue dispatch sane.
 const SELECTION_HARD_CAP = 200
 
+const AUDIT_DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+function formatAuditDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return AUDIT_DATE_FORMATTER.format(date)
+}
+
 export function SearchView({
   filterOptions,
   results,
@@ -438,10 +450,10 @@ export function SearchView({
                     <th className="w-[44px] px-3 py-2 text-center">Type</th>
                     <th className="px-3 py-2">Nom latin</th>
                     <th className="px-3 py-2">Nom commun</th>
-                    <th className="px-3 py-2">Parent</th>
                     <th className="px-3 py-2">Strate</th>
                     <th className="px-3 py-2">Exposition</th>
                     <th className="px-3 py-2">Rusticité</th>
+                    <th className="px-3 py-2">Dernier audit IA</th>
                     {onAddToPalette && <th className="w-[60px] px-3 py-2"></th>}
                   </tr>
                 </thead>
@@ -577,7 +589,6 @@ function ResultRow({
   const [showStrateMenu, setShowStrateMenu] = useState(false)
 
   const kindMeta = KIND_OPTIONS.find((k) => k.id === result.type)!
-  const parent = result.genusName || result.speciesName || null
   const plantTypeLabel = result.plantType
     ? filterOptions.types.find((t) => t.id === result.plantType)?.label || result.plantType
     : null
@@ -634,9 +645,6 @@ function ResultRow({
       <td className="px-3 py-2 text-stone-600">
         {result.commonName || <span className="text-stone-300">—</span>}
       </td>
-      <td className="px-3 py-2 italic text-stone-500">
-        {parent || <span className="not-italic text-stone-300">—</span>}
-      </td>
       <td className="px-3 py-2 text-stone-600">
         {plantTypeLabel || <span className="text-stone-300">—</span>}
       </td>
@@ -658,6 +666,13 @@ function ResultRow({
       </td>
       <td className="px-3 py-2 font-mono text-[11px] text-stone-600">
         {result.hardiness || <span className="text-stone-300">—</span>}
+      </td>
+      <td className="px-3 py-2 font-mono text-[11px] text-stone-500">
+        {result.auditedAt ? (
+          formatAuditDate(result.auditedAt)
+        ) : (
+          <span className="text-stone-300">—</span>
+        )}
       </td>
       {onAddToPalette && (
         <td className="relative px-3 py-2 text-right">
