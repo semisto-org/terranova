@@ -220,6 +220,49 @@ module PlantCardsHelper
     'weed-suppression' => 'e-grass'
   }.freeze
 
+  ECO_ICON_FILES = {
+    'windbreak' => 'windbreak', 'mellifere' => 'flower', 'birds' => 'bird',
+    'beneficial-insects' => 'insect', 'erosion-control' => 'erosion',
+    'light-shade' => 'shadow', 'nitrogen' => 'nitrogen',
+    'ground-cover' => 'cover',
+    'organic-matter' => 'organic', 'minerals' => 'minerals',
+    'weed-suppression' => 'allelopathic'
+  }.freeze
+
+  ICONS_DIR = Rails.root.join('app/frontend/assets/icons')
+
+  def self.compute_eco_icon_body(eco_id)
+    filename = ECO_ICON_FILES[eco_id]
+    return nil unless filename
+
+    path = ICONS_DIR.join("#{filename}.svg")
+    return nil unless File.exist?(path)
+
+    raw = File.read(path)
+    vb = raw[/viewBox="([^"]+)"/, 1] || '0 0 1024 1024'
+    inner = raw[/<svg[^>]*>(.*?)<\/svg>/m, 1].to_s
+    inner = inner
+      .gsub(/stroke="(?!none|currentColor)[^"]*"/, 'stroke="currentColor"')
+      .gsub(/fill="(?!none|currentColor)[^"]*"/, 'fill="currentColor"')
+      .gsub(/style="([^"]*)"/) do
+        style = Regexp.last_match(1)
+        style = style.gsub(/stroke:\s*[^;]+/, 'stroke:currentColor')
+                     .gsub(/fill:\s*(?!none)[^;]+/, 'fill:currentColor')
+        %(style="#{style}")
+      end
+
+    { view_box: vb, inner: inner }
+  end
+
+  def eco_icon_body(eco_id)
+    return PlantCardsHelper.compute_eco_icon_body(eco_id) if Rails.env.development?
+    PlantCardsHelper.eco_icon_cache[eco_id] ||= PlantCardsHelper.compute_eco_icon_body(eco_id)
+  end
+
+  def self.eco_icon_cache
+    @eco_icon_cache ||= {}
+  end
+
   ECO_FR_LABELS = {
     'windbreak' => 'Brise-vent', 'mellifere' => 'Mellifère', 'birds' => 'Oiseaux',
     'beneficial-insects' => 'Auxiliaires', 'erosion-control' => 'Anti-érosion',
@@ -243,13 +286,74 @@ module PlantCardsHelper
 
   RESOURCE_ICONS = {
     'edible' => 'r-edible', 'aromatic' => 'r-aromatic', 'medicinal' => 'r-medicinal',
-    'fiber' => 'r-fiber', 'sensory' => 'r-sensory', 'animal' => 'r-fodder'
+    'fiber' => 'r-fiber', 'sensory' => 'r-sensory', 'animal' => 'r-fodder',
+    # Sensory subtypes — promoted to top-level icons on the card
+    'ornamental' => 'r-ornamental', 'fragrant' => 'r-fragrant', 'dye' => 'r-dye'
   }.freeze
 
   RESOURCE_FR = {
     'edible' => 'Comestible', 'aromatic' => 'Aromatique', 'medicinal' => 'Médicinale',
-    'fiber' => 'Fibre', 'sensory' => 'Sensorielle', 'animal' => 'Animale'
+    'fiber' => 'Fibre', 'sensory' => 'Sensorielle', 'animal' => 'Animale',
+    'ornamental' => 'Ornementale', 'fragrant' => 'Odorante', 'dye' => 'Tinctoriale'
   }.freeze
+
+  # Filename mapping inside app/frontend/assets/icons/resources/
+  # (user's French spelling for ornemental, English for the rest)
+  RESOURCE_ICON_FILES = {
+    'edible' => 'edible', 'aromatic' => 'aromatic', 'medicinal' => 'medicinal',
+    'fiber' => 'fiber', 'animal' => 'animal',
+    'ornamental' => 'ornemental', 'fragrant' => 'fragrant', 'dye' => 'dye'
+  }.freeze
+
+  RESOURCES_ICON_DIR = ICONS_DIR.join('resources')
+
+  def self.compute_resource_icon_body(slug)
+    filename = RESOURCE_ICON_FILES[slug]
+    return nil unless filename
+    path = RESOURCES_ICON_DIR.join("#{filename}.svg")
+    return nil unless File.exist?(path)
+    raw = File.read(path)
+    vb = raw[/viewBox="([^"]+)"/, 1] || '0 0 1024 1024'
+    inner = raw[/<svg[^>]*>(.*?)<\/svg>/m, 1].to_s
+    inner = inner
+      .gsub(/stroke="(?!none|currentColor)[^"]*"/, 'stroke="currentColor"')
+      .gsub(/fill="(?!none|currentColor)[^"]*"/, 'fill="currentColor"')
+      .gsub(/style="([^"]*)"/) do
+        s = Regexp.last_match(1)
+          .gsub(/stroke:\s*[^;]+/, 'stroke:currentColor')
+          .gsub(/fill:\s*(?!none)[^;]+/, 'fill:currentColor')
+        %(style="#{s}")
+      end
+    { view_box: vb, inner: inner }
+  end
+
+  def resource_icon_body(slug)
+    return PlantCardsHelper.compute_resource_icon_body(slug) if Rails.env.development?
+    PlantCardsHelper.resource_icon_cache[slug] ||= PlantCardsHelper.compute_resource_icon_body(slug)
+  end
+
+  def self.resource_icon_cache
+    @resource_icon_cache ||= {}
+  end
+
+  # Returns 8 logical entries to display on the card: 5 main categories + 3
+  # sensory subtypes promoted to top-level. Each entry knows whether it is
+  # active (off=false) and what parts label to display.
+  CARD_RESOURCE_ORDER = %w[edible aromatic medicinal fiber ornamental fragrant dye animal].freeze
+
+  def card_resource_entries(species)
+    parts = species.resource_parts.is_a?(Hash) ? species.resource_parts : {}
+    sensory_subtypes = Array(parts['sensory'])
+
+    CARD_RESOURCE_ORDER.map do |slug|
+      if %w[ornamental fragrant dye].include?(slug)
+        { id: slug, label: resource_label(slug), parts_label: nil, off: !sensory_subtypes.include?(slug) }
+      else
+        pl = parts_label(parts[slug])
+        { id: slug, label: resource_label(slug), parts_label: pl, off: pl.nil? }
+      end
+    end
+  end
 
   PART_FR = {
     # plant parts
