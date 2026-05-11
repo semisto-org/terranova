@@ -171,6 +171,10 @@ export interface Photo {
   targetType: TargetType
   url: string
   caption: string
+  role?: string | null
+  license?: string | null
+  attributionAuthor?: string | null
+  sourcePlatform?: string | null
   contributorId: string
   createdAt: string
 }

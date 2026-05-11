@@ -1283,6 +1283,7 @@ export default function PlantsIndex({ currentContributorId, initialPaletteId }) 
         onGenerateAISummary={(kind, id) => generateAiSummary(kind, id)}
         onContributorSelect={(id) => navigateTo('contributor', id)}
         refreshSignal={drawerRefresh}
+        onLocalMutation={() => setDrawerRefresh((value) => value + 1)}
       />
     </div>
   )

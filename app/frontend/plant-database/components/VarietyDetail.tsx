@@ -41,6 +41,8 @@ export function VarietyDetail({
   extraNurseryContent,
   extraNurseryTitle,
   extraNurseryCount = 0,
+  isAdmin = false,
+  onLocalMutation,
 }: VarietyDetailProps & {
   filterOptions: FilterOptions
   varieties?: any[]
@@ -54,6 +56,8 @@ export function VarietyDetail({
   extraNurseryContent?: React.ReactNode
   extraNurseryTitle?: string
   extraNurseryCount?: number
+  isAdmin?: boolean
+  onLocalMutation?: () => void
 }) {
   const primaryCommonName = commonNames.find((cn) => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter((cn) => cn.language !== 'fr')
@@ -241,6 +245,8 @@ export function VarietyDetail({
               photos={photos}
               contributors={contributors}
               onContributorSelect={onContributorSelect}
+              canEdit={isAdmin}
+              onPhotosChange={onLocalMutation}
             />
           </CollapsibleSection>
         )}

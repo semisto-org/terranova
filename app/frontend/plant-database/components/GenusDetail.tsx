@@ -30,6 +30,10 @@ interface GenusDetailWithFiltersProps extends GenusDetailProps {
   /** Render without page-level wrappers (min-h-screen, max-w-4xl) so the
    *  fiche fits inside a drawer or other constrained container. */
   embedded?: boolean
+  /** Whether the current member is admin (gates inline photo edition). */
+  isAdmin?: boolean
+  /** Called after a local mutation (e.g. photo edit/delete). */
+  onLocalMutation?: () => void
 }
 
 export function GenusDetail({
@@ -54,6 +58,8 @@ export function GenusDetail({
   onAddSpecies,
   onEdit,
   embedded = false,
+  isAdmin = false,
+  onLocalMutation,
 }: GenusDetailWithFiltersProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
@@ -414,6 +420,8 @@ export function GenusDetail({
               photos={photos}
               contributors={contributors}
               onContributorSelect={onContributorSelect}
+              canEdit={isAdmin}
+              onPhotosChange={onLocalMutation}
             />
           </CollapsibleSection>
         )}

@@ -55,6 +55,10 @@ interface PlantSheetDrawerProps {
    *  every visible layer. Used by callers after a mutation that may have
    *  changed the rendered fiches (notes, photos, edits). */
   refreshSignal?: number
+  /** Called when an embedded fiche mutates data locally (e.g. inline photo
+   *  edit/delete) so the parent can refresh dependent views and bump
+   *  `refreshSignal`. */
+  onLocalMutation?: () => void
   /** Whether the current member is admin — propagated to embedded fiches so
    *  admin-only controls (e.g. illustration regeneration) appear. */
   isAdmin?: boolean
@@ -140,6 +144,7 @@ export function PlantSheetDrawer({
   autoResolveParents = true,
   refreshSignal = 0,
   isAdmin = false,
+  onLocalMutation,
 }: PlantSheetDrawerProps) {
   const [cache, setCache] = useState<Map<string, any>>(new Map())
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
@@ -493,6 +498,7 @@ export function PlantSheetDrawer({
                   onSelectSpecies={handleSelectSpecies}
                   onSelectVariety={handleSelectVariety}
                   isAdmin={isAdmin}
+                  onLocalMutation={onLocalMutation}
                 />
               )}
             </div>
@@ -523,6 +529,7 @@ interface FicheBodyProps {
   onSelectSpecies: (id: string) => void
   onSelectVariety: (id: string) => void
   isAdmin?: boolean
+  onLocalMutation?: () => void
 }
 
 function FicheBody({
@@ -545,6 +552,7 @@ function FicheBody({
   onSelectSpecies,
   onSelectVariety,
   isAdmin = false,
+  onLocalMutation,
 }: FicheBodyProps) {
   const showExtra =
     extraSection &&
@@ -592,6 +600,8 @@ function FicheBody({
             onAddSpecies ? () => onAddSpecies(payload.genus.id) : undefined
           }
           onEdit={onEdit ? () => onEdit('genus', payload) : undefined}
+          isAdmin={isAdmin}
+          onLocalMutation={onLocalMutation}
         />
       )}
 
@@ -653,6 +663,7 @@ function FicheBody({
           extraNurseryTitle={extraNurseryTitle}
           extraNurseryCount={extraNurseryCount}
           isAdmin={isAdmin}
+          onLocalMutation={onLocalMutation}
         />
       )}
 
@@ -709,6 +720,8 @@ function FicheBody({
           extraNurseryContent={extraNurseryContent}
           extraNurseryTitle={extraNurseryTitle}
           extraNurseryCount={extraNurseryCount}
+          isAdmin={isAdmin}
+          onLocalMutation={onLocalMutation}
         />
       )}
     </div>

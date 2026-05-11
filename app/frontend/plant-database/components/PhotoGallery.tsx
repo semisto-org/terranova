@@ -1,18 +1,25 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { Pencil } from 'lucide-react'
 import type { Photo, Contributor } from '../types'
+import { PhotoLightbox } from './PhotoLightbox'
+import { PhotoEditModal } from './PhotoEditModal'
 
 interface PhotoGalleryProps {
   photos: Photo[]
   contributors: Contributor[]
   onContributorSelect?: (contributorId: string) => void
   onAddPhoto?: () => void
+  onPhotosChange?: () => void
+  canEdit?: boolean
 }
 
-export function PhotoGallery({ photos, contributors, onContributorSelect, onAddPhoto }: PhotoGalleryProps) {
+export function PhotoGallery({ photos, contributors, onContributorSelect, onAddPhoto, onPhotosChange, canEdit = false }: PhotoGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchDelta, setTouchDelta] = useState(0)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -133,19 +140,17 @@ export function PhotoGallery({ photos, contributors, onContributorSelect, onAddP
             transition: touchStart !== null ? 'none' : isTransitioning ? 'transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
           }}
         >
-          {photos.map((photo, index) => {
-            const photoContributor = contributors.find(c => c.id === photo.contributorId)
-            return (
-              <div key={photo.id} className="flex-shrink-0 w-full h-full relative">
-                <img
-                  src={photo.url}
-                  alt={photo.caption || `Photo ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
-              </div>
-            )
-          })}
+          {photos.map((photo, index) => (
+            <div key={photo.id} className="flex-shrink-0 w-full h-full relative">
+              <img
+                src={photo.url}
+                alt={photo.caption || `Photo ${index + 1}`}
+                className="w-full h-full object-cover cursor-zoom-in"
+                draggable={false}
+                onClick={() => setLightboxIndex(index)}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Gradient overlay at bottom */}
@@ -177,18 +182,30 @@ export function PhotoGallery({ photos, contributors, onContributorSelect, onAddP
               )}
             </div>
 
-            {/* Upload button floating */}
-            {onAddPhoto && (
-              <button
-                onClick={onAddPhoto}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-lg text-white/90 text-xs font-medium hover:bg-white/25 transition-all border border-white/10"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Photo
-              </button>
-            )}
+            <div className="flex-shrink-0 flex items-center gap-2">
+              {canEdit && currentPhoto && (
+                <button
+                  onClick={() => setEditingPhoto(currentPhoto)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-lg text-white/90 text-xs font-medium hover:bg-white/25 transition-all border border-white/10"
+                  aria-label="Éditer la photo"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Éditer
+                </button>
+              )}
+              {/* Upload button floating */}
+              {onAddPhoto && (
+                <button
+                  onClick={onAddPhoto}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-lg text-white/90 text-xs font-medium hover:bg-white/25 transition-all border border-white/10"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Photo
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -269,6 +286,25 @@ export function PhotoGallery({ photos, contributors, onContributorSelect, onAddP
             />
           ))}
         </div>
+      )}
+
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photos={photos}
+          initialIndex={lightboxIndex}
+          contributors={contributors}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+
+      {editingPhoto && (
+        <PhotoEditModal
+          open
+          photo={editingPhoto}
+          onClose={() => setEditingPhoto(null)}
+          onSaved={() => { setEditingPhoto(null); onPhotosChange?.() }}
+          onDeleted={() => { setEditingPhoto(null); onPhotosChange?.() }}
+        />
       )}
     </div>
   )
