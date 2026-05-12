@@ -49,6 +49,22 @@ module Strategy
       update!(voting_deadline: Time.current + 7.days)
     end
 
+    def self.advance_due!
+      open_count = 0
+      where(status: "open").where("opened_at <= ?", 15.days.ago).find_each do |delib|
+        delib.transition_to_voting!
+        open_count += 1
+      end
+
+      voting_count = 0
+      where(status: "voting").where("voting_deadline <= ?", Time.current).find_each do |delib|
+        delib.transition_to_outcome_pending!
+        voting_count += 1
+      end
+
+      { open_to_voting: open_count, voting_to_outcome_pending: voting_count }
+    end
+
     def cancel!
       raise "Cannot cancel a decided deliberation" if status == "decided"
       update!(status: "cancelled")
