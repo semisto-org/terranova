@@ -1,8 +1,9 @@
 <div class="a6 strate-<%= species.strate %>" data-face="verso">
   <div class="strate-bar"></div>
   <div class="verso-top">
+    <% display_common_name = species.common_names_fr.to_s.split(',', 2).first&.strip %>
     <div class="verso-name-row">
-      <h2><%= species.common_names_fr.presence || species.latin_name %></h2>
+      <h2><%= display_common_name.presence || species.latin_name %></h2>
       <span class="latin-mini"><%= species.latin_name %></span>
     </div>
     <% letters = %w[J F M A M J J A S O N D] %>
@@ -18,7 +19,7 @@
       <span><span class="dot harv"></span>Récolte</span>
     </div>
   </div>
-  <div class="body" style="padding-top: 10px; padding-bottom: 30px">
+  <div class="body" style="padding-top: 10px; padding-bottom: 66px">
     <% if species.fertility.present? || species.pollination_distance_m.present? || species.specific_pollinators.any? %>
       <div class="section-title"><span>Pollinisation</span></div>
       <div class="pollin-section">
@@ -71,15 +72,13 @@
     </div>
     <div class="section-title"><span>Ressources</span></div>
     <div class="resource-grid-c">
-      <% Plant::Species::RESOURCE_CATEGORIES.each do |cat| %>
-        <% parts = species.resource_parts.is_a?(Hash) ? species.resource_parts[cat] : nil %>
-        <% pl = parts_label(parts) %>
-        <div class="resource-c <%= 'off' unless pl %>">
-          <span class="icn"><svg viewBox="0 0 24 24"><use href="#<%= resource_icon(cat) %>"/></svg></span>
-          <div class="info">
-            <span class="name"><%= resource_label(cat) %></span>
-            <span class="parts <%= 'empty' unless pl %>"><%= pl || '—' %></span>
-          </div>
+      <% card_resource_entries(species).each do |entry| %>
+        <div class="resource-c <%= 'off' if entry[:off] %>">
+          <span class="pic"><svg viewBox="0 0 24 24"><use href="#<%= resource_icon(entry[:id]) %>"/></svg></span>
+          <span class="lbl"><%= entry[:label] %></span>
+          <% if entry[:parts_label] %>
+            <span class="parts"><%= entry[:parts_label] %></span>
+          <% end %>
         </div>
       <% end %>
     </div>

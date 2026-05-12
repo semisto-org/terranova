@@ -89,53 +89,13 @@
     .dim-line .ic { color: #234766; font-weight: 700; font-size: 11px; }
     .dim-line .sep { color: #cbd5e1; }
 
-  .hero-split {
-    margin-top: 10px;
-    height: 130px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    position: relative;
-    z-index: 3;
-  }
-  .photo-tile {
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    background: #fff;
-  }
-  .photo-tile img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .photo-tile.empty {
-    background: repeating-linear-gradient(45deg, #f5f5f5, #f5f5f5 6px, #fafafa 6px, #fafafa 12px);
-    border: 1px dashed #d1d5db;
-  }
-  .photo-tile.empty::after {
-    content: "Photo manquante";
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    font-size: 8px; color: #9ca3af;
-    letter-spacing: .1em; text-transform: uppercase;
-  }
-  .photo-tile .role-tag {
-    position: absolute; bottom: 6px; left: 6px;
-    font-size: 8px; background: rgba(255,255,255,.92);
-    padding: 2px 7px; border-radius: 999px;
-    color: #234766; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
-  }
-
   .cross-section {
     margin-top: auto;
     margin-left: -18px; margin-right: -18px;
-    height: 270px;
+    height: 410px;
     position: relative;
     display: grid;
-    grid-template-rows: 160px 110px;
+    grid-template-rows: 290px 120px;
     z-index: 2;
   }
   .above-ground {
@@ -151,7 +111,7 @@
   .ground-line {
     position: absolute;
     left: 0; right: 0;
-    top: 160px;
+    top: 290px;
     height: 2px;
     background: #2d2519;
     z-index: 4;
@@ -159,21 +119,12 @@
   .grass {
     position: absolute;
     left: 0; right: 0;
-    top: 156px;
+    top: 286px;
     height: 6px;
     background: repeating-linear-gradient(85deg, #5A9A2F 0 1px, transparent 1px 4px);
     opacity: 0.7;
     z-index: 5;
   }
-  .human {
-    position: absolute;
-    left: 6px;
-    bottom: 0;
-    width: 28px;
-    height: 56px;
-    z-index: 4;
-  }
-  .human svg { width: 100%; height: 100%; display: block; }
 
   .plant-bg {
     position: absolute;
@@ -194,6 +145,10 @@
   }
   .plant-bg svg { width: 100%; height: 100%; display: block; }
   .plant-bg.has-illustration {
+    top: 0;
+    bottom: -15px;
+    -webkit-clip-path: inset(0 0 15px 0);
+    clip-path: inset(0 0 15px 0);
     -webkit-mask-image: none;
     mask-image: none;
   }
@@ -307,6 +262,17 @@
     width: 100%; height: 100%; display: block;
   }
 
+  /* Verso-only layout: flex the card so .body fills exactly the space below
+     .verso-top, allowing padding-bottom on .body to reserve clear space above
+     the absolute-positioned QR corner. */
+  .a6[data-face="verso"] { display: flex; flex-direction: column; }
+  .a6[data-face="verso"] .verso-top { flex: 0 0 auto; }
+  .a6[data-face="verso"] .body {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+  }
+
   .verso-top {
     background: #FFFFFF;
     padding: 18px 14px 12px;
@@ -326,6 +292,7 @@
   .verso-name-row .latin-mini {
     font-style: italic; font-size: 11px;
     color: #6b7280; letter-spacing: .01em;
+    text-align: right;
   }
 
   .cal-line {
@@ -364,15 +331,15 @@
   .section-title {
     font-size: 8.5px; font-weight: 700; color: #234766;
     letter-spacing: .14em; text-transform: uppercase;
-    margin: 10px 0 6px;
+    margin: 6px 0 3px;
     display: flex; gap: 10px; align-items: center;
   }
   .section-title::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 
   .pollin-section {
     display: flex; align-items: stretch; gap: 14px;
-    margin-top: 4px;
-    padding: 10px 12px;
+    margin-top: 2px;
+    padding: 6px 12px;
     background: #fdf2f8;
     border-radius: 6px;
     border-left: 3px solid #EC4899;
@@ -412,18 +379,26 @@
     gap: 3px; text-transform: uppercase; color: #6b7280;
   }
   .section-title .legend .dot {
-    width: 9px; height: 9px;
-    border-radius: 2px; display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%; display: inline-block;
+    box-sizing: border-box; position: relative;
   }
-  .section-title .legend .dot.service { background: #5A9A2F; }
-  .section-title .legend .dot.need { background: #5B5781; }
+  .section-title .legend .dot.service { border: 1.2px solid #5A9A2F; }
+  .section-title .legend .dot.need { border: 1.2px dashed #5B5781; }
   .section-title .legend .dot.both {
-    background: linear-gradient(to right, #5A9A2F 50%, #5B5781 50%);
+    border: 1.2px solid #5A9A2F;
+    clip-path: polygon(-2% -2%, 50% -2%, 50% 102%, -2% 102%);
+  }
+  .section-title .legend .dot.both::after {
+    content: ""; position: absolute;
+    inset: -1.2px; border-radius: 50%;
+    border: 1.2px dashed #5B5781;
+    clip-path: polygon(50% -2%, 102% -2%, 102% 102%, 50% 102%);
   }
 
   .eco-grid {
     display: grid; grid-template-columns: repeat(6, 1fr);
-    gap: 8px 4px; margin-top: 6px;
+    gap: 4px 4px; margin-top: 3px;
   }
   .eco-item {
     display: flex; flex-direction: column;
@@ -432,10 +407,22 @@
     color: #cbd5e1;
   }
   .eco-item .pic {
-    width: 26px; height: 26px;
+    width: 39px; height: 39px;
     color: #cbd5e1; position: relative;
   }
   .eco-item .pic > svg { width: 100%; height: 100%; display: block; }
+  /* Normalize stroke for new picto SVGs (auto-traced output may use a large
+     viewBox like 0 0 1024 1024 — without this, strokes render <0.5px). */
+  .eco-item .pic svg path,
+  .eco-item .pic svg line,
+  .eco-item .pic svg polyline,
+  .eco-item .pic svg polygon,
+  .eco-item .pic svg circle,
+  .eco-item .pic svg ellipse,
+  .eco-item .pic svg rect {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.5;
+  }
   .eco-item .pic .half {
     position: absolute; inset: 0;
     width: 100%; height: 100%; display: block;
@@ -445,49 +432,94 @@
   .eco-item .lbl {
     font-size: 7px; font-weight: 700;
     line-height: 1.05; letter-spacing: .02em;
+    padding: 2px 6px; border-radius: 999px;
+    display: inline-block;
+    margin-top: -5px; position: relative; z-index: 2;
   }
   .eco-item.service .pic { color: #5A9A2F; }
-  .eco-item.service .lbl { color: #166534; }
+  .eco-item.service .lbl {
+    color: #166534;
+    background: #dcfce7;
+  }
   .eco-item.need .pic { color: #5B5781; }
-  .eco-item.need .lbl { color: #4c1d95; }
+  .eco-item.need .lbl {
+    color: #4c1d95;
+    background: #ede9fe;
+  }
   .eco-item.both .lbl {
-    background: linear-gradient(to right, #166534 50%, #4c1d95 50%);
-    -webkit-background-clip: text; background-clip: text;
-    color: transparent; font-weight: 800;
+    font-weight: 800;
+    color: #1f2937;
+    background: linear-gradient(to right, #dcfce7 50%, #ede9fe 50%);
+  }
+
+  /* Shape-based state ring around the picto — colorblind-safe encoding:
+     - service: full solid ring
+     - need: full dashed ring
+     - both (2-in-1): left half solid + right half dashed (matches the picto color split) */
+  .eco-item.service .pic::before,
+  .eco-item.need .pic::before,
+  .eco-item.both .pic::before,
+  .eco-item.both .pic::after {
+    content: ""; position: absolute;
+    inset: -3px; border-radius: 50%;
+    pointer-events: none;
+  }
+  .eco-item.service .pic::before { border: 1.4px solid #5A9A2F; }
+  .eco-item.need .pic::before    { border: 1.4px dashed #5B5781; }
+  .eco-item.both .pic::before    {
+    border: 1.4px solid #5A9A2F;
+    clip-path: polygon(-2% -2%, 50% -2%, 50% 102%, -2% 102%);
+  }
+  .eco-item.both .pic::after     {
+    border: 1.4px dashed #5B5781;
+    clip-path: polygon(50% -2%, 102% -2%, 102% 102%, 50% 102%);
   }
 
   .resource-grid-c {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 5px 12px; margin-top: 4px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 4px 4px; margin-top: 4px;
   }
   .resource-c {
-    display: flex; align-items: flex-start;
-    gap: 6px; padding: 3px 0;
-  }
-  .resource-c .icn {
-    width: 22px; height: 22px;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    color: #234766;
-  }
-  .resource-c.off .icn { color: #cbd5e1; }
-  .resource-c .icn svg { width: 100%; height: 100%; display: block; }
-  .resource-c .info {
     display: flex; flex-direction: column;
-    gap: 1px; min-width: 0;
+    align-items: center; text-align: center;
+    padding: 0; gap: 2px;
+    color: #cbd5e1;
   }
-  .resource-c .name {
-    font-size: 8.5px; font-weight: 800;
-    color: #234766; letter-spacing: .04em;
-    text-transform: uppercase;
+  .resource-c .pic {
+    width: 39px; height: 39px;
+    color: #234766; position: relative;
   }
-  .resource-c.off .name { color: #cbd5e1; }
+  .resource-c .pic > svg { width: 100%; height: 100%; display: block; }
+  /* Stroke normalisation for new picto SVGs */
+  .resource-c .pic svg path,
+  .resource-c .pic svg line,
+  .resource-c .pic svg polyline,
+  .resource-c .pic svg polygon,
+  .resource-c .pic svg circle,
+  .resource-c .pic svg ellipse,
+  .resource-c .pic svg rect {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.5;
+  }
+  .resource-c .lbl {
+    font-size: 7px; font-weight: 700;
+    line-height: 1.05; letter-spacing: .02em;
+    padding: 2px 6px; border-radius: 999px;
+    display: inline-block;
+    background: #e0e7ef; color: #234766;
+    margin-top: -5px; position: relative; z-index: 2;
+  }
   .resource-c .parts {
-    font-size: 9px; color: #4b5563;
-    line-height: 1.25;
+    font-size: 7px; color: #4b5563;
+    line-height: 1.2; margin-top: 1px;
+    max-width: 100%;
   }
-  .resource-c.off .parts { color: #d1d5db; }
-  .resource-c .parts.empty { font-style: italic; color: #cbd5e1; }
+  .resource-c.off { color: #d1d5db; }
+  .resource-c.off .pic { color: #d1d5db; }
+  .resource-c.off .lbl {
+    background: transparent; color: #cbd5e1;
+  }
+  .resource-c.off .parts { display: none; }
 
   .warnings-banner {
     margin-top: 8px;

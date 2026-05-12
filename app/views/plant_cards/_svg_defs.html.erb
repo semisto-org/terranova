@@ -119,26 +119,89 @@
       <path d="M19 10 L 21 12 L 19 14" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
     </symbol>
 
-    <!-- Eco service icons (12 services using currentColor for state-based coloring) -->
-    <symbol id="e-windbreak" viewBox="0 0 24 24"><path d="M3 8 L18 8 M3 12 L21 12 M3 16 L17 16" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M19 4 L21 8 L19 8 L20 12 L18 12 L19 16" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
-    <symbol id="e-melli" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="6" ry="5" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M12 9 Q 9 4 5 5 M12 9 Q 15 4 19 5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
-    <symbol id="e-bird" viewBox="0 0 24 24"><path d="M5 14 Q 8 10 14 12 L 19 9 L 18 13 Q 17 17 12 18 Q 7 18 5 14 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><circle cx="16" cy="10" r="0.8" fill="currentColor"/></symbol>
-    <symbol id="e-aux" viewBox="0 0 24 24"><circle cx="12" cy="13" r="5" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="12" y1="6" x2="12" y2="20" stroke="currentColor" stroke-width="1"/><circle cx="11" cy="6" r="1" fill="currentColor"/><circle cx="13" cy="6" r="1" fill="currentColor"/></symbol>
-    <symbol id="e-erosion" viewBox="0 0 24 24"><path d="M3 18 Q 6 14 9 16 Q 12 18 15 14 Q 18 12 21 14" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
-    <symbol id="e-shade" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M3 17 Q 7 13 11 14 L 17 14 Q 21 16 21 19 L 3 19 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
-    <symbol id="e-nitrogen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4" fill="none"/><text x="12" y="16" font-size="11" font-weight="800" fill="currentColor" text-anchor="middle" font-family="Inter">N</text></symbol>
-    <symbol id="e-groundcover" viewBox="0 0 24 24"><path d="M3 16 Q 7 13 11 16 Q 15 13 19 16 Q 21 14 21 18 L 3 18 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
-    <symbol id="e-pollination" viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="16" cy="15" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M11 11 L 13 13" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.5 1.5"/></symbol>
-    <symbol id="e-orgmatter" viewBox="0 0 24 24"><path d="M5 18 Q 5 14 9 13 L 9 8 Q 12 6 14 8 L 14 12 Q 18 13 18 18 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
-    <symbol id="e-mineral" viewBox="0 0 24 24"><path d="M12 4 L18 9 L15 18 L9 18 L6 9 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
-    <symbol id="e-grass" viewBox="0 0 24 24"><path d="M5 14 L5 8 M9 14 L9 5 M13 14 L13 7 M17 14 L17 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/><line x1="6" y1="3" x2="20" y2="11" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <!-- Eco service icons — preferred source: app/frontend/assets/icons/*.svg (loaded via
+         PlantCardsHelper). Inline fallbacks kept for files not yet placed and for
+         cross-pollination (handled elsewhere in the sheet). Each SVG uses currentColor
+         so the .eco-item state classes (service/need/both) tint it. -->
+    <% windbreak = eco_icon_body('windbreak') %>
+    <% if windbreak %><symbol id="e-windbreak" viewBox="<%= windbreak[:view_box] %>"><%= windbreak[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-windbreak" viewBox="0 0 24 24"><path d="M3 8 L18 8 M3 12 L21 12 M3 16 L17 16" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M19 4 L21 8 L19 8 L20 12 L18 12 L19 16" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol><% end %>
 
-    <!-- Resource category icons -->
-    <symbol id="r-edible" viewBox="0 0 24 24"><path d="M5 3 L5 11 M9 3 L9 11 M5 11 Q5 14 7 14 Q9 14 9 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 14 L7 22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M16 3 Q14 4 14 8 Q14 11 17 11 Q19 11 19 8 Q19 4 17 3 L17 22" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></symbol>
-    <symbol id="r-aromatic" viewBox="0 0 24 24"><path d="M12 3 C 8 6 6 11 8 16 C 9 19 12 21 12 21 C 12 21 15 19 16 16 C 18 11 16 6 12 3 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 8 L12 19" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></symbol>
-    <symbol id="r-medicinal" viewBox="0 0 24 24"><path d="M12 3 L12 21 M8 7 Q 12 7 12 11 Q 12 7 16 7 M9 13 Q 12 13 12 16 Q 12 13 15 13" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="12" cy="3.5" r="1.2" fill="currentColor"/></symbol>
-    <symbol id="r-fiber" viewBox="0 0 24 24"><path d="M6 4 L6 22 M10 4 L10 22 M14 4 L14 22 M18 4 L18 22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
-    <symbol id="r-sensory" viewBox="0 0 24 24"><circle cx="12" cy="13" r="6" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="12" cy="13" r="2" fill="currentColor"/></symbol>
-    <symbol id="r-fodder" viewBox="0 0 24 24"><path d="M5 16 Q 6 10 9 9 Q 11 8 11 6 Q 11 4 13 4 Q 16 4 16 8 Q 16 11 18 12 Q 20 14 19 17 L 17 19 L 8 19 Q 5 19 5 16 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <% melli = eco_icon_body('mellifere') %>
+    <% if melli %><symbol id="e-melli" viewBox="<%= melli[:view_box] %>"><%= melli[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-melli" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="6" ry="5" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M12 9 Q 9 4 5 5 M12 9 Q 15 4 19 5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol><% end %>
+
+    <% bird = eco_icon_body('birds') %>
+    <% if bird %><symbol id="e-bird" viewBox="<%= bird[:view_box] %>"><%= bird[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-bird" viewBox="0 0 24 24"><path d="M5 14 Q 8 10 14 12 L 19 9 L 18 13 Q 17 17 12 18 Q 7 18 5 14 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><circle cx="16" cy="10" r="0.8" fill="currentColor"/></symbol><% end %>
+
+    <% aux = eco_icon_body('beneficial-insects') %>
+    <% if aux %><symbol id="e-aux" viewBox="<%= aux[:view_box] %>"><%= aux[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-aux" viewBox="0 0 24 24"><circle cx="12" cy="13" r="5" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="12" y1="6" x2="12" y2="20" stroke="currentColor" stroke-width="1"/><circle cx="11" cy="6" r="1" fill="currentColor"/><circle cx="13" cy="6" r="1" fill="currentColor"/></symbol><% end %>
+
+    <% erosion = eco_icon_body('erosion-control') %>
+    <% if erosion %><symbol id="e-erosion" viewBox="<%= erosion[:view_box] %>"><%= erosion[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-erosion" viewBox="0 0 24 24"><path d="M3 18 Q 6 14 9 16 Q 12 18 15 14 Q 18 12 21 14" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol><% end %>
+
+    <% shade = eco_icon_body('light-shade') %>
+    <% if shade %><symbol id="e-shade" viewBox="<%= shade[:view_box] %>"><%= shade[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-shade" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M3 17 Q 7 13 11 14 L 17 14 Q 21 16 21 19 L 3 19 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol><% end %>
+
+    <% nitrogen = eco_icon_body('nitrogen') %>
+    <% if nitrogen %><symbol id="e-nitrogen" viewBox="<%= nitrogen[:view_box] %>"><%= nitrogen[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-nitrogen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4" fill="none"/><text x="12" y="16" font-size="11" font-weight="800" fill="currentColor" text-anchor="middle" font-family="Inter">N</text></symbol><% end %>
+
+    <% cover = eco_icon_body('ground-cover') %>
+    <% if cover %><symbol id="e-groundcover" viewBox="<%= cover[:view_box] %>"><%= cover[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-groundcover" viewBox="0 0 24 24"><path d="M3 16 Q 7 13 11 16 Q 15 13 19 16 Q 21 14 21 18 L 3 18 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol><% end %>
+
+    <!-- cross-pollination is moving elsewhere on the sheet — kept inline for now -->
+    <symbol id="e-pollination" viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="16" cy="15" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M11 11 L 13 13" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.5 1.5"/></symbol>
+
+    <% organic = eco_icon_body('organic-matter') %>
+    <% if organic %><symbol id="e-orgmatter" viewBox="<%= organic[:view_box] %>"><%= organic[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-orgmatter" viewBox="0 0 24 24"><path d="M5 18 Q 5 14 9 13 L 9 8 Q 12 6 14 8 L 14 12 Q 18 13 18 18 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol><% end %>
+
+    <% minerals = eco_icon_body('minerals') %>
+    <% if minerals %><symbol id="e-mineral" viewBox="<%= minerals[:view_box] %>"><%= minerals[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-mineral" viewBox="0 0 24 24"><path d="M12 4 L18 9 L15 18 L9 18 L6 9 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol><% end %>
+
+    <% allelo = eco_icon_body('weed-suppression') %>
+    <% if allelo %><symbol id="e-grass" viewBox="<%= allelo[:view_box] %>"><%= allelo[:inner].html_safe %></symbol>
+    <% else %><symbol id="e-grass" viewBox="0 0 24 24"><path d="M5 14 L5 8 M9 14 L9 5 M13 14 L13 7 M17 14 L17 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/><line x1="6" y1="3" x2="20" y2="11" stroke="currentColor" stroke-width="1.4"/></symbol><% end %>
+
+    <!-- Resource category icons — loaded from app/frontend/assets/icons/resources/*.svg
+         via PlantCardsHelper. Inline fallbacks kept for files not yet placed. -->
+    <% r_edible = resource_icon_body('edible') %>
+    <% if r_edible %><symbol id="r-edible" viewBox="<%= r_edible[:view_box] %>"><%= r_edible[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-edible" viewBox="0 0 24 24"><path d="M5 3 L5 11 M9 3 L9 11 M5 11 Q5 14 7 14 Q9 14 9 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 14 L7 22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M16 3 Q14 4 14 8 Q14 11 17 11 Q19 11 19 8 Q19 4 17 3 L17 22" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></symbol><% end %>
+
+    <% r_aromatic = resource_icon_body('aromatic') %>
+    <% if r_aromatic %><symbol id="r-aromatic" viewBox="<%= r_aromatic[:view_box] %>"><%= r_aromatic[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-aromatic" viewBox="0 0 24 24"><path d="M12 3 C 8 6 6 11 8 16 C 9 19 12 21 12 21 C 12 21 15 19 16 16 C 18 11 16 6 12 3 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 8 L12 19" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></symbol><% end %>
+
+    <% r_medicinal = resource_icon_body('medicinal') %>
+    <% if r_medicinal %><symbol id="r-medicinal" viewBox="<%= r_medicinal[:view_box] %>"><%= r_medicinal[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-medicinal" viewBox="0 0 24 24"><path d="M12 3 L12 21 M8 7 Q 12 7 12 11 Q 12 7 16 7 M9 13 Q 12 13 12 16 Q 12 13 15 13" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="12" cy="3.5" r="1.2" fill="currentColor"/></symbol><% end %>
+
+    <% r_fiber = resource_icon_body('fiber') %>
+    <% if r_fiber %><symbol id="r-fiber" viewBox="<%= r_fiber[:view_box] %>"><%= r_fiber[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-fiber" viewBox="0 0 24 24"><path d="M6 4 L6 22 M10 4 L10 22 M14 4 L14 22 M18 4 L18 22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol><% end %>
+
+    <% r_animal = resource_icon_body('animal') %>
+    <% if r_animal %><symbol id="r-fodder" viewBox="<%= r_animal[:view_box] %>"><%= r_animal[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-fodder" viewBox="0 0 24 24"><path d="M5 16 Q 6 10 9 9 Q 11 8 11 6 Q 11 4 13 4 Q 16 4 16 8 Q 16 11 18 12 Q 20 14 19 17 L 17 19 L 8 19 Q 5 19 5 16 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol><% end %>
+
+    <% r_orn = resource_icon_body('ornamental') %>
+    <% if r_orn %><symbol id="r-ornamental" viewBox="<%= r_orn[:view_box] %>"><%= r_orn[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-ornamental" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></symbol><% end %>
+
+    <% r_frag = resource_icon_body('fragrant') %>
+    <% if r_frag %><symbol id="r-fragrant" viewBox="<%= r_frag[:view_box] %>"><%= r_frag[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-fragrant" viewBox="0 0 24 24"><path d="M13 4 Q 14 10 14 13 Q 14 18 11 19 L 13 21" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 9 Q 9 9 10 11 M6 14 Q 8 14 9 16" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/></symbol><% end %>
+
+    <% r_dye = resource_icon_body('dye') %>
+    <% if r_dye %><symbol id="r-dye" viewBox="<%= r_dye[:view_box] %>"><%= r_dye[:inner].html_safe %></symbol>
+    <% else %><symbol id="r-dye" viewBox="0 0 24 24"><path d="M12 3 Q 8 8 8 12 Q 8 15 12 15 Q 16 15 16 12 Q 16 8 12 3 Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><path d="M5 19 Q 9 17 12 19 Q 15 21 19 19" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></symbol><% end %>
   </defs>
 </svg>

@@ -941,7 +941,8 @@ module Api
             id: item.id.to_s,
             type: 'genus',
             latinName: item.latin_name,
-            commonName: first_common_name('genus', item.id)
+            commonName: first_common_name('genus', item.id),
+            auditedAt: item.audited_at
           }
         end
       end
@@ -964,7 +965,8 @@ module Api
             plantType: item.plant_type,
             exposures: item.exposures,
             hardiness: item.hardiness,
-            hasIllustration: item.silhouette_illustration.attached?
+            hasIllustration: item.silhouette_illustration.attached?,
+            auditedAt: item.audited_at
           }
         end
       end
@@ -985,7 +987,8 @@ module Api
             latinName: item.latin_name,
             commonName: first_common_name('variety', item.id),
             speciesId: item.species_id.to_s,
-            speciesName: item.species&.latin_name
+            speciesName: item.species&.latin_name,
+            auditedAt: item.audited_at
           }
         end
       end
