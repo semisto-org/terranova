@@ -5,7 +5,7 @@
   <section class="a4-page">
     <% group.each do |species| %>
       <div class="a4-cell">
-        <%= render 'plant_cards/recto', species: species, photos: (@photos_by_species[species.id] || []) %>
+        <%= render 'plant_cards/recto', species: species %>
       </div>
     <% end %>
     <% (4 - group.size).times do %>

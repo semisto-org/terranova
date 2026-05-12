@@ -87,10 +87,6 @@ module PlantCardsHelper
     "#{USDA_TO_CELSIUS[zone].to_s.tr('-', '−')} °C"
   end
 
-  def pick_photo(photos, role)
-    photos.find { |p| p.role == role }
-  end
-
   def cell_state(month_id, species)
     flow = species.flowering_months.include?(month_id)
     harv = species.harvest_months.include?(month_id)

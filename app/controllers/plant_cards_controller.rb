@@ -4,7 +4,6 @@ class PlantCardsController < ApplicationController
 
   def show
     @species = Plant::Species.find(params[:id])
-    @photos = Plant::Photo.where(target_type: 'species', target_id: @species.id)
   end
 
   def batch
@@ -16,10 +15,6 @@ class PlantCardsController < ApplicationController
     @species_list = Plant::Species
       .where(id: ids)
       .order(Arel.sql("array_position(ARRAY[#{ids.join(',')}]::int[], id)"))
-
-    @photos_by_species = Plant::Photo
-      .where(target_type: 'species', target_id: ids)
-      .group_by(&:target_id)
 
     render :batch, layout: 'plant_card_batch'
   end
