@@ -70,6 +70,9 @@ interface SpeciesDetailWithFiltersProps extends SpeciesDetailProps {
   extraNurseryCount?: number
   /** Whether the current member is admin (gates illustration controls). */
   isAdmin?: boolean
+  /** Called after a local mutation (e.g. photo edit/delete) so the parent
+   *  can refetch dependent views. */
+  onLocalMutation?: () => void
 }
 
 export function SpeciesDetail({
@@ -104,6 +107,7 @@ export function SpeciesDetail({
   extraNurseryTitle,
   extraNurseryCount = 0,
   isAdmin = false,
+  onLocalMutation,
 }: SpeciesDetailWithFiltersProps & { onSpeciesSelect?: (id: string) => void }) {
   const primaryCommonName = commonNames.find(cn => cn.language === 'fr')?.name
   const otherCommonNames = commonNames.filter(cn => cn.language !== 'fr')
@@ -249,6 +253,8 @@ export function SpeciesDetail({
                 contributors={contributors}
                 onContributorSelect={onContributorSelect}
                 onAddPhoto={onAddPhoto}
+                canEdit={isAdmin}
+                onPhotosChange={onLocalMutation}
               />
             </div>
 

@@ -656,15 +656,19 @@ module Api
           target_name: target_latin_name(item.target_type, item.target_id)
         )
 
-        render json: {
-          id: item.id.to_s,
-          targetId: item.target_id.to_s,
-          targetType: item.target_type,
-          url: item.url,
-          caption: item.caption,
-          contributorId: item.contributor_id.to_s,
-          createdAt: item.created_at.iso8601
-        }, status: :created
+        render json: serialize_photo(item), status: :created
+      end
+
+      def update_photo
+        item = Plant::Photo.find(params[:id])
+        item.update!(photo_update_params)
+        render json: serialize_photo(item)
+      end
+
+      def destroy_photo
+        item = Plant::Photo.find(params[:id])
+        item.destroy!
+        head :no_content
       end
 
       def create_reference
@@ -725,6 +729,7 @@ module Api
           startedAt: job.started_at&.iso8601,
           finishedAt: job.finished_at&.iso8601,
           errorMessage: job.error_message,
+          errorClass: job.error_class,
           feedback: job.feedback
         }
         base.merge!(promptUsed: job.prompt_used, vdsVersion: job.vds_version, geminiAttempts: job.gemini_attempts) if full
@@ -887,7 +892,28 @@ module Api
       end
 
       def photo_params
-        params.permit(:target_type, :target_id, :contributor_id, :url, :caption, :role)
+        params.permit(:target_type, :target_id, :contributor_id, :url, :caption, :role,
+                      :license, :attribution_author, :source_platform)
+      end
+
+      def photo_update_params
+        params.permit(:url, :caption, :role, :license, :attribution_author, :source_platform)
+      end
+
+      def serialize_photo(item)
+        {
+          id: item.id.to_s,
+          targetId: item.target_id.to_s,
+          targetType: item.target_type,
+          url: item.url,
+          caption: item.caption,
+          role: item.role,
+          license: item.license,
+          attributionAuthor: item.attribution_author,
+          sourcePlatform: item.source_platform,
+          contributorId: item.contributor_id.to_s,
+          createdAt: item.created_at.iso8601
+        }
       end
 
       def reference_params
@@ -1053,16 +1079,7 @@ module Api
       def photos_for(target_type, target_id)
         scope = Plant::Photo.where(target_type: target_type, target_id: target_id).to_a
         scope.sort_by { |p| [PHOTO_ROLE_ORDER.fetch(p.role, 5), -p.created_at.to_i] }.map do |item|
-          {
-            id: item.id.to_s,
-            targetId: item.target_id.to_s,
-            targetType: item.target_type,
-            url: item.url,
-            caption: item.caption,
-            role: item.role,
-            contributorId: item.contributor_id.to_s,
-            createdAt: item.created_at.iso8601
-          }
+          serialize_photo(item)
         end
       end
 

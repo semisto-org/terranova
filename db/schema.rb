@@ -1789,6 +1789,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_11_135000) do
     t.string "target_type", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.string "license"
+    t.string "attribution_author"
+    t.string "source_platform"
     t.index ["contributor_id"], name: "index_plant_photos_on_contributor_id"
     t.index ["role"], name: "index_plant_photos_on_role"
     t.index ["target_type", "target_id"], name: "index_plant_photos_on_target_type_and_target_id"

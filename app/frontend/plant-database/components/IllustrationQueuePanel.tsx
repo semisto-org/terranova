@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import { RotateCw } from 'lucide-react'
+import { IllustrationJobModal } from './IllustrationJobModal'
 
 interface Job {
   id: number
@@ -50,6 +51,7 @@ export function IllustrationQueuePanel({ isAdmin, onRetry }: Props) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [retrying, setRetrying] = useState<Set<number>>(new Set())
   const [loaded, setLoaded] = useState(false)
+  const [detailJobId, setDetailJobId] = useState<number | null>(null)
 
   useEffect(() => {
     let active = true
@@ -97,6 +99,15 @@ export function IllustrationQueuePanel({ isAdmin, onRetry }: Props) {
         </span>
       </header>
 
+      {detailJobId !== null && (
+        <IllustrationJobModal
+          jobId={detailJobId}
+          isAdmin={isAdmin}
+          onClose={() => setDetailJobId(null)}
+          onRetry={onRetry}
+        />
+      )}
+
       <div className="max-h-[60vh] overflow-auto px-4 py-3">
         {!loaded ? (
           <p className="text-[11px] text-stone-400 italic">Chargement…</p>
@@ -123,21 +134,28 @@ export function IllustrationQueuePanel({ isAdmin, onRetry }: Props) {
                     aria-label={STATUS_LABEL[job.status]}
                   />
                   <div className="flex-1 min-w-0">
-                    <div
-                      className="italic text-[12px] text-stone-900 truncate leading-tight"
+                    <button
+                      type="button"
+                      onClick={() => setDetailJobId(job.id)}
+                      className="italic text-[12px] text-stone-900 truncate leading-tight block text-left w-full hover:underline"
                       style={{ fontFamily: "'Sole Serif Small', 'DM Serif Display', serif" }}
                     >
                       {job.speciesLatinName}
-                    </div>
+                    </button>
                     {meta && (
                       <div className="text-[10px] text-stone-500 mt-0.5">{meta}</div>
                     )}
                     {job.status === 'failed' && (
                       <div className="mt-1 flex items-start gap-1.5 flex-wrap">
-                        <span className="text-[10px] text-red-600 leading-snug break-words flex-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setDetailJobId(job.id)}
+                          className="text-[10px] text-red-600 leading-snug break-words flex-1 min-w-0 text-left hover:underline"
+                          title="Voir le détail de l'erreur"
+                        >
                           {job.errorMessage?.slice(0, 80) || 'Échec'}
                           {job.errorMessage && job.errorMessage.length > 80 ? '…' : ''}
-                        </span>
+                        </button>
                         {isAdmin && onRetry && (
                           <button
                             onClick={() => handleRetry(job.id)}

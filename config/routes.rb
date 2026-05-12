@@ -430,6 +430,8 @@ Rails.application.routes.draw do
       delete "plants/varieties/:id", to: "plants#destroy_variety"
       post "plants/notes", to: "plants#create_note"
       post "plants/photos", to: "plants#create_photo"
+      patch "plants/photos/:id", to: "plants#update_photo"
+      delete "plants/photos/:id", to: "plants#destroy_photo"
       post "plants/references", to: "plants#create_reference"
 
       # Illustrations management
