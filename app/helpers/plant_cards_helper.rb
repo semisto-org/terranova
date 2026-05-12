@@ -179,6 +179,13 @@ module PlantCardsHelper
     (height_cm.to_i * PIXELS_PER_METER / 100.0).round
   end
 
+  def format_meters(cm)
+    return nil if cm.nil?
+    m = cm.to_f / 100.0
+    return m.to_i.to_s if (m - m.to_i).abs < 0.0001
+    format('%.2f', m).sub(/0+\z/, '').sub(/\.\z/, '').tr('.', ',')
+  end
+
   def silhouette_partial(species)
     habit = species.growth_habit.to_s.tr('-', '_')
     return 'plant_cards/silhouettes/default' if habit.empty?

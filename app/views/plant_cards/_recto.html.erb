@@ -19,17 +19,17 @@
         </div>
         <div class="dim-line">
           <% if species.height_min_cm && species.height_max_cm %>
-            <span class="item"><span class="ic">↕</span> <%= species.height_min_cm/100.0 %>–<%= species.height_max_cm/100.0 %> m</span>
+            <span class="item"><span class="ic">↕</span> <%= format_meters(species.height_min_cm) %>–<%= format_meters(species.height_max_cm) %> m</span>
           <% end %>
           <% if species.height_min_cm && species.height_max_cm && (species.spread_min_cm && species.spread_max_cm) %>
             <span class="sep">·</span>
           <% end %>
           <% if species.spread_min_cm && species.spread_max_cm %>
-            <span class="item"><span class="ic">↔</span> <%= species.spread_min_cm/100.0 %>–<%= species.spread_max_cm/100.0 %> m</span>
+            <span class="item"><span class="ic">↔</span> <%= format_meters(species.spread_min_cm) %>–<%= format_meters(species.spread_max_cm) %> m</span>
           <% end %>
           <% if species.planting_spacing_cm %>
             <span class="sep">·</span>
-            <span class="item"><span class="ic">⇿</span> Espacement <%= species.planting_spacing_cm/100.0 %> m</span>
+            <span class="item"><span class="ic">⇿</span> Espacement <%= format_meters(species.planting_spacing_cm) %> m</span>
           <% end %>
         </div>
       </div>
