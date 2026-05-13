@@ -365,10 +365,6 @@ export function PlantSheetDrawer({
   return (
     <div className="fixed inset-0 z-40">
       <style>{`
-        @keyframes plant-drawer-slide-in {
-          from { transform: translateX(100%); opacity: 0.6; }
-          to { transform: translateX(0); opacity: 1; }
-        }
         @keyframes plant-drawer-fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -412,9 +408,6 @@ export function PlantSheetDrawer({
               transformOrigin: 'left center',
               opacity,
               zIndex: 50 + index,
-              animation: isTop
-                ? 'plant-drawer-slide-in 280ms cubic-bezier(0.2, 0.7, 0.2, 1)'
-                : undefined,
               transition:
                 'transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 220ms ease-out',
               pointerEvents: 'auto',
