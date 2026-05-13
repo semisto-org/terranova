@@ -2,9 +2,12 @@
   <div class="strate-bar"></div>
   <div class="verso-top">
     <% display_common_name = species.common_names_fr.to_s.split(',', 2).first&.strip %>
+    <% title = display_common_name.presence || species.latin_name %>
     <div class="verso-name-row">
-      <h2><%= display_common_name.presence || species.latin_name %></h2>
-      <span class="latin-mini"><%= species.latin_name %></span>
+      <h2><%= title %></h2>
+      <% if title != species.latin_name %>
+        <span class="latin-mini"><%= species.latin_name %></span>
+      <% end %>
     </div>
     <% letters = %w[J F M A M J J A S O N D] %>
     <% months  = %w[jan feb mar apr may jun jul aug sep oct nov dec] %>

@@ -123,6 +123,18 @@ module PlantCardsHelper
     Array(list).map { |p| POLLINATOR_LABELS[p] || p }.join(', ').presence
   end
 
+  # Pick a size-class for the recto title based on character count.
+  # The recto h1 may wrap to 2 lines; tiers keep it within that budget.
+  # Verso uses a single fixed size, so this is recto-only.
+  def card_title_class(text, face)
+    return nil unless face == :recto
+    n = text.to_s.length
+    return 'h1-xs' if n > 56
+    return 'h1-sm' if n > 40
+    return 'h1-md' if n > 28
+    nil
+  end
+
   TOXICITY_TARGET_FR = {
     'humans' => 'humains', 'sheep' => 'brebis', 'dogs' => 'chiens',
     'horses' => 'chevaux', 'poultry' => 'volaille', 'cattle' => 'bovins'

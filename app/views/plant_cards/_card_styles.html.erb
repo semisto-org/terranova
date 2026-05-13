@@ -33,9 +33,14 @@
 
     .a6 h1 {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 27px; line-height: 1; margin: 0;
+      font-size: 27px; line-height: 1.05; margin: 0;
       letter-spacing: -0.01em; color: #1f2937;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+      overflow: hidden;
     }
+    .a6 h1.h1-md { font-size: 22px; }
+    .a6 h1.h1-sm { font-size: 18px; }
+    .a6 h1.h1-xs { font-size: 14px; }
     .a6 .latin {
       font-style: italic; font-size: 12px; color: #6b7280;
       letter-spacing: 0.01em; margin-top: 3px;
@@ -316,7 +321,9 @@
   .verso-name-row h2 {
     margin: 0;
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 22px; line-height: 1;
+    font-size: 17px; line-height: 1.1;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    overflow: hidden;
   }
   .verso-name-row .latin-mini {
     font-style: italic; font-size: 11px;
