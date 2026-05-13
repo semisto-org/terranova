@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { StockBatchForm } from './StockBatchForm'
 import { StockTable } from './StockTable'
-import { Plus, Search, X, SlidersHorizontal, ChevronDown, Check } from 'lucide-react'
+import { Plus, Search, X, SlidersHorizontal, ChevronDown, Check, Printer } from 'lucide-react'
 
 const GROWTH_STAGE_LABELS = {
   seed: 'Graine', seedling: 'Semis', young: 'Jeune', established: 'Établi', mature: 'Mature',
@@ -140,6 +140,32 @@ export function StockManagement({ batches, nurseries, containers, onSaveBatch, o
         )}
 
         <div className="ml-auto flex items-center gap-1">
+          {(() => {
+            const semistoNurseries = nurseries.filter((n) => n.type === 'semisto')
+            if (semistoNurseries.length === 0) return null
+            const filteredIsSemisto =
+              filters.nurseryId && semistoNurseries.some((n) => n.id === filters.nurseryId)
+            const targetNurseryId =
+              (filteredIsSemisto && filters.nurseryId) ||
+              (semistoNurseries.length === 1 ? semistoNurseries[0].id : null)
+            const disabled = !targetNurseryId
+            return (
+              <a
+                href={targetNurseryId ? `/plants/cards/nursery/${targetNurseryId}` : undefined}
+                target="_blank"
+                rel="noopener"
+                aria-disabled={disabled}
+                title={disabled ? 'Filtre une pépinière Semisto pour imprimer ses fiches' : undefined}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12px] transition ${
+                  disabled
+                    ? 'border-stone-200 bg-white text-stone-400 cursor-not-allowed pointer-events-none'
+                    : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50'
+                }`}
+              >
+                <Printer className="h-3.5 w-3.5" /> Fiches du stock
+              </a>
+            )
+          })()}
           <button
             onClick={handleCreate}
             className="inline-flex items-center gap-1.5 rounded-md bg-stone-900 px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition hover:bg-stone-800"

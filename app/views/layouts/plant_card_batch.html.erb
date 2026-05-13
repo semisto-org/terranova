@@ -2,16 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Fiches plantes — impression batch</title>
+  <title><%= @page_title || 'Fiches plantes — impression batch' %></title>
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
   <style>
     @page { size: A4 portrait; margin: 0; }
-    @media print {
-      body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .a4-page { page-break-after: always; box-shadow: none; }
-      .a4-page:last-child { page-break-after: auto; }
-    }
     body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f0f0f0; padding: 24px; }
     .a4-page {
       width: 210mm; height: 297mm;
@@ -50,6 +45,12 @@
     }
     /* Inside .a4-cell, override .a6 sizing to match the cell exactly (mm-based) */
     .a4-cell .a6 { width: 105mm; height: 148mm; box-shadow: none; border-radius: 0; }
+    /* Print overrides — kept LAST so they win over base rules at equal specificity */
+    @media print {
+      body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .a4-page { page-break-after: always; box-shadow: none; margin: 0; background: #fff; }
+      .a4-page:last-child { page-break-after: auto; }
+    }
   </style>
   <style>
     <%= render 'plant_cards/card_styles' %>

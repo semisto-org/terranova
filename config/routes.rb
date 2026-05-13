@@ -84,6 +84,7 @@ Rails.application.routes.draw do
   get "plants/illustrations", to: "plant_illustrations#index"
   get "plants/species/:id/card", to: "plant_cards#show", as: :plant_card
   get "plants/cards", to: "plant_cards#batch", as: :plant_cards_batch
+  get "plants/cards/nursery/:nursery_id", to: "plant_cards#nursery_stock", as: :plant_cards_nursery_stock
   get "s/:slug", to: "app#public_species_page", as: :public_species
   get "plants/*path", to: "app#plants"
   get "guilds", to: "app#guilds"

@@ -18,4 +18,22 @@ class PlantCardsController < ApplicationController
 
     render :batch, layout: 'plant_card_batch'
   end
+
+  def nursery_stock
+    nursery = Nursery::Nursery.where(nursery_type: 'semisto').find(params[:nursery_id])
+
+    species_ids = Nursery::StockBatch
+      .where(nursery_id: nursery.id, status: %w[available in_production])
+      .where('available_quantity > 0 OR status = ?', 'in_production')
+      .distinct
+      .pluck(:species_id)
+
+    @species_list = Plant::Species
+      .where(id: species_ids)
+      .order(:latin_name)
+
+    @page_title = "Fiches — #{nursery.name} (#{Date.current.strftime('%Y-%m-%d')})"
+
+    render :batch, layout: 'plant_card_batch'
+  end
 end
