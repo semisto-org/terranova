@@ -107,6 +107,34 @@
               </span>
             </div>
           </div>
+          <% if species.fertility.present? %>
+            <div class="sky-tile pollin-tile">
+              <span class="icon-side">
+                <span class="pollin-icon"><svg viewBox="0 0 24 24"><use href="#<%= fertility_symbol(species.fertility) %>"/></svg></span>
+              </span>
+              <div class="text-side">
+                <span class="lbl">Pollinisation</span>
+                <span class="val"><%= fertility_label(species.fertility) %></span>
+              </div>
+            </div>
+          <% end %>
+          <% pol_label = pollinators_label(species.specific_pollinators) %>
+          <% if pol_label || species.pollination_distance_m.present? %>
+            <div class="pollin-sub">
+              <% if pol_label %>
+                <div class="extra">
+                  <span class="ic"><svg viewBox="0 0 24 24"><use href="#vec-insect"/></svg></span>
+                  <span><%= pol_label %></span>
+                </div>
+              <% end %>
+              <% if species.pollination_distance_m.present? %>
+                <div class="extra">
+                  <span class="ic"><svg viewBox="0 0 24 24"><use href="#vec-distance"/></svg></span>
+                  <span>&lt; <strong><%= species.pollination_distance_m %> m</strong></span>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
         </div>
       </div>
       <div class="below-ground">

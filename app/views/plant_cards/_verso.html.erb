@@ -19,33 +19,7 @@
       <span><span class="dot harv"></span>Récolte</span>
     </div>
   </div>
-  <div class="body" style="padding-top: 10px; padding-bottom: 66px">
-    <% if species.fertility.present? || species.pollination_distance_m.present? || species.specific_pollinators.any? %>
-      <div class="section-title"><span>Pollinisation</span></div>
-      <div class="pollin-section">
-        <div class="pollin-main">
-          <span class="icn-big"><svg viewBox="0 0 24 24"><use href="#<%= fertility_symbol(species.fertility) %>"/></svg></span>
-          <div class="status">
-            <span class="lbl">Statut</span>
-            <span class="val"><%= fertility_label(species.fertility) || '—' %></span>
-          </div>
-        </div>
-        <div class="pollin-extras">
-          <% if (vec_label = pollinators_label(species.specific_pollinators)) %>
-            <div class="extra">
-              <span class="ic"><svg viewBox="0 0 24 24"><use href="#vec-insect"/></svg></span>
-              <span><strong>Insectes</strong> — <%= vec_label %></span>
-            </div>
-          <% end %>
-          <% if species.pollination_distance_m.present? %>
-            <div class="extra">
-              <span class="ic"><svg viewBox="0 0 24 24"><use href="#vec-distance"/></svg></span>
-              <span>Croisement <strong>&lt; <%= species.pollination_distance_m %> m</strong> bénéfique</span>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
+  <div class="body" style="padding-top: 4px; padding-bottom: 66px">
     <div class="section-title">
       <span>Système écosystémique</span>
       <span class="legend">
@@ -94,11 +68,12 @@
     <% end %>
   </div>
   <div class="qr-corner">
-    <% public_url = "https://#{ENV.fetch('PLANTS_HOST', 'plantes.semisto.org')}/s/#{species.slug}" %>
+    <% public_url = "https://data.semisto.org/s/#{species.slug}" %>
     <%= qr_svg(public_url) %>
   </div>
   <div class="signature">
     <div class="line1">Fiche réalisée par <strong>Semisto</strong></div>
-    <div class="line2">plantes.semisto.org</div>
+    <div class="line2">data.semisto.org</div>
+    <div class="version">version du 12/06/2026</div>
   </div>
 </div>

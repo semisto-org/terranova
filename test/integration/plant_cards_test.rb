@@ -130,23 +130,25 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'class="cell both"', response.body
   end
 
-  test 'pollination section renders when fertility or pollinators present' do
+  test 'pollination tile renders on recto when fertility or pollinators present' do
     @species.update!(
       fertility: 'partially-self-fertile',
       specific_pollinators: ['bees', 'hoverflies'],
       pollination_distance_m: 30
     )
     get "/plants/species/#{@species.id}/card"
-    assert_match 'class="pollin-section"', response.body
+    assert_match 'class="sky-tile pollin-tile"', response.body
     assert_match 'Part. auto-fertile', response.body
+    assert_match 'class="pollin-sub"', response.body
     assert_match 'abeilles, syrphes', response.body
-    assert_match '&lt; 30 m', response.body
+    assert_match '&lt; <strong>30 m</strong>', response.body
   end
 
-  test 'pollination section hidden when no pollination data' do
+  test 'pollination tile hidden when no pollination data' do
     @species.update!(fertility: '', specific_pollinators: [], pollination_distance_m: nil)
     get "/plants/species/#{@species.id}/card"
-    assert_no_match 'class="pollin-section"', response.body
+    assert_no_match 'class="sky-tile pollin-tile"', response.body
+    assert_no_match 'class="pollin-sub"', response.body
   end
 
   test 'eco services grid renders 12 items with state classes' do
@@ -193,7 +195,8 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     get "/plants/species/#{@species.id}/card"
     assert_match 'qr-corner', response.body
     assert_match 'Fiche réalisée par', response.body
-    assert_match 'plantes.semisto.org', response.body
+    assert_match 'data.semisto.org', response.body
+    assert_match 'version du', response.body
   end
 
   test 'batch print returns 200 with multiple species' do
