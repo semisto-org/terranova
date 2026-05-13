@@ -1,7 +1,9 @@
 class IllustrationGenerationJob < ApplicationJob
   queue_as :illustrations
 
-  retry_on Plants::GeminiImageClient::RateLimitError, wait: 10.seconds, attempts: 1
+  limits_concurrency to: 1, key: "gemini-image-generation", duration: 15.minutes
+
+  retry_on Plants::GeminiImageClient::RateLimitError, wait: :polynomially_longer, attempts: 5
   discard_on ActiveRecord::RecordNotFound
 
   def perform(illustration_job_id)

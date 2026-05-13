@@ -9,7 +9,7 @@ module Plants
     RateLimitError = Class.new(GenerationError)
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent".freeze
-    MAX_ATTEMPTS = 3
+    MAX_ATTEMPTS = 5
     RETRYABLE_NETWORK_ERRORS = [
       Net::ReadTimeout,
       Net::OpenTimeout,
@@ -39,7 +39,7 @@ module Plants
         when 503
           raise GenerationError, "Gemini 503 (overloaded)"
         when 429
-          raise RateLimitError, "Gemini 429 (rate limited)"
+          raise GenerationError, "Gemini 429 (rate limited)"
         else
           raise GenerationError, "Gemini #{response.code}: #{response.body[0..500]}"
         end
@@ -50,11 +50,12 @@ module Plants
         end
         raise GenerationError, "Gemini network failure after #{MAX_ATTEMPTS} attempts: #{e.class}: #{e.message}"
       rescue GenerationError => e
-        if attempt < MAX_ATTEMPTS && e.message.include?("503")
+        retryable = e.message.include?("503") || e.message.include?("429")
+        if attempt < MAX_ATTEMPTS && retryable
           sleep backoff_seconds(attempt)
           retry
         end
-        raise RateLimitError, "Gemini 503 after #{MAX_ATTEMPTS} attempts" if e.message.include?("503")
+        raise RateLimitError, "Gemini #{e.message[/4\d\d|5\d\d/]} after #{MAX_ATTEMPTS} attempts" if retryable
         raise
       end
     end
@@ -62,8 +63,9 @@ module Plants
     private
 
     def backoff_seconds(attempt)
-      # 10s, 30s, 60s
-      [10 * (3 ** (attempt - 1)), 60].min
+      # 20s, 45s, 90s, 180s, 300s (capped) — jittered to avoid thundering herd
+      base = [20 * (2 ** (attempt - 1)) + 5 * attempt, 300].min
+      base + rand(0..10)
     end
 
     def post_request(prompt)
