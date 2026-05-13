@@ -22,6 +22,7 @@ interface ApiResponse {
 interface Props {
   isAdmin: boolean
   onRetry?: (jobId: number) => Promise<void> | void
+  onUploaded?: (speciesId: number) => void
 }
 
 const STATUS_DOT: Record<Job['status'], string> = {
@@ -47,7 +48,7 @@ function relativeTime(iso: string | null): string {
   return `il y a ${Math.round(seconds / 86400)}j`
 }
 
-export function IllustrationQueuePanel({ isAdmin, onRetry }: Props) {
+export function IllustrationQueuePanel({ isAdmin, onRetry, onUploaded }: Props) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [retrying, setRetrying] = useState<Set<number>>(new Set())
   const [loaded, setLoaded] = useState(false)
@@ -105,6 +106,7 @@ export function IllustrationQueuePanel({ isAdmin, onRetry }: Props) {
           isAdmin={isAdmin}
           onClose={() => setDetailJobId(null)}
           onRetry={onRetry}
+          onUploaded={onUploaded}
         />
       )}
 

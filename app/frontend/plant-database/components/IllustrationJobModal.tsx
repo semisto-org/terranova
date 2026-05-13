@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { X, AlertTriangle, RotateCw, ChevronDown, ChevronRight, Clock, CheckCircle2, Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, AlertTriangle, RotateCw, ChevronDown, ChevronRight, Clock, CheckCircle2, Loader2, Upload } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 
 interface JobDetail {
@@ -24,6 +24,9 @@ interface Props {
   isAdmin: boolean
   onClose: () => void
   onRetry?: (jobId: number) => Promise<void> | void
+  /** Called after an admin uploads a manual illustration for the job's species.
+   *  Parent can use it to refresh dependent lists (e.g. the gallery grid). */
+  onUploaded?: (speciesId: number) => void
 }
 
 function formatTimestamp(iso: string | null): string {
@@ -32,11 +35,14 @@ function formatTimestamp(iso: string | null): string {
   return date.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
-export function IllustrationJobModal({ jobId, isAdmin, onClose, onRetry }: Props) {
+export function IllustrationJobModal({ jobId, isAdmin, onClose, onRetry, onUploaded }: Props) {
   const [job, setJob] = useState<JobDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [retrying, setRetrying] = useState(false)
   const [promptOpen, setPromptOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     apiRequest<JobDetail>(`/api/v1/plants/illustrations/jobs/${jobId}`)
@@ -58,6 +64,26 @@ export function IllustrationJobModal({ jobId, isAdmin, onClose, onRetry }: Props
       onClose()
     } finally {
       setRetrying(false)
+    }
+  }
+
+  const handleFileChosen = async (file: File) => {
+    if (!job) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      await apiRequest(`/api/v1/plants/species/${job.speciesId}/silhouette-illustration`, {
+        method: 'POST',
+        body: form,
+      })
+      onUploaded?.(job.speciesId)
+      onClose()
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Échec de l\'upload')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -196,25 +222,53 @@ export function IllustrationJobModal({ jobId, isAdmin, onClose, onRetry }: Props
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-stone-50/60 border-t border-stone-100">
-          {job?.status === 'failed' && isAdmin && onRetry && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) handleFileChosen(f)
+            e.target.value = ''
+          }}
+        />
+
+        <div className="flex flex-col gap-2 px-6 py-4 bg-stone-50/60 border-t border-stone-100">
+          {uploadError && (
+            <p className="text-xs text-red-600 text-right">{uploadError}</p>
+          )}
+          <div className="flex items-center justify-end gap-2 flex-wrap">
+            {job?.status === 'failed' && isAdmin && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-stone-300 bg-white text-stone-800 rounded-lg text-sm font-medium hover:bg-stone-50 disabled:opacity-60"
+              >
+                <Upload className={`w-3.5 h-3.5 ${uploading ? 'animate-pulse' : ''}`} />
+                {uploading ? 'Envoi…' : 'Uploader une illustration'}
+              </button>
+            )}
+            {job?.status === 'failed' && isAdmin && onRetry && (
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={retrying}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-[#5B5781] text-white rounded-lg text-sm font-medium hover:bg-[#4a4770] disabled:opacity-60"
+              >
+                <RotateCw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
+                {retrying ? 'Relance…' : 'Relancer ce job'}
+              </button>
+            )}
             <button
               type="button"
-              onClick={handleRetry}
-              disabled={retrying}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-[#5B5781] text-white rounded-lg text-sm font-medium hover:bg-[#4a4770] disabled:opacity-60"
+              onClick={onClose}
+              className="px-4 py-2 border border-stone-300 rounded-lg text-stone-700 text-sm hover:bg-white"
             >
-              <RotateCw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
-              {retrying ? 'Relance…' : 'Relancer ce job'}
+              Fermer
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-stone-300 rounded-lg text-stone-700 text-sm hover:bg-white"
-          >
-            Fermer
-          </button>
+          </div>
         </div>
       </div>
     </div>

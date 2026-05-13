@@ -394,6 +394,50 @@ export function SpeciesFormModal({
     existingCommonNames.length > 0 ? existingCommonNames : [{ language: 'fr', name: '' }]
   )
 
+  // Manually-uploaded silhouette illustration (separate ActiveStorage lifecycle).
+  // The species must exist before upload, so the widget is hidden in creation mode.
+  const [silhouetteUrl, setSilhouetteUrl] = useState<string | null>(species?.silhouetteUrl ?? null)
+  const [silhouetteBusy, setSilhouetteBusy] = useState(false)
+  const [silhouetteError, setSilhouetteError] = useState<string | null>(null)
+  const silhouetteFileRef = useRef<HTMLInputElement>(null)
+
+  const handleSilhouetteUpload = async (file: File) => {
+    if (!species?.id) return
+    setSilhouetteBusy(true)
+    setSilhouetteError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const result = await apiRequest(
+        `/api/v1/plants/species/${species.id}/silhouette-illustration`,
+        { method: 'POST', body: form }
+      ) as { url?: string | null }
+      setSilhouetteUrl(result?.url ?? null)
+    } catch (e) {
+      setSilhouetteError(e instanceof Error ? e.message : "Échec de l'upload")
+    } finally {
+      setSilhouetteBusy(false)
+    }
+  }
+
+  const handleSilhouetteDelete = async () => {
+    if (!species?.id) return
+    if (!window.confirm("Supprimer l'illustration actuelle ?")) return
+    setSilhouetteBusy(true)
+    setSilhouetteError(null)
+    try {
+      await apiRequest(
+        `/api/v1/plants/species/${species.id}/silhouette-illustration`,
+        { method: 'DELETE' }
+      )
+      setSilhouetteUrl(null)
+    } catch (e) {
+      setSilhouetteError(e instanceof Error ? e.message : 'Échec de la suppression')
+    } finally {
+      setSilhouetteBusy(false)
+    }
+  }
+
   // Characteristics
   const [lifeCycle, setLifeCycle] = useState(species?.lifeCycle ?? 'perennial')
   const [growthRate, setGrowthRate] = useState(species?.growthRate ?? 'medium')
@@ -677,6 +721,61 @@ export function SpeciesFormModal({
                   Identité
                 </h4>
                 <div className="space-y-4">
+                  {/* Silhouette illustration — manual upload fallback when AI fails.
+                      Hidden during creation since ActiveStorage needs a persisted species. */}
+                  {species?.id && (
+                    <div>
+                      <label className={labelBase}>Illustration</label>
+                      <div className="flex items-start gap-4 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
+                        <div className="w-20 h-20 shrink-0 rounded-lg bg-white border border-stone-200 flex items-center justify-center overflow-hidden">
+                          {silhouetteUrl ? (
+                            <img src={silhouetteUrl} alt="Illustration actuelle" className="w-full h-full object-contain" />
+                          ) : (
+                            <span className="text-[10px] text-stone-400 italic">Aucune</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <input
+                            ref={silhouetteFileRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0]
+                              if (f) handleSilhouetteUpload(f)
+                              e.target.value = ''
+                            }}
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => silhouetteFileRef.current?.click()}
+                              disabled={silhouetteBusy}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-stone-300 bg-white text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                              </svg>
+                              {silhouetteBusy ? 'Envoi…' : (silhouetteUrl ? 'Remplacer' : 'Téléverser')}
+                            </button>
+                            {silhouetteUrl && (
+                              <button
+                                type="button"
+                                onClick={handleSilhouetteDelete}
+                                disabled={silhouetteBusy}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-red-200 bg-white text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                              >
+                                Supprimer
+                              </button>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs text-stone-500">PNG ou JPG, fond transparent recommandé. Utile quand la génération IA échoue.</p>
+                          {silhouetteError && <p className="mt-1 text-xs text-red-600">{silhouetteError}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Genus autocomplete */}
                   <div>
                     <label className={labelBase}>Genre</label>

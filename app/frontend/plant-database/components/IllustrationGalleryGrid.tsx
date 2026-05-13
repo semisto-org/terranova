@@ -21,9 +21,11 @@ interface ApiResponse {
 interface Props {
   filter: string
   onItemClick?: (item: IllustrationItem) => void
+  /** Bump to force a refetch — used after an admin uploads/retries an illustration. */
+  refreshSignal?: number
 }
 
-export function IllustrationGalleryGrid({ filter, onItemClick }: Props) {
+export function IllustrationGalleryGrid({ filter, onItemClick, refreshSignal = 0 }: Props) {
   const [items, setItems] = useState<IllustrationItem[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -54,7 +56,7 @@ export function IllustrationGalleryGrid({ filter, onItemClick }: Props) {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [filter, page])
+  }, [filter, page, refreshSignal])
 
   if (loading && items.length === 0) {
     return (

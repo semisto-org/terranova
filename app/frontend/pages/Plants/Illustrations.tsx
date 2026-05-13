@@ -37,6 +37,7 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
   const [showCardContext, setShowCardContext] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [lightboxItem, setLightboxItem] = useState<IllustrationItem | null>(null)
+  const [gridRefresh, setGridRefresh] = useState(0)
 
   useShellNav({
     sections: PLANT_SECTIONS,
@@ -121,10 +122,18 @@ export default function PlantsIllustrations({ isAdmin }: Props) {
               onShowCardContextChange={setShowCardContext}
             />
 
-            <IllustrationGalleryGrid filter={filter} onItemClick={setLightboxItem} />
+            <IllustrationGalleryGrid filter={filter} onItemClick={setLightboxItem} refreshSignal={gridRefresh} />
           </div>
 
-          <IllustrationQueuePanel isAdmin={isAdmin} onRetry={handleRetry} />
+          <IllustrationQueuePanel
+            isAdmin={isAdmin}
+            onRetry={handleRetry}
+            onUploaded={() => {
+              setGridRefresh((n) => n + 1)
+              refreshStats()
+              toast.success('Illustration téléversée.')
+            }}
+          />
         </div>
       </div>
 
