@@ -307,6 +307,81 @@ export function SpeciesDetail({
                 </div>
               )}
 
+              {/* Botanical plate — pulls the AI silhouette into a small
+                  herbarium-style frame. Aged paper bg + double-rule border +
+                  multiply-blended illustration give a printed-plate feel that
+                  echoes the printable fiche without being kitsch. */}
+              {species.silhouetteUrl && (
+                <figure className="relative mb-6 select-none">
+                  <div
+                    className="relative px-4 pt-3 pb-2 rounded-sm"
+                    style={{
+                      background:
+                        'radial-gradient(120% 80% at 50% 0%, #f7eed4 0%, #ede1bb 70%, #d9c79a 100%)',
+                      boxShadow:
+                        '0 1px 0 rgba(0,0,0,0.08), 0 12px 24px -16px rgba(80,55,15,0.30), inset 0 0 0 1px rgba(120,90,40,0.55)',
+                    }}
+                  >
+                    {/* paper-grain noise overlay */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50 rounded-sm"
+                      style={{
+                        backgroundImage:
+                          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.30 0 0 0 0 0.22 0 0 0 0 0.10 0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+                      }}
+                    />
+                    {/* inner double rule */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-2 pointer-events-none rounded-[2px]"
+                      style={{ border: '1px solid rgba(95,65,25,0.30)' }}
+                    />
+
+                    {/* eyebrow */}
+                    <div className="relative flex items-center justify-between mb-2">
+                      <span
+                        className="text-[10px] uppercase tracking-[0.28em] text-[#7a5a1c] font-semibold"
+                        style={{ fontFamily: "'Sole Serif Small', Georgia, serif" }}
+                      >
+                        Planche botanique
+                      </span>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#7a5a1c]/70">
+                        Pl. {species.id.toString().padStart(3, '0')}
+                      </span>
+                    </div>
+
+                    {/* the illustration itself */}
+                    <div className="relative flex items-end justify-center min-h-[200px]">
+                      <img
+                        src={species.silhouetteUrl}
+                        alt={`Illustration botanique de ${species.latinName}`}
+                        className="max-h-[280px] w-auto object-contain"
+                        style={{ mixBlendMode: 'multiply', filter: 'contrast(1.05) saturate(0.94)' }}
+                      />
+                    </div>
+
+                    {/* caption */}
+                    <figcaption
+                      className="relative mt-2 pt-2 text-center"
+                      style={{
+                        borderTop: '1px solid rgba(95,65,25,0.25)',
+                        fontFamily: "'Sole Serif Small', Georgia, serif",
+                      }}
+                    >
+                      <p className="italic text-[15px] text-[#3a2a10] leading-tight">
+                        {species.latinName}
+                      </p>
+                      {primaryCommonName && (
+                        <p className="text-[11px] text-[#7a5a1c] mt-0.5 tracking-wide">
+                          {primaryCommonName}
+                        </p>
+                      )}
+                    </figcaption>
+                  </div>
+                </figure>
+              )}
+
               {/* Action buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
                 <AddToPaletteButton
