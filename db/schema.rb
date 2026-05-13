@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_11_135000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_11_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1781,17 +1781,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_11_135000) do
   end
 
   create_table "plant_photos", force: :cascade do |t|
+    t.string "attribution_author"
     t.string "caption", default: "", null: false
     t.bigint "contributor_id", null: false
     t.datetime "created_at", null: false
+    t.string "license"
     t.string "role"
+    t.string "source_platform"
     t.bigint "target_id", null: false
     t.string "target_type", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
-    t.string "license"
-    t.string "attribution_author"
-    t.string "source_platform"
     t.index ["contributor_id"], name: "index_plant_photos_on_contributor_id"
     t.index ["role"], name: "index_plant_photos_on_role"
     t.index ["target_type", "target_id"], name: "index_plant_photos_on_target_type_and_target_id"
