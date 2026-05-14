@@ -27,12 +27,19 @@ function getPhaseForStatus(status) {
   return PHASES.find((p) => p.statuses.includes(status)) || PHASES[0]
 }
 
+function hasPrice(training) {
+  if (Number(training.price) > 0) return true
+  if ((training.participantCategories || []).some((c) => Number(c.price) > 0)) return true
+  if ((training.packs || []).some((p) => Number(p.price) > 0)) return true
+  return false
+}
+
 function getReadinessChecks(training, sessions) {
   return [
     { id: 'date', label: 'Date(s)', done: sessions.length > 0 },
     { id: 'location', label: 'Lieu', done: sessions.length > 0 && sessions.every((s) => (s.locationIds || []).length > 0) },
     { id: 'trainer', label: 'Formateur', done: sessions.length > 0 && sessions.every((s) => (s.trainerIds || []).length > 0) },
-    { id: 'price', label: 'Prix', done: Number(training.price) > 0 },
+    { id: 'price', label: 'Prix', done: hasPrice(training) },
   ]
 }
 

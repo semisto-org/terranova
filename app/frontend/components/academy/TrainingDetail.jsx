@@ -85,6 +85,13 @@ function formatCurrency(value) {
   })
 }
 
+function trainingHasPrice(training) {
+  if (Number(training.price) > 0) return true
+  if ((training.participantCategories || []).some((c) => Number(c.price) > 0)) return true
+  if ((training.packs || []).some((p) => Number(p.price) > 0)) return true
+  return false
+}
+
 function StatusDropdown({ currentStatus, onChangeStatus, readinessChecks = [] }) {
   const [open, setOpen] = useState(false)
   const [tooltipStatus, setTooltipStatus] = useState(null)
@@ -321,7 +328,7 @@ export default function TrainingDetail({
                     { id: 'date', label: 'Date(s)', done: sessions.length > 0 },
                     { id: 'location', label: 'Lieu', done: sessions.length > 0 && sessions.every((s) => (s.locationIds || []).length > 0) },
                     { id: 'trainer', label: 'Formateur', done: sessions.length > 0 && sessions.every((s) => (s.trainerIds || []).length > 0) },
-                    { id: 'price', label: 'Prix', done: Number(training.price) > 0 },
+                    { id: 'price', label: 'Prix', done: trainingHasPrice(training) },
                   ]}
                 />
               </div>
