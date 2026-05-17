@@ -977,6 +977,259 @@ Nursery::Transfer.find_or_create_by!(order: order3, status: 'in-progress') do |t
   t.notes = 'Livraison chênes pour Gembloux'
 end
 
+# ─── Pépinière Arbuste Fruitier (arbustefruitier.com) ───────────────────────
+# Synchronisé depuis le catalogue Shopify — mai 2026
+# Source : www.arbustefruitier.com — Hennuy Corentin, Vaux-sur-Sûre (BE)
+nursery_arb = Nursery::Nursery.find_or_create_by!(name: 'Arbuste Fruitier') do |n|
+  n.nursery_type  = 'partner'
+  n.integration   = 'manual'
+  n.address       = '77/1 rue Saint-Eloi'
+  n.city          = 'Vaux-sur-Sûre'
+  n.postal_code   = '6640'
+  n.country       = 'BE'
+  n.latitude      = 50.0075
+  n.longitude     = 5.5564
+  n.contact_name  = 'Hennuy Corentin'
+  n.contact_email = 'info@arbustefruitier.com'
+  n.contact_phone = '+32 493 05 58 96'
+  n.website       = 'https://www.arbustefruitier.com'
+  n.description   = 'Pépinière belge spécialisée en arbustes fruitiers, fruitiers alternatifs et plantes comestibles pour forêts-jardins et jardins nourriciers.'
+  n.specialties   = ['fruitiers', 'arbustes-fruitiers', 'comestibles', 'forêt-jardin', 'asiminiers', 'cornouiller', 'myrtilles']
+  n.is_pickup_point = true
+end
+
+container_godet = Nursery::Container.find_or_create_by!(short_name: 'GODET') do |c|
+  c.name         = 'Godet'
+  c.volume_liters = 0.3
+  c.description  = 'Petit godet de repiquage'
+  c.sort_order   = 0
+end
+
+container_c1 = Nursery::Container.find_or_create_by!(short_name: 'C1') do |c|
+  c.name         = 'Pot 1L'
+  c.volume_liters = 1.0
+  c.description  = 'Conteneur 1 litre'
+  c.sort_order   = 15
+end
+
+arb_sp_cache  = {}
+arb_var_cache = {}
+
+# [latin_name, variety_name_or_nil, container, price_euros_or_nil, status, plant_type]
+arb_catalog = [
+  # ACTINIDIA
+  ['Actinidia arguta',            'Weiki',                      container_c2,     20.00, 'sold_out',  'shrub'],
+  ['Actinidia arguta',            "Ken's Red",                  container_c2,     20.00, 'sold_out',  'shrub'],
+  # AGASTACHE
+  ['Agastache foeniculum',        nil,                          container_c1,      7.00, 'available', 'herbaceous'],
+  # AKEBIA
+  ['Akebia quinata',              nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Akebia quinata',              'Alba',                       container_c2,       nil, 'sold_out',  'shrub'],
+  # ALLIUM
+  ['Allium ampeloprasum',         nil,                          container_godet,   7.00, 'available', 'herbaceous'],
+  ['Allium proliferum',           nil,                          container_godet,   5.00, 'sold_out',  'herbaceous'],
+  ['Allium schoenoprasum',        nil,                          container_godet,   3.00, 'available', 'herbaceous'],
+  ['Allium tuberosum',            nil,                          container_godet,   3.00, 'available', 'herbaceous'],
+  ['Allium tuberosum',            nil,                          container_c1,      6.00, 'available', 'herbaceous'],
+  # AMELANCHIER
+  ['Amelanchier lamarckii',       nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Amelanchier laevis',          'Ballerina',                  container_c2,     25.00, 'available', 'shrub'],
+  ['Amelanchier laevis',          'Prince William',             container_c2,     25.00, 'available', 'shrub'],
+  # ARMORACIA
+  ['Armoracia rusticana',         nil,                          container_godet,   4.00, 'available', 'herbaceous'],
+  ['Armoracia rusticana',         nil,                          container_c1,      8.00, 'available', 'herbaceous'],
+  # ARONIA
+  ['Aronia melanocarpa',          'Hugin',                      container_c2,     14.00, 'available', 'shrub'],
+  # ARTEMISIA
+  ['Artemisia abrotanum',         nil,                          container_c1,      9.00, 'sold_out',  'herbaceous'],
+  # ASIMINA
+  ['Asimina triloba',             'Allegheny',                  container_c2,       nil, 'sold_out',  'shrub'],
+  ['Asimina triloba',             'KSU Chappel',                container_c2,       nil, 'sold_out',  'shrub'],
+  ['Asimina triloba',             'Overleese',                  container_c2,       nil, 'sold_out',  'shrub'],
+  ['Asimina triloba',             'Rappahannock',               container_c2,       nil, 'sold_out',  'shrub'],
+  ['Asimina triloba',             'Shenandoah',                 container_c2,       nil, 'sold_out',  'shrub'],
+  ['Asimina triloba',             'VE-21',                      container_c2,       nil, 'sold_out',  'shrub'],
+  # CARAGANA
+  ['Caragana arborescens',        nil,                          container_c2,     15.00, 'available', 'shrub'],
+  # CASTANEA
+  ['Castanea sativa',             "Dorée de Lyon",              container_c2,     30.00, 'available', 'shrub'],
+  ['Castanea sativa',             'Maraval',                    container_c2,       nil, 'sold_out',  'shrub'],
+  ['Castanea sativa x crenata',   'Bouche de Bétizac',          container_c2,       nil, 'sold_out',  'shrub'],
+  # CELTIS
+  ['Celtis occidentalis',         nil,                          container_c2,     20.00, 'available', 'shrub'],
+  # CHAENOMELES
+  ['Chaenomeles japonica',        'Cido',                       container_c2,       nil, 'sold_out',  'shrub'],
+  # CORNUS
+  ['Cornus kousa',                'Satomi',                     container_c2,       nil, 'sold_out',  'shrub'],
+  ['Cornus mas',                  'Juliusz',                    container_c2,     30.00, 'available', 'shrub'],
+  ['Cornus mas',                  'Neshny',                     container_c2,     20.00, 'available', 'shrub'],
+  ['Cornus mas',                  'Paczoski',                   container_c2,     30.00, 'available', 'shrub'],
+  # CORYLUS
+  ['Corylus avellana',            'Merveille de Bollwiller',    container_c2,       nil, 'sold_out',  'shrub'],
+  ['Corylus avellana',            "Webb's Prize Cobb",          container_c2,       nil, 'sold_out',  'shrub'],
+  # CRATAEGUS
+  ['Crataegus monogyna',          'Zbigniew',                   container_c2,       nil, 'sold_out',  'shrub'],
+  ['Crataegus pinnatifida',       'Big Ball',                   container_c2,       nil, 'sold_out',  'shrub'],
+  ['Crataegus schraderiana',      nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  # CYDONIA
+  ['Cydonia oblonga',             'Muskatnaja',                 container_c2,       nil, 'sold_out',  'shrub'],
+  # DIOSPYROS
+  ['Diospyros kaki',              'Mikatani Gosho',             container_c2,       nil, 'sold_out',  'shrub'],
+  ['Diospyros kaki x virginiana', 'Russian Beauty',             container_c2,       nil, 'sold_out',  'shrub'],
+  ['Diospyros virginiana',        'Supersweet',                 container_c2,       nil, 'sold_out',  'shrub'],
+  # ELAEAGNUS
+  ['Elaeagnus angustifolia',      nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Elaeagnus ebbingei',          nil,                          container_c2,     20.00, 'available', 'shrub'],
+  ['Elaeagnus ebbingei',          'Limelight',                  container_c2,     20.00, 'available', 'shrub'],
+  ['Elaeagnus multiflora',        nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Elaeagnus umbellata',         'Pointilla® Amoroso',         container_c2,       nil, 'sold_out',  'shrub'],
+  ['Elaeagnus umbellata',         'Pointilla® Fortunella',      container_c2,       nil, 'sold_out',  'shrub'],
+  ['Elaeagnus umbellata',         "Pointilla® Sweet'N'Sour",    container_c2,       nil, 'sold_out',  'shrub'],
+  # FICUS
+  ['Ficus carica',                'Bornholm',                   container_c2,     30.00, 'available', 'shrub'],
+  ['Ficus carica',                'Brown Turkey',               container_c2,     20.00, 'available', 'shrub'],
+  ['Ficus carica',                'Rouge de Bordeaux',          container_c2,     20.00, 'available', 'shrub'],
+  # FRAGARIA
+  ['Fragaria nilgerrensis',       'Fenhong Se',                 container_godet,   3.00, 'sold_out',  'herbaceous'],
+  ['Fragaria x ananassa',         'Mara des Bois',              container_godet,   3.00, 'sold_out',  'herbaceous'],
+  ['Fragaria x ananassa',         'Snow White',                 container_godet,   4.00, 'sold_out',  'herbaceous'],
+  # GALIUM
+  ['Galium odoratum',             nil,                          container_godet,   4.00, 'sold_out',  'herbaceous'],
+  ['Galium odoratum',             nil,                          container_c1,      8.00, 'available', 'herbaceous'],
+  # HEMEROCALLIS
+  ['Hemerocallis',                'Stella de Oro',              container_godet,   5.00, 'sold_out',  'herbaceous'],
+  # HIPPOPHAE
+  ['Hippophae rhamnoides',        'Hergo',                      container_c2,     30.00, 'available', 'shrub'],
+  ['Hippophae rhamnoides',        'Otto',                       container_c2,     15.00, 'available', 'shrub'],
+  # HOVENIA
+  ['Hovenia dulcis',              nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  # JUGLANS
+  ['Juglans regia',               'Fernette',                   container_c2,       nil, 'sold_out',  'shrub'],
+  ['Juglans regia',               'Fernor',                     container_c2,       nil, 'sold_out',  'shrub'],
+  ['Juglans regia',               'Lara',                       container_c2,       nil, 'sold_out',  'shrub'],
+  ['Juglans regia',               'Parisienne',                 container_c2,       nil, 'sold_out',  'shrub'],
+  # LONICERA
+  ['Lonicera kamtschatica',       'Armur',                      container_c2,       nil, 'sold_out',  'shrub'],
+  ['Lonicera kamtschatica',       'Duet',                       container_c2,       nil, 'sold_out',  'shrub'],
+  # LYCIUM
+  ['Lycium barbarum',             'Sweet Lifeberry®',           container_c2,     15.00, 'available', 'shrub'],
+  # MALUS
+  ['Malus domestica',             'Cwastresse Double',          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Cwastresse Simple',          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Early Red Meat',             container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Gueule de Mouton',           container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Jacques Lebel',              container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Pink Pearl',                 container_c2,     20.00, 'available', 'shrub'],
+  ['Malus domestica',             'Président Roulin',           container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Président Van Dievoet',      container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Reine des Reinettes',        container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus domestica',             'Reinette Étoilée',           container_c2,       nil, 'sold_out',  'shrub'],
+  ['Malus sieversii',             nil,                          container_c2,     25.00, 'available', 'shrub'],
+  # MELISSA
+  ['Melissa officinalis',         nil,                          container_c1,      6.00, 'sold_out',  'herbaceous'],
+  # MENTHA
+  ['Mentha suaveolens',           nil,                          container_c1,      6.00, 'sold_out',  'herbaceous'],
+  # MESPILUS
+  ['Mespilus germanica',          'Géant de Breda',             container_c2,     20.00, 'available', 'shrub'],
+  ['Mespilus germanica',          'Kurpfalz',                   container_c2,       nil, 'sold_out',  'shrub'],
+  # MONARDA
+  ['Monarda didyma',              nil,                          container_godet,   5.00, 'sold_out',  'herbaceous'],
+  # MORUS
+  ['Morus alba',                  nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Morus alba',                  'Beautiful Day',              container_c2,       nil, 'sold_out',  'shrub'],
+  ['Morus rubra',                 'Illinois Everbearing',       container_c2,     30.00, 'sold_out',  'shrub'],
+  # PRUNUS
+  ['Prunus americana x salicina', 'Bubble Gum',                 container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus cerasus',              'Annabella',                  container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus cerasus',              'Early Rivers',               container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus cerasus',              'Griotte de Schaerbeek',      container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus cerasus',              'Kordia',                     container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            'Belle de Thuin',             container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            'Mirabelle de Nancy',         container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            'Prune de Prince',            container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            "Quetsche d'Alsace",          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            'Reine Claude Crottée',       container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            "Reine Claude d'Oullins",     container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus domestica',            'Rivers Early Prolific',      container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus dulcis',               'Robijn',                     container_c2,     20.00, 'available', 'shrub'],
+  ['Prunus maritima',             'no. 2',                      container_c2,     20.00, 'available', 'shrub'],
+  ['Prunus maritima',             'no. 5',                      container_c2,     20.00, 'available', 'shrub'],
+  ['Prunus persica',              'Fertile de Septembre',       container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus salicina x armeniaca', 'Cherny Prince',              container_c2,     25.00, 'available', 'shrub'],
+  ['Prunus salicina x armeniaca', 'Flavor Candy',               container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus salicina x armeniaca', 'Globus',                     container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus tomentosa',            nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Prunus tomentosa',            'Snovit',                     container_c2,       nil, 'sold_out',  'shrub'],
+  # PYRUS
+  ['Pyrus communis',              'Beurré Chaboceau',           container_c2,       nil, 'sold_out',  'shrub'],
+  ["Pyrus communis",              "Bronzée d'Enghien",          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus communis',              'Comtesse de Paris',          container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus communis',              'Joséphine de Malines',       container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus communis',              'Légipont',                   container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus communis',              'Saint-Mathieu',              container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus communis',              'Triomphe de Vienne',         container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus pyrifolia',             'Chojuro',                    container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus pyrifolia',             'Hayatama',                   container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus pyrifolia',             'Hosui',                      container_c2,       nil, 'sold_out',  'shrub'],
+  ['Pyrus pyrifolia',             'Shinseiki',                  container_c2,       nil, 'sold_out',  'shrub'],
+  # RIBES
+  ['Ribes nigrum',                'Titania',                    container_c2,     10.00, 'available', 'shrub'],
+  ['Ribes nigrum',                'Wellington',                 container_c2,     10.00, 'available', 'shrub'],
+  ['Ribes rubrum',                'Jonkheer van Tets',          container_c2,     10.00, 'available', 'shrub'],
+  ['Ribes uva-crispa',            'Hinnonmaki jaune',           container_c2,     10.00, 'available', 'shrub'],
+  # RUBUS
+  ['Rubus fruticosus',            'Black Satin',                container_c2,       nil, 'sold_out',  'shrub'],
+  ['Rubus idaeus',                'Golden Queen',               container_c2,       nil, 'sold_out',  'shrub'],
+  ['Rubus idaeus',                'Malling Promise',            container_c2,       nil, 'sold_out',  'shrub'],
+  ['Rubus x loganobaccus',        nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  # SAMBUCUS
+  ['Sambucus canadensis',         'Berry Hill',                 container_c2,       nil, 'sold_out',  'shrub'],
+  # SORBUS
+  ['Sorbus aucuparia',            'Rosina',                     container_c2,       nil, 'sold_out',  'shrub'],
+  ['Sorbus domestica',            'Sossenheimer Riesen',         container_c2,       nil, 'sold_out',  'shrub'],
+  ['Sorbus x thuringiaca',        'Burka',                      container_c2,       nil, 'sold_out',  'shrub'],
+  # STACHYS
+  ['Stachys affinis',             nil,                          container_godet,   5.00, 'available', 'herbaceous'],
+  # TETRADIUM
+  ['Tetradium daniellii',         nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  # TILIA
+  ['Tilia cordata',               nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  # TOONA
+  ['Toona sinensis',              nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+  # VACCINIUM
+  ['Vaccinium corymbosum',        'Bluejay',                    container_c2,     16.00, 'available', 'shrub'],
+  ['Vaccinium corymbosum',        'Duke',                       container_c2,     16.00, 'available', 'shrub'],
+  ['Vaccinium corymbosum',        'Pink Lemonade',              container_c2,     16.00, 'available', 'shrub'],
+  ['Vaccinium macrocarpon',       'Big Pearl',                  container_c2,       nil, 'sold_out',  'shrub'],
+  ['Vaccinium vitis-idaea',       'Red Pearl',                  container_c2,       nil, 'sold_out',  'shrub'],
+  # VITIS
+  ['Vitis vinifera',              'Arkadia',                    container_c2,     15.00, 'available', 'shrub'],
+  ['Vitis vinifera',              'Palatina',                   container_c2,     15.00, 'available', 'shrub'],
+  # ZANTHOXYLUM
+  ['Zanthoxylum piperitum',       nil,                          container_c2,     50.00, 'available', 'shrub'],
+  ['Zanthoxylum simulans',        nil,                          container_c2,       nil, 'sold_out',  'shrub'],
+]
+
+arb_catalog.each do |latin_name, variety_name, container, price, status, plant_type|
+  species = arb_sp_cache[latin_name] ||= Plant::Species.find_or_create_by!(latin_name: latin_name) do |s|
+    s.plant_type = plant_type
+  end
+  variety = if variety_name
+    key = "#{latin_name}::#{variety_name}"
+    arb_var_cache[key] ||= Plant::Variety.find_or_create_by!(species: species, latin_name: variety_name)
+  end
+  Nursery::StockBatch.find_or_create_by!(nursery: nursery_arb, species: species, variety: variety, container: container) do |b|
+    b.quantity           = status == 'available' ? 10 : 0
+    b.available_quantity = status == 'available' ? 10 : 0
+    b.reserved_quantity  = 0
+    b.growth_stage       = 'young'
+    b.status             = status
+    b.price_euros        = price || 0
+    b.accepts_semos      = false
+    b.origin             = 'Arbuste Fruitier (arbustefruitier.com)'
+  end
+end
+
 puts "Nursery seeding done!"
 
 # ─── Knowledge Base ───
