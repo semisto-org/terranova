@@ -4,9 +4,21 @@ import { formatRelativeTime } from '../utils/formatRelativeTime'
 import slackIcon from '../../assets/slack-icon.svg'
 
 function notesPreview(member: Member): string {
-  const raw = member.notes && member.notes.trim().length > 0
-    ? member.notes
-    : (member.notesHtml || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+  const html = member.notesHtml || ''
+  const raw = html
+    ? html
+        .replace(/<\s*br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, '\n')
+        .replace(/<li[^>]*>/gi, '• ')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/^\s+|\s+$/g, '')
+    : (member.notes || '').trim()
   if (!raw) return ''
   return raw.length > 220 ? `${raw.slice(0, 220).trimEnd()}…` : raw
 }
