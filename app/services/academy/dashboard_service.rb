@@ -85,7 +85,12 @@ module Academy
     def payment_alerts
       registrations = Academy::TrainingRegistration
         .joins(:training)
-        .includes(:training, :contact)
+        .includes(
+          :contact,
+          :registration_items,
+          :registration_packs,
+          training: %i[participant_categories packs]
+        )
         .where.not(payment_status: "paid")
         .where(academy_trainings: { status: ACTIVE_STATUSES })
         .where(academy_training_registrations: { deleted_at: nil })
@@ -102,7 +107,7 @@ module Academy
           daysSinceRegistration: (Date.today - reg.registered_at.to_date).to_i,
           paymentStatus: reg.payment_status,
           amountPaid: reg.amount_paid.to_f,
-          expectedAmount: reg.training.price.to_f
+          expectedAmount: reg.computed_expected_amount
         }
       end
     end

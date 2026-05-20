@@ -26,10 +26,11 @@ export default function TrainingRegistrationsTab({
   onUpdatePaymentStatus,
 }) {
   const totalPaid = registrations.reduce((sum, r) => sum + Number(r.amountPaid || 0), 0)
-  const totalExpected = registrations.reduce((sum, r) => {
-    const pa = Number(r.paymentAmount || 0)
-    return sum + (pa > 0 ? pa : Number(trainingPrice))
-  }, 0)
+  // paymentAmount is authoritative (computed server-side from items/packs, with a
+  // training.price fallback only for legacy single-price trainings). No need to
+  // re-add trainingPrice here — doing so inflated the total by trainingPrice for
+  // every comp / free / legacy registration whose payment_amount was 0.
+  const totalExpected = registrations.reduce((sum, r) => sum + Number(r.paymentAmount || 0), 0)
   const remainingAmount = totalExpected - totalPaid
 
   return (

@@ -23,6 +23,23 @@ module Academy
       update!(payment_amount: items_total + packs_total)
     end
 
+    # Authoritative expected amount for this registration.
+    # The stored `payment_amount` column is only refreshed by `recompute_payment_amount!`,
+    # which isn't called for registrations created without items/packs (free / comp,
+    # legacy data, etc.). This method always returns the right value:
+    #   - sum of items/packs subtotals when present
+    #   - 0 for a comp on a modern training (categories/packs configured)
+    #   - training.price for legacy trainings priced via the single-price column
+    def computed_expected_amount
+      items_total = registration_items.sum(:subtotal).to_f
+      packs_total = registration_packs.sum(:subtotal).to_f
+      line_total = items_total + packs_total
+      return line_total if line_total.positive?
+
+      modern_pricing = training.participant_categories.any? || training.packs.any?
+      modern_pricing ? 0.0 : training.price.to_f
+    end
+
     def recompute_payment_status_from_revenues!
       received_total = revenues.where(status: 'received').sum(:amount)
       total_due = payment_amount.to_d

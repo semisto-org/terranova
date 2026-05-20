@@ -576,7 +576,13 @@ module Api
         trainings = Academy::Training.includes(:album, :participant_categories).order(updated_at: :desc)
         sessions = Academy::TrainingSession.order(start_date: :asc)
         locations = Academy::TrainingLocation.order(:name)
-        registrations = Academy::TrainingRegistration.order(registered_at: :desc)
+        registrations = Academy::TrainingRegistration
+          .includes(
+            registration_items: :participant_category,
+            registration_packs: { pack: { pack_items: :participant_category } },
+            training: %i[participant_categories packs]
+          )
+          .order(registered_at: :desc)
         attendances = Academy::TrainingAttendance.where(registration_id: Academy::TrainingRegistration.select(:id)).order(updated_at: :desc)
         documents = Academy::TrainingDocument.order(uploaded_at: :desc)
         expenses = Expense.where(projectable_type: 'Academy::Training').order(invoice_date: :desc)
@@ -816,7 +822,7 @@ module Api
           departureCountry: item.departure_country,
           carpooling: item.carpooling,
           amountPaid: item.amount_paid.to_f,
-          paymentAmount: item.payment_amount.to_f,
+          paymentAmount: item.computed_expected_amount,
           paymentStatus: item.payment_status,
           stripePaymentIntentId: item.stripe_payment_intent_id,
           internalNote: item.internal_note,
