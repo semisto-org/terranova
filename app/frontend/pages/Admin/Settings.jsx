@@ -249,6 +249,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             body.append('joined_at', new Date().toISOString().slice(0, 10))
             body.append('membership_type', values.membership_type)
             body.append('member_kind', 'human')
+            body.append('notes', values.notes ?? '')
+            body.append('notes_html', values.notes_html ?? '')
             values.roles.forEach((role) => body.append('roles[]', role))
             const response = await fetch('/api/v1/lab/members', {
               method: 'POST',
@@ -272,6 +274,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 joined_at: new Date().toISOString().slice(0, 10),
                 membership_type: values.membership_type,
                 member_kind: 'human',
+                notes: values.notes ?? '',
+                notes_html: values.notes_html ?? '',
                 roles: values.roles,
                 guild_ids: [],
               }),
@@ -306,6 +310,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             body.append('status', values.status)
             body.append('membership_type', values.membership_type)
             body.append('slack_user_id', values.slack_user_id)
+            body.append('notes', values.notes ?? '')
+            body.append('notes_html', values.notes_html ?? '')
             body.append('avatar_image', values.avatar_file)
             values.roles.forEach((role) => body.append('roles[]', role))
             const response = await fetch(`/api/v1/lab/members/${memberId}`, {
@@ -327,6 +333,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 status: values.status,
                 membership_type: values.membership_type,
                 slack_user_id: values.slack_user_id,
+                notes: values.notes ?? '',
+                notes_html: values.notes_html ?? '',
                 roles: values.roles,
               }),
             })

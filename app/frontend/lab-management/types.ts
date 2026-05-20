@@ -34,6 +34,8 @@ export interface Member {
   guildIds: string[]
   slackUserId: string | null
   lastActivityAt: string | null
+  notes?: string | null
+  notesHtml?: string | null
 }
 
 export interface Guild {

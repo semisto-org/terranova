@@ -797,7 +797,7 @@ module Api
       private
 
       def member_params
-        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, :membership_type, :slack_user_id, roles: [], guild_ids: [])
+        params.permit(:first_name, :last_name, :email, :avatar, :avatar_image, :status, :is_admin, :joined_at, :member_kind, :membership_type, :slack_user_id, :notes, :notes_html, roles: [], guild_ids: [])
       end
 
       def pitch_params
@@ -1243,7 +1243,9 @@ module Api
           walletId: member.wallet&.id&.to_s,
           guildIds: member.guild_ids_list.map(&:to_s),
           slackUserId: member.slack_user_id,
-          lastActivityAt: member.last_activity_at&.iso8601
+          lastActivityAt: member.last_activity_at&.iso8601,
+          notes: member.notes,
+          notesHtml: member.notes_html
         }
       end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_11_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_20_195158) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1321,6 +1321,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_11_160000) do
     t.string "last_name", null: false
     t.string "member_kind", default: "human", null: false
     t.string "membership_type", default: "effective", null: false
+    t.text "notes"
+    t.text "notes_html"
     t.string "password_digest"
     t.string "slack_user_id"
     t.string "status", default: "active", null: false

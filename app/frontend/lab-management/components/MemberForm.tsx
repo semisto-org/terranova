@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Member, MembershipType, MemberStatus } from '../types'
+import SimpleEditor from '../../components/SimpleEditor'
+
+function stripHtml(html: string): string {
+  return (html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5B5781]/30 focus:border-[#5B5781]'
@@ -26,6 +31,8 @@ export interface MemberFormProps {
     membership_type: MembershipType
     status: MemberStatus
     slack_user_id: string
+    notes: string
+    notes_html: string
     avatar_file?: File | null
     remove_avatar?: boolean
   }) => Promise<void>
@@ -49,6 +56,7 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
   const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar ?? null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [slackUserId, setSlackUserId] = useState(member?.slackUserId ?? '')
+  const [notesHtml, setNotesHtml] = useState(member?.notesHtml ?? '')
   const [removeAvatar, setRemoveAvatar] = useState(false)
 
   // Focus first input when modal opens
@@ -132,6 +140,8 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
         membership_type: membershipType,
         status: status,
         slack_user_id: slackUserId.trim(),
+        notes: stripHtml(notesHtml),
+        notes_html: notesHtml === '<p></p>' ? '' : notesHtml,
         avatar_file: avatarFile,
         remove_avatar: removeAvatar,
       })
@@ -438,6 +448,19 @@ export function MemberForm({ member, onSubmit, onCancel, busy = false }: MemberF
                       <option value="inactive">Inactif</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
+                    Notes
+                  </label>
+                  <SimpleEditor
+                    content={notesHtml}
+                    onUpdate={(html: string) => setNotesHtml(html)}
+                    placeholder="Notes internes sur ce membre…"
+                    toolbar={['bold', 'italic', '|', 'bulletList', 'orderedList', '|', 'link']}
+                  />
                 </div>
 
                 {/* Admin checkbox */}

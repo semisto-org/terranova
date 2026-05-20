@@ -3,6 +3,14 @@ import type { Member, Guild, Wallet, MemberRole, MemberStatus, MembershipType } 
 import { formatRelativeTime } from '../utils/formatRelativeTime'
 import slackIcon from '../../assets/slack-icon.svg'
 
+function notesPreview(member: Member): string {
+  const raw = member.notes && member.notes.trim().length > 0
+    ? member.notes
+    : (member.notesHtml || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!raw) return ''
+  return raw.length > 220 ? `${raw.slice(0, 220).trimEnd()}…` : raw
+}
+
 export interface MemberListProps {
   members: Member[]
   guilds: Guild[]
@@ -150,6 +158,26 @@ function MemberTable({
                             Admin
                           </span>
                         )}
+                        {(() => {
+                          const preview = notesPreview(member)
+                          if (!preview) return null
+                          return (
+                            <span
+                              className="relative group/notes flex-shrink-0 inline-flex items-center text-stone-400 hover:text-[#5B5781] transition-colors"
+                              aria-label="Notes"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m1-12H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-4-4z" />
+                              </svg>
+                              <span
+                                role="tooltip"
+                                className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-20 hidden group-hover/notes:block w-72 p-3 rounded-xl bg-stone-900 text-stone-50 text-xs leading-relaxed shadow-xl whitespace-pre-wrap break-words"
+                              >
+                                {preview}
+                              </span>
+                            </span>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>
