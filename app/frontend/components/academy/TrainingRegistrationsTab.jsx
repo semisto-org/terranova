@@ -31,7 +31,12 @@ export default function TrainingRegistrationsTab({
   // re-add trainingPrice here — doing so inflated the total by trainingPrice for
   // every comp / free / legacy registration whose payment_amount was 0.
   const totalExpected = registrations.reduce((sum, r) => sum + Number(r.paymentAmount || 0), 0)
-  const remainingAmount = totalExpected - totalPaid
+  // Sum per-row outstanding amounts with a floor of 0 so that one participant's
+  // overpayment (amountPaid > paymentAmount) does not offset another's unpaid balance.
+  const remainingAmount = registrations.reduce(
+    (sum, r) => sum + Math.max(0, Number(r.paymentAmount || 0) - Number(r.amountPaid || 0)),
+    0
+  )
 
   return (
     <div className="space-y-4">
