@@ -728,7 +728,7 @@ function DeliberationDetail({ deliberationId, onBack, onEdit, authMemberId }) {
           <h3 className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <Check className="w-3.5 h-3.5" /> Décision
           </h3>
-          <div className="text-sm text-green-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: delib.outcome }} />
+          <div className="prose prose-sm max-w-none text-green-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: delib.outcome }} />
           {delib.decidedAt && (
             <p className="text-xs text-green-600 mt-2">Décidée le {new Date(delib.decidedAt).toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
           )}
