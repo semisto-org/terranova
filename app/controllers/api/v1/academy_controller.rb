@@ -657,11 +657,11 @@ module Api
       end
 
       def training_params
-        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [], access_contact_ids: [])
       end
 
       def training_update_params
-        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, :training_type_id, checklist_items: [], checked_items: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, :training_type_id, checklist_items: [], checked_items: [], access_contact_ids: [])
       end
 
       def session_params
@@ -773,6 +773,8 @@ module Api
           coordinatorNote: item.coordinator_note,
           checklistItems: item.checklist_items,
           checkedItems: item.checked_items,
+          accessContactIds: item.access_contact_ids,
+          accessContacts: access_contacts_for(item.access_contact_ids),
           album: item.album ? serialize_training_album(item.album) : nil,
           participantCategories: item.participant_categories.order(:position).map { |c|
             { id: c.id.to_s, label: c.label, price: c.price.to_f, maxSpots: c.max_spots,
@@ -785,6 +787,18 @@ module Api
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
+      end
+
+      # Resolves contact IDs (granted My Semisto access) to lightweight {id,name,email}.
+      # Memoizes contacts across the request to avoid an N+1 in the overview action
+      # (which serializes every training).
+      def access_contacts_for(ids)
+        return [] if ids.blank?
+        @contacts_by_id ||= {}
+        missing = ids.map(&:to_s) - @contacts_by_id.keys
+        Contact.where(id: missing).each { |c| @contacts_by_id[c.id.to_s] = c } if missing.any?
+        ids.filter_map { |id| @contacts_by_id[id.to_s] }
+           .map { |c| { id: c.id.to_s, name: c.display_name, email: c.email.to_s } }
       end
 
       def serialize_training_album(album)

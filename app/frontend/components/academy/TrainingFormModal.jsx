@@ -1,8 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Search, X, Loader2, UserPlus } from 'lucide-react'
 import SimpleEditor from '@/components/SimpleEditor'
+import { apiRequest } from '../../lib/api'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/30 focus:border-[#B01A19]'
+
+function debounce(fn, ms) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }
+}
 
 export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel, busy = false }) {
   const isEdit = Boolean(training)
@@ -42,6 +52,15 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
     return []
   })
   const [error, setError] = useState(null)
+
+  // My Semisto access grants: contacts who may view this training + its documents
+  // in the portal without being registered participants.
+  const [accessContacts, setAccessContacts] = useState(training?.accessContacts ?? [])
+  const [accessQuery, setAccessQuery] = useState('')
+  const [accessSuggestions, setAccessSuggestions] = useState([])
+  const [showAccessSuggestions, setShowAccessSuggestions] = useState(false)
+  const [accessSearchLoading, setAccessSearchLoading] = useState(false)
+  const accessSearchRef = useRef(null)
 
   const activeCategories = categories.filter((c) => !c._destroy && c.label.trim())
   const showPacks = activeCategories.length >= 2
@@ -83,6 +102,60 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onCancel])
+
+  // Close access-contact suggestions on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (accessSearchRef.current && !accessSearchRef.current.contains(e.target)) {
+        setShowAccessSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const searchAccessContacts = useCallback(
+    debounce(async (query) => {
+      if (!query || query.length < 2) {
+        setAccessSuggestions([])
+        setShowAccessSuggestions(false)
+        return
+      }
+      setAccessSearchLoading(true)
+      try {
+        const res = await apiRequest(`/api/v1/lab/contacts?q=${encodeURIComponent(query)}&contact_type=person`)
+        const items = res.items || []
+        setAccessSuggestions(items)
+        setShowAccessSuggestions(items.length > 0)
+      } catch {
+        setAccessSuggestions([])
+      } finally {
+        setAccessSearchLoading(false)
+      }
+    }, 300),
+    []
+  )
+
+  const handleAccessQueryChange = (value) => {
+    setAccessQuery(value)
+    searchAccessContacts(value)
+  }
+
+  const addAccessContact = (contact) => {
+    setAccessContacts((prev) =>
+      prev.some((c) => String(c.id) === String(contact.id))
+        ? prev
+        : [...prev, { id: String(contact.id), name: contact.name || 'Sans nom', email: contact.email || '' }]
+    )
+    setAccessQuery('')
+    setAccessSuggestions([])
+    setShowAccessSuggestions(false)
+  }
+
+  const removeAccessContact = (id) => {
+    setAccessContacts((prev) => prev.filter((c) => String(c.id) !== String(id)))
+  }
 
   const computePackSavings = (pack) => {
     const individualTotal = activeCategories.reduce((sum, cat) => {
@@ -151,6 +224,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
         coordinator_note: coordinatorNote === '<p></p>' ? '' : coordinatorNote,
         participant_categories: categoriesPayload,
         packs: packsPayload.length > 0 ? packsPayload : undefined,
+        access_contact_ids: accessContacts.map((c) => String(c.id)),
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -607,6 +681,88 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                     onUpdate={setCoordinatorNote}
                     minHeight="100px"
                   />
+                </div>
+
+                {/* My Semisto access */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
+                    Accès My Semisto
+                  </label>
+                  <p className="text-xs text-stone-400 mb-3">
+                    Ces personnes pourront consulter cette activité et ses documents depuis leur espace
+                    My Semisto, sans être inscrites comme participantes (formateurs, coordinateur…).
+                  </p>
+
+                  {/* Selected contacts as chips */}
+                  {accessContacts.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {accessContacts.map((contact) => (
+                        <span
+                          key={contact.id}
+                          className="inline-flex items-center gap-2 rounded-full bg-[#B01A19]/10 pl-3 pr-2 py-1 text-sm font-medium text-[#B01A19]"
+                        >
+                          <span className="truncate max-w-[200px]">
+                            {contact.name}
+                            {contact.email ? (
+                              <span className="text-[#B01A19]/60"> · {contact.email}</span>
+                            ) : null}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeAccessContact(contact.id)}
+                            className="rounded-full p-0.5 hover:bg-[#B01A19]/20 transition-colors"
+                            title="Retirer l'accès"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search input + suggestions */}
+                  <div className="relative" ref={accessSearchRef}>
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={accessQuery}
+                      onChange={(e) => handleAccessQueryChange(e.target.value)}
+                      onFocus={() => accessSuggestions.length > 0 && setShowAccessSuggestions(true)}
+                      placeholder="Rechercher un contact par nom ou email…"
+                      className={`${inputBase} pl-10`}
+                    />
+                    {accessSearchLoading && (
+                      <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                    )}
+
+                    {showAccessSuggestions && accessSuggestions.length > 0 && (
+                      <div className="absolute z-10 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg">
+                        {accessSuggestions.map((contact) => {
+                          const alreadyAdded = accessContacts.some((c) => String(c.id) === String(contact.id))
+                          return (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              disabled={alreadyAdded}
+                              onClick={() => addAccessContact(contact)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <UserPlus className="w-4 h-4 text-stone-400 shrink-0" />
+                              <span className="flex-1 min-w-0">
+                                <span className="block text-sm font-medium text-stone-900 truncate">
+                                  {contact.name || 'Sans nom'}
+                                </span>
+                                {contact.email && (
+                                  <span className="block text-xs text-stone-500 truncate">{contact.email}</span>
+                                )}
+                              </span>
+                              {alreadyAdded && <span className="text-xs text-stone-400">Ajouté</span>}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

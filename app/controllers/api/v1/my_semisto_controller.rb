@@ -99,9 +99,7 @@ module Api
       # ── Academy API ──
 
       def academy_trainings
-        registrations = contact_registrations.includes(training: [:training_type, :sessions])
-        training_ids = registrations.map(&:training_id).uniq
-        trainings = Academy::Training.where(id: training_ids).includes(:training_type, :sessions)
+        trainings = Academy::Training.where(id: accessible_training_ids).includes(:training_type, :sessions)
 
         render json: {
           trainings: trainings.map { |t| serialize_portal_training(t) }
@@ -190,6 +188,21 @@ module Api
                  email: current_contact.email&.downcase)
       end
 
+      # Training IDs where this contact was explicitly granted access (formateurs,
+      # coordinateurs…) without being a registered participant.
+      def access_granted_training_ids
+        Academy::Training
+          .where(deleted_at: nil)
+          .where("access_contact_ids @> ?", [current_contact.id.to_s].to_json)
+          .pluck(:id)
+      end
+
+      # All trainings this contact may view in the portal: registered participations
+      # plus explicit access grants.
+      def accessible_training_ids
+        (contact_registrations.pluck(:training_id) + access_granted_training_ids).uniq
+      end
+
       def find_contact_registration!
         registration = contact_registrations.find_by(training_id: params[:training_id])
         unless registration
@@ -221,12 +234,11 @@ module Api
       end
 
       def find_contact_training!
-        registration = contact_registrations.find_by(training_id: params[:training_id])
-        unless registration
+        unless accessible_training_ids.include?(params[:training_id].to_i)
           render json: { error: "Formation introuvable" }, status: :not_found
           return nil
         end
-        Academy::Training.includes(:training_type, :sessions, :documents).find(registration.training_id)
+        Academy::Training.includes(:training_type, :sessions, :documents).find(params[:training_id])
       end
 
       def contact_avatar_url(contact)
