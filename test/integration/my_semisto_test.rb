@@ -170,6 +170,56 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert body["trainings"].any? { |t| t["title"] == "Formation email" }
   end
 
+  # ── Explicit My Semisto access (no registration) ──
+
+  test "GET /api/v1/my/academy lists trainings the contact was explicitly granted" do
+    trainer = Contact.create!(contact_type: "person", name: "Formateur Léa", email: "lea@example.com")
+    granted_training = Academy::Training.create!(
+      training_type: @training_type,
+      title: "Formation des formateurs",
+      status: "in_preparation",
+      access_contact_ids: [trainer.id.to_s]
+    )
+
+    sign_in_contact(trainer)
+
+    get "/api/v1/my/academy", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    titles = body["trainings"].map { |t| t["title"] }
+    assert_includes titles, "Formation des formateurs"
+    # The granted contact has no registration, so only the granted training shows up
+    assert_equal [granted_training.id.to_s], body["trainings"].map { |t| t["id"] }
+  end
+
+  test "GET /api/v1/my/academy/:id returns detail + documents for a granted contact" do
+    trainer = Contact.create!(contact_type: "person", name: "Formateur Léa", email: "lea@example.com")
+    @training.update!(access_contact_ids: [trainer.id.to_s])
+    Academy::TrainingDocument.create!(
+      training: @training,
+      name: "Guide formateur",
+      url: "https://example.com/guide.pdf",
+      uploaded_at: Time.current
+    )
+
+    sign_in_contact(trainer)
+
+    get "/api/v1/my/academy/#{@training.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal @training.id.to_s, body["id"]
+    assert_equal 1, body["documents"].length
+    assert_equal "Guide formateur", body["documents"][0]["name"]
+  end
+
+  test "GET /api/v1/my/academy/:id returns 404 for a contact neither registered nor granted" do
+    stranger = Contact.create!(contact_type: "person", name: "Inconnu", email: "stranger@example.com")
+    sign_in_contact(stranger)
+
+    get "/api/v1/my/academy/#{@training.id}", as: :json
+    assert_response :not_found
+  end
+
   # ── Carpooling API ──
 
   test "GET /api/v1/my/academy/:id/carpooling returns carpooling data" do
@@ -372,13 +422,16 @@ class MySemistoTest < ActionDispatch::IntegrationTest
   private
 
   def auth_headers
-    # Set up session by going through the verify endpoint first
+    sign_in_contact(@contact)
+    {}
+  end
+
+  def sign_in_contact(contact)
     token = Rails.application.message_verifier(:contact_login).generate(
-      { contact_id: @contact.id },
+      { contact_id: contact.id },
       purpose: :contact_login,
       expires_in: 24.hours
     )
     get "/api/v1/my/auth/verify", params: { token: token }
-    {}
   end
 end

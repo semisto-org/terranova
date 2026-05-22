@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_20_195158) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -219,6 +219,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_195158) do
   end
 
   create_table "academy_trainings", force: :cascade do |t|
+    t.jsonb "access_contact_ids", default: [], null: false
     t.jsonb "checked_items", default: [], null: false
     t.jsonb "checklist_items", default: [], null: false
     t.text "coordinator_note", default: "", null: false
