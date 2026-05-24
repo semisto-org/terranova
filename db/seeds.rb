@@ -1085,3 +1085,89 @@ if first_topic && first_topic.comments.empty?
 end
 
 puts "Knowledge Base seeding done!"
+
+# ─── Pépinière Arbuste Fruitier (partenaire externe - Shopify) ───
+# Synchronisé depuis arbustefruitier.com le 2026-05-24
+puts "Seeding Arbuste Fruitier nursery..."
+
+nursery_af = Nursery::Nursery.find_or_create_by!(name: 'Arbuste Fruitier') do |n|
+  n.nursery_type  = 'partner'
+  n.integration   = 'manual'
+  n.country       = 'BE'
+  n.website       = 'https://www.arbustefruitier.com'
+  n.description   = 'Pépinière spécialisée en arbustes fruitiers rares et plantes comestibles pour forêts-jardins et jardins-forêts. Catalogue disponible sur leur boutique en ligne.'
+  n.specialties   = ['fruitiers', 'arbustes comestibles', 'plantes rares']
+  n.is_pickup_point = false
+end
+
+def af_species(latin_name, plant_type_val = 'shrub')
+  Plant::Species.find_or_create_by!(latin_name: latin_name) { |s| s.plant_type = plant_type_val }
+end
+
+def af_variety(species, variety_name)
+  Plant::Variety.find_or_create_by!(species: species, latin_name: variety_name)
+end
+
+# Lots disponibles (en stock) au 2026-05-24 — source : arbustefruitier.com/collections/all
+# Format : [latin_name, plant_type, variety_name_or_nil, price_euros, container_short_name, growth_stage]
+af_catalog = [
+  ['Agastache foeniculum',        'herbaceous', nil,                   7.0,  'P9', 'seedling'],
+  ['Prunus dulcis',               'tree',       'Robijn',             20.0,  'C5', 'young'  ],
+  ['Amelanchier laevis',          'shrub',      'Ballerina',          25.0,  'C2', 'young'  ],
+  ['Amelanchier canadensis',      'shrub',      'Prince William',     25.0,  'C2', 'young'  ],
+  ['Hippophae rhamnoides',        'shrub',      'Hergo',              30.0,  'C2', 'young'  ],
+  ['Hippophae rhamnoides',        'shrub',      'Otto',               15.0,  'C2', 'young'  ],
+  ['Galium odoratum',             'herbaceous', nil,                   8.0,  'P9', 'seedling'],
+  ['Caragana arborescens',        'shrub',      nil,                  15.0,  'C2', 'young'  ],
+  ['Ribes nigrum',                'shrub',      'Titania',            10.0,  'C2', 'young'  ],
+  ['Ribes nigrum',                'shrub',      'Wellington',         10.0,  'C2', 'young'  ],
+  ['Elaeagnus ebbingei',          'shrub',      'Limelight',          20.0,  'C2', 'young'  ],
+  ['Elaeagnus ebbingei',          'shrub',      nil,                  20.0,  'C2', 'young'  ],
+  ['Castanea sativa',             'tree',       'Dorée de Lyon',      30.0,  'C5', 'young'  ],
+  ['Allium tuberosum',            'herbaceous', nil,                   6.0,  'P9', 'seedling'],
+  ['Cornus mas',                  'tree',       'Juliusz',            30.0,  'C5', 'young'  ],
+  ['Cornus mas',                  'tree',       'Neshny',             20.0,  'C5', 'young'  ],
+  ['Cornus mas',                  'tree',       'Paczoski',           30.0,  'C5', 'young'  ],
+  ['Ficus carica',                'tree',       'Bornholm',           30.0,  'C5', 'young'  ],
+  ['Ficus carica',                'tree',       'Brown Turkey',       20.0,  'C5', 'young'  ],
+  ['Ficus carica',                'tree',       'Rouge de Bordeaux',  20.0,  'C5', 'young'  ],
+  ['Lycium barbarum',             'shrub',      'Sweet Lifeberry',    15.0,  'C2', 'young'  ],
+  ['Ribes rubrum',                'shrub',      'Jonkheer van Tets',  10.0,  'C2', 'young'  ],
+  ['Ribes uva-crispa',            'shrub',      'Hinnonmaki jaune',   10.0,  'C2', 'young'  ],
+  ['Celtis occidentalis',         'tree',       nil,                  20.0,  'C5', 'young'  ],
+  ['Vaccinium corymbosum',        'shrub',      'Bluejay',            16.0,  'C2', 'young'  ],
+  ['Vaccinium corymbosum',        'shrub',      'Duke',               16.0,  'C2', 'young'  ],
+  ['Vaccinium corymbosum',        'shrub',      'Pink Lemonade',      16.0,  'C2', 'young'  ],
+  ['Mespilus germanica',          'tree',       'Géant de Breda',     20.0,  'C5', 'young'  ],
+  ['Prunus salicina x armeniaca', 'tree',       'Cherny Prince',      25.0,  'C5', 'young'  ],
+  ['Zanthoxylum piperitum',       'shrub',      nil,                  50.0,  'C5', 'established'],
+  ['Malus domestica',             'tree',       'Pink Pearl',         20.0,  'C5', 'young'  ],
+  ['Malus sieversii',             'tree',       nil,                  25.0,  'C5', 'young'  ],
+  ['Armoracia rusticana',         'herbaceous', nil,                   8.0,  'P9', 'seedling'],
+  ['Vitis vinifera',              'vine',       'Arkadia',            15.0,  'C2', 'young'  ],
+  ['Vitis vinifera',              'vine',       'Palatina',           15.0,  'C2', 'young'  ],
+]
+
+af_catalog.each do |latin_name, plant_type, variety_name, price_euros, container_short, growth_stage|
+  species  = af_species(latin_name, plant_type)
+  variety  = variety_name ? af_variety(species, variety_name) : nil
+  container = Nursery::Container.find_by!(short_name: container_short)
+
+  Nursery::StockBatch.find_or_create_by!(
+    nursery:   nursery_af,
+    species:   species,
+    variety:   variety,
+    container: container
+  ) do |b|
+    b.quantity            = 10
+    b.available_quantity  = 10
+    b.reserved_quantity   = 0
+    b.growth_stage        = growth_stage
+    b.status              = 'available'
+    b.price_euros         = price_euros
+    b.accepts_semos       = false
+    b.origin              = 'Pépinière partenaire'
+  end
+end
+
+puts "Arbuste Fruitier: #{nursery_af.stock_batches.reload.count} lots créés."
