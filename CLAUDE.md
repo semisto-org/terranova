@@ -178,7 +178,7 @@ bin/dev    # Rails (port 3000) + Vite (port 3036)
 - **Maps**: Leaflet + react-leaflet
 - **Inertia page render**: `render inertia: "PageName", props: { ... }` in controllers
 - **Token verification**: `Rails.application.message_verifier(:purpose)` for client portal & password reset
-- **API skill sync**: When adding/modifying API endpoints in `app/controllers/api/v1/`, update the corresponding reference file in `~/.claude/skills/terranova-api/api-reference/`
+- **API docs (OpenAPI)**: The API contract is auto-generated, not hand-written. `rspec-openapi` records request/response pairs from the Minitest integration suite. After adding/changing an endpoint, ensure it has an integration test, then regenerate: `OPENAPI=1 bin/rails test test/integration && bin/rails openapi:split`. Output: master `doc/openapi.yaml` + per-domain slices `doc/openapi/{domain}.json` + `index.json`, served publicly at `GET /api/v1/openapi` (index) and `/api/v1/openapi/:domain`. Commit the regenerated spec — CI fails on drift. An endpoint missing from the spec means it lacks a test.
 - **Destructive actions**: Every delete/remove action in the UI must be guarded by a `window.confirm()` dialog before executing
 - **Admin-only UI**: Elements restricted to admins (`isAdmin`) must be wrapped in a dashed amber callout with a `Lock` icon (lucide-react). Pattern: `<div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3"><div className="flex items-center gap-4"><Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />{ /* admin content */ }</div></div>`
 

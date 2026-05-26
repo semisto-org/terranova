@@ -3,6 +3,35 @@ require_relative '../config/environment'
 require 'rails/test_help'
 require 'mocha/minitest'
 
+# OpenAPI generation: only active when OPENAPI=1, so normal test runs are untouched.
+# `rspec-openapi` records real request/response pairs from the integration tests and
+# writes a spec to doc/openapi.yaml. See lib/tasks/openapi.rake for the domain split.
+if ENV['OPENAPI']
+  require 'rspec/openapi'
+  RSpec::OpenAPI.title = 'Terranova API'
+  RSpec::OpenAPI.path = 'doc/openapi.yaml'
+  RSpec::OpenAPI.application_version = '1.0.0'
+  RSpec::OpenAPI.servers = [{ url: 'https://terranova.semisto.org' }]
+  # Examples are recorded from live test responses (volatile IDs/timestamps), which
+  # would make the spec non-deterministic and break CI drift detection. The inferred
+  # schema is the contract and stays stable, so we keep schemas and drop examples.
+  RSpec::OpenAPI.enable_example = false
+
+  # rspec-openapi stores the opt-in flag in a per-class instance variable that does
+  # not inherit, so enabling it on a base class would not reach subclasses. Make the
+  # check walk the ancestor chain so a single opt-in on ActionDispatch::IntegrationTest
+  # covers every integration test.
+  module RSpec::OpenAPI::Minitest::ActivateOpenApiClassMethods::ClassMethods
+    def openapi?
+      return @openapi unless @openapi.nil?
+
+      superclass.respond_to?(:openapi?) ? superclass.openapi? : false
+    end
+  end
+
+  ActionDispatch::IntegrationTest.openapi!
+end
+
 # Configure deterministic ActiveRecord encryption keys for the test environment.
 ActiveRecord::Encryption.configure(
   primary_key: 'test_primary_key_32_bytes_minimum_xx',

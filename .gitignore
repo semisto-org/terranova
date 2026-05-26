@@ -38,3 +38,7 @@ Thumbs.db
 .playwright-mcp/
 .superpowers/
 .superset/attachments/
+
+# OpenAPI: master spec is a regeneration intermediate; only the per-domain
+# slices under doc/openapi/ are committed and served.
+/doc/openapi.yaml

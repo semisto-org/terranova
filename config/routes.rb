@@ -121,6 +121,10 @@ Rails.application.routes.draw do
 
       get "health", to: "health#show"
 
+      # OpenAPI spec (public, auto-generated, split per domain)
+      get "openapi", to: "openapi#index"
+      get "openapi/:domain", to: "openapi#show", constraints: { domain: /[a-z0-9_]+/ }
+
       # Unified task management (polymorphic, works for any project type)
       get "projects/:type/:id/task-lists", to: "tasks#list_task_lists"
       post "projects/:type/:id/task-lists", to: "tasks#create_task_list"
