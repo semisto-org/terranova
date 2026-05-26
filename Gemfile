@@ -19,6 +19,7 @@ end
 
 group :test do
   gem "mocha", "~> 2.4", require: false
+  gem "rspec-openapi", "~> 0.27", require: false
 end
 
 group :development do

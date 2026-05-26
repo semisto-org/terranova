@@ -1,0 +1,978 @@
+{
+  "domains": [
+    {
+      "endpointCount": 23,
+      "file": "academy.json",
+      "name": "academy",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/academy",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/attendance",
+          "summary": "mark_attendance"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/calendar",
+          "summary": "calendar"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/calendar-links",
+          "summary": "calendar_links"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/dashboard",
+          "summary": "dashboard"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/expenses/{expense_id}",
+          "summary": "update_expense"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/academy/idea-notes/{note_id}",
+          "summary": "destroy_idea_note"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/registrations/{registration_id}",
+          "summary": "update_registration"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/registrations/{registration_id}/payment-status",
+          "summary": "update_payment_status"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/reporting",
+          "summary": "reporting"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/settings",
+          "summary": "academy_settings"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/settings",
+          "summary": "update_academy_settings"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/team",
+          "summary": "create_team_member"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/team/check-email",
+          "summary": "check_team_email"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/academy/team/{contact_id}",
+          "summary": "remove_team_member"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/team/{contact_id}",
+          "summary": "show_team_member"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/team/{contact_id}",
+          "summary": "update_team_member"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/training-types",
+          "summary": "create_training_type"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/training-types/{training_type_id}",
+          "summary": "update_training_type"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/trainings",
+          "summary": "create_training"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/trainings/{training_id}",
+          "summary": "update_training"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/trainings/{training_id}/registrations",
+          "summary": "create_registration"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/trainings/{training_id}/status",
+          "summary": "update_training_status"
+        }
+      ]
+    },
+    {
+      "endpointCount": 11,
+      "file": "bank.json",
+      "name": "bank",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/bank/connections",
+          "summary": "list_connections"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/bank/connections",
+          "summary": "create_connection"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/bank/connections/{id}",
+          "summary": "destroy_connection"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/bank/connections/{id}/upload_coda",
+          "summary": "upload_coda"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/bank/reconciliations",
+          "summary": "create_reconciliation"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/bank/reconciliations/{id}",
+          "summary": "destroy_reconciliation"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/bank/summary",
+          "summary": "summary"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/bank/transactions",
+          "summary": "list_transactions"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/bank/transactions",
+          "summary": "list_transactions"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/bank/transactions/{id}/candidates",
+          "summary": "candidates"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/bank/transactions/{id}/unignore",
+          "summary": "unignore_transaction"
+        }
+      ]
+    },
+    {
+      "endpointCount": 14,
+      "file": "design.json",
+      "name": "design",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/design",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/design/annotations/{annotation_id}",
+          "summary": "destroy_annotation"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/billing-overview",
+          "summary": "billing_overview"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/design/expenses/{expense_id}/approve",
+          "summary": "approve_expense"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/design/planting-plan/markers/{marker_id}",
+          "summary": "destroy_plant_marker"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/{project_id}",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/design/{project_id}",
+          "summary": "update"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/{project_id}/client-portal",
+          "summary": "client_portal"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design/{project_id}/duplicate",
+          "summary": "duplicate"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design/{project_id}/palette/import/{plant_palette_id}",
+          "summary": "import_palette_from_plants"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design/{project_id}/search",
+          "summary": "search"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/design/{project_id}/site-analysis",
+          "summary": "upsert_site_analysis"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/design/{project_id}/team-members/{member_id}",
+          "summary": "destroy_team_member"
+        }
+      ]
+    },
+    {
+      "endpointCount": 4,
+      "file": "economics.json",
+      "name": "economics",
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/v1/economics/inputs",
+          "summary": "create_input"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/economics/inputs/{id}",
+          "summary": "destroy_input"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/economics/outputs",
+          "summary": "create_output"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/economics/outputs/{id}",
+          "summary": "destroy_output"
+        }
+      ]
+    },
+    {
+      "endpointCount": 7,
+      "file": "foundation.json",
+      "name": "foundation",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/foundation/milestone",
+          "summary": "milestone"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/foundation/routes",
+          "summary": "routes"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/foundation/shell",
+          "summary": "shell"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/nova/chat",
+          "summary": "chat"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/profile",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/profile",
+          "summary": "update"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/search/global",
+          "summary": "global"
+        }
+      ]
+    },
+    {
+      "endpointCount": 16,
+      "file": "knowledge.json",
+      "name": "knowledge",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/search",
+          "summary": "index"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/sections",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/knowledge/sections",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/knowledge/sections/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/knowledge/sections/{id}",
+          "summary": "update"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/topics",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/knowledge/topics",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/knowledge/topics/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/topics/{id}",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/knowledge/topics/{id}",
+          "summary": "update"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/topics/{id}/comments",
+          "summary": "comments"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/knowledge/topics/{id}/comments",
+          "summary": "create_comment"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/topics/{id}/related",
+          "summary": "related"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/knowledge/topics/{id}/revisions",
+          "summary": "revisions"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/knowledge/topics/{id}/unpin",
+          "summary": "unpin"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/knowledge/topics/{topic_id}/comments/{id}",
+          "summary": "destroy_comment"
+        }
+      ]
+    },
+    {
+      "endpointCount": 20,
+      "file": "lab.json",
+      "name": "lab",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/guilds",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/guilds",
+          "summary": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/guilds/{guild_id}/credentials/{id}/reveal",
+          "summary": "reveal_credential"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/guilds/{guild_id}/task-lists",
+          "summary": "list_task_lists"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/guilds/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/guilds/{id}",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/guilds/{id}",
+          "summary": "update"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/lab/albums",
+          "summary": "list_albums"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/lab/bets",
+          "summary": "place_bet"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/lab/calendar",
+          "summary": "calendar"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/lab/contacts/{id}/impersonate",
+          "summary": "impersonate_contact"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/lab/expenses",
+          "summary": "list_expenses"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/lab/members/{id}",
+          "summary": "update_member"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/lab/overview",
+          "summary": "overview"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/lab/pitches",
+          "summary": "create_pitch"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/lab/reporting",
+          "summary": "reporting"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/lab/semos/transfer",
+          "summary": "transfer_semos"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/lab/timesheets",
+          "summary": "create_timesheet"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/labs",
+          "summary": "index"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/labs/{id}",
+          "summary": "show"
+        }
+      ]
+    },
+    {
+      "endpointCount": 6,
+      "file": "my_semisto.json",
+      "name": "my_semisto",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/my/academy",
+          "summary": "academy_trainings"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my/academy/{training_id}",
+          "summary": "academy_training_detail"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my/academy/{training_id}/carpooling",
+          "summary": "carpooling"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/my/academy/{training_id}/carpooling",
+          "summary": "update_carpooling"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my/auth/request-link",
+          "summary": "request_magic_link"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my/auth/verify",
+          "summary": "verify"
+        }
+      ]
+    },
+    {
+      "endpointCount": 2,
+      "file": "notion_records.json",
+      "name": "notion_records",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/notion_records/search",
+          "summary": "search"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/notion_records/upsert",
+          "summary": "upsert"
+        }
+      ]
+    },
+    {
+      "endpointCount": 25,
+      "file": "nursery.json",
+      "name": "nursery",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/nursery",
+          "summary": "index"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/nursery/catalog",
+          "summary": "catalog"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/nursery/containers",
+          "summary": "create_container"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/nursery/containers/{container_id}",
+          "summary": "destroy_container"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/containers/{container_id}",
+          "summary": "update_container"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/nursery/dashboard",
+          "summary": "dashboard"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/nursery/documentation/{doc_id}",
+          "summary": "destroy_documentation"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/mother-plants/{mother_plant_id}/reject",
+          "summary": "reject_mother_plant"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/mother-plants/{mother_plant_id}/validate",
+          "summary": "validate_mother_plant"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/nursery/nurseries",
+          "summary": "create_nursery"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/nursery/nurseries/{nursery_id}",
+          "summary": "destroy_nursery"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/nurseries/{nursery_id}",
+          "summary": "update_nursery"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/nursery/orders/{order_id}",
+          "summary": "show_order"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/orders/{order_id}/cancel",
+          "summary": "cancel_order"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/orders/{order_id}/picked-up",
+          "summary": "mark_order_picked_up"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/orders/{order_id}/ready",
+          "summary": "mark_order_ready"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/nursery/public-orders",
+          "summary": "submit_public_order"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/nursery/public-pickup-points",
+          "summary": "public_pickup_points"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/nursery/schedule/{slot_id}",
+          "summary": "destroy_schedule_slot"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/nursery/stock-batches",
+          "summary": "create_stock_batch"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/stock-batches/{batch_id}/status",
+          "summary": "update_stock_batch_status"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/nursery/team/{member_id}",
+          "summary": "destroy_team_member"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/nursery/timesheets/{entry_id}",
+          "summary": "destroy_timesheet"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/transfers/{transfer_id}/cancel",
+          "summary": "cancel_transfer"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/nursery/transfers/{transfer_id}/complete",
+          "summary": "complete_transfer"
+        }
+      ]
+    },
+    {
+      "endpointCount": 2,
+      "file": "openapi.json",
+      "name": "openapi",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/openapi",
+          "summary": "index"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/openapi/{domain}",
+          "summary": "show"
+        }
+      ]
+    },
+    {
+      "endpointCount": 15,
+      "file": "plants.json",
+      "name": "plants",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/activity",
+          "summary": "activity_feed"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/plants/ai-summary",
+          "summary": "generate_ai_summary"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/filter-options",
+          "summary": "filter_options"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/plants/illustrations",
+          "summary": "list_illustrations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/plants/illustrations/generate",
+          "summary": "generate_illustrations"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/illustrations/jobs",
+          "summary": "list_illustration_jobs"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/plants/illustrations/jobs/{id}/retry",
+          "summary": "retry_illustration_job"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/illustrations/stats",
+          "summary": "illustration_stats"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/plants/palette-items/{id}",
+          "summary": "remove_palette_item"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/palettes",
+          "summary": "list_palettes"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/plants/palettes/{id}",
+          "summary": "destroy_palette"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/palettes/{id}/export",
+          "summary": "export_palette_pdf"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/plants/search",
+          "summary": "search"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/plants/species/{id}",
+          "summary": "species"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/plants/varieties",
+          "summary": "create_variety"
+        }
+      ]
+    },
+    {
+      "endpointCount": 2,
+      "file": "projects.json",
+      "name": "projects",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/bucket",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/bucket",
+          "summary": "create"
+        }
+      ]
+    },
+    {
+      "endpointCount": 2,
+      "file": "public.json",
+      "name": "public",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/public/academy/trainings/{training_id}",
+          "summary": "training_info"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/public/stripe-webhooks",
+          "summary": "create"
+        }
+      ]
+    },
+    {
+      "endpointCount": 3,
+      "file": "settings.json",
+      "name": "settings",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/billing-config",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/billing-config",
+          "summary": "update"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/settings/cycles/{id}",
+          "summary": "destroy"
+        }
+      ]
+    },
+    {
+      "endpointCount": 18,
+      "file": "strategy.json",
+      "name": "strategy",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/axes",
+          "summary": "index"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/deliberations",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/strategy/deliberations",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/strategy/deliberations/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/deliberations/{id}",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/strategy/deliberations/{id}",
+          "summary": "update"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/strategy/deliberations/{id}/attachments",
+          "summary": "create_attachment"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/strategy/deliberations/{id}/attachments/{attachment_id}",
+          "summary": "destroy_attachment"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/strategy/deliberations/{id}/cancel",
+          "summary": "cancel"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/deliberations/{id}/comments",
+          "summary": "comments"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/strategy/deliberations/{id}/decide",
+          "summary": "decide"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/strategy/deliberations/{id}/publish",
+          "summary": "publish"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/effective-members",
+          "summary": "effective_members"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/strategy/frameworks/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/strategy/proposals/{id}",
+          "summary": "update_proposal"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/strategy/proposals/{id}/reactions",
+          "summary": "create_reaction"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/proposals/{id}/versions",
+          "summary": "proposal_versions"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/resources",
+          "summary": "index"
+        }
+      ]
+    }
+  ],
+  "generatedFrom": "doc/openapi.yaml (recorded by rspec-openapi from the Minitest integration suite)",
+  "info": {
+    "title": "Terranova API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.3",
+  "servers": [
+    {
+      "url": "https://terranova.semisto.org"
+    }
+  ],
+  "totalEndpoints": 170
+}
