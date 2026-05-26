@@ -42,7 +42,7 @@ namespace :openapi do
       domain = domain_for(path)
       next if domain == "misc"
 
-      by_domain[domain][path] = coerce_integer_types(normalize_descriptions(operations))
+      by_domain[domain][path] = coerce_integer_types(strip_examples(normalize_descriptions(operations)))
     end
 
     FileUtils.rm_rf(SPLIT_DIR)
@@ -101,6 +101,29 @@ namespace :openapi do
       end
     end
     path_item
+  end
+
+  # Recorded examples carry volatile values (IDs, timestamps) and the gem's
+  # enable_example flag behaves inconsistently across environments, so strip examples
+  # here — the single deterministic normalization point — to keep local and CI output
+  # identical. The inferred schema is the contract and is kept. Context-aware: a schema
+  # property literally named "example" (under "properties") is preserved.
+  def strip_examples(obj)
+    case obj
+    when Hash
+      obj.delete("example")
+      obj.delete("examples")
+      obj.each do |key, value|
+        if key == "properties" && value.is_a?(Hash)
+          value.each_value { |schema| strip_examples(schema) }
+        else
+          strip_examples(value)
+        end
+      end
+    when Array
+      obj.each { |v| strip_examples(v) }
+    end
+    obj
   end
 
   # A field observed as a whole number in one test and a fraction in another gets
