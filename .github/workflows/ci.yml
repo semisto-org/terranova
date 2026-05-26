@@ -57,8 +57,10 @@ jobs:
         with:
           ruby-version: '3.3.10'
           bundler-cache: true
-      - name: Prepare database
-        run: bin/rails db:prepare
+      - name: Prepare test database
+        # Loads the schema into the test DB without running seeds (db:prepare would
+        # seed, and seeds are not needed — tests build their own data).
+        run: bin/rails db:test:prepare
       - name: Record OpenAPI spec from the integration suite
         # Spec-freshness gate, not a test-correctness gate: the spec is recorded for
         # every request regardless of pass/fail, and only /api/v1 paths are kept. The
