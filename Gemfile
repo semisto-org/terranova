@@ -34,6 +34,9 @@ gem "faraday", "~> 2.9"
 gem "prawn", "~> 2.5"
 gem "prawn-table", "~> 0.2"
 
+# PDF compression (pure Ruby, zero system dependency) — recompresses trainer-uploaded PDFs
+gem "hexapdf", "~> 1.0"
+
 gem "rqrcode", "~> 2.2"
 
 # Image transformation backend for ActiveStorage variants (silhouette thumbnails)
