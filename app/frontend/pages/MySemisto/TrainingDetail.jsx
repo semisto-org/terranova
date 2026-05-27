@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePage, Link } from '@inertiajs/react'
 import { ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
+import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
 import CarpoolingSection from '../../my-semisto/components/CarpoolingSection'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
@@ -40,13 +41,39 @@ export default function TrainingDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    myApiRequest(`${myApiPath('/academy')}/${trainingId}`)
+  // Refetches the training detail without a full page reload — used after the
+  // initial load and after every upload/delete so the list stays in sync.
+  const loadTraining = useCallback(
+    ({ initial = false } = {}) => {
+      if (initial) setLoading(true)
+      return myApiRequest(`${myApiPath('/academy')}/${trainingId}`)
+        .then((data) => {
+          setTraining(data)
+          setError(null)
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => {
+          if (initial) setLoading(false)
+        })
+    },
+    [trainingId]
+  )
 
-      .then((data) => setTraining(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [trainingId])
+  useEffect(() => {
+    loadTraining({ initial: true })
+  }, [loadTraining])
+
+  async function handleDelete(doc) {
+    if (!window.confirm(`Supprimer « ${doc.name} » ?`)) return
+    try {
+      await myApiRequest(`${myApiPath('/academy')}/${trainingId}/documents/${doc.id}`, {
+        method: 'DELETE',
+      })
+      await loadTraining()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   return (
     <MySemistoShell activeNav={myPath('/academy')}>
@@ -100,8 +127,22 @@ export default function TrainingDetail() {
             </div>
           </div>
 
+          {/* Upload zone — only for contacts with the upload right */}
+          {training.canUpload && (
+            <div className="my-animate-section" style={{ animationDelay: '50ms' }}>
+              <DocumentUploadForm
+                trainingId={trainingId}
+                sessions={training.sessions || []}
+                onUploaded={() => loadTraining()}
+              />
+            </div>
+          )}
+
           {/* Sessions timeline with inline documents */}
-          <SessionsAndDocuments training={training} />
+          <SessionsAndDocuments
+            training={training}
+            onDelete={training.canUpload ? handleDelete : null}
+          />
 
           {/* Carpooling */}
           <CarpoolingSection trainingId={trainingId} />
@@ -111,7 +152,7 @@ export default function TrainingDetail() {
   )
 }
 
-function SessionsAndDocuments({ training }) {
+function SessionsAndDocuments({ training, onDelete }) {
   const documents = training.documents || []
   const sessions = training.sessions || []
 
@@ -194,7 +235,7 @@ function SessionsAndDocuments({ training }) {
                           {sessionDocs.length} document{sessionDocs.length > 1 ? 's' : ''}
                         </p>
                         {sessionDocs.map((doc) => (
-                          <DocumentItem key={doc.id} doc={doc} colorIndex={docColorCounter++} />
+                          <DocumentItem key={doc.id} doc={doc} colorIndex={docColorCounter++} onDelete={onDelete} />
                         ))}
                       </div>
                     )}
@@ -220,7 +261,7 @@ function SessionsAndDocuments({ training }) {
           </div>
           <div className="space-y-2">
             {generalDocs.map((doc) => (
-              <DocumentItem key={doc.id} doc={doc} colorIndex={docColorCounter++} />
+              <DocumentItem key={doc.id} doc={doc} colorIndex={docColorCounter++} onDelete={onDelete} />
             ))}
           </div>
         </div>

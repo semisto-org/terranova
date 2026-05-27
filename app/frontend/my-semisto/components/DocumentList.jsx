@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileText, Download, Calendar, FolderOpen } from 'lucide-react'
+import { FileText, Download, Calendar, FolderOpen, Trash2 } from 'lucide-react'
 
 const DOC_COLORS = ['#5B5781', '#2D6A4F', '#234766', '#B01A19', '#EF9B0D']
 
@@ -36,18 +36,13 @@ function formatDate(dateStr) {
   })
 }
 
-export function DocumentItem({ doc, colorIndex = 0 }) {
+export function DocumentItem({ doc, colorIndex = 0, onDelete }) {
   const color = DOC_COLORS[colorIndex % DOC_COLORS.length]
 
-  return (
-    <a
-      href={doc.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-stone-200
-                 hover:shadow-sm transition-all group my-card-accent"
-      aria-label={`Télécharger ${doc.name}`}
-    >
+  // Inner content shared between the read-only (pure anchor) and the
+  // deletable (anchor + delete button) layouts.
+  const inner = (
+    <>
       <div
         className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
         style={{ backgroundColor: `${color}12` }}
@@ -77,7 +72,50 @@ export function DocumentItem({ doc, colorIndex = 0 }) {
           style={{ '--hover-color': color }}
         />
       </div>
-    </a>
+    </>
+  )
+
+  // Read-only: whole card is the download link (unchanged behavior).
+  if (!onDelete) {
+    return (
+      <a
+        href={doc.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-stone-200
+                   hover:shadow-sm transition-all group my-card-accent"
+        aria-label={`Télécharger ${doc.name}`}
+      >
+        {inner}
+      </a>
+    )
+  }
+
+  // Deletable: download link + a separate delete button (anchors can't nest buttons).
+  return (
+    <div
+      className="flex items-center gap-2 rounded-xl bg-white border border-stone-200
+                 hover:shadow-sm transition-all group my-card-accent"
+    >
+      <a
+        href={doc.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 px-4 py-3 flex-1 min-w-0"
+        aria-label={`Télécharger ${doc.name}`}
+      >
+        {inner}
+      </a>
+      <button
+        type="button"
+        onClick={() => onDelete(doc)}
+        className="flex-shrink-0 mr-2 p-2 rounded-lg text-stone-400 hover:text-[#B01A19] hover:bg-red-50 transition-colors"
+        aria-label={`Supprimer ${doc.name}`}
+        title="Supprimer"
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
   )
 }
 
