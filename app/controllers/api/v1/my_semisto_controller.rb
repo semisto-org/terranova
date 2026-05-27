@@ -113,7 +113,10 @@ module Api
         documents = training.documents.order(uploaded_at: :desc)
         sessions = training.sessions.order(start_date: :asc)
 
-        render json: serialize_portal_training_detail(training, sessions, documents)
+        render json: serialize_portal_training_detail(
+          training, sessions, documents,
+          can_upload: uploadable_training_ids.include?(training.id)
+        )
       end
 
       # ── Carpooling API ──
@@ -162,6 +165,87 @@ module Api
         }
       end
 
+      # ── Documents API (trainer upload / delete) ──
+
+      MAX_DOCUMENT_BYTES = 200 * 1024 * 1024 # 200 Mo
+
+      # POST /api/v1/my/academy/:training_id/documents
+      # Mirror of admin Api::V1::AcademyController#create_document, but:
+      #  - gated on the upload right (in access_contact_ids AND not registered)
+      #  - forces uploaded_by = "trainer"
+      #  - enforces a 200 Mo per-file server-side cap (422 on overflow)
+      #  - validates session_id (if given) belongs to the training
+      #  - enqueues PDF compression for PDFs and one Slack ping for the deposit
+      # Supports one or many files in a single request (params[:files][]),
+      # while staying compatible with a single params[:file].
+      def create_document
+        training = find_uploadable_training!
+        return unless training
+
+        files = upload_files
+        if files.empty?
+          render json: { error: "Aucun fichier fourni." }, status: :unprocessable_entity
+          return
+        end
+
+        session = resolve_upload_session(training)
+        return if performed? # resolve_upload_session rendered an error
+
+        oversized = files.find { |f| f.size.to_i > MAX_DOCUMENT_BYTES }
+        if oversized
+          render json: {
+            error: "Le fichier « #{oversized.original_filename} » dépasse la limite de 200 Mo."
+          }, status: :unprocessable_entity
+          return
+        end
+
+        created = []
+        Academy::TrainingDocument.transaction do
+          files.each do |uploaded|
+            document = training.documents.build(
+              name: document_name_for(uploaded),
+              session_id: session&.id,
+              uploaded_by: "trainer",
+              uploaded_at: Time.current,
+              url: nil
+            )
+            document.file.attach(uploaded)
+            document.save!
+            created << document
+          end
+        end
+
+        # Async, post-commit: compress each PDF, and send a single Slack ping.
+        created.each do |document|
+          if document.file.attached? && document.file.content_type == "application/pdf"
+            PdfCompressionJob.perform_later(document.id)
+          end
+        end
+        enqueue_slack_notification(training, session, created.size)
+
+        render json: { documents: created.map { |d| serialize_portal_document(d) } }, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages.join(", ") }, status: :unprocessable_entity
+      end
+
+      # DELETE /api/v1/my/academy/:training_id/documents/:document_id
+      # Any contact with the upload right on the training may delete ANY of its
+      # documents (team, other trainers, own) — soft delete. A document from a
+      # training the contact has no right on is rejected.
+      def destroy_document
+        training = find_uploadable_training!
+        return unless training
+
+        document = training.documents.find_by(id: params[:document_id])
+        unless document
+          render json: { error: "Document introuvable" }, status: :not_found
+          return
+        end
+
+        document.soft_delete!
+        head :no_content
+      end
+
       private
 
       def verify_contact_token(token)
@@ -201,6 +285,72 @@ module Api
       # plus explicit access grants.
       def accessible_training_ids
         (contact_registrations.pluck(:training_id) + access_granted_training_ids).uniq
+      end
+
+      # Trainings the contact may upload to / delete documents from: explicit
+      # access grant AND not a registered participant (D3). access_granted_training_ids
+      # already uses the jsonb string-id containment match; subtracting the
+      # registration ids enforces the "et pas inscrit" rule.
+      def uploadable_training_ids
+        access_granted_training_ids - contact_registrations.pluck(:training_id)
+      end
+
+      # Loads the target training for write actions, or renders the access error
+      # and returns nil. 404 (not 403) keeps the portal opaque about which
+      # trainings exist — consistent with find_contact_training!.
+      def find_uploadable_training!
+        unless uploadable_training_ids.include?(params[:training_id].to_i)
+          render json: { error: "Formation introuvable" }, status: :not_found
+          return nil
+        end
+        Academy::Training.find(params[:training_id])
+      end
+
+      # Normalizes single- and multi-file uploads to an array of uploaded files.
+      def upload_files
+        if params[:files].present?
+          Array(params[:files]).compact
+        elsif params[:file].present?
+          [params[:file]]
+        else
+          []
+        end
+      end
+
+      # Per-document display name: explicit name when provided, else the filename.
+      def document_name_for(uploaded)
+        provided = params[:name].to_s.strip
+        return provided if provided.present?
+        uploaded.original_filename.to_s
+      end
+
+      # Resolves the chosen session for the upload, or nil for "Général".
+      # A session_id that doesn't belong to the training is rejected (renders 422).
+      def resolve_upload_session(training)
+        session_id = params[:session_id].presence
+        return nil if session_id.blank?
+
+        session = training.sessions.find_by(id: session_id)
+        unless session
+          render json: { error: "Session invalide pour cette formation." }, status: :unprocessable_entity
+          return nil
+        end
+        session
+      end
+
+      # Enqueues the (best-effort, isolated) Slack ping summarizing the deposit.
+      # Building the message here keeps the job a plain string consumer.
+      def enqueue_slack_notification(training, session, count)
+        session_label = session ? session.start_date.to_date.strftime("%d/%m") : "Général"
+        link = "#{request.base_url}#{my_semisto_training_link(training)}"
+        text = "📎 #{current_contact.display_name} a déposé #{count} document(s) " \
+               "pour #{training.title} — #{session_label} · #{link}"
+        SlackNotificationJob.perform_later(text)
+      end
+
+      # Path to the training detail page in My Semisto, honoring the domain prefix.
+      def my_semisto_training_link(training)
+        my_semisto_path("/academy/#{training.id}")
       end
 
       def find_contact_registration!
@@ -309,13 +459,14 @@ module Api
         }
       end
 
-      def serialize_portal_training_detail(training, sessions, documents)
+      def serialize_portal_training_detail(training, sessions, documents, can_upload: false)
         {
           id: training.id.to_s,
           title: training.title,
           status: training.status,
           description: training.description,
           trainingType: training.training_type&.name,
+          canUpload: can_upload,
           sessions: sessions.map { |s| serialize_portal_session(s) },
           documents: documents.map { |d| serialize_portal_document(d) }
         }

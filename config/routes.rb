@@ -26,6 +26,8 @@ Rails.application.routes.draw do
           delete "profile/avatar", to: "api/v1/my_semisto#remove_avatar", as: false
           get "academy/:training_id/carpooling", to: "api/v1/my_semisto#carpooling", as: false
           patch "academy/:training_id/carpooling", to: "api/v1/my_semisto#update_carpooling", as: false
+          post "academy/:training_id/documents", to: "api/v1/my_semisto#create_document", as: false
+          delete "academy/:training_id/documents/:document_id", to: "api/v1/my_semisto#destroy_document", as: false
         end
       end
 
@@ -117,6 +119,8 @@ Rails.application.routes.draw do
         delete "profile/avatar", to: "my_semisto#remove_avatar"
         get "academy/:training_id/carpooling", to: "my_semisto#carpooling"
         patch "academy/:training_id/carpooling", to: "my_semisto#update_carpooling"
+        post "academy/:training_id/documents", to: "my_semisto#create_document"
+        delete "academy/:training_id/documents/:document_id", to: "my_semisto#destroy_document"
       end
 
       get "health", to: "health#show"
