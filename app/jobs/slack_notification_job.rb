@@ -15,20 +15,9 @@ class SlackNotificationJob < ApplicationJob
   retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
   def perform(text)
-    webhook_url = self.class.webhook_url
-
-    if webhook_url.blank?
-      Rails.logger.warn("[SlackNotificationJob] No #ping-formations webhook configured — skipping")
-      return
-    end
-
-    SlackNotifier.post(text: text, url: webhook_url)
-  end
-
-  # Webhook URL lives in Rails credentials (never hardcoded, never plain ENV).
-  # `dig` returns nil safely when the :slack section does not exist yet, so the
-  # job degrades to a logged no-op instead of crashing.
-  def self.webhook_url
-    Rails.application.credentials.dig(:slack, :ping_formations_webhook_url)
+    # Réutilise l'intégration Slack existante : SlackNotifier retombe sur
+    # ENV["SLACK_WEBHOOK_URL"] — le même webhook qui notifie déjà #ping-formations
+    # pour les nouvelles inscriptions. Pas de credential séparé à configurer.
+    SlackNotifier.post(text: text)
   end
 end

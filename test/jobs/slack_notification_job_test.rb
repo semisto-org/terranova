@@ -1,25 +1,18 @@
 require 'test_helper'
 
-# AC-22: the Slack notification job is fully isolated — a missing webhook or a
-# failing post is logged and never raises into the upload path.
+# AC-22 : le job de notification Slack est totalement isolé du chemin d'upload.
+# Il délègue à SlackNotifier, qui réutilise ENV["SLACK_WEBHOOK_URL"] — le même
+# webhook qui notifie déjà #ping-formations pour les nouvelles inscriptions.
+# Pas de credential séparé.
 class SlackNotificationJobTest < ActiveSupport::TestCase
-  test "no configured webhook → logged no-op, never raises" do
-    SlackNotificationJob.stubs(:webhook_url).returns(nil)
-    SlackNotifier.expects(:post).never
-    assert_nothing_raised { SlackNotificationJob.perform_now("📎 test") }
-  end
-
-  test "with a webhook it delegates the message to SlackNotifier.post" do
-    SlackNotificationJob.stubs(:webhook_url).returns("https://hooks.example/test")
-    SlackNotifier.expects(:post).with(
-      text: "📎 Léa a déposé 1 document(s)",
-      url: "https://hooks.example/test"
-    )
+  test "délègue le message à SlackNotifier.post (réutilise SLACK_WEBHOOK_URL, sans credential séparé)" do
+    SlackNotifier.expects(:post).with(text: "📎 Léa a déposé 1 document(s)")
     SlackNotificationJob.perform_now("📎 Léa a déposé 1 document(s)")
   end
 
-  test "webhook_url reads from credentials and is nil when absent" do
-    # No :slack section configured in the test credentials → safe nil via dig.
-    assert_nil SlackNotificationJob.webhook_url
+  test "ne lève jamais dans le chemin d'upload — SlackNotifier absorbe ses propres erreurs" do
+    # SlackNotifier rescue StandardError en interne (cf. app/services/slack_notifier.rb).
+    SlackNotifier.stubs(:post).returns(nil)
+    assert_nothing_raised { SlackNotificationJob.perform_now("📎 test") }
   end
 end
