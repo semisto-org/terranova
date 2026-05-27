@@ -5,6 +5,7 @@ import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
 import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
 import CarpoolingSection from '../../my-semisto/components/CarpoolingSection'
+import SessionPhotoAlbum from '../../my-semisto/components/SessionPhotoAlbum'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
@@ -141,7 +142,9 @@ export default function TrainingDetail() {
           {/* Sessions timeline with inline documents */}
           <SessionsAndDocuments
             training={training}
+            trainingId={trainingId}
             onDelete={training.canUpload ? handleDelete : null}
+            onChanged={() => loadTraining()}
           />
 
           {/* Carpooling */}
@@ -152,7 +155,7 @@ export default function TrainingDetail() {
   )
 }
 
-function SessionsAndDocuments({ training, onDelete }) {
+function SessionsAndDocuments({ training, trainingId, onDelete, onChanged }) {
   const documents = training.documents || []
   const sessions = training.sessions || []
 
@@ -227,6 +230,13 @@ function SessionsAndDocuments({ training, onDelete }) {
                     {session.description && (
                       <p className="text-xs text-stone-500 mt-1.5">{session.description}</p>
                     )}
+
+                    <SessionPhotoAlbum
+                      trainingId={trainingId}
+                      session={session}
+                      canEdit={training.canUpload}
+                      onSaved={onChanged}
+                    />
 
                     {sessionDocs.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-stone-100 space-y-2">

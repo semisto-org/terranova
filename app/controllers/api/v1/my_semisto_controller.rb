@@ -246,6 +246,30 @@ module Api
         head :no_content
       end
 
+      # ── Session photo album link (trainer set / clear) ──
+
+      # PATCH /api/v1/my/academy/:training_id/sessions/:session_id/photo-album
+      # Gated on the same upload right as documents (access grant AND not
+      # registered). Sets — or clears, on a blank value — the Google Photos
+      # album link of one session. A session_id not belonging to the training
+      # is rejected (422), consistent with resolve_upload_session.
+      def update_session_photo_album
+        training = find_uploadable_training!
+        return unless training
+
+        session = training.sessions.find_by(id: params[:session_id])
+        unless session
+          render json: { error: "Session invalide pour cette formation." }, status: :unprocessable_entity
+          return
+        end
+
+        if session.update(photo_album_url: params[:photo_album_url].to_s.strip)
+          render json: { session: serialize_portal_session(session) }
+        else
+          render json: { error: session.errors.full_messages.join(", ") }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def verify_contact_token(token)
@@ -478,7 +502,8 @@ module Api
           startDate: session.start_date.iso8601,
           endDate: session.end_date.iso8601,
           topic: session.topic,
-          description: session.description
+          description: session.description,
+          photoAlbumUrl: session.photo_album_url.presence
         }
       end
 

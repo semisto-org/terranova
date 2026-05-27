@@ -525,7 +525,7 @@
       ]
     },
     {
-      "endpointCount": 8,
+      "endpointCount": 9,
       "file": "my_semisto.json",
       "name": "my_semisto",
       "operations": [
@@ -558,6 +558,11 @@
           "method": "DELETE",
           "path": "/api/v1/my/academy/{training_id}/documents/{document_id}",
           "summary": "destroy_document"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/photo-album",
+          "summary": "update_session_photo_album"
         },
         {
           "method": "POST",
@@ -984,5 +989,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 172
+  "totalEndpoints": 173
 }
