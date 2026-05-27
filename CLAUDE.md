@@ -2,6 +2,8 @@
 
 Digital infrastructure for the Semisto movement — transforming anthropized zones across Europe into food forests, forest gardens, and living territories. Open source.
 
+> **📋 Project ISA — single source of truth for "what v1.0 means" + current-vs-ideal state: [`ISA.md`](ISA.md).** Feature status, scope, decisions, and the v1.0 criteria live there (the ISA is the living spec; this CLAUDE.md is the orientation/conventions layer). ⚠️ Some counts below are stale — actual is **~155 tables across ~13 domains, ~35 API controllers**. `MILESTONES.md` is outdated (contradicts the code); trust `ISA.md` for status.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -110,7 +112,7 @@ config/
   routes.rb                      # All routes
   database.yml                   # PostgreSQL (ENV-based: PGHOST, PGPORT, PGUSER, PGPASSWORD)
 db/
-  schema.rb                      # 60+ tables
+  schema.rb                      # ~155 tables (see ISA.md domain map)
   seeds.rb                       # Dev seed data
 test/
   integration/                   # 7 integration test files (Minitest)
@@ -124,7 +126,7 @@ test/
 
 ## Database
 
-60+ tables across 5 domains:
+~155 tables across ~13 domains (full domain map in `ISA.md`):
 - **Core**: members, wallets, contacts, timesheets, active_storage_*
 - **Lab**: cycles, pitches, bets, scopes, guilds, events, event_types, semos_*, idea_*
 - **Design**: design_projects, design_quotes, design_planting_plans, design_palettes, design_annotations, etc. (22 tables)
