@@ -279,6 +279,55 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     assert_equal 2, expense.bank_reconciliations.count
   end
 
+  test "adjust_total grows the expense total by the allocated amount" do
+    tx1 = BankTransaction.create!(
+      bank_connection: @connection, provider_transaction_id: "tx_grow_001",
+      date: Date.current, amount: -20.00, counterpart_name: "Facebook"
+    )
+    expense = Expense.create!(
+      name: "Pub Facebook", supplier: "Facebook", status: "paid",
+      expense_type: "services_and_goods", invoice_date: Date.current,
+      total_incl_vat: 20.00, amount_excl_vat: 20.00
+    )
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx1.id, reconcilable_type: "Expense", reconcilable_id: expense.id
+    }, as: :json
+    assert_response :created
+
+    # Second charge, allocated WITH the adjust_total flag.
+    tx2 = BankTransaction.create!(
+      bank_connection: @connection, provider_transaction_id: "tx_grow_002",
+      date: Date.current, amount: -15.00, counterpart_name: "Facebook"
+    )
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx2.id, reconcilable_type: "Expense", reconcilable_id: expense.id,
+      amount: 15.00, adjust_total: true
+    }, as: :json
+    assert_response :created
+
+    expense.reload
+    assert_in_delta 35.00, expense.total_incl_vat, 0.001, "expense total should grow by the allocated amount"
+    assert_in_delta 35.00, expense.amount_excl_vat, 0.001, "HT scales proportionally (no VAT here)"
+  end
+
+  test "without adjust_total the expense total is unchanged" do
+    tx = BankTransaction.create!(
+      bank_connection: @connection, provider_transaction_id: "tx_nogrow_001",
+      date: Date.current, amount: -15.00
+    )
+    expense = Expense.create!(
+      name: "Pub Facebook", supplier: "Facebook", status: "paid",
+      expense_type: "services_and_goods", invoice_date: Date.current,
+      total_incl_vat: 20.00, amount_excl_vat: 20.00
+    )
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx.id, reconcilable_type: "Expense", reconcilable_id: expense.id, amount: 15.00
+    }, as: :json
+    assert_response :created
+    expense.reload
+    assert_in_delta 20.00, expense.total_incl_vat, 0.001
+  end
+
   test "split reconciliation across two expenses succeeds" do
     tx = BankTransaction.create!(
       bank_connection: @connection,

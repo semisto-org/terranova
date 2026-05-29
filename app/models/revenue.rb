@@ -30,6 +30,28 @@ class Revenue < ApplicationRecord
     (amount - reconciled_amount).abs <= BankReconciliation::AMOUNT_TOLERANCE
   end
 
+  # Increase the revenue total by a delta — e.g. an extra bank transaction
+  # allocated to the same revenue. HT / VAT are scaled proportionally so that
+  # amount = HT + VAT stays consistent. Used by the reconciliation
+  # "add this amount to the total" option.
+  def add_to_total!(delta)
+    delta = delta.to_d
+    return if delta <= 0
+
+    current = amount.to_d
+    if current.positive?
+      factor = (current + delta) / current
+      self.amount_excl_vat = (amount_excl_vat.to_d * factor).round(2)
+      self.vat_6  = (vat_6.to_d  * factor).round(2)
+      self.vat_21 = (vat_21.to_d * factor).round(2)
+      self.amount = amount_excl_vat + vat_6 + vat_21
+    else
+      self.amount_excl_vat = amount_excl_vat.to_d + delta
+      self.amount = delta
+    end
+    save!
+  end
+
   private
 
   def assign_default_organization

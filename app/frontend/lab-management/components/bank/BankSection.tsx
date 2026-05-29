@@ -230,7 +230,8 @@ export function BankSection() {
     transactionId: string,
     reconcilableType: string,
     reconcilableId: string,
-    amount?: number
+    amount?: number,
+    adjustTotal?: boolean
   ) => {
     const body: Record<string, unknown> = {
       bank_transaction_id: transactionId,
@@ -238,6 +239,7 @@ export function BankSection() {
       reconcilable_id: reconcilableId,
     }
     if (amount != null) body.amount = amount
+    if (adjustTotal) body.adjust_total = true
     const result = await apiRequest('/api/v1/bank/reconciliations', {
       method: 'POST',
       body: JSON.stringify(body),

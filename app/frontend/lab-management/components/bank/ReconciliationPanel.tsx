@@ -38,7 +38,8 @@ interface ReconciliationPanelProps {
     transactionId: string,
     reconcilableType: string,
     reconcilableId: string,
-    amount?: number
+    amount?: number,
+    adjustTotal?: boolean
   ) => Promise<void>
   onUnreconcile: (reconciliationId: string) => Promise<void>
   onBack: () => void
@@ -118,6 +119,7 @@ export function ReconciliationPanel({ transaction, onMatch, onUnreconcile, onBac
   const [matching, setMatching] = useState<string | null>(null)
   const [pendingCandidate, setPendingCandidate] = useState<Candidate | null>(null)
   const [pendingAmount, setPendingAmount] = useState<string>('')
+  const [addToTotal, setAddToTotal] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mode, setMode] = useState<CandidatesMode>('suggested')
   const [searchQuery, setSearchQuery] = useState('')
@@ -222,6 +224,7 @@ export function ReconciliationPanel({ transaction, onMatch, onUnreconcile, onBac
   const openAllocation = (candidate: Candidate) => {
     setError(null)
     setPendingCandidate(candidate)
+    setAddToTotal(false)
     const defaultAmount = Math.min(remaining, candidate.amount).toFixed(2)
     setPendingAmount(defaultAmount)
   }
@@ -239,9 +242,10 @@ export function ReconciliationPanel({ transaction, onMatch, onUnreconcile, onBac
     }
     setMatching(pendingCandidate.id)
     try {
-      await onMatch(transaction.id, pendingCandidate.type, pendingCandidate.id, parsed)
+      await onMatch(transaction.id, pendingCandidate.type, pendingCandidate.id, parsed, addToTotal)
       setPendingCandidate(null)
       setPendingAmount('')
+      setAddToTotal(false)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur pendant le rapprochement.')
     } finally {
@@ -550,6 +554,23 @@ export function ReconciliationPanel({ transaction, onMatch, onUnreconcile, onBac
             <div className="text-xs text-stone-400 mt-1.5">
               Reste disponible sur la transaction : <span className="font-mono text-stone-600">{fmtMoney(remaining)}</span>
             </div>
+
+            <label className="flex items-start gap-2.5 mt-4 p-3 rounded-lg border border-stone-200 bg-stone-50/60 cursor-pointer hover:border-[#5B5781]/40 transition-colors">
+              <input
+                type="checkbox"
+                checked={addToTotal}
+                onChange={(e) => setAddToTotal(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#5B5781] focus:ring-[#5B5781]"
+              />
+              <span className="text-sm text-stone-700">
+                Ajouter ce montant au total de la {pendingCandidate.type === 'Expense' ? 'dépense' : 'recette'}
+                <span className="block text-xs text-stone-400 mt-0.5">
+                  Passe de {fmtMoney(pendingCandidate.amount)} à{' '}
+                  <span className="font-mono">{fmtMoney(pendingCandidate.amount + (parseFloat(pendingAmount.replace(',', '.')) || 0))}</span>.
+                  Utile pour des prélèvements successifs (ex. pub Facebook).
+                </span>
+              </span>
+            </label>
 
             {error && (
               <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">

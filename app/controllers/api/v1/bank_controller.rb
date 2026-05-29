@@ -345,7 +345,12 @@ module Api
         )
 
         if reconciliation.save
-          render json: serialize_reconciliation(reconciliation), status: :created
+          # Optionally grow the matched expense/revenue total by this allocation —
+          # e.g. several bank transactions accumulating onto one Facebook ads expense.
+          if ActiveModel::Type::Boolean.new.cast(params[:adjust_total]) && reconcilable.respond_to?(:add_to_total!)
+            reconcilable.add_to_total!(amount)
+          end
+          render json: serialize_reconciliation(reconciliation.reload), status: :created
         else
           render json: { error: reconciliation.errors.full_messages.to_sentence }, status: :unprocessable_entity
         end

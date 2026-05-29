@@ -43,6 +43,29 @@ class Expense < ApplicationRecord
     (total_incl_vat - reconciled_amount).abs <= BankReconciliation::AMOUNT_TOLERANCE
   end
 
+  # Increase the expense total by a TTC delta — e.g. an extra bank transaction
+  # allocated to this same expense (Facebook ads charged in several installments).
+  # The HT / VAT breakdown is scaled proportionally so TTC = HT + VAT stays
+  # consistent. Used by the reconciliation "add this amount to the total" option.
+  def add_to_total!(ttc_delta)
+    ttc_delta = ttc_delta.to_d
+    return if ttc_delta <= 0
+
+    current = total_incl_vat.to_d
+    if current.positive?
+      factor = (current + ttc_delta) / current
+      self.amount_excl_vat = (amount_excl_vat.to_d * factor).round(2)
+      self.vat_6  = (vat_6.to_d  * factor).round(2)
+      self.vat_12 = (vat_12.to_d * factor).round(2)
+      self.vat_21 = (vat_21.to_d * factor).round(2)
+      self.total_incl_vat = amount_excl_vat + vat_6 + vat_12 + vat_21
+    else
+      self.amount_excl_vat = amount_excl_vat.to_d + ttc_delta
+      self.total_incl_vat = ttc_delta
+    end
+    save!
+  end
+
   def multi_project?
     project_allocations.any?
   end
