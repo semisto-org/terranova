@@ -241,6 +241,44 @@ class BankManagementTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "free search returns a fully reconciled expense so several transactions can target it" do
+    # First Facebook ad charge: expense created and fully reconciled by tx1.
+    tx1 = BankTransaction.create!(
+      bank_connection: @connection, provider_transaction_id: "tx_fb_001",
+      date: Date.current, amount: -20.00, counterpart_name: "Facebook"
+    )
+    expense = Expense.create!(
+      name: "Pub Facebook formation Syntropie", supplier: "Facebook", status: "paid",
+      expense_type: "services_and_goods", invoice_date: Date.current,
+      total_incl_vat: 20.00, amount_excl_vat: 16.53
+    )
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx1.id, reconcilable_type: "Expense", reconcilable_id: expense.id
+    }, as: :json
+    assert_response :created
+
+    # Second Facebook charge arrives on a new transaction.
+    tx2 = BankTransaction.create!(
+      bank_connection: @connection, provider_transaction_id: "tx_fb_002",
+      date: Date.current, amount: -20.00, counterpart_name: "Facebook"
+    )
+
+    # The already-fully-reconciled expense MUST still appear in free search.
+    get "/api/v1/bank/transactions/#{tx2.id}/search_candidates", params: { q: "syntropie" }, as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    match = body["items"].find { |i| i["id"] == expense.id.to_s }
+    assert match, "fully reconciled expense should be returned by free search"
+    assert_in_delta 20.00, match["allocatedAmount"], 0.001
+
+    # And a second transaction can be allocated to it.
+    post "/api/v1/bank/reconciliations", params: {
+      bank_transaction_id: tx2.id, reconcilable_type: "Expense", reconcilable_id: expense.id
+    }, as: :json
+    assert_response :created
+    assert_equal 2, expense.bank_reconciliations.count
+  end
+
   test "split reconciliation across two expenses succeeds" do
     tx = BankTransaction.create!(
       bank_connection: @connection,

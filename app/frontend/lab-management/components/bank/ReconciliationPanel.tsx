@@ -25,6 +25,7 @@ interface Candidate {
   supplier?: string
   contact?: string
   amount: number
+  allocatedAmount?: number
   date: string | null
   status: string
 }
@@ -89,6 +90,11 @@ function CandidateRow({
         <div className="text-xs text-stone-400">
           {candidate.supplier || candidate.contact || '—'} · {fmtDate(candidate.date)} · {candidate.status}
         </div>
+        {candidate.allocatedAmount != null && candidate.allocatedAmount > 0.01 && (
+          <div className="text-[11px] text-amber-600 mt-0.5">
+            Déjà {fmtMoney(candidate.allocatedAmount)} rapproché
+          </div>
+        )}
       </div>
       <div className="text-right shrink-0">
         <div className="text-sm font-mono font-semibold text-stone-900">{fmtMoney(candidate.amount)}</div>
@@ -477,7 +483,7 @@ export function ReconciliationPanel({ transaction, onMatch, onUnreconcile, onBac
           <div className="text-center py-10 bg-white rounded-xl border border-dashed border-stone-200">
             <p className="text-stone-500">Saisissez au moins 2 caractères.</p>
             <p className="text-xs text-stone-400 mt-1">
-              Les éléments déjà totalement rapprochés sont exclus.
+              La recherche inclut les éléments déjà rapprochés — pratique pour allouer plusieurs transactions à une même dépense.
             </p>
           </div>
         ) : searching ? (

@@ -661,9 +661,15 @@ module Api
 
       def search_expenses(query, limit)
         like = "%#{sanitize_sql_like(query)}%"
+        # Free search is a deliberate escape hatch: it returns ANY matching expense,
+        # including ones already fully reconciled. A single expense (e.g. a Facebook
+        # ads campaign) can legitimately receive several transactions over time, so we
+        # must never hide already-reconciled expenses here. The current allocation is
+        # surfaced via allocatedAmount so the user can track the accumulation.
         scope = Expense
           .left_joins(:bank_reconciliations)
           .left_joins(:supplier_contact)
+          .select("expenses.*, COALESCE(SUM(bank_reconciliations.amount), 0) AS allocated_amount")
 
         numeric_id = query.to_i if query.match?(/\A\d+\z/)
 
@@ -677,7 +683,6 @@ module Api
         scope = scope
           .where(conditions.join(" OR "), like: like, numeric_id: numeric_id)
           .group("expenses.id")
-          .having("ABS(expenses.total_incl_vat - COALESCE(SUM(bank_reconciliations.amount), 0)) > 0.01 OR COUNT(bank_reconciliations.id) = 0")
           .order("expenses.invoice_date DESC NULLS LAST, expenses.id DESC")
           .limit(limit)
 
@@ -686,6 +691,7 @@ module Api
             type: "Expense",
             id: expense.id.to_s,
             score: nil,
+            allocatedAmount: expense.allocated_amount.to_f,
             **serialize_candidate(expense, :expense)
           }
         end
@@ -693,9 +699,13 @@ module Api
 
       def search_revenues(query, limit)
         like = "%#{sanitize_sql_like(query)}%"
+        # See search_expenses: free search returns every matching revenue, including
+        # ones already fully reconciled, so several transactions can be allocated to
+        # the same revenue. allocatedAmount surfaces the current allocation.
         scope = Revenue
           .left_joins(:bank_reconciliations)
           .left_joins(:contact)
+          .select("revenues.*, COALESCE(SUM(bank_reconciliations.amount), 0) AS allocated_amount")
 
         numeric_id = query.to_i if query.match?(/\A\d+\z/)
 
@@ -709,7 +719,6 @@ module Api
         scope = scope
           .where(conditions.join(" OR "), like: like, numeric_id: numeric_id)
           .group("revenues.id")
-          .having("ABS(revenues.amount - COALESCE(SUM(bank_reconciliations.amount), 0)) > 0.01 OR COUNT(bank_reconciliations.id) = 0")
           .order("revenues.date DESC NULLS LAST, revenues.id DESC")
           .limit(limit)
 
@@ -718,6 +727,7 @@ module Api
             type: "Revenue",
             id: revenue.id.to_s,
             score: nil,
+            allocatedAmount: revenue.allocated_amount.to_f,
             **serialize_candidate(revenue, :revenue)
           }
         end
