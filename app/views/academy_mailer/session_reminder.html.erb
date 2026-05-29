@@ -1,0 +1,200 @@
+<%
+  def date_fr(date)
+    mois = %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre]
+    "#{date.day} #{mois[date.month - 1]} #{date.year}"
+  end
+%>
+
+<!-- Greeting -->
+<% if @contact_name.present? %>
+  <p style="margin: 0 0 20px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.7; color: #1f2937;">
+    Bonjour <strong><%= @contact_name %></strong>,
+  </p>
+<% else %>
+  <p style="margin: 0 0 20px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.7; color: #1f2937;">
+    Bonjour,
+  </p>
+<% end %>
+
+<!-- Custom intro block -->
+<% if @intro_html.present? %>
+  <div style="margin: 0 0 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+    <%= @intro_html %>
+  </div>
+<% end %>
+
+<!-- L'essentiel card -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+  <!-- Card header -->
+  <tr>
+    <td style="background-color: #fef2f2; padding: 20px 24px; border-bottom: 1px solid #e5e7eb;">
+      <p style="margin: 0 0 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+        L'essentiel
+      </p>
+      <p style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #1f2937; line-height: 1.4;">
+        <%= @training.title %>
+      </p>
+      <% if @training.training_type&.name.present? %>
+        <p style="margin: 4px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+          <%= @training.training_type.name %>
+        </p>
+      <% end %>
+    </td>
+  </tr>
+
+  <!-- Details -->
+  <tr>
+    <td style="padding: 20px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <!-- Quand -->
+        <tr>
+          <td width="90" valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+            Quand
+          </td>
+          <td valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+            <%= date_fr(@session.start_date) %><% if @session.end_date && @session.end_date != @session.start_date %> &mdash; <%= date_fr(@session.end_date) %><% end %>
+          </td>
+        </tr>
+
+        <!-- Rendez-vous -->
+        <% if @meeting_time.present? || @meeting_point.present? %>
+          <tr>
+            <td width="90" valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+              Rendez-vous
+            </td>
+            <td valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+              <%= [@meeting_time, @meeting_point].reject(&:blank?).join(" &middot; ").html_safe %>
+            </td>
+          </tr>
+        <% end %>
+
+        <!-- Lieu -->
+        <% if @locations.present? && @locations.any? %>
+          <tr>
+            <td width="90" valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+              Lieu
+            </td>
+            <td valign="top" style="padding-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+              <% @locations.each_with_index do |location, index| %>
+                <div style="<%= index.zero? ? '' : 'margin-top: 8px;' %>">
+                  <span style="color: #1f2937;"><%= location[:name] %></span>
+                  <% if location[:address].present? %>
+                    <br><span style="font-size: 12px; color: #9ca3af;"><%= location[:address] %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+
+        <!-- Avec -->
+        <% if @trainers.present? && @trainers.any? %>
+          <tr>
+            <td width="90" valign="top" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+              Avec
+            </td>
+            <td valign="top" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+              <%= @trainers.join(", ") %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- CTA button (bulletproof) -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="background-color: #B01A19; border-radius: 10px;">
+            <a href="<%= @session_url %>" style="display: inline-block; padding: 16px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+              Toutes les infos pratiques de ma session
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- CTA subtext -->
+<p style="margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #9ca3af; text-align: center;">
+  Repas, h&eacute;bergement, ce qu'il faut pr&eacute;voir&nbsp;: tout est sur ta page.
+</p>
+
+<!-- Optional teaser of available practical sections -->
+<% practical_teasers = [] %>
+<% practical_teasers << "&#127869;&#65039; Repas".html_safe if @meals_info.present? %>
+<% practical_teasers << "&#128716; H&eacute;bergement".html_safe if @accommodation_info.present? %>
+<% practical_teasers << "&#127890; Dans ton sac".html_safe if @packing_list.present? && @packing_list.any? %>
+<% if practical_teasers.any? %>
+  <p style="margin: 0 0 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #6b7280; text-align: center;">
+    <%= practical_teasers.join(" &middot; ").html_safe %>
+  </p>
+<% end %>
+
+<!-- Custom bonus block -->
+<% if @bonus_html.present? %>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+    <tr>
+      <td style="background-color: #fef2f2; padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
+        <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+          Les bonus du moment
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px 24px;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+          <%= @bonus_html %>
+        </div>
+      </td>
+    </tr>
+  </table>
+<% end %>
+
+<!-- Cross-promo -->
+<% if @other_trainings.present? && @other_trainings.any? %>
+  <p style="margin: 0 0 16px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: bold; color: #1f2937;">
+    &Ccedil;a pourrait aussi t'int&eacute;resser
+  </p>
+
+  <% @other_trainings.each do |other| %>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+      <tr>
+        <td style="padding: 16px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td valign="top" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+                <% if other[:type_name].present? %>
+                  <p style="margin: 0 0 4px; font-size: 11px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <%= other[:type_name] %>
+                  </p>
+                <% end %>
+                <p style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: #1f2937; line-height: 1.4;">
+                  <%= other[:title] %>
+                </p>
+                <% if other[:date_label].present? %>
+                  <p style="margin: 4px 0 0; font-size: 13px; color: #9ca3af;">
+                    <%= other[:date_label] %>
+                  </p>
+                <% end %>
+              </td>
+              <td valign="top" align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; white-space: nowrap; padding-left: 16px;">
+                <a href="<%= other[:url] %>" style="font-size: 13px; font-weight: 600; color: #B01A19; text-decoration: none;">Voir &rarr;</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  <% end %>
+<% end %>
+
+<!-- Closing -->
+<p style="margin: 28px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  &Agrave; tr&egrave;s bient&ocirc;t&nbsp;!
+</p>

@@ -26,6 +26,7 @@ Rails.application.routes.draw do
           delete "profile/avatar", to: "api/v1/my_semisto#remove_avatar", as: false
           get "academy/:training_id/carpooling", to: "api/v1/my_semisto#carpooling", as: false
           patch "academy/:training_id/carpooling", to: "api/v1/my_semisto#update_carpooling", as: false
+          post "academy/:training_id/carpooling/contact", to: "api/v1/my_semisto#contact_carpooler", as: false
           post "academy/:training_id/documents", to: "api/v1/my_semisto#create_document", as: false
           delete "academy/:training_id/documents/:document_id", to: "api/v1/my_semisto#destroy_document", as: false
           patch "academy/:training_id/sessions/:session_id/photo-album", to: "api/v1/my_semisto#update_session_photo_album", as: false
@@ -120,6 +121,7 @@ Rails.application.routes.draw do
         delete "profile/avatar", to: "my_semisto#remove_avatar"
         get "academy/:training_id/carpooling", to: "my_semisto#carpooling"
         patch "academy/:training_id/carpooling", to: "my_semisto#update_carpooling"
+        post "academy/:training_id/carpooling/contact", to: "my_semisto#contact_carpooler"
         post "academy/:training_id/documents", to: "my_semisto#create_document"
         delete "academy/:training_id/documents/:document_id", to: "my_semisto#destroy_document"
         patch "academy/:training_id/sessions/:session_id/photo-album", to: "my_semisto#update_session_photo_album"
@@ -545,6 +547,8 @@ Rails.application.routes.draw do
       post "academy/trainings/:training_id/sessions", to: "academy#create_session"
       patch "academy/sessions/:session_id", to: "academy#update_session"
       delete "academy/sessions/:session_id", to: "academy#destroy_session"
+      post "academy/sessions/:session_id/reminder/preview", to: "academy#reminder_preview"
+      post "academy/sessions/:session_id/reminder/send", to: "academy#send_reminder"
       post "academy/trainings/:training_id/registrations", to: "academy#create_registration"
       patch "academy/registrations/:registration_id", to: "academy#update_registration"
       delete "academy/registrations/:registration_id", to: "academy#destroy_registration"

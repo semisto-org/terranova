@@ -255,8 +255,13 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert_equal "Namur", body["myRegistration"]["departureCity"]
     assert_equal 1, body["drivers"].length
     assert_equal "Pierre", body["drivers"][0]["firstName"]
-    assert_equal "phone", body["drivers"][0]["contactMethod"]
-    assert_equal "0478123456", body["drivers"][0]["contactValue"]
+    # Relais anonyme : aucune coordonnée exposée, seulement l'id de relais + contactable
+    assert body["drivers"][0]["id"].present?
+    assert_equal true, body["drivers"][0]["contactable"]
+    assert_not body["drivers"][0].key?("contactMethod")
+    assert_not body["drivers"][0].key?("contactValue")
+    assert_not body["drivers"][0].key?("email")
+    assert_not body["drivers"][0].key?("phone")
     assert_equal 0, body["seekers"].length
   end
 
@@ -323,7 +328,7 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "carpooling drivers show email when no phone" do
+  test "carpooling drivers never expose contact info (relay model)" do
     Academy::TrainingRegistration.create!(
       training: @training,
       contact_name: "Sophie Lemaire",
@@ -342,8 +347,53 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = JSON.parse(response.body)
     driver = body["drivers"].find { |d| d["firstName"] == "Sophie" }
-    assert_equal "email", driver["contactMethod"]
-    assert_equal "sophie@example.com", driver["contactValue"]
+    assert_equal true, driver["contactable"]
+    assert_not driver.key?("contactMethod")
+    assert_not driver.key?("contactValue")
+    assert_not driver.key?("email")
+    assert_not driver.key?("phone")
+  end
+
+  test "POST carpooling/contact relays a message with Reply-To set to the sender" do
+    @registration.update!(carpooling: "seeking", contact_email: "me@example.com")
+    target = Academy::TrainingRegistration.create!(
+      training: @training,
+      contact_name: "Pierre Martin",
+      contact_email: "pierre@example.com",
+      payment_status: "paid",
+      registered_at: 1.week.ago,
+      carpooling: "offering",
+      departure_city: "Bruxelles"
+    )
+
+    assert_emails 1 do
+      post "/api/v1/my/academy/#{@training.id}/carpooling/contact",
+        params: { to_registration_id: target.id, message: "Salut, je passe par chez toi ?" },
+        as: :json, headers: auth_headers
+    end
+
+    assert_response :success
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal ["pierre@example.com"], mail.to
+    assert_equal ["me@example.com"], mail.reply_to
+    assert_includes mail.body.encoded, "je passe par chez toi"
+  end
+
+  test "POST carpooling/contact rejects an empty message" do
+    target = Academy::TrainingRegistration.create!(
+      training: @training,
+      contact_name: "Pierre Martin",
+      contact_email: "pierre@example.com",
+      payment_status: "paid",
+      registered_at: 1.week.ago,
+      carpooling: "offering"
+    )
+
+    post "/api/v1/my/academy/#{@training.id}/carpooling/contact",
+      params: { to_registration_id: target.id, message: "  " },
+      as: :json, headers: auth_headers
+
+    assert_response :unprocessable_entity
   end
 
   test "carpooling seekers do not expose contact info" do

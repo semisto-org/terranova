@@ -16,6 +16,11 @@ export function SessionFormModal({ session, locations, members, academyContacts 
   const [assistantIds, setAssistantIds] = useState(session?.assistantIds ?? [])
   const [topic, setTopic] = useState(session?.topic ?? '')
   const [description, setDescription] = useState(session?.description ?? '')
+  const [meetingPoint, setMeetingPoint] = useState(session?.meetingPoint ?? '')
+  const [meetingTime, setMeetingTime] = useState(session?.meetingTime ?? '')
+  const [mealsInfo, setMealsInfo] = useState(session?.mealsInfo ?? '')
+  const [accommodationInfo, setAccommodationInfo] = useState(session?.accommodationInfo ?? '')
+  const [packingText, setPackingText] = useState((session?.packingList ?? []).join('\n'))
   const [error, setError] = useState(null)
 
   // Focus first input when modal opens
@@ -86,6 +91,11 @@ export function SessionFormModal({ session, locations, members, academyContacts 
         trainer_ids: trainerIds,
         assistant_ids: assistantIds,
         description: description === '<p></p>' ? '' : description,
+        meeting_point: meetingPoint.trim(),
+        meeting_time: meetingTime.trim(),
+        meals_info: mealsInfo.trim(),
+        accommodation_info: accommodationInfo.trim(),
+        packing_list: packingText.split('\n').map((s) => s.trim()).filter(Boolean),
       })
     } catch (err) {
       setError(err.message || "Erreur lors de l'enregistrement")
@@ -360,6 +370,90 @@ export function SessionFormModal({ session, locations, members, academyContacts 
                     onUpdate={setDescription}
                     minHeight="120px"
                   />
+                </div>
+
+                {/* Infos pratiques — réutilisées dans l'email de rappel et la page participant */}
+                <div className="pt-2 border-t border-stone-200">
+                  <h4 className="text-sm font-bold text-stone-900 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                    Infos pratiques
+                  </h4>
+                  <p className="text-xs text-stone-400 mb-4">
+                    Affichées sur la page participant (My Semisto) et reprises dans l'email de rappel de session.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="meeting-time" className="block text-sm font-semibold text-stone-700 mb-2">
+                          Heure de rendez-vous
+                        </label>
+                        <input
+                          id="meeting-time"
+                          type="text"
+                          value={meetingTime}
+                          onChange={(e) => setMeetingTime(e.target.value)}
+                          className={inputBase}
+                          placeholder="ex: 9h30"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="meeting-point" className="block text-sm font-semibold text-stone-700 mb-2">
+                          Point de rendez-vous
+                        </label>
+                        <input
+                          id="meeting-point"
+                          type="text"
+                          value={meetingPoint}
+                          onChange={(e) => setMeetingPoint(e.target.value)}
+                          className={inputBase}
+                          placeholder="ex: Salle Henry, à l'auberge"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="meals-info" className="block text-sm font-semibold text-stone-700 mb-2">
+                        Repas
+                      </label>
+                      <textarea
+                        id="meals-info"
+                        value={mealsInfo}
+                        onChange={(e) => setMealsInfo(e.target.value)}
+                        rows={3}
+                        className={inputBase}
+                        placeholder="ex: Petit-déj et midis prévus à l'auberge. Buffet à 12h."
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="accommodation-info" className="block text-sm font-semibold text-stone-700 mb-2">
+                        Hébergement
+                      </label>
+                      <textarea
+                        id="accommodation-info"
+                        value={accommodationInfo}
+                        onChange={(e) => setAccommodationInfo(e.target.value)}
+                        rows={2}
+                        className={inputBase}
+                        placeholder="ex: Check-in entre 17h et 21h le vendredi."
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="packing-list" className="block text-sm font-semibold text-stone-700 mb-2">
+                        Dans ton sac
+                      </label>
+                      <textarea
+                        id="packing-list"
+                        value={packingText}
+                        onChange={(e) => setPackingText(e.target.value)}
+                        rows={4}
+                        className={inputBase}
+                        placeholder={"Un élément par ligne\nex: Bottes solides + gants\nDe quoi noter\nTa gourde"}
+                      />
+                      <p className="text-xs text-stone-400 mt-1">Un élément par ligne — affiché en liste à puces.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

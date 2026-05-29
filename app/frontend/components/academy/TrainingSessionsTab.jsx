@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Calendar, MapPin, User, Plus, Edit, Trash2 } from 'lucide-react'
+import { Calendar, MapPin, User, Plus, Edit, Trash2, Mail } from 'lucide-react'
+import SessionReminderModal from './SessionReminderModal'
 
 function formatDate(dateStr) {
   const date = new Date(dateStr)
@@ -114,6 +115,7 @@ function SessionCard({
   onDelete,
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [reminderOpen, setReminderOpen] = useState(false)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -233,6 +235,17 @@ function SessionCard({
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
+                  setReminderOpen(true)
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
+              >
+                <Mail className="w-4 h-4" />
+                Envoyer le rappel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
                   onDelete()
                 }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -244,6 +257,10 @@ function SessionCard({
           )}
         </div>
       </div>
+
+      {reminderOpen && (
+        <SessionReminderModal session={session} onClose={() => setReminderOpen(false)} />
+      )}
     </div>
   )
 }

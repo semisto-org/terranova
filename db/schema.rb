@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_102018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -189,12 +189,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_140000) do
   end
 
   create_table "academy_training_sessions", force: :cascade do |t|
+    t.text "accommodation_info", default: "", null: false
     t.jsonb "assistant_ids", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.date "end_date", null: false
     t.jsonb "location_ids", default: [], null: false
+    t.text "meals_info", default: "", null: false
+    t.string "meeting_point", default: "", null: false
+    t.string "meeting_time", default: "", null: false
+    t.jsonb "packing_list", default: [], null: false
     t.string "photo_album_url", default: "", null: false
     t.date "start_date", null: false
     t.string "topic"

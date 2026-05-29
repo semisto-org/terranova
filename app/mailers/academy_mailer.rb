@@ -27,4 +27,122 @@ class AcademyMailer < ApplicationMailer
       subject: "Confirmation d'inscription — #{@training.title}"
     )
   end
+
+  # Rappel envoyé quelques jours avant une session, à un inscrit donné.
+  # intro_html / bonus_html : HTML custom (déjà sanitizé ici) rédigé par le
+  # coordinateur au moment de l'envoi. Le détail logistique vit sur la page
+  # MySemisto vers laquelle pointe le bouton (lien one-click via magic-link).
+  def session_reminder(session, registration, intro_html: "", bonus_html: "")
+    @session = session
+    @training = session.training
+    @registration = registration
+    @contact_name = registration.contact_name.to_s
+
+    @intro_html = sanitize_rich(intro_html)
+    @bonus_html = sanitize_rich(bonus_html)
+
+    @meeting_point = session.meeting_point.to_s
+    @meeting_time = session.meeting_time.to_s
+    @meals_info = session.meals_info.to_s
+    @accommodation_info = session.accommodation_info.to_s
+    @packing_list = session.packing_list || []
+
+    location_ids = session.location_ids || []
+    @locations = Academy::TrainingLocation.where(id: location_ids).map { |l| { name: l.name, address: l.address.to_s } }
+
+    trainer_ids = (session.trainer_ids || [])
+    @trainers = trainer_ids.any? ? Contact.where(id: trainer_ids).pluck(:name) : []
+
+    contact = registration.contact || (registration.contact_email.present? && Contact.find_by("LOWER(email) = ?", registration.contact_email.downcase)) || nil
+    @session_url = participant_session_url(@training, contact)
+
+    @other_trainings = build_other_trainings(@training)
+
+    attachments.inline["academy-logo.png"] = File.read(
+      Rails.root.join("public/icons/academy.png")
+    )
+
+    mail(
+      to: @registration.contact_email,
+      subject: "🗓️ Infos pratiques — #{@training.title}"
+    )
+  end
+
+  # Relais covoiturage : message d'un inscrit à un autre. L'adresse de
+  # l'expéditeur n'apparaît jamais sur la plateforme ; on la place en Reply-To
+  # pour que la réponse du destinataire lui parvienne directement.
+  def carpooling_message(from_registration:, to_registration:, message:)
+    @training = from_registration.training
+    @from_name = from_registration.contact_name.to_s
+    @from_city = from_registration.departure_city.to_s
+    @from_carpooling = from_registration.carpooling
+    @message = message.to_s
+
+    attachments.inline["academy-logo.png"] = File.read(
+      Rails.root.join("public/icons/academy.png")
+    )
+
+    mail(
+      to: to_registration.contact_email,
+      reply_to: from_registration.contact_email,
+      subject: "🚗 Covoiturage — #{@training.title}"
+    )
+  end
+
+  private
+
+  def sanitize_rich(html)
+    return "".html_safe if html.blank?
+    ActionController::Base.helpers.sanitize(
+      html,
+      tags: %w[p br strong em u a ul ol li h3 h4 blockquote span],
+      attributes: %w[href target rel style]
+    )
+  end
+
+  # Lien vers la page d'activité du portail participant. Quand un Contact est
+  # connu, on génère un magic-link (purpose :contact_login) qui connecte ET
+  # redirige vers la page de l'activité — un seul clic depuis l'email.
+  def participant_session_url(training, contact)
+    path = "/academy/#{training.id}"
+    my_host = ENV["MY_SEMISTO_HOST"]
+    protocol = Rails.env.production? ? "https" : "http"
+
+    if contact && my_host.present?
+      token = Rails.application.message_verifier(:contact_login).generate(
+        { contact_id: contact.id },
+        purpose: :contact_login,
+        expires_in: 21.days
+      )
+      "#{protocol}://#{my_host}/api/v1/auth/verify?token=#{CGI.escape(token)}&redirect=#{CGI.escape(path)}"
+    elsif my_host.present?
+      "#{protocol}://#{my_host}#{path}"
+    else
+      "#{root_url.chomp('/')}#{path}"
+    end
+  end
+
+  # Autres activités ouvertes aux inscriptions (cross-promo), hors activité courante.
+  def build_other_trainings(current_training)
+    app_host = ENV.fetch("APP_HOST", "terranova.semisto.org")
+    protocol = Rails.env.production? ? "https" : "http"
+
+    Academy::Training
+      .where(status: "registrations_open")
+      .where.not(id: current_training.id)
+      .includes(:training_type, :sessions)
+      .limit(3)
+      .map do |t|
+        first = t.sessions.min_by(&:start_date)
+        { title: t.title,
+          type_name: t.training_type&.name,
+          date_label: first ? date_fr_short(first.start_date) : nil,
+          url: "#{protocol}://#{app_host}/academy/#{t.id}/register" }
+      end
+  end
+
+  def date_fr_short(date)
+    mois = %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre]
+    "#{date.day} #{mois[date.month - 1]} #{date.year}"
+  end
 end

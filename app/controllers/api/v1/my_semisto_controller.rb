@@ -28,10 +28,18 @@ module Api
         data = verify_contact_token(token)
         contact = Contact.find(data[:contact_id] || data["contact_id"])
         session[:contact_id] = contact.id
-        redirect_to my_semisto_path("/")
+        redirect_to my_semisto_path(safe_redirect_path(params[:redirect]))
       rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
         redirect_to my_semisto_path("/login"), alert: "Lien invalide ou expiré. Veuillez en demander un nouveau."
 
+      end
+
+      # Only allow internal, relative redirect targets — never an absolute or
+      # protocol-relative URL (open-redirect guard). Defaults to the portal root.
+      def safe_redirect_path(raw)
+        path = raw.to_s
+        return "/" unless path.start_with?("/") && !path.start_with?("//")
+        path
       end
 
       # ── Directory API ──
@@ -139,9 +147,42 @@ module Api
             departurePostalCode: registration.departure_postal_code,
             departureCountry: registration.departure_country
           },
-          drivers: drivers.map { |r| serialize_carpooling_participant(r, show_contact: true) },
-          seekers: seekers.map { |r| serialize_carpooling_participant(r, show_contact: false) }
+          drivers: drivers.map { |r| serialize_carpooling_participant(r) },
+          seekers: seekers.map { |r| serialize_carpooling_participant(r) }
         }
+      end
+
+      # Privacy-preserving relay: a participant sends a message to another
+      # participant of the same training. We email the target with Reply-To set
+      # to the sender, so the reply lands directly in the sender's inbox — no
+      # address is ever revealed on the page or in the payload.
+      def contact_carpooler
+        sender = find_contact_registration!
+        return unless sender
+
+        target = Academy::TrainingRegistration
+          .where(training_id: sender.training_id, deleted_at: nil)
+          .where.not(id: sender.id)
+          .find_by(id: params[:to_registration_id])
+
+        unless target&.contact_email.present?
+          render json: { error: "Participant introuvable" }, status: :not_found
+          return
+        end
+
+        message = params[:message].to_s.strip
+        if message.blank?
+          render json: { error: "Le message ne peut pas être vide" }, status: :unprocessable_entity
+          return
+        end
+
+        AcademyMailer.carpooling_message(
+          from_registration: sender,
+          to_registration: target,
+          message: message
+        ).deliver_later
+
+        render json: { status: "ok" }
       end
 
       def update_carpooling
@@ -386,25 +427,17 @@ module Api
         registration
       end
 
-      def serialize_carpooling_participant(registration, show_contact:)
-        data = {
+      # No contact details are exposed — only the relay target id (registration),
+      # first name and departure location. Contacting goes through #contact_carpooler.
+      def serialize_carpooling_participant(registration)
+        {
+          id: registration.id.to_s,
           firstName: registration.contact_name.to_s.split(" ").first,
           departureCity: registration.departure_city,
           departurePostalCode: registration.departure_postal_code,
-          departureCountry: registration.departure_country
+          departureCountry: registration.departure_country,
+          contactable: registration.contact_email.present?
         }
-
-        if show_contact
-          if registration.phone.present?
-            data[:contactMethod] = "phone"
-            data[:contactValue] = registration.phone
-          elsif registration.contact_email.present?
-            data[:contactMethod] = "email"
-            data[:contactValue] = registration.contact_email
-          end
-        end
-
-        data
       end
 
       def find_contact_training!
@@ -484,6 +517,9 @@ module Api
       end
 
       def serialize_portal_training_detail(training, sessions, documents, can_upload: false)
+        location_ids = sessions.flat_map(&:location_ids).uniq
+        locations_by_id = Academy::TrainingLocation.where(id: location_ids).index_by { |l| l.id.to_s }
+
         {
           id: training.id.to_s,
           title: training.title,
@@ -491,19 +527,29 @@ module Api
           description: training.description,
           trainingType: training.training_type&.name,
           canUpload: can_upload,
-          sessions: sessions.map { |s| serialize_portal_session(s) },
+          sessions: sessions.map { |s| serialize_portal_session(s, locations_by_id) },
           documents: documents.map { |d| serialize_portal_document(d) }
         }
       end
 
-      def serialize_portal_session(session)
+      def serialize_portal_session(session, locations_by_id = {})
         {
           id: session.id.to_s,
           startDate: session.start_date.iso8601,
           endDate: session.end_date.iso8601,
           topic: session.topic,
           description: session.description,
-          photoAlbumUrl: session.photo_album_url.presence
+          photoAlbumUrl: session.photo_album_url.presence,
+          meetingPoint: session.meeting_point.presence,
+          meetingTime: session.meeting_time.presence,
+          mealsInfo: session.meals_info.presence,
+          accommodationInfo: session.accommodation_info.presence,
+          packingList: session.packing_list || [],
+          locations: (session.location_ids || []).filter_map { |id|
+            loc = locations_by_id[id.to_s]
+            next unless loc
+            { id: loc.id.to_s, name: loc.name, address: loc.address }
+          }
         }
       end
 

@@ -1780,4 +1780,79 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_equal 2, adult.reload.spots_taken
     assert_equal 1, child.reload.spots_taken
   end
+
+  test 'session stores and serializes practical info fields' do
+    type = Academy::TrainingType.create!(name: 'Visite', description: 'Terrain')
+    training = Academy::Training.create!(training_type: type, title: 'Visite forêt-jardin', status: 'idea')
+
+    post "/api/v1/academy/trainings/#{training.id}/sessions", params: {
+      start_date: Date.current.iso8601,
+      end_date: Date.current.iso8601,
+      meeting_point: 'Salle Henry',
+      meeting_time: '9h30',
+      meals_info: "Midi à l'auberge",
+      accommodation_info: 'Check-in 17-21h',
+      packing_list: ['Bottes', 'Gourde']
+    }, as: :json
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal 'Salle Henry', body['meetingPoint']
+    assert_equal '9h30', body['meetingTime']
+    assert_equal "Midi à l'auberge", body['mealsInfo']
+    assert_equal 'Check-in 17-21h', body['accommodationInfo']
+    assert_equal ['Bottes', 'Gourde'], body['packingList']
+  end
+
+  test 'session reminder preview returns html, subject and recipients' do
+    type = Academy::TrainingType.create!(name: 'Cursus', description: 'Long')
+    training = Academy::Training.create!(training_type: type, title: 'Cursus 12', status: 'idea')
+    session = training.sessions.create!(start_date: Date.current, end_date: Date.current, meeting_point: 'Salle Henry', meeting_time: '9h30')
+    training.registrations.create!(contact_name: 'Marie', contact_email: 'marie@example.com', payment_status: 'paid', registered_at: 1.week.ago)
+
+    post "/api/v1/academy/sessions/#{session.id}/reminder/preview", params: {
+      intro_html: '<p>Bonjour les Semistopotes !</p>',
+      bonus_html: '<p>Forêt Miyawaki vendredi.</p>'
+    }, as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_includes body['subject'], 'Cursus 12'
+    assert_includes body['html'], 'Semistopotes'
+    assert_includes body['html'], 'Miyawaki'
+    assert_equal 1, body['recipients'].size
+    assert_equal 'marie@example.com', body['recipients'][0]['email']
+  end
+
+  test 'session reminder send enqueues one email per registration' do
+    type = Academy::TrainingType.create!(name: 'Cursus', description: 'Long')
+    training = Academy::Training.create!(training_type: type, title: 'Cursus 12', status: 'idea')
+    session = training.sessions.create!(start_date: Date.current, end_date: Date.current)
+    training.registrations.create!(contact_name: 'Marie', contact_email: 'marie@example.com', payment_status: 'paid', registered_at: 1.week.ago)
+    training.registrations.create!(contact_name: 'Paul', contact_email: 'paul@example.com', payment_status: 'paid', registered_at: 1.week.ago)
+
+    assert_emails 2 do
+      perform_enqueued_jobs do
+        post "/api/v1/academy/sessions/#{session.id}/reminder/send", params: { intro_html: '<p>Coucou</p>' }, as: :json
+      end
+    end
+    assert_response :success
+    assert_equal 2, JSON.parse(response.body)['sent']
+  end
+
+  test 'session reminder send with test_email sends a single email' do
+    type = Academy::TrainingType.create!(name: 'Cursus', description: 'Long')
+    training = Academy::Training.create!(training_type: type, title: 'Cursus 12', status: 'idea')
+    session = training.sessions.create!(start_date: Date.current, end_date: Date.current)
+    training.registrations.create!(contact_name: 'Marie', contact_email: 'marie@example.com', payment_status: 'paid', registered_at: 1.week.ago)
+
+    assert_emails 1 do
+      perform_enqueued_jobs do
+        post "/api/v1/academy/sessions/#{session.id}/reminder/send", params: { test_email: 'coordo@example.com' }, as: :json
+      end
+    end
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body['sent']
+    assert_equal true, body['test']
+    assert_equal ['coordo@example.com'], ActionMailer::Base.deliveries.last.to
+  end
 end

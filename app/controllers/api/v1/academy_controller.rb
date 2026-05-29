@@ -137,6 +137,52 @@ module Api
         head :no_content
       end
 
+      # Renders the reminder email (HTML) for a session with the supplied custom
+      # blocks, plus the recipient list — drives the admin composer's live preview.
+      def reminder_preview
+        session = Academy::TrainingSession.find(params.require(:session_id))
+        training = session.training
+        sample = training.registrations.first || training.registrations.build(contact_name: "Aperçu", contact_email: "apercu@example.com")
+
+        mail = AcademyMailer.session_reminder(
+          session, sample,
+          intro_html: params[:intro_html].to_s,
+          bonus_html: params[:bonus_html].to_s
+        )
+        html = mail.html_part&.body&.decoded || mail.body.decoded
+
+        render json: {
+          subject: mail.subject,
+          html: html,
+          recipients: training.registrations.map { |r| { name: r.contact_name, email: r.contact_email } }
+        }
+      end
+
+      # Sends the session reminder. With test_email, sends a single copy there;
+      # otherwise enqueues one personalized email per registration of the training.
+      def send_reminder
+        session = Academy::TrainingSession.find(params.require(:session_id))
+        training = session.training
+        intro_html = params[:intro_html].to_s
+        bonus_html = params[:bonus_html].to_s
+
+        if params[:test_email].present?
+          sample = training.registrations.first&.dup || training.registrations.build
+          sample.assign_attributes(contact_email: params[:test_email], contact_name: sample.contact_name.presence || "Test")
+          # deliver_now: the synthetic registration isn't persisted, so it can't be
+          # GlobalID-serialized for a background job — and a test send should be immediate anyway.
+          AcademyMailer.session_reminder(session, sample, intro_html: intro_html, bonus_html: bonus_html).deliver_now
+          return render json: { sent: 1, test: true }
+        end
+
+        recipients = training.registrations.where.not(contact_email: [nil, ""])
+        recipients.each do |registration|
+          AcademyMailer.session_reminder(session, registration, intro_html: intro_html, bonus_html: bonus_html).deliver_later
+        end
+
+        render json: { sent: recipients.size }
+      end
+
       def create_registration
         training = Academy::Training.find(params.require(:training_id))
         resolved_id = resolve_contact_for_registration(registration_params)
@@ -665,7 +711,7 @@ module Api
       end
 
       def session_params
-        params.permit(:start_date, :end_date, :description, :topic, location_ids: [], trainer_ids: [], assistant_ids: [])
+        params.permit(:start_date, :end_date, :description, :topic, :meeting_point, :meeting_time, :meals_info, :accommodation_info, location_ids: [], trainer_ids: [], assistant_ids: [], packing_list: [])
       end
 
       def registration_params
@@ -819,7 +865,12 @@ module Api
           trainerIds: item.trainer_ids,
           assistantIds: item.assistant_ids,
           description: item.description,
-          topic: item.topic
+          topic: item.topic,
+          meetingPoint: item.meeting_point,
+          meetingTime: item.meeting_time,
+          mealsInfo: item.meals_info,
+          accommodationInfo: item.accommodation_info,
+          packingList: item.packing_list
         }
       end
 

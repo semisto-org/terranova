@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 23,
+      "endpointCount": 26,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -54,6 +54,16 @@
           "method": "GET",
           "path": "/api/v1/academy/reporting",
           "summary": "reporting"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/sessions/{session_id}/reminder/preview",
+          "summary": "reminder_preview"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/sessions/{session_id}/reminder/send",
+          "summary": "send_reminder"
         },
         {
           "method": "GET",
@@ -114,6 +124,11 @@
           "method": "POST",
           "path": "/api/v1/academy/trainings/{training_id}/registrations",
           "summary": "create_registration"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/trainings/{training_id}/sessions",
+          "summary": "create_session"
         },
         {
           "method": "PATCH",
@@ -525,7 +540,7 @@
       ]
     },
     {
-      "endpointCount": 9,
+      "endpointCount": 10,
       "file": "my_semisto.json",
       "name": "my_semisto",
       "operations": [
@@ -548,6 +563,11 @@
           "method": "PATCH",
           "path": "/api/v1/my/academy/{training_id}/carpooling",
           "summary": "update_carpooling"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my/academy/{training_id}/carpooling/contact",
+          "summary": "contact_carpooler"
         },
         {
           "method": "POST",
@@ -989,5 +1009,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 173
+  "totalEndpoints": 177
 }

@@ -1,0 +1,47 @@
+<%
+  def carpool_intent_label(value)
+    case value
+    when "offering" then "propose un trajet"
+    when "seeking" then "cherche un trajet"
+    else "te contacte au sujet du covoiturage"
+    end
+  end
+%>
+
+<!-- Greeting -->
+<p style="margin: 0 0 20px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.7; color: #1f2937;">
+  Bonjour,
+</p>
+
+<p style="margin: 0 0 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  <strong><%= @from_name.presence || "Un·e participant·e" %></strong><% if @from_city.present? %> (<%= @from_city %>)<% end %>
+  <%= carpool_intent_label(@from_carpooling) %> pour l'activit&eacute;
+  <strong><%= @training.title %></strong> et t'envoie ce message&nbsp;:
+</p>
+
+<!-- Message card -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+  <tr>
+    <td style="background-color: #fef2f2; padding: 12px 20px; border-bottom: 1px solid #e5e7eb;">
+      <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+        &#128099; Message covoiturage
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #1f2937;">
+      <%= simple_format(@message) %>
+    </td>
+  </tr>
+</table>
+
+<!-- Reply hint -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 8px;">
+  <tr>
+    <td style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px 20px;">
+      <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #166534;">
+        &#8617;&#65039; <strong>R&eacute;ponds simplement &agrave; cet e-mail</strong> pour lui &eacute;crire en direct &mdash; ta r&eacute;ponse lui parviendra sans que ton adresse n'ait &eacute;t&eacute; partag&eacute;e auparavant.
+      </p>
+    </td>
+  </tr>
+</table>

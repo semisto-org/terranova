@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Car, MapPin, Phone, Mail, Pencil, Check, X, Loader2, Users } from 'lucide-react'
+import { Car, MapPin, MessageCircle, Send, Pencil, Check, X, Loader2, Users } from 'lucide-react'
 import { myApiRequest } from '../lib/api'
 import { myApiPath } from '../lib/paths'
 
@@ -169,7 +169,7 @@ export default function CarpoolingSection({ trainingId }) {
               title={`Conducteur${drivers.length > 1 ? 's' : ''} disponible${drivers.length > 1 ? 's' : ''}`}
               count={drivers.length}
               participants={drivers}
-              showContact
+              trainingId={trainingId}
             />
           )}
           {seekers.length > 0 && (
@@ -177,7 +177,7 @@ export default function CarpoolingSection({ trainingId }) {
               title={`Cherche${seekers.length > 1 ? 'nt' : ''} un covoiturage`}
               count={seekers.length}
               participants={seekers}
-              showContact={false}
+              trainingId={trainingId}
             />
           )}
         </div>
@@ -210,7 +210,7 @@ function StatusBadge({ status }) {
   )
 }
 
-function ParticipantList({ title, count, participants, showContact }) {
+function ParticipantList({ title, count, participants, trainingId }) {
   return (
     <div className="rounded-xl bg-white border border-stone-200 overflow-hidden">
       <div className="px-4 py-2.5 border-b border-stone-100 flex items-center gap-2">
@@ -220,37 +220,107 @@ function ParticipantList({ title, count, participants, showContact }) {
         </span>
       </div>
       <div className="divide-y divide-stone-100">
-        {participants.map((p, i) => (
-          <div key={i} className="px-4 py-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-stone-700">
-              <MapPin size={13} className="text-stone-400 flex-shrink-0" />
-              <span className="font-medium">{p.firstName}</span>
-              <span className="text-stone-400">—</span>
-              <span className="text-stone-500">
-                {formatLocation(p.departureCity, p.departurePostalCode, p.departureCountry)}
-              </span>
-            </div>
-            {showContact && p.contactValue && (
-              <ContactBadge method={p.contactMethod} value={p.contactValue} />
-            )}
-          </div>
+        {participants.map((p) => (
+          <ParticipantRow key={p.id} participant={p} trainingId={trainingId} />
         ))}
       </div>
     </div>
   )
 }
 
-function ContactBadge({ method, value }) {
-  const Icon = method === 'phone' ? Phone : Mail
+// One participant: name + departure, plus a privacy-preserving relay. The
+// "Contacter" button opens an inline message box; sending posts to the relay
+// endpoint, which emails the participant with Reply-To set to the sender.
+function ParticipantRow({ participant: p, trainingId }) {
+  const [open, setOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState(null)
+
+  const send = async () => {
+    if (!message.trim()) return
+    setSending(true)
+    setError(null)
+    try {
+      await myApiRequest(`${myApiPath('/academy')}/${trainingId}/carpooling/contact`, {
+        method: 'POST',
+        body: JSON.stringify({ to_registration_id: p.id, message: message.trim() }),
+      })
+      setSent(true)
+      setOpen(false)
+      setMessage('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
-    <a
-      href={method === 'phone' ? `tel:${value}` : `mailto:${value}`}
-      className="inline-flex items-center gap-1.5 text-xs text-[#B01A19] hover:underline flex-shrink-0"
-    >
-      <Icon size={12} />
-      {value}
-    </a>
+    <div className="px-4 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-stone-700 min-w-0">
+          <MapPin size={13} className="text-stone-400 flex-shrink-0" />
+          <span className="font-medium">{p.firstName}</span>
+          <span className="text-stone-400">—</span>
+          <span className="text-stone-500 truncate">
+            {formatLocation(p.departureCity, p.departurePostalCode, p.departureCountry)}
+          </span>
+        </div>
+        {p.contactable && !sent && (
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-xs text-[#B01A19] hover:underline flex-shrink-0"
+          >
+            <MessageCircle size={13} />
+            Contacter
+          </button>
+        )}
+        {sent && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-green-700 flex-shrink-0">
+            <Check size={13} />
+            Message envoyé
+          </span>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-2.5 rounded-lg border border-stone-200 bg-stone-50 p-3">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={3}
+            autoFocus
+            placeholder={`Écris un mot à ${p.firstName}… (ex: je passe par chez toi, on s'organise ?)`}
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/20 focus:border-[#B01A19]"
+          />
+          <p className="text-[11px] text-stone-400 mt-1.5">
+            Ton message lui sera envoyé par email. Sa réponse t'arrivera directement — vos adresses ne sont pas affichées ici.
+          </p>
+          {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={send}
+              disabled={sending || !message.trim()}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              style={{ backgroundColor: '#B01A19' }}
+            >
+              {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              Envoyer
+            </button>
+            <button
+              onClick={() => { setOpen(false); setMessage('') }}
+              disabled={sending}
+              className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700 px-3 py-1.5 rounded-lg border border-stone-300 transition-colors"
+            >
+              <X size={14} />
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePage, Link } from '@inertiajs/react'
-import { ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText } from 'lucide-react'
+import { ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText, Utensils, BedDouble, Backpack } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
 import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
@@ -226,10 +226,18 @@ function SessionsAndDocuments({ training, trainingId, onDelete, onChanged }) {
                         <Calendar size={12} />
                         {formatDateShort(session.startDate)} — {formatDateShort(session.endDate)}
                       </span>
+                      {(session.meetingTime || session.meetingPoint) && (
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} />
+                          RDV{session.meetingTime ? ` ${session.meetingTime}` : ''}{session.meetingPoint ? ` · ${session.meetingPoint}` : ''}
+                        </span>
+                      )}
                     </div>
                     {session.description && (
                       <p className="text-xs text-stone-500 mt-1.5">{session.description}</p>
                     )}
+
+                    <SessionPractical session={session} />
 
                     <SessionPhotoAlbum
                       trainingId={trainingId}
@@ -281,5 +289,71 @@ function SessionsAndDocuments({ training, trainingId, onDelete, onChanged }) {
         <DocumentList documents={[]} sessions={[]} />
       )}
     </>
+  )
+}
+
+// Practical info for a session: lieux & adresses, repas, hébergement, à prévoir.
+// Each block renders only when its field is filled, so an empty session stays clean.
+function SessionPractical({ session }) {
+  const locations = session.locations || []
+  const packing = session.packingList || []
+  const hasAny =
+    locations.length > 0 ||
+    session.mealsInfo ||
+    session.accommodationInfo ||
+    packing.length > 0
+
+  if (!hasAny) return null
+
+  return (
+    <div className="mt-3 pt-3 border-t border-stone-100 space-y-3">
+      {locations.length > 0 && (
+        <PracticalBlock icon={MapPin} label="Où ça se passe">
+          {locations.map((loc) => (
+            <div key={loc.id} className="mb-1 last:mb-0">
+              <span className="font-medium text-stone-700">{loc.name}</span>
+              {loc.address && <span className="text-stone-500"> — {loc.address}</span>}
+            </div>
+          ))}
+        </PracticalBlock>
+      )}
+
+      {session.mealsInfo && (
+        <PracticalBlock icon={Utensils} label="Repas">
+          <p className="whitespace-pre-line">{session.mealsInfo}</p>
+        </PracticalBlock>
+      )}
+
+      {session.accommodationInfo && (
+        <PracticalBlock icon={BedDouble} label="Hébergement">
+          <p className="whitespace-pre-line">{session.accommodationInfo}</p>
+        </PracticalBlock>
+      )}
+
+      {packing.length > 0 && (
+        <PracticalBlock icon={Backpack} label="Dans ton sac">
+          <ul className="space-y-0.5">
+            {packing.map((entry, i) => (
+              <li key={i} className="flex items-start gap-1.5">
+                <span className="text-stone-400 mt-px">·</span>
+                <span>{entry}</span>
+              </li>
+            ))}
+          </ul>
+        </PracticalBlock>
+      )}
+    </div>
+  )
+}
+
+function PracticalBlock({ icon: Icon, label, children }) {
+  return (
+    <div className="text-xs text-stone-600">
+      <p className="flex items-center gap-1.5 font-medium text-stone-400 uppercase tracking-wider mb-1">
+        <Icon size={11} />
+        {label}
+      </p>
+      <div className="pl-[18px] leading-relaxed">{children}</div>
+    </div>
   )
 }
