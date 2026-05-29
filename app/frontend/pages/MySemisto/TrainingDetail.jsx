@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePage, Link } from '@inertiajs/react'
-import { ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText, Utensils, BedDouble, Backpack } from 'lucide-react'
+import {
+  ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText,
+  Utensils, BedDouble, Backpack, ChevronDown, Car, CheckCircle2, CalendarClock,
+} from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
 import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
@@ -9,13 +12,26 @@ import SessionPhotoAlbum from '../../my-semisto/components/SessionPhotoAlbum'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
+const COLOR_PAST = '#5B5781'
+const COLOR_UPCOMING = '#2D6A4F'
+const COLOR_ACADEMY = '#B01A19'
 
-const SESSION_COLOR_PAST = '#5B5781'
-const SESSION_COLOR_UPCOMING = '#2D6A4F'
+function startOfToday() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
 
 function isSessionPast(session) {
   if (!session.endDate) return false
   return new Date(session.endDate) < new Date()
+}
+
+// A session is "ongoing" when today falls inside [startDate, endDate].
+function isSessionOngoing(session) {
+  if (!session.startDate || !session.endDate) return false
+  const now = new Date()
+  return new Date(session.startDate) <= now && now <= new Date(session.endDate)
 }
 
 function formatDate(dateStr) {
@@ -34,6 +50,26 @@ function formatDateShort(dateStr) {
     day: 'numeric',
     month: 'short',
   })
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const target = new Date(dateStr)
+  target.setHours(0, 0, 0, 0)
+  return Math.round((target - startOfToday()) / 86400000)
+}
+
+// Human countdown for the upcoming session, in French.
+function countdownLabel(session) {
+  if (isSessionOngoing(session)) return "C'est en cours"
+  const days = daysUntil(session.startDate)
+  if (days === null) return ''
+  if (days <= 0) return "Aujourd'hui"
+  if (days === 1) return 'Demain'
+  if (days < 7) return `Dans ${days} jours`
+  if (days < 14) return 'La semaine prochaine'
+  if (days < 60) return `Dans ${Math.round(days / 7)} semaines`
+  return `Dans ${Math.round(days / 30)} mois`
 }
 
 export default function TrainingDetail() {
@@ -76,13 +112,37 @@ export default function TrainingDetail() {
     }
   }
 
+  const sessions = training?.sessions || []
+  const documents = training?.documents || []
+
+  // Documents keyed by session for inline rendering.
+  const sessionDocMap = useMemo(() => {
+    const map = {}
+    documents.forEach((d) => {
+      if (d.sessionId) (map[d.sessionId] ||= []).push(d)
+    })
+    return map
+  }, [documents])
+
+  const generalDocs = useMemo(() => documents.filter((d) => !d.sessionId), [documents])
+
+  // The next session = the first not-yet-finished session in chronological order.
+  // (Sessions arrive sorted by start_date asc from the API.)
+  const nextSession = useMemo(
+    () => sessions.find((s) => !isSessionPast(s)) || null,
+    [sessions]
+  )
+
+  const pastCount = useMemo(() => sessions.filter(isSessionPast).length, [sessions])
+
+  const canDelete = training?.canUpload ? handleDelete : null
+
   return (
     <MySemistoShell activeNav={myPath('/academy')}>
       {/* Back link */}
       <div className="mb-6">
         <Link
           href={myPath('/academy')}
-
           className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#B01A19] transition-colors"
         >
           <ArrowLeft size={16} />
@@ -92,7 +152,7 @@ export default function TrainingDetail() {
 
       {loading && (
         <div className="flex items-center justify-center py-16">
-          <Loader2 size={24} className="animate-spin" style={{ color: '#B01A19' }} />
+          <Loader2 size={24} className="animate-spin" style={{ color: COLOR_ACADEMY }} />
         </div>
       )}
 
@@ -104,7 +164,7 @@ export default function TrainingDetail() {
 
       {training && (
         <div className="space-y-8 my-animate-section">
-          {/* Header with colored accent */}
+          {/* Header with colored accent + progress strip */}
           <div className="relative overflow-hidden rounded-2xl bg-white border border-stone-200 p-6">
             <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #B01A19, #EF9B0D, #2D6A4F)' }} />
             <div className="flex items-start gap-4">
@@ -112,183 +172,361 @@ export default function TrainingDetail() {
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
                 style={{ backgroundColor: '#B01A1912' }}
               >
-                <GraduationCap size={20} style={{ color: '#B01A19' }} />
+                <GraduationCap size={20} style={{ color: COLOR_ACADEMY }} />
               </div>
-              <div className="min-w-0">
-                <h1
-                  className="text-2xl text-stone-800"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
                   {training.title}
                 </h1>
                 {training.trainingType && (
                   <p className="text-sm text-stone-500 mt-1">{training.trainingType}</p>
                 )}
+                {sessions.length > 0 && (
+                  <ProgressStrip pastCount={pastCount} total={sessions.length} />
+                )}
               </div>
             </div>
           </div>
+
+          {/* Hero — the next session, front and center */}
+          {nextSession ? (
+            <NextSessionHero
+              session={nextSession}
+              index={sessions.indexOf(nextSession)}
+              docs={sessionDocMap[nextSession.id] || []}
+            />
+          ) : sessions.length > 0 ? (
+            <div className="rounded-2xl border border-stone-200 bg-white px-6 py-5 flex items-center gap-3">
+              <CheckCircle2 size={20} style={{ color: COLOR_PAST }} />
+              <p className="text-sm text-stone-600">
+                Toutes les sessions de ce cursus sont passées. Bravo d'être allé·e au bout&nbsp;!
+              </p>
+            </div>
+          ) : null}
 
           {/* Upload zone — only for contacts with the upload right */}
           {training.canUpload && (
             <div className="my-animate-section" style={{ animationDelay: '50ms' }}>
               <DocumentUploadForm
                 trainingId={trainingId}
-                sessions={training.sessions || []}
+                sessions={sessions}
                 onUploaded={() => loadTraining()}
               />
             </div>
           )}
 
-          {/* Sessions timeline with inline documents */}
-          <SessionsAndDocuments
-            training={training}
-            trainingId={trainingId}
-            onDelete={training.canUpload ? handleDelete : null}
-            onChanged={() => loadTraining()}
-          />
+          {/* All sessions — collapsible timeline */}
+          {sessions.length > 0 && (
+            <SessionsTimeline
+              sessions={sessions}
+              nextSessionId={nextSession?.id}
+              sessionDocMap={sessionDocMap}
+              trainingId={trainingId}
+              canEdit={training.canUpload}
+              onDelete={canDelete}
+              onChanged={() => loadTraining()}
+            />
+          )}
+
+          {/* General documents — collapsed by default (secondary) */}
+          {generalDocs.length > 0 && (
+            <GeneralDocuments docs={generalDocs} onDelete={canDelete} />
+          )}
+
+          {documents.length === 0 && sessions.length === 0 && (
+            <DocumentList documents={[]} sessions={[]} />
+          )}
 
           {/* Carpooling */}
-          <CarpoolingSection trainingId={trainingId} />
+          <div id="covoiturage">
+            <CarpoolingSection trainingId={trainingId} />
+          </div>
         </div>
       )}
     </MySemistoShell>
   )
 }
 
-function SessionsAndDocuments({ training, trainingId, onDelete, onChanged }) {
-  const documents = training.documents || []
-  const sessions = training.sessions || []
-
-  const sessionDocMap = useMemo(() => {
-    const map = {}
-    documents.forEach((d) => {
-      if (d.sessionId) {
-        if (!map[d.sessionId]) map[d.sessionId] = []
-        map[d.sessionId].push(d)
-      }
-    })
-    return map
-  }, [documents])
-
-  const generalDocs = useMemo(
-    () => documents.filter((d) => !d.sessionId),
-    [documents]
+// "X / N sessions passées" with a thin progress bar.
+function ProgressStrip({ pastCount, total }) {
+  const pct = total > 0 ? Math.round((pastCount / total) * 100) : 0
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between text-xs text-stone-500 mb-1.5">
+        <span>{pastCount} / {total} sessions passées</span>
+        <span>{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${COLOR_PAST}, ${COLOR_UPCOMING})` }}
+        />
+      </div>
+    </div>
   )
+}
 
-  const hasSessions = sessions.length > 0
-  let docColorCounter = 0
+// The centerpiece: the next upcoming (or ongoing) session, fully expanded.
+function NextSessionHero({ session, index, docs }) {
+  const ongoing = isSessionOngoing(session)
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border bg-white my-animate-section"
+      style={{ borderColor: `${COLOR_UPCOMING}40`, animationDelay: '30ms' }}
+    >
+      <div className="absolute top-0 left-0 bottom-0 w-1.5" style={{ backgroundColor: COLOR_UPCOMING }} />
+      <div className="p-6 pl-7">
+        {/* Eyebrow + countdown */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: COLOR_UPCOMING }}>
+            <CalendarClock size={14} />
+            {ongoing ? 'Session en cours' : 'Prochaine session'}
+          </span>
+          <span
+            className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full text-white whitespace-nowrap"
+            style={{ backgroundColor: COLOR_UPCOMING }}
+          >
+            {countdownLabel(session)}
+          </span>
+        </div>
+
+        {/* Title */}
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="text-sm font-bold" style={{ color: COLOR_UPCOMING }}>#{index + 1}</span>
+          <h2 className="text-xl text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
+            {session.topic || `Session ${index + 1}`}
+          </h2>
+        </div>
+
+        {/* Date + RDV */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-stone-600 mb-1">
+          <span className="flex items-center gap-1.5">
+            <Calendar size={14} className="text-stone-400" />
+            {formatDate(session.startDate)}
+            {session.endDate && session.endDate.slice(0, 10) !== session.startDate.slice(0, 10) && (
+              <> → {formatDate(session.endDate)}</>
+            )}
+          </span>
+          {(session.meetingTime || session.meetingPoint) && (
+            <span className="flex items-center gap-1.5">
+              <Clock size={14} className="text-stone-400" />
+              RDV{session.meetingTime ? ` ${session.meetingTime}` : ''}{session.meetingPoint ? ` · ${session.meetingPoint}` : ''}
+            </span>
+          )}
+        </div>
+
+        {session.description && (
+          <p className="text-sm text-stone-500 mt-2">{session.description}</p>
+        )}
+
+        {/* Practical info */}
+        <SessionPractical session={session} />
+
+        {/* Session documents */}
+        {docs.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-stone-100">
+            <p className="text-xs font-medium text-stone-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+              <FileText size={11} />
+              {docs.length} document{docs.length > 1 ? 's' : ''}
+            </p>
+            <div className="space-y-2">
+              {docs.map((doc, i) => (
+                <DocumentItem key={doc.id} doc={doc} colorIndex={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Jump to carpooling */}
+        <div className="mt-4 pt-4 border-t border-stone-100">
+          <a
+            href="#covoiturage"
+            className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:underline"
+            style={{ color: COLOR_UPCOMING }}
+          >
+            <Car size={15} />
+            Organiser mon covoiturage
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Collapsible timeline of every session. Collapsed by default; the next
+// session is highlighted but not auto-expanded (it already lives in the hero).
+function SessionsTimeline({ sessions, nextSessionId, sessionDocMap, trainingId, canEdit, onDelete, onChanged }) {
+  const [openIds, setOpenIds] = useState(() => new Set())
+
+  const toggle = (id) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
 
   return (
-    <>
-      {hasSessions && (
-        <div className="my-animate-section" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#EF9B0D' }} />
-            <h2
-              className="text-lg text-stone-800"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Sessions
-            </h2>
-          </div>
-          <div className="space-y-3">
-            {sessions.map((session, index) => {
-              const past = isSessionPast(session)
-              const color = past ? SESSION_COLOR_PAST : SESSION_COLOR_UPCOMING
-              const sessionDocs = sessionDocMap[session.id] || []
+    <div className="my-animate-section" style={{ animationDelay: '100ms' }}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#EF9B0D' }} />
+        <h2 className="text-lg text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
+          Toutes les sessions
+        </h2>
+        <span className="text-sm text-stone-400">({sessions.length})</span>
+      </div>
 
-              return (
-                <div
-                  key={session.id}
-                  className="flex gap-4 px-4 py-3 rounded-xl bg-white border border-stone-200 transition-all hover:shadow-sm"
-                >
-                  <div className="flex flex-col items-center">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                      style={{ backgroundColor: color }}
-                    >
-                      {index + 1}
-                    </div>
-                    {index < sessions.length - 1 && (
-                      <div
-                        className="w-px h-full mt-1"
-                        style={{ background: `linear-gradient(to bottom, ${color}40, transparent)` }}
-                      />
-                    )}
-                  </div>
+      <div className="space-y-2">
+        {sessions.map((session, index) => (
+          <SessionRow
+            key={session.id}
+            session={session}
+            index={index}
+            isLast={index === sessions.length - 1}
+            isNext={session.id === nextSessionId}
+            open={openIds.has(session.id)}
+            onToggle={() => toggle(session.id)}
+            docs={sessionDocMap[session.id] || []}
+            trainingId={trainingId}
+            canEdit={canEdit}
+            onDelete={onDelete}
+            onChanged={onChanged}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
-                  <div className="flex-1 min-w-0">
-                    {session.topic && (
-                      <p className="text-sm font-medium text-stone-800 mb-1">{session.topic}</p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {formatDateShort(session.startDate)} — {formatDateShort(session.endDate)}
-                      </span>
-                      {(session.meetingTime || session.meetingPoint) && (
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} />
-                          RDV{session.meetingTime ? ` ${session.meetingTime}` : ''}{session.meetingPoint ? ` · ${session.meetingPoint}` : ''}
-                        </span>
-                      )}
-                    </div>
-                    {session.description && (
-                      <p className="text-xs text-stone-500 mt-1.5">{session.description}</p>
-                    )}
+function SessionRow({ session, index, isLast, isNext, open, onToggle, docs, trainingId, canEdit, onDelete, onChanged }) {
+  const past = isSessionPast(session)
+  const color = past ? COLOR_PAST : COLOR_UPCOMING
+  const docCount = docs.length
 
-                    <SessionPractical session={session} />
+  const statusPill = past
+    ? { label: 'Passée', bg: '#f5f5f4', text: '#78716c' }
+    : isNext
+      ? { label: 'Prochaine', bg: `${COLOR_UPCOMING}18`, text: COLOR_UPCOMING }
+      : { label: 'À venir', bg: '#f0fdf4', text: COLOR_UPCOMING }
 
-                    <SessionPhotoAlbum
-                      trainingId={trainingId}
-                      session={session}
-                      canEdit={training.canUpload}
-                      onSaved={onChanged}
-                    />
+  return (
+    <div
+      className="rounded-xl bg-white border transition-all"
+      style={{
+        borderColor: isNext ? `${COLOR_UPCOMING}80` : '#e7e5e4',
+        boxShadow: isNext ? `0 0 0 3px ${COLOR_UPCOMING}1a` : 'none',
+        opacity: past && !open ? 0.85 : 1,
+      }}
+    >
+      {/* Collapsed header — clickable */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+      >
+        <span
+          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+          style={{ backgroundColor: color }}
+        >
+          {index + 1}
+        </span>
 
-                    {sessionDocs.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-stone-100 space-y-2">
-                        <p className="text-xs font-medium text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <FileText size={11} />
-                          {sessionDocs.length} document{sessionDocs.length > 1 ? 's' : ''}
-                        </p>
-                        {sessionDocs.map((doc) => (
-                          <DocumentItem key={doc.id} doc={doc} colorIndex={docColorCounter++} onDelete={onDelete} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-stone-800 truncate">
+            {session.topic || `Session ${index + 1}`}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-stone-500 mt-0.5">
+            <span className="flex items-center gap-1">
+              <Calendar size={11} />
+              {formatDateShort(session.startDate)} — {formatDateShort(session.endDate)}
+            </span>
+            {docCount > 0 && (
+              <span className="flex items-center gap-1">
+                <FileText size={11} />
+                {docCount} doc{docCount > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
         </div>
-      )}
 
-      {/* General documents (not tied to a session) */}
-      {generalDocs.length > 0 && (
-        <div className="my-animate-section" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#5B5781' }} />
-            <h2
-              className="text-lg text-stone-800"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Documents généraux
-            </h2>
-          </div>
-          <div className="space-y-2">
-            {generalDocs.map((doc) => (
-              <DocumentItem key={doc.id} doc={doc} colorIndex={docColorCounter++} onDelete={onDelete} />
-            ))}
-          </div>
+        <span
+          className="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
+          style={{ backgroundColor: statusPill.bg, color: statusPill.text }}
+        >
+          {statusPill.label}
+        </span>
+
+        <ChevronDown
+          size={16}
+          className="text-stone-400 flex-shrink-0 transition-transform"
+          style={{ transform: open ? 'rotate(180deg)' : 'none' }}
+        />
+      </button>
+
+      {/* Expanded body */}
+      {open && (
+        <div className="px-4 pb-4 pl-[60px]">
+          {session.description && (
+            <p className="text-sm text-stone-500">{session.description}</p>
+          )}
+
+          <SessionPractical session={session} />
+
+          <SessionPhotoAlbum
+            trainingId={trainingId}
+            session={session}
+            canEdit={canEdit}
+            onSaved={onChanged}
+          />
+
+          {docCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-stone-100 space-y-2">
+              <p className="text-xs font-medium text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+                <FileText size={11} />
+                {docCount} document{docCount > 1 ? 's' : ''}
+              </p>
+              {docs.map((doc, i) => (
+                <DocumentItem key={doc.id} doc={doc} colorIndex={i} onDelete={onDelete} />
+              ))}
+            </div>
+          )}
         </div>
       )}
+    </div>
+  )
+}
 
-      {documents.length === 0 && !hasSessions && (
-        <DocumentList documents={[]} sessions={[]} />
+// General documents (not tied to a session) — collapsed by default.
+function GeneralDocuments({ docs, onDelete }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="my-animate-section" style={{ animationDelay: '200ms' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-2 mb-2 text-left"
+      >
+        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#5B5781' }} />
+        <h2 className="text-lg text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
+          Documents généraux
+        </h2>
+        <span className="text-sm text-stone-400">({docs.length})</span>
+        <ChevronDown
+          size={16}
+          className="text-stone-400 ml-auto transition-transform"
+          style={{ transform: open ? 'rotate(180deg)' : 'none' }}
+        />
+      </button>
+
+      {open && (
+        <div className="space-y-2">
+          {docs.map((doc, i) => (
+            <DocumentItem key={doc.id} doc={doc} colorIndex={i} onDelete={onDelete} />
+          ))}
+        </div>
       )}
-    </>
+    </div>
   )
 }
 
@@ -306,7 +544,7 @@ function SessionPractical({ session }) {
   if (!hasAny) return null
 
   return (
-    <div className="mt-3 pt-3 border-t border-stone-100 space-y-3">
+    <div className="mt-3 pt-3 border-t border-stone-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
       {locations.length > 0 && (
         <PracticalBlock icon={MapPin} label="Où ça se passe">
           {locations.map((loc) => (
