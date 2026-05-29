@@ -41,9 +41,9 @@ Ce script execute : `bundle install`, `yarn install`, creation de la base, migra
 bin/dev
 ```
 
-Demarre Rails (port 3000) et Vite (port 3036) en parallele.
+Demarre Rails (port 4000) et Vite (port 30362) en parallele.
 
-- Application : `http://localhost:3000/`
+- Application : `http://localhost:4000/`
 - Healthcheck : `GET /api/v1/health`
 
 ### Base de donnees

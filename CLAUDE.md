@@ -160,7 +160,7 @@ Checklist after a destructive migration:
 ## Dev Server
 
 ```bash
-bin/dev    # Rails (port 3000) + Vite (port 3036)
+bin/dev    # Rails (port 4000) + Vite (port 30362)
 ```
 
 ## Conventions

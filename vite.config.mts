@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
   base: mode === 'development' ? '/vite-dev/' : '/vite/',
   server: {
     host: 'localhost',
-    port: 3036,
+    port: 30362,
     strictPort: true,
   },
   build: {
