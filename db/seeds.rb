@@ -977,6 +977,194 @@ Nursery::Transfer.find_or_create_by!(order: order3, status: 'in-progress') do |t
   t.notes = 'Livraison chênes pour Gembloux'
 end
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Arbuste Fruitier — pépinière partenaire (Shopify)
+# Source catalogue : https://www.arbustefruitier.com/collections/all
+# Sync : 2026-05-31
+# ─────────────────────────────────────────────────────────────────────────────
+puts "Seeding Arbuste Fruitier..."
+
+nursery_af = Nursery::Nursery.find_or_create_by!(name: 'Arbuste Fruitier') do |n|
+  n.nursery_type    = 'partner'
+  n.integration     = 'platform'
+  n.country         = 'BE'
+  n.website         = 'https://www.arbustefruitier.com'
+  n.description     = 'Pépinière belge spécialisée en arbustes fruitiers, petits fruitiers et plantes de forêt-jardin. Catalogue synchronisé depuis Shopify.'
+  n.specialties     = %w[fruitiers petits_fruitiers forêt-jardin arbustes]
+  n.is_pickup_point = true
+end
+
+# [latin_name, variety_or_nil, price_or_nil, container_key, status]
+af_catalogue = [
+  # ── disponibles ───────────────────────────────────────────────────────────
+  ['Agastache rugosa',             nil,                           7.0,  'P9', 'available'],
+  ['Prunus dulcis',                'Robijn',                     20.0,  'C5', 'available'],
+  ['Amelanchier laevis',           'Ballerina',                  25.0,  'C5', 'available'],
+  ['Amelanchier canadensis',       'Prince William',             25.0,  'C5', 'available'],
+  ['Hippophae rhamnoides',         'Hergo',                      30.0,  'C2', 'available'],
+  ['Hippophae rhamnoides',         'Otto',                       15.0,  'C2', 'available'],
+  ['Galium odoratum',              nil,                           8.0,  'P9', 'available'],
+  ['Caragana arborescens',         nil,                          15.0,  'C2', 'available'],
+  ['Ribes nigrum',                 'Titania',                    10.0,  'C2', 'available'],
+  ['Ribes nigrum',                 'Wellington',                 10.0,  'C2', 'available'],
+  ['Elaeagnus ebbingei',           'Limelight',                  20.0,  'C5', 'available'],
+  ['Elaeagnus ebbingei',           nil,                          20.0,  'C2', 'available'],
+  ['Allium tuberosum',             nil,                           6.0,  'P9', 'available'],
+  ['Cornus mas',                   'Juliusz',                    30.0,  'C5', 'available'],
+  ['Cornus mas',                   'Neshny',                     20.0,  'C5', 'available'],
+  ['Cornus mas',                   'Paczoski',                   30.0,  'C5', 'available'],
+  ['Ficus carica',                 'Bornholm',                   30.0,  'C5', 'available'],
+  ['Ficus carica',                 'Brown Turkey',               20.0,  'C5', 'available'],
+  ['Ficus carica',                 'Rouge de Bordeaux',          20.0,  'C5', 'available'],
+  ['Lycium barbarum',              'Sweet Lifeberry',            15.0,  'C2', 'available'],
+  ['Ribes rubrum',                 'Jonkheer van Tets',          10.0,  'C2', 'available'],
+  ['Ribes uva-crispa',             'Hinnonmaki jaune',           10.0,  'C2', 'available'],
+  ['Celtis occidentalis',          nil,                          20.0,  'C5', 'available'],
+  ['Vaccinium corymbosum',         'Bluejay',                    16.0,  'C2', 'available'],
+  ['Vaccinium corymbosum',         'Duke',                       16.0,  'C2', 'available'],
+  ['Vaccinium corymbosum',         'Pink Lemonade',              16.0,  'C2', 'available'],
+  ['Mespilus germanica',           'Géant de Breda',             20.0,  'C5', 'available'],
+  ['Prunus salicina x armeniaca',  'Cherny Prince',              25.0,  'C5', 'available'],
+  ['Zanthoxylum piperitum',        nil,                          50.0,  'C5', 'available'],
+  ['Malus domestica',              'Pink Pearl',                 20.0,  'C5', 'available'],
+  ['Malus sieversii',              nil,                          25.0,  'C5', 'available'],
+  ['Armoracia rusticana',          nil,                           8.0,  'P9', 'available'],
+  ['Vitis vinifera',               'Arkadia',                    15.0,  'C2', 'available'],
+  ['Vitis vinifera',               'Palatina',                   15.0,  'C2', 'available'],
+  # ── épuisés ───────────────────────────────────────────────────────────────
+  ['Vaccinium vitis-idaea',        'Red Pearl',                  nil,   'P9', 'sold_out'],
+  ['Akebia quinata',               'Alba',                       nil,   'C2', 'sold_out'],
+  ['Akebia quinata',               nil,                          nil,   'C2', 'sold_out'],
+  ['Amelanchier lamarckii',        nil,                          nil,   'C5', 'sold_out'],
+  ['Tetradium daniellii',          nil,                          nil,   'C5', 'sold_out'],
+  ['Aronia melanocarpa',           'Hugin',                      nil,   'C2', 'sold_out'],
+  ['Asimina triloba',              'Allegheny',                  nil,   'C5', 'sold_out'],
+  ['Asimina triloba',              'KSU Chappel',                nil,   'C5', 'sold_out'],
+  ['Asimina triloba',              'Overleese',                  nil,   'C5', 'sold_out'],
+  ['Asimina triloba',              'Rappahannock',               nil,   'C5', 'sold_out'],
+  ['Asimina triloba',              'Shenandoah',                 nil,   'C5', 'sold_out'],
+  ['Asimina triloba',              'VE-21',                      nil,   'C5', 'sold_out'],
+  ['Crataegus anomala',            'Zbigniew',                   nil,   'C5', 'sold_out'],
+  ['Crataegus schraderiana',       nil,                          nil,   'C5', 'sold_out'],
+  ['Crataegus pinnatifida',        'Big Ball',                   nil,   'C5', 'sold_out'],
+  ['Lonicera kamtschatica',        'Armur',                      nil,   'C2', 'sold_out'],
+  ['Lonicera kamtschatica',        'Duet',                       nil,   'C2', 'sold_out'],
+  ['Vaccinium macrocarpon',        'Big Pearl',                  nil,   'P9', 'sold_out'],
+  ['Toona sinensis',               nil,                          nil,   'C5', 'sold_out'],
+  ['Prunus cerasus',               'Annabella',                  nil,   'C5', 'sold_out'],
+  ['Prunus cerasus',               'Early Rivers',               nil,   'C5', 'sold_out'],
+  ['Prunus cerasus',               'Griotte de Schaerbeek',      nil,   'C5', 'sold_out'],
+  ['Prunus cerasus',               'Kordia',                     nil,   'C5', 'sold_out'],
+  ['Elaeagnus umbellata',          'Pointilla Amoroso',          nil,   'C2', 'sold_out'],
+  ['Elaeagnus umbellata',          'Pointilla Fortunella',       nil,   'C2', 'sold_out'],
+  ['Elaeagnus umbellata',          "Pointilla Sweet'N'Sour",     nil,   'C2', 'sold_out'],
+  ['Castanea sativa x crenata',    'Bouche de Bétizac',          nil,   'C5', 'sold_out'],
+  ['Castanea sativa',              'Dorée de Lyon',              nil,   'C5', 'sold_out'],
+  ['Castanea sativa x crenata',    'Maraval',                    nil,   'C5', 'sold_out'],
+  ['Allium schoenoprasum',         nil,                          nil,   'P9', 'sold_out'],
+  ['Cydonia oblonga',              'Muskatnaja',                 nil,   'C5', 'sold_out'],
+  ['Chaenomeles japonica',         'Cido',                       nil,   'C2', 'sold_out'],
+  ['Sorbus domestica',             'Sossenheimer Riesen',        nil,   'C5', 'sold_out'],
+  ['Cornus kousa',                 'Satomi',                     nil,   'C5', 'sold_out'],
+  ['Stachys affinis',              nil,                          nil,   'P9', 'sold_out'],
+  ['Fragaria nilgerrensis',        'Fenhong Se',                 nil,   'P9', 'sold_out'],
+  ['Fragaria x ananassa',          'Mara des Bois',              nil,   'P9', 'sold_out'],
+  ['Fragaria x ananassa',          'Snow White',                 nil,   'P9', 'sold_out'],
+  ['Rubus idaeus',                 'Golden Queen',               nil,   'C2', 'sold_out'],
+  ['Rubus idaeus',                 'Malling Promise',            nil,   'C2', 'sold_out'],
+  ['Elaeagnus multiflora',         nil,                          nil,   'C2', 'sold_out'],
+  ['Hemerocallis',                 'Stella de Oro',              nil,   'P9', 'sold_out'],
+  ['Diospyros kaki',               'Mikatani Gosho',             nil,   'C5', 'sold_out'],
+  ['Diospyros kaki x virginiana',  'Russian Beauty',             nil,   'C5', 'sold_out'],
+  ['Actinidia arguta',             "Ken's Red",                  nil,   'C2', 'sold_out'],
+  ['Actinidia arguta',             'Weiki',                      nil,   'C2', 'sold_out'],
+  ['Melissa officinalis',          nil,                          nil,   'P9', 'sold_out'],
+  ['Mentha suaveolens',            nil,                          nil,   'P9', 'sold_out'],
+  ['Monarda didyma',               nil,                          nil,   'P9', 'sold_out'],
+  ['Morus alba',                   'Beautiful Day',              nil,   'C5', 'sold_out'],
+  ['Morus alba',                   nil,                          nil,   'C5', 'sold_out'],
+  ['Morus rubra',                  'Illinois Everbearing',       nil,   'C5', 'sold_out'],
+  ['Rubus fruticosus',             'Black Satin',                nil,   'C2', 'sold_out'],
+  ['Rubus x loganobaccus',         'Loganberry',                 nil,   'C2', 'sold_out'],
+  ['Pyrus pyrifolia',              'Chojuro',                    nil,   'C5', 'sold_out'],
+  ['Pyrus pyrifolia',              'Hayatama',                   nil,   'C5', 'sold_out'],
+  ['Pyrus pyrifolia',              'Hosui',                      nil,   'C5', 'sold_out'],
+  ['Pyrus pyrifolia',              'Shinseiki',                  nil,   'C5', 'sold_out'],
+  ['Mespilus germanica',           'Kurpfalz',                   nil,   'C5', 'sold_out'],
+  ['Corylus avellana',             'Merveille de Bollwiller',    nil,   'RN', 'sold_out'],
+  ['Corylus avellana',             "Webb's Prize Cobb",          nil,   'RN', 'sold_out'],
+  ['Juglans regia',                'Fernette',                   nil,   'C5', 'sold_out'],
+  ['Juglans regia',                'Fernor',                     nil,   'C5', 'sold_out'],
+  ['Juglans regia',                'Lara',                       nil,   'C5', 'sold_out'],
+  ['Juglans regia',                'Parisienne',                 nil,   'C5', 'sold_out'],
+  ['Allium proliferum',            nil,                          nil,   'P9', 'sold_out'],
+  ['Elaeagnus angustifolia',       nil,                          nil,   'C5', 'sold_out'],
+  ['Prunus persica',               'Fertile de Septembre',       nil,   'C5', 'sold_out'],
+  ['Artemisia abrotanum',          nil,                          nil,   'P9', 'sold_out'],
+  ['Diospyros virginiana',         'Supersweet',                 nil,   'C5', 'sold_out'],
+  ['Prunus salicina x armeniaca',  'Flavor Candy',               nil,   'C5', 'sold_out'],
+  ['Prunus salicina x armeniaca',  'Globus',                     nil,   'C5', 'sold_out'],
+  ['Allium ampeloprasum',          nil,                          nil,   'P9', 'sold_out'],
+  ['Pyrus communis',               'Beurré Chaboceau',           nil,   'C5', 'sold_out'],
+  ['Pyrus communis',               "Bronzée d'Enghien",          nil,   'C5', 'sold_out'],
+  ['Pyrus communis',               'Comtesse de Paris',          nil,   'C5', 'sold_out'],
+  ['Pyrus communis',               'Joséphine de Malines',       nil,   'C5', 'sold_out'],
+  ['Pyrus communis',               'Légipont',                   nil,   'C5', 'sold_out'],
+  ['Pyrus communis',               'Saint-Mathieu',              nil,   'C5', 'sold_out'],
+  ['Pyrus communis',               'Triomphe de Vienne',         nil,   'C5', 'sold_out'],
+  ['Zanthoxylum simulans',         nil,                          nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Cwastresse Double',          nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Cwastresse Simple',          nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Gueule de Mouton',           nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Jacques Lebel',              nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Président Roulin',           nil,   'C5', 'sold_out'],
+  ['Malus domestica',              "Président Van Dievoet",      nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Reine des Reinettes',        nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Reinette Étoilée',           nil,   'C5', 'sold_out'],
+  ['Malus domestica',              'Early Red Meat',             nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             'Belle de Thuin',             nil,   'C5', 'sold_out'],
+  ['Prunus americana x salicina',  'Bubble Gum',                 nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             'Mirabelle de Nancy',         nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             'Prune de Prince',            nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             "Quetsche d'Alsace",          nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             'Reine Claude Crottée',       nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             "Reine Claude d'Oullins",     nil,   'C5', 'sold_out'],
+  ['Prunus domestica',             'Rivers Early Prolific',      nil,   'C5', 'sold_out'],
+  ['Prunus maritima',              'no. 2',                      nil,   'C5', 'sold_out'],
+  ['Prunus maritima',              'no. 5',                      nil,   'C5', 'sold_out'],
+  ['Prunus tomentosa',             'Snovit',                     nil,   'C2', 'sold_out'],
+  ['Prunus tomentosa',             nil,                          nil,   'C2', 'sold_out'],
+  ['Hovenia dulcis',               nil,                          nil,   'C5', 'sold_out'],
+  ['Sorbus aucuparia',             'Rosina',                     nil,   'C5', 'sold_out'],
+  ['Sorbus aucuparia x sorbaronia','Burka',                      nil,   'C5', 'sold_out'],
+  ['Sambucus canadensis',          'Berry Hill',                 nil,   'C2', 'sold_out'],
+  ['Tilia cordata',                nil,                          nil,   'C5', 'sold_out'],
+]
+
+af_containers = { 'P9' => container_p9, 'C2' => container_c2, 'C5' => container_c5, 'RN' => container_rn }
+
+af_catalogue.each do |latin_name, variety_name, price, container_key, status|
+  species   = find_or_create_seed_species(latin_name)
+  variety   = variety_name ? find_or_create_seed_variety(species, variety_name) : nil
+  container = af_containers[container_key]
+
+  Nursery::StockBatch.find_or_create_by!(
+    nursery: nursery_af, species: species, variety: variety, container: container
+  ) do |b|
+    b.status             = status
+    b.quantity           = status == 'available' ? 10 : 0
+    b.available_quantity = status == 'available' ? 10 : 0
+    b.reserved_quantity  = 0
+    b.price_euros        = price || 0
+    b.accepts_semos      = false
+    b.growth_stage       = 'young'
+    b.origin             = 'Pépinière partenaire'
+    b.notes              = 'Source: arbustefruitier.com — sync 2026-05-31'
+  end
+end
+
+puts "Arbuste Fruitier: #{af_catalogue.size} lots créés/vérifiés"
+
 puts "Nursery seeding done!"
 
 # ─── Knowledge Base ───
