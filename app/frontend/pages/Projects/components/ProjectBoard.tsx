@@ -33,6 +33,7 @@ interface ProjectBoardProps {
   projects: ProjectSummary[]
   loading: boolean
   error: string | null
+  initialPole?: string | null
   onSelect: (typeKey: string, id: string) => void
   onRefresh: () => void
 }
@@ -109,6 +110,31 @@ const COMPLETED_STATUSES = new Set([
   'completed', 'archived', 'Terminé', 'Annulé', 'No go', 'cancelled',
 ])
 
+// Libellés d'affichage des statuts (les valeurs varient selon le type de projet).
+const STATUS_LABELS: Record<string, string> = {
+  idea: 'Idée', Idée: 'Idée',
+  in_preparation: 'En préparation', 'En attente': 'En attente',
+  active: 'Actif', registrations_open: 'Inscriptions ouvertes',
+  'En cours': 'En cours', in_progress: 'En cours',
+  post_production: 'Post-production', Standby: 'Standby',
+  completed: 'Terminé', Terminé: 'Terminé', archived: 'Archivé',
+  cancelled: 'Annulé', Annulé: 'Annulé', 'No go': 'No go',
+}
+
+// Ordre d'affichage des groupes de statut (amont → terminé).
+const STATUS_ORDER = [
+  'idea', 'Idée', 'in_preparation', 'En attente',
+  'active', 'registrations_open', 'En cours', 'in_progress', 'post_production', 'Standby',
+  'completed', 'Terminé', 'archived', 'cancelled', 'Annulé', 'No go',
+]
+
+const NO_STATUS = '__none__'
+
+function statusLabel(status: string): string {
+  if (status === NO_STATUS) return 'Sans statut'
+  return STATUS_LABELS[status] || status
+}
+
 function isActive(status: string | null): boolean {
   if (!status) return true
   return ACTIVE_STATUSES.has(status) || (!COMPLETED_STATUSES.has(status))
@@ -133,8 +159,14 @@ function relativeDate(iso: string): string {
   return `il y a ${Math.floor(days / 365)} an${Math.floor(days / 365) > 1 ? 's' : ''}`
 }
 
-export default function ProjectBoard({ projects, loading, error, onSelect, onRefresh }: ProjectBoardProps) {
-  const [activePole, setActivePole] = useState<string>('design-project')
+export default function ProjectBoard({ projects, loading, error, initialPole, onSelect, onRefresh }: ProjectBoardProps) {
+  const [activePole, setActivePole] = useState<string>(initialPole || 'design-project')
+
+  // Au retour depuis un projet, ouvrir le tab du type de ce projet.
+  useEffect(() => {
+    if (initialPole) setActivePole(initialPole)
+  }, [initialPole])
+
   const [statusFilter, setStatusFilter] = useState('active')
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'list' | 'grid'>('list')
@@ -181,6 +213,27 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
     }
     return items
   }, [projects, activePole, statusFilter, search])
+
+  // Regroupe les projets affichés par statut, dans un ordre lisible.
+  const groupedByStatus = useMemo(() => {
+    const map = new Map<string, ProjectSummary[]>()
+    for (const p of filtered) {
+      const key = p.status || NO_STATUS
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(p)
+    }
+    const rank = (s: string) => {
+      const i = STATUS_ORDER.indexOf(s)
+      return i === -1 ? 900 : i
+    }
+    return [...map.entries()]
+      .sort((a, b) => {
+        if (a[0] === NO_STATUS) return 1
+        if (b[0] === NO_STATUS) return -1
+        return rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0])
+      })
+      .map(([status, items]) => ({ status, items }))
+  }, [filtered])
 
   const activeConfig = TYPE_CONFIG[activePole]!
 
@@ -460,27 +513,36 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
             {search ? 'Modifiez votre recherche' : 'Créez le premier projet de ce pôle'}
           </p>
         </div>
-      ) : view === 'list' ? (
-        <div className="rounded-2xl bg-white border border-stone-200/70 overflow-hidden divide-y divide-stone-100">
-          {filtered.map((p, idx) => (
-            <ProjectRow
-              key={`${p.typeKey}-${p.id}`}
-              project={p}
-              config={activeConfig}
-              index={idx}
-              onClick={() => onSelect(p.typeKey, p.id)}
-            />
-          ))}
-        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((p) => (
-            <ProjectCard
-              key={`${p.typeKey}-${p.id}`}
-              project={p}
-              config={activeConfig}
-              onClick={() => onSelect(p.typeKey, p.id)}
-            />
+        <div className="space-y-8">
+          {groupedByStatus.map(({ status, items }) => (
+            <section key={status}>
+              <StatusGroupHeader status={status} count={items.length} accent={activeConfig.accent} />
+              {view === 'list' ? (
+                <div className="rounded-2xl bg-white border border-stone-200/70 overflow-hidden divide-y divide-stone-100">
+                  {items.map((p, idx) => (
+                    <ProjectRow
+                      key={`${p.typeKey}-${p.id}`}
+                      project={p}
+                      config={activeConfig}
+                      index={idx}
+                      onClick={() => onSelect(p.typeKey, p.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {items.map((p) => (
+                    <ProjectCard
+                      key={`${p.typeKey}-${p.id}`}
+                      project={p}
+                      config={activeConfig}
+                      onClick={() => onSelect(p.typeKey, p.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
           ))}
         </div>
       )}
@@ -495,6 +557,33 @@ export default function ProjectBoard({ projects, loading, error, onSelect, onRef
           }}
         />
       )}
+    </div>
+  )
+}
+
+/* ============================================================
+ * STATUS GROUP HEADER
+ * ============================================================ */
+
+function StatusGroupHeader({ status, count, accent }: { status: string; count: number; accent: string }) {
+  const isDone = COMPLETED_STATUSES.has(status)
+  const color = isDone ? '#10b981' : accent
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+      <h3
+        className="text-[12px] font-semibold uppercase tracking-wider text-stone-700"
+        style={{ fontFamily: "var(--font-mono, monospace)", letterSpacing: '0.08em' }}
+      >
+        {statusLabel(status)}
+      </h3>
+      <span
+        className="tabular-nums text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+        style={{ backgroundColor: `${color}14`, color, fontFamily: "var(--font-mono, monospace)" }}
+      >
+        {count.toString().padStart(2, '0')}
+      </span>
+      <span className="flex-1 h-px bg-stone-100" />
     </div>
   )
 }

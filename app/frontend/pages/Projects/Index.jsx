@@ -43,6 +43,8 @@ export default function ProjectsIndex() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Pôle (tab) à ouvrir au retour sur la liste — celui du projet qu'on quittait.
+  const [boardPole, setBoardPole] = useState(null)
 
   const loadProjects = useCallback(async () => {
     setLoading(true)
@@ -64,8 +66,11 @@ export default function ProjectsIndex() {
   }, [setSelectedProject])
 
   const handleBack = useCallback(() => {
+    // Mémorise le type du projet quitté pour rouvrir la liste sur le bon tab.
+    const [typeKey] = (selectedProject || '').split(':')
+    if (typeKey) setBoardPole(typeKey)
     setSelectedProject(null)
-  }, [setSelectedProject])
+  }, [selectedProject, setSelectedProject])
 
   // Parse selected project
   const parsedProject = useMemo(() => {
@@ -91,6 +96,7 @@ export default function ProjectsIndex() {
         projects={projects}
         loading={loading}
         error={error}
+        initialPole={boardPole}
         onSelect={handleSelectProject}
         onRefresh={loadProjects}
       />

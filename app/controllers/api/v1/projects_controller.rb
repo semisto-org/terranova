@@ -51,6 +51,21 @@ module Api
         render json: serialize_project_detail(@projectable)
       end
 
+      # GET /api/v1/my-projects
+      # Projets dont le membre courant fait partie de l'équipe, avec leurs
+      # membres et leurs listes de tâches — de quoi éditer une tâche (picker
+      # d'assigné) et en ajouter une depuis le drawer « Mes tâches ».
+      def my_projects
+        projectables = ProjectMembership
+          .where(member_id: current_member.id)
+          .includes(:projectable)
+          .map(&:projectable)
+          .compact
+          .uniq
+
+        render json: { projects: projectables.map { |p| serialize_my_project(p) } }
+      end
+
       # POST /api/v1/projects/:type
       def create
         type_key = params[:type]
@@ -397,6 +412,25 @@ module Api
           completedTasks: completed,
           createdAt: project.created_at.iso8601,
           updatedAt: project.updated_at.iso8601
+        }
+      end
+
+      def serialize_my_project(project)
+        {
+          projectType: project.project_type_key,
+          projectId: project.id.to_s,
+          projectName: project.project_name,
+          members: project.project_memberships.includes(:member).map do |pm|
+            {
+              id: pm.member_id.to_s,
+              firstName: pm.member.first_name,
+              lastName: pm.member.last_name,
+              avatar: pm.member.avatar_url
+            }
+          end,
+          taskLists: project.unified_task_lists.order(:position, :created_at).map do |tl|
+            { id: tl.id.to_s, name: tl.name }
+          end
         }
       end
 
