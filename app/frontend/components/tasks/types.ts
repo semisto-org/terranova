@@ -1,18 +1,36 @@
+export interface MemberRef {
+  id: string
+  firstName: string
+  lastName: string
+  avatar?: string | null
+}
+
 export interface Task {
   id: string
   name: string
   description: string | null
+  notes: string | null
   status: 'pending' | 'in_progress' | 'completed'
   dueDate: string | null
   assigneeId: string | null
   assigneeName: string | null
   assigneeAvatar: string | null
+  assignedAt: string | null
+  assignedBy: MemberRef | null
+  completedAt: string | null
+  completedBy: MemberRef | null
+  starredAt: string | null
+  pingedAt: string | null
+  pingedBy: MemberRef | null
   priority: 'low' | 'medium' | 'high' | null
   tags: string[]
   timeMinutes: number | null
   position: number
   parentId: string | null
   taskListId: string
+  projectType?: ProjectTypeKey | null
+  projectId?: string | null
+  projectName?: string | null
   createdAt: string
   updatedAt: string
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2420,23 +2420,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_120000) do
   end
 
   create_table "tasks", force: :cascade do |t|
+    t.datetime "assigned_at"
+    t.bigint "assigned_by_id"
     t.bigint "assignee_id"
     t.string "assignee_name"
+    t.datetime "completed_at"
+    t.bigint "completed_by_id"
     t.datetime "created_at", null: false
     t.text "description"
     t.date "due_date"
     t.string "name", null: false
+    t.text "notes"
     t.bigint "parent_id"
+    t.datetime "pinged_at"
+    t.bigint "pinged_by_id"
     t.integer "position", default: 0
     t.string "priority"
+    t.datetime "starred_at"
     t.string "status", default: "pending", null: false
     t.jsonb "tags", default: []
     t.bigint "task_list_id", null: false
     t.integer "time_minutes"
     t.datetime "updated_at", null: false
+    t.index ["assigned_by_id"], name: "index_tasks_on_assigned_by_id"
     t.index ["assignee_id", "status"], name: "index_tasks_on_assignee_id_and_status"
     t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
+    t.index ["completed_by_id"], name: "index_tasks_on_completed_by_id"
     t.index ["parent_id"], name: "index_tasks_on_parent_id"
+    t.index ["pinged_at"], name: "index_tasks_on_pinged_at"
+    t.index ["pinged_by_id"], name: "index_tasks_on_pinged_by_id"
+    t.index ["starred_at"], name: "index_tasks_on_starred_at"
     t.index ["task_list_id"], name: "index_tasks_on_task_list_id"
   end
 

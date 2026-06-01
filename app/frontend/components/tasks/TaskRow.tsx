@@ -1,5 +1,5 @@
 import React, { forwardRef, useMemo, useState } from 'react'
-import { Calendar, Clock, GripVertical, Pencil, Trash2 } from 'lucide-react'
+import { Calendar, Clock, GripVertical, Hand, Pencil, Star, Trash2 } from 'lucide-react'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import type { Task, MemberOption } from './types'
 import { STATUS_NEXT } from './types'
@@ -9,6 +9,9 @@ interface TaskRowProps {
   onToggle: (id: string) => void
   onEdit?: (task: Task) => void
   onDelete?: (id: string) => void
+  onOpenDetail?: (task: Task) => void
+  onStar?: (id: string) => void
+  onPing?: (id: string) => void
   busy?: boolean
   accentColor?: string
   members?: MemberOption[]
@@ -85,12 +88,15 @@ function StatusCheckbox({ status, accentColor, onClick, disabled }: {
 const PRIORITY_DOTS: Record<string, number> = { low: 1, medium: 2, high: 3 }
 
 export const TaskRow = forwardRef<HTMLDivElement, TaskRowProps>(function TaskRow(
-  { task, onToggle, onEdit, onDelete, busy, accentColor = '#5B5781', members = [], dragHandleProps, isDragging = false, style },
+  { task, onToggle, onEdit, onDelete, onOpenDetail, onStar, onPing, busy, accentColor = '#5B5781', members = [], dragHandleProps, isDragging = false, style },
   ref
 ) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const isOverdue = task.dueDate && task.status !== 'completed' && new Date(task.dueDate) < new Date()
   const dots = task.priority ? PRIORITY_DOTS[task.priority] || 0 : 0
+  const starred = !!task.starredAt
+  const pinged = !!task.pingedAt
+  const openPrimary = onOpenDetail || onEdit
 
   const assigneeMember = useMemo(
     () => task.assigneeId
@@ -114,7 +120,9 @@ export const TaskRow = forwardRef<HTMLDivElement, TaskRowProps>(function TaskRow
       className={`group flex items-start gap-3 py-2.5 px-1 rounded-lg transition-all ${
         isDragging
           ? 'bg-white shadow-lg ring-1 ring-stone-200 scale-[1.01] z-50'
-          : 'hover:bg-stone-50/80'
+          : pinged
+            ? 'bg-amber-50 ring-1 ring-amber-200 hover:bg-amber-100/70'
+            : 'hover:bg-stone-50/80'
       } ${task.status === 'completed' ? 'opacity-50' : ''}`}
     >
       {dragHandleProps && (
@@ -136,7 +144,8 @@ export const TaskRow = forwardRef<HTMLDivElement, TaskRowProps>(function TaskRow
       />
 
       <div className="flex-1 min-w-0">
-        <button onClick={() => onEdit?.(task)} className="text-left w-full">
+        <button onClick={() => openPrimary?.(task)} className="text-left w-full flex items-center gap-1.5">
+          {pinged && <Hand className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
           <span className={`text-sm leading-snug ${
             task.status === 'completed'
               ? 'line-through text-stone-400'
@@ -193,6 +202,33 @@ export const TaskRow = forwardRef<HTMLDivElement, TaskRowProps>(function TaskRow
             </span>
           ))}
         </div>
+      </div>
+
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        {onStar && (
+          <button
+            onClick={e => { e.stopPropagation(); onStar(task.id) }}
+            disabled={busy}
+            className={`p-1 rounded hover:bg-amber-50 transition-all ${
+              starred ? 'text-amber-500 opacity-100' : 'text-stone-300 hover:text-amber-500 opacity-0 group-hover:opacity-100'
+            }`}
+            title={starred ? 'Retirer de ma sélection' : 'Ajouter à ma sélection'}
+          >
+            <Star className="w-3.5 h-3.5" fill={starred ? 'currentColor' : 'none'} />
+          </button>
+        )}
+        {onPing && (
+          <button
+            onClick={e => { e.stopPropagation(); onPing(task.id) }}
+            disabled={busy}
+            className={`p-1 rounded hover:bg-amber-50 transition-all ${
+              pinged ? 'text-amber-500 opacity-100' : 'text-stone-300 hover:text-amber-500 opacity-0 group-hover:opacity-100'
+            }`}
+            title={pinged ? 'Retirer le coucou' : 'Faire coucou 👋 (faire remonter cette tâche)'}
+          >
+            <Hand className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">

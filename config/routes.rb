@@ -142,6 +142,8 @@ Rails.application.routes.draw do
       post "task-lists/:task_list_id/tasks", to: "tasks#create_task"
       patch "tasks/:id", to: "tasks#update_task"
       patch "tasks/:id/toggle", to: "tasks#toggle_task"
+      patch "tasks/:id/star", to: "tasks#star_task"
+      patch "tasks/:id/ping", to: "tasks#ping_task"
       delete "tasks/:id", to: "tasks#destroy_task"
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"

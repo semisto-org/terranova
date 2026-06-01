@@ -540,6 +540,30 @@
       ]
     },
     {
+      "endpointCount": 1,
+      "file": "my-projects.json",
+      "name": "my-projects",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/my-projects",
+          "summary": "my_projects"
+        }
+      ]
+    },
+    {
+      "endpointCount": 1,
+      "file": "my-tasks.json",
+      "name": "my-tasks",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/my-tasks",
+          "summary": "my_tasks"
+        }
+      ]
+    },
+    {
       "endpointCount": 10,
       "file": "my_semisto.json",
       "name": "my_semisto",
@@ -845,10 +869,15 @@
       ]
     },
     {
-      "endpointCount": 2,
+      "endpointCount": 3,
       "file": "projects.json",
       "name": "projects",
       "operations": [
+        {
+          "method": "PATCH",
+          "path": "/api/v1/projects/{type}/{id}",
+          "summary": "update"
+        },
         {
           "method": "GET",
           "path": "/api/v1/projects/{type}/{id}/bucket",
@@ -996,6 +1025,28 @@
           "summary": "index"
         }
       ]
+    },
+    {
+      "endpointCount": 3,
+      "file": "tasks.json",
+      "name": "tasks",
+      "operations": [
+        {
+          "method": "PATCH",
+          "path": "/api/v1/tasks/{id}/ping",
+          "summary": "ping_task"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/tasks/{id}/star",
+          "summary": "star_task"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/tasks/{id}/toggle",
+          "summary": "toggle_task"
+        }
+      ]
     }
   ],
   "generatedFrom": "doc/openapi.yaml (recorded by rspec-openapi from the Minitest integration suite)",
@@ -1009,5 +1060,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 177
+  "totalEndpoints": 183
 }

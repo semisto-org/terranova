@@ -11,23 +11,15 @@ import { MyTasksDashboard } from '@/components/tasks'
 import { apiRequest } from '@/lib/api'
 import GlobalSearchPalette from './GlobalSearchPalette'
 
-// Mappe un (projectType, id) vers sa page naturelle pour la navigation depuis
-// le drawer « Mes tâches ».
-const PROJECT_ROUTES = {
-  'training': (id) => `/academy/${id}`,
-  'design-project': (id) => `/design/${id}`,
-  'lab-project': () => `/lab`,
-  'guild': () => `/lab`,
-}
-
 function MyTasksDrawer({ open, onClose }) {
   if (!open) return null
+  // Navigue vers le projet lui-même (page projets unifiée), pour TOUS les types.
+  // Auparavant lab/guilde renvoyaient vers /lab (le tableau de bord) — bug
+  // rapporté par Michael : « ça n'envoie pas vers le projet ».
   const navigate = (projectType, projectId) => {
-    const build = PROJECT_ROUTES[projectType]
-    if (build) {
-      onClose()
-      router.visit(build(projectId))
-    }
+    if (!projectType || !projectId) return
+    onClose()
+    router.visit(`/projects/${projectType}/${projectId}`)
   }
   return (
     <>

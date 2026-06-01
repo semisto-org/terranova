@@ -145,8 +145,6 @@ export function TaskForm({ task, onSubmit, onClose, busy, accentColor = '#5B5781
   const [assigneeName, setAssigneeName] = useState(task?.assigneeName || '')
   const [dueDate, setDueDate] = useState(task?.dueDate || '')
   const [priority, setPriority] = useState(task?.priority || '')
-  const [tagsStr, setTagsStr] = useState(task?.tags?.join(', ') || '')
-  const [timeMinutes, setTimeMinutes] = useState<string>(task?.timeMinutes?.toString() || '')
   const [members, setMembers] = useState<MemberOption[]>(propMembers || [])
 
   useEffect(() => {
@@ -172,8 +170,8 @@ export function TaskForm({ task, onSubmit, onClose, busy, accentColor = '#5B5781
       assignee_name: assigneeName,
       due_date: dueDate,
       priority,
-      tags: tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [],
-      time_minutes: timeMinutes ? parseInt(timeMinutes, 10) : null,
+      tags: task?.tags || [],
+      time_minutes: task?.timeMinutes ?? null,
     })
   }
 
@@ -262,30 +260,6 @@ export function TaskForm({ task, onSubmit, onClose, busy, accentColor = '#5B5781
                   <option value="medium">Moyenne</option>
                   <option value="high">Haute</option>
                 </select>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block space-y-1.5">
-                <span className={labelClass}>Tags</span>
-                <input
-                  type="text"
-                  value={tagsStr}
-                  onChange={e => setTagsStr(e.target.value)}
-                  className={inputClass}
-                  placeholder="tag1, tag2..."
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className={labelClass}>Estimation (min)</span>
-                <input
-                  type="number"
-                  value={timeMinutes}
-                  onChange={e => setTimeMinutes(e.target.value)}
-                  className={inputClass}
-                  placeholder="60"
-                  min="0"
-                />
               </label>
             </div>
           </div>

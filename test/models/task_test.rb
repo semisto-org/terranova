@@ -46,4 +46,34 @@ class TaskTest < ActiveSupport::TestCase
     assert task.valid?, task.errors.full_messages.to_sentence
     assert task.save
   end
+
+  test 'assigning a task stamps assigned_at' do
+    ProjectMembership.create!(projectable: @project, member: @member, role: 'member')
+    task = @list.tasks.create!(name: 'Réserver la salle', status: 'pending', assignee_id: @member.id)
+    assert_not_nil task.assigned_at
+  end
+
+  test 'completing a task stamps completed_at and clears it when reopened' do
+    task = @list.tasks.create!(name: 'Envoyer le mail', status: 'pending')
+
+    task.update!(status: 'completed', completed_by: @member)
+    assert_not_nil task.completed_at
+    assert_equal @member.id, task.completed_by_id
+
+    task.update!(status: 'pending')
+    assert_nil task.completed_at
+    assert_nil task.completed_by_id
+  end
+
+  test 'scopes select starred, pinged and recently completed' do
+    starred = @list.tasks.create!(name: 'Étoilée', status: 'pending', starred_at: Time.current)
+    pinged = @list.tasks.create!(name: 'Coucou', status: 'pending', pinged_at: Time.current)
+    done = @list.tasks.create!(name: 'Faite', status: 'completed', completed_at: 1.day.ago)
+    old_done = @list.tasks.create!(name: 'Vieille', status: 'completed', completed_at: 60.days.ago)
+
+    assert_includes Task.starred, starred
+    assert_includes Task.pinged, pinged
+    assert_includes Task.recently_completed(14), done
+    assert_not_includes Task.recently_completed(14), old_done
+  end
 end

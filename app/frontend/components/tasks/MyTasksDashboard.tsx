@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiRequest } from '@/lib/api'
-import { ListTodo, ChevronRight, Inbox, Plus, X } from 'lucide-react'
+import { ListTodo, ChevronRight, Inbox, Plus, X, Search, LayoutList, CalendarDays } from 'lucide-react'
 import { TaskRow } from './TaskRow'
 import { TaskForm } from './TaskForm'
+import { TaskDetail } from './TaskDetail'
 import type { Task, ProjectGroup, ProjectTypeKey, MemberOption } from './types'
 import { PROJECT_ACCENT_COLORS, PROJECT_TYPE_LABELS } from './types'
 
@@ -20,18 +21,50 @@ interface MyTasksDashboardProps {
 
 const projectKey = (type: string, id: string) => `${type}-${id}`
 
+type ViewMode = 'project' | 'date'
+
+const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x }
+
+// Range de groupe pour la vue datée. L'ordre définit la priorité d'affectation :
+// une tâche tombe dans le PREMIER groupe qui la matche (coucou avant sélection,
+// etc.), de sorte que ce qui demande attention remonte tout en haut.
+const DATE_GROUPS = [
+  'Coucous 👋', 'Ma sélection', 'En retard', "Aujourd'hui",
+  'Cette semaine', 'Plus tard', 'Sans date', 'Récemment terminé',
+] as const
+type DateGroup = typeof DATE_GROUPS[number]
+
+function dateGroupFor(task: Task): DateGroup {
+  if (task.status === 'completed') return 'Récemment terminé'
+  if (task.pingedAt) return 'Coucous 👋'
+  if (task.starredAt) return 'Ma sélection'
+  if (!task.dueDate) return 'Sans date'
+  const today = startOfDay(new Date())
+  const due = startOfDay(new Date(task.dueDate))
+  const diffDays = Math.round((due.getTime() - today.getTime()) / 86_400_000)
+  if (diffDays < 0) return 'En retard'
+  if (diffDays === 0) return "Aujourd'hui"
+  if (diffDays <= 7) return 'Cette semaine'
+  return 'Plus tard'
+}
+
 export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps) {
   const [projects, setProjects] = useState<ProjectGroup[]>([])
   const [myProjects, setMyProjects] = useState<MyProject[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
 
+  const [search, setSearch] = useState('')
+  const [view, setView] = useState<ViewMode>('project')
+  const [projectFilter, setProjectFilter] = useState<string>('all') // 'all' | projectKey
+
+  const [detail, setDetail] = useState<{ task: Task; key: string; accent: string } | null>(null)
   const [editing, setEditing] = useState<{ task: Task; key: string; accent: string } | null>(null)
   const [adding, setAdding] = useState(false)
   const [creating, setCreating] = useState<{ listId: string; members: MemberOption[] } | null>(null)
 
   // silent: ne pas repasser par l'état `loading` (qui démonte la liste et
-  // ferait sauter le scroll du drawer quand on coche une tâche).
+  // ferait sauter le scroll du drawer quand on coche/épingle une tâche).
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
@@ -55,25 +88,45 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
     [myProjects]
   )
 
-  const handleToggle = useCallback(async (taskId: string) => {
+  // Garde le détail/édition synchronisés avec les données rechargées.
+  const refreshOpenTask = useCallback((list: ProjectGroup[]) => {
+    setDetail(prev => {
+      if (!prev) return prev
+      const fresh = list.flatMap(p => p.tasks).find(t => t.id === prev.task.id)
+      return fresh ? { ...prev, task: fresh } : null
+    })
+  }, [])
+
+  const patch = useCallback(async (path: string, options?: RequestInit) => {
     setBusy(true)
     try {
-      await apiRequest(`/api/v1/tasks/${taskId}/toggle`, { method: 'PATCH' })
+      await apiRequest(path, { method: 'PATCH', ...options })
+      const tasksRes = await apiRequest('/api/v1/my-tasks')
+      const list: ProjectGroup[] = tasksRes.projects || []
+      setProjects(list)
+      refreshOpenTask(list)
+    } finally {
+      setBusy(false)
+    }
+  }, [refreshOpenTask])
+
+  const handleToggle = useCallback((id: string) => patch(`/api/v1/tasks/${id}/toggle`), [patch])
+  const handleStar = useCallback((id: string) => patch(`/api/v1/tasks/${id}/star`), [patch])
+  const handlePing = useCallback((id: string) => patch(`/api/v1/tasks/${id}/ping`), [patch])
+
+  const handleDelete = useCallback(async (id: string) => {
+    setBusy(true)
+    try {
+      await apiRequest(`/api/v1/tasks/${id}`, { method: 'DELETE' })
       await load(true)
+      setDetail(null)
     } finally {
       setBusy(false)
     }
   }, [load])
 
-  const handleDelete = useCallback(async (taskId: string) => {
-    setBusy(true)
-    try {
-      await apiRequest(`/api/v1/tasks/${taskId}`, { method: 'DELETE' })
-      await load(true)
-    } finally {
-      setBusy(false)
-    }
-  }, [load])
+  const handleSaveNotes = useCallback((id: string, notes: string) =>
+    patch(`/api/v1/tasks/${id}`, { body: JSON.stringify({ notes }) }), [patch])
 
   const handleEditSubmit = useCallback(async (values: any) => {
     if (!editing) return
@@ -99,9 +152,46 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
     }
   }, [creating, load])
 
-  const totalTasks = projects.reduce((sum, p) => sum + p.tasks.length, 0)
+  const accentForType = (type: string) => PROJECT_ACCENT_COLORS[type as ProjectTypeKey] || '#5B5781'
+
+  // Recherche + filtre projet appliqués à toutes les tâches.
+  const matches = useCallback((t: Task) => {
+    if (projectFilter !== 'all' && projectKey(t.projectType || '', t.projectId || '') !== projectFilter) return false
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return [t.name, t.description, t.notes, t.projectName].some(v => v?.toLowerCase().includes(q))
+  }, [search, projectFilter])
+
+  const filteredProjects = useMemo(
+    () => projects.map(p => ({ ...p, tasks: p.tasks.filter(matches) })).filter(p => p.tasks.length > 0),
+    [projects, matches]
+  )
+
+  const allTasks = useMemo(() => projects.flatMap(p => p.tasks), [projects])
+  const filteredTasks = useMemo(() => allTasks.filter(matches), [allTasks, matches])
+  const activeCount = useMemo(() => allTasks.filter(t => t.status !== 'completed').length, [allTasks])
+
+  // Vue datée : affectation au premier groupe qui matche.
+  const dateGrouped = useMemo(() => {
+    const map = new Map<DateGroup, Task[]>()
+    for (const t of filteredTasks) {
+      const g = dateGroupFor(t)
+      if (!map.has(g)) map.set(g, [])
+      map.get(g)!.push(t)
+    }
+    return DATE_GROUPS.filter(g => map.has(g)).map(g => ({ group: g, tasks: map.get(g)! }))
+  }, [filteredTasks])
+
+  const projectOptions = useMemo(
+    () => projects.map(p => ({ key: projectKey(p.projectType, p.projectId), name: p.projectName })),
+    [projects]
+  )
+
+  const openDetail = (task: Task, key: string, accent: string) => setDetail({ task, key, accent })
 
   if (loading) return null
+
+  const inputClass = 'w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-stone-200 text-stone-900 placeholder:text-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400/30 focus:border-stone-400'
 
   return (
     <div className="space-y-3">
@@ -114,7 +204,7 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
             </div>
             <div>
               <h3 className="text-sm font-semibold text-stone-900">Mes tâches</h3>
-              <p className="text-xs text-stone-500">{totalTasks} en cours</p>
+              <p className="text-xs text-stone-500">{activeCount} en cours</p>
             </div>
           </div>
           <button
@@ -127,25 +217,67 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
             Ajouter
           </button>
         </div>
+
+        {/* Recherche + filtres + bascule de vue */}
+        <div className="px-4 pb-4 space-y-2.5">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher dans mes tâches…"
+              className={inputClass}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-lg border border-stone-200 bg-white p-0.5">
+              <button
+                onClick={() => setView('project')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${view === 'project' ? 'bg-[#5B5781] text-white' : 'text-stone-500 hover:text-stone-800'}`}
+              >
+                <LayoutList className="w-3.5 h-3.5" /> Projet
+              </button>
+              <button
+                onClick={() => setView('date')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${view === 'date' ? 'bg-[#5B5781] text-white' : 'text-stone-500 hover:text-stone-800'}`}
+              >
+                <CalendarDays className="w-3.5 h-3.5" /> Date
+              </button>
+            </div>
+            <select
+              value={projectFilter}
+              onChange={e => setProjectFilter(e.target.value)}
+              className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-lg bg-white border border-stone-200 text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400/30"
+            >
+              <option value="all">Tous les projets</option>
+              {projectOptions.map(o => <option key={o.key} value={o.key}>{o.name}</option>)}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {totalTasks === 0 ? (
+      {filteredTasks.length === 0 ? (
         <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
           <div className="px-5 py-8 flex flex-col items-center gap-2 text-center">
             <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center">
               <Inbox className="w-5 h-5 text-stone-400" />
             </div>
-            <p className="text-sm text-stone-500">Aucune tâche assignée</p>
+            <p className="text-sm text-stone-500">{search || projectFilter !== 'all' ? 'Aucune tâche ne correspond' : 'Aucune tâche assignée'}</p>
           </div>
         </div>
-      ) : (
+      ) : view === 'project' ? (
         <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm divide-y divide-stone-100">
-          {projects.map(project => {
+          {filteredProjects.map(project => {
             const key = projectKey(project.projectType, project.projectId)
-            const accent = PROJECT_ACCENT_COLORS[project.projectType] || '#5B5781'
+            const accent = accentForType(project.projectType)
             const typeLabel = PROJECT_TYPE_LABELS[project.projectType] || ''
             const members = membersFor(key)
-
             return (
               <div key={key} className="px-4 py-3">
                 <button
@@ -158,14 +290,14 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
                   {typeLabel && <span className="text-stone-400 font-normal ml-1">· {typeLabel}</span>}
                   <ChevronRight className="w-3 h-3 opacity-50" />
                 </button>
-
                 {project.tasks.map(task => (
                   <TaskRow
                     key={task.id}
                     task={task}
                     onToggle={handleToggle}
-                    onEdit={t => setEditing({ task: t, key, accent })}
-                    onDelete={handleDelete}
+                    onOpenDetail={t => openDetail(t, key, accent)}
+                    onStar={handleStar}
+                    onPing={handlePing}
                     busy={busy}
                     accentColor={accent}
                     members={members}
@@ -175,6 +307,59 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
             )
           })}
         </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm divide-y divide-stone-100">
+          {dateGrouped.map(({ group, tasks }) => (
+            <div key={group} className="px-4 py-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-semibold text-stone-600">{group}</span>
+                <span className="text-[10px] text-stone-400">{tasks.length}</span>
+              </div>
+              {tasks.map(task => {
+                const key = projectKey(task.projectType || '', task.projectId || '')
+                const accent = accentForType(task.projectType || '')
+                return (
+                  <div key={task.id}>
+                    <TaskRow
+                      task={task}
+                      onToggle={handleToggle}
+                      onOpenDetail={t => openDetail(t, key, accent)}
+                      onStar={handleStar}
+                      onPing={handlePing}
+                      busy={busy}
+                      accentColor={accent}
+                      members={membersFor(key)}
+                    />
+                    {task.projectName && (
+                      <button
+                        onClick={() => task.projectType && task.projectId && onNavigateToProject?.(task.projectType, task.projectId)}
+                        className="ml-8 -mt-1 mb-1 text-[11px] text-stone-400 hover:text-stone-600 hover:underline"
+                      >
+                        {task.projectName}
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Détail d'une tâche (provenance, historique, notes) */}
+      {detail && (
+        <TaskDetail
+          task={detail.task}
+          accentColor={detail.accent}
+          busy={busy}
+          onClose={() => setDetail(null)}
+          onEdit={t => { setEditing({ task: t, key: detail.key, accent: detail.accent }); setDetail(null) }}
+          onDelete={handleDelete}
+          onStar={handleStar}
+          onPing={handlePing}
+          onSaveNotes={handleSaveNotes}
+          onNavigateToProject={onNavigateToProject}
+        />
       )}
 
       {/* Édition d'une tâche existante */}

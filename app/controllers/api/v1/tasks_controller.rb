@@ -5,7 +5,7 @@ module Api
     class TasksController < BaseController
       before_action :set_projectable, only: [:list_task_lists, :create_task_list]
       before_action :set_task_list, only: [:update_task_list, :destroy_task_list, :reorder_task_list, :create_task, :reorder_tasks]
-      before_action :set_task, only: [:update_task, :toggle_task, :destroy_task]
+      before_action :set_task, only: [:update_task, :toggle_task, :destroy_task, :star_task, :ping_task]
 
       # GET /api/v1/projects/:type/:id/task-lists
       def list_task_lists
@@ -69,6 +69,10 @@ module Api
       def update_task
         @task.assign_attributes(task_params)
         resolve_assignee(@task)
+        # Complétion via le formulaire (pas seulement via toggle) : on trace l'auteur.
+        if @task.status_changed? && @task.status == "completed" && @task.completed_by_id.blank?
+          @task.completed_by = current_member
+        end
 
         if @task.save
           render json: serialize_task(@task)
@@ -79,8 +83,29 @@ module Api
 
       # PATCH /api/v1/tasks/:id/toggle
       def toggle_task
-        new_status = @task.status == "completed" ? "pending" : "completed"
-        @task.update!(status: new_status)
+        if @task.status == "completed"
+          @task.status = "pending"
+        else
+          @task.status = "completed"
+          @task.completed_by = current_member
+        end
+        @task.save!
+        render json: serialize_task(@task)
+      end
+
+      # PATCH /api/v1/tasks/:id/star — bascule « ma sélection »
+      def star_task
+        @task.update!(starred_at: @task.starred_at.present? ? nil : Time.current)
+        render json: serialize_task(@task)
+      end
+
+      # PATCH /api/v1/tasks/:id/ping — coucou bienveillant (in-app)
+      def ping_task
+        if @task.pinged_at.present?
+          @task.update!(pinged_at: nil, pinged_by: nil)
+        else
+          @task.update!(pinged_at: Time.current, pinged_by: current_member)
+        end
         render json: serialize_task(@task)
       end
 
@@ -100,10 +125,15 @@ module Api
       end
 
       # GET /api/v1/my-tasks
+      #
+      # Renvoie les tâches non terminées + les tâches terminées récemment (≤ 14 j),
+      # pour que cocher une tâche ne la fasse pas disparaître du drawer : elle
+      # reste visible (grisée/barrée) et alimente le fil daté « récemment terminé ».
       def my_tasks
-        tasks = Task.includes(task_list: :taskable)
+        recent_days = 14
+        tasks = Task.includes(:assignee, task_list: :taskable, assigned_by: {}, completed_by: {}, pinged_by: {})
           .where(assignee_id: current_member.id)
-          .where.not(status: "completed")
+          .where("tasks.status != 'completed' OR tasks.completed_at >= ?", recent_days.days.ago)
           .order(Arel.sql("due_date ASC NULLS LAST"), created_at: :desc)
 
         grouped = tasks.group_by { |t| t.task_list.taskable }
@@ -148,7 +178,7 @@ module Api
         # assignee_name n'est PLUS accepté en entrée : il est dérivé du membre
         # assigné via resolve_assignee. On n'autorise donc que l'assignation par
         # assignee_id (un membre de l'équipe), jamais du texte libre.
-        permitted = params.permit(:name, :description, :status, :due_date, :assignee_id,
+        permitted = params.permit(:name, :description, :notes, :status, :due_date, :assignee_id,
                                    :priority, :time_minutes, :position, :parent_id, tags: [])
         %i[priority due_date assignee_id time_minutes parent_id].each do |key|
           permitted[key] = nil if permitted[key].is_a?(String) && permitted[key].empty?
@@ -160,10 +190,23 @@ module Api
         if task.assignee_id.present?
           member = Member.find_by(id: task.assignee_id)
           task.assignee_name = "#{member.first_name} #{member.last_name}".strip if member
+          # Trace qui a posé l'assignation (le membre courant) quand elle change.
+          task.assigned_by = current_member if task.assignee_id_changed?
         elsif task.assignee_id_changed? || task.new_record?
           # Désassignation explicite : on efface le nom dérivé.
           task.assignee_name = nil
         end
+      end
+
+      def serialize_member(member)
+        return nil unless member
+
+        {
+          id: member.id.to_s,
+          firstName: member.first_name,
+          lastName: member.last_name,
+          avatar: member.avatar_url
+        }
       end
 
       def serialize_task_list(task_list)
@@ -176,21 +219,33 @@ module Api
       end
 
       def serialize_task(task)
+        projectable = task.task_list&.taskable
         {
           id: task.id.to_s,
           name: task.name,
           description: task.description,
+          notes: task.notes,
           status: task.status,
           dueDate: task.due_date&.iso8601,
           assigneeId: task.assignee_id&.to_s,
           assigneeName: task.assignee_name,
           assigneeAvatar: task.assignee&.avatar_url,
+          assignedAt: task.assigned_at&.iso8601,
+          assignedBy: serialize_member(task.assigned_by),
+          completedAt: task.completed_at&.iso8601,
+          completedBy: serialize_member(task.completed_by),
+          starredAt: task.starred_at&.iso8601,
+          pingedAt: task.pinged_at&.iso8601,
+          pingedBy: serialize_member(task.pinged_by),
           priority: task.priority,
           tags: task.tags,
           timeMinutes: task.time_minutes,
           position: task.position,
           parentId: task.parent_id&.to_s,
           taskListId: task.task_list_id.to_s,
+          projectType: projectable&.project_type_key,
+          projectId: projectable&.id&.to_s,
+          projectName: projectable&.project_name,
           createdAt: task.created_at.iso8601,
           updatedAt: task.updated_at.iso8601
         }
