@@ -76,7 +76,7 @@ const STATUS_HOVER = {
   cancelled: 'hover:bg-rose-50',
 }
 
-const STATUS_ORDER = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
+const STATUS_ORDER = ['idea', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
 
 function formatCurrency(value) {
   return Number(value).toLocaleString('fr-FR', {

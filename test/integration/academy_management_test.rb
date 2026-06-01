@@ -837,7 +837,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     post '/api/v1/academy/training-types', params: { name: 'Type Status' }, as: :json
     training_type_id = JSON.parse(response.body)['id']
 
-    statuses_to_test = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
+    statuses_to_test = ['idea', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
     training_ids = []
 
     statuses_to_test.each_with_index do |status, i|
@@ -867,7 +867,7 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     calendar = JSON.parse(response.body)
-    assert_equal 8, calendar.size
+    assert_equal statuses_to_test.size, calendar.size
 
     # Verify each training has status field for color-coding
     statuses_to_test.each do |status|

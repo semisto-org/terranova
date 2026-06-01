@@ -4,8 +4,9 @@ module Academy
     include Projectable
     self.table_name = 'academy_trainings'
 
+    # « in_construction » retiré (fusionné dans « in_preparation », séance 2).
     STATUSES = %w[
-      idea in_construction in_preparation registrations_open
+      idea in_preparation registrations_open
       in_progress post_production completed cancelled
     ].freeze
     REGISTRATION_MODES = %w[open closed].freeze

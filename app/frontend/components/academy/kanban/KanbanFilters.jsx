@@ -14,7 +14,6 @@ const STATUS_LABELS = {
 
 const STATUS_GROUPS = [
   { label: 'Idée', statuses: ['idea'] },
-  { label: 'En construction', statuses: ['in_construction'] },
   { label: 'En préparation', statuses: ['in_preparation'] },
   { label: 'Inscriptions', statuses: ['registrations_open'] },
   { label: 'En cours', statuses: ['in_progress'] },

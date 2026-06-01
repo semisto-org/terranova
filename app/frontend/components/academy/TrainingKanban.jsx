@@ -47,7 +47,7 @@ const STATUS_LEFT_BORDER = {
   cancelled: 'border-l-rose-400',
 }
 
-const STATUS_ORDER = ['idea', 'in_construction', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
+const STATUS_ORDER = ['idea', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
 
 function formatDate(dateString) {
   if (!dateString) return '—'
@@ -63,7 +63,7 @@ const READINESS_ICON_MAP = {
   price: Euro,
 }
 
-const PREPARATION_STATUSES = ['in_construction', 'in_preparation']
+const PREPARATION_STATUSES = ['in_preparation']
 
 function hasPrice(training) {
   if (Number(training.price) > 0) return true

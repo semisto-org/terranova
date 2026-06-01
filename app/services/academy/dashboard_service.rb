@@ -2,7 +2,7 @@
 
 module Academy
   class DashboardService
-    ACTIVE_STATUSES = %w[idea in_construction in_preparation registrations_open in_progress post_production].freeze
+    ACTIVE_STATUSES = %w[idea in_preparation registrations_open in_progress post_production].freeze
 
     def call
       {

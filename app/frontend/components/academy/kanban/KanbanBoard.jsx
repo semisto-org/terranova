@@ -11,12 +11,14 @@ import {
 import KanbanColumn from './KanbanColumn'
 import KanbanTrainingCard from './KanbanTrainingCard'
 
+// Séance 2 : « en construction » fusionné dans « en préparation » ; « en cours »
+// n'est plus une colonne (il sort du Kanban dans un bandeau en haut) mais reste
+// un statut. Les colonnes du Kanban couvrent donc la phase de conception →
+// inscriptions → post-prod → clôture.
 const PHASES = [
   { id: 'idea', label: 'Idée', statuses: ['idea'], defaultStatus: 'idea' },
-  { id: 'in_construction', label: 'En construction', statuses: ['in_construction'], defaultStatus: 'in_construction' },
   { id: 'in_preparation', label: 'En préparation', statuses: ['in_preparation'], defaultStatus: 'in_preparation' },
   { id: 'registrations_open', label: 'Inscriptions ouvertes', statuses: ['registrations_open'], defaultStatus: 'registrations_open' },
-  { id: 'in_progress', label: 'En cours', statuses: ['in_progress'], defaultStatus: 'in_progress' },
   { id: 'post_production', label: 'En post-prod', statuses: ['post_production'], defaultStatus: 'post_production' },
   { id: 'cloture', label: 'Clôture', statuses: ['completed', 'cancelled'], defaultStatus: 'completed' },
 ]
@@ -113,6 +115,12 @@ export default function KanbanBoard({
     }))
   }, [rows, showClosed])
 
+  // « En cours » sort du Kanban : on l'affiche dans un bandeau au-dessus.
+  const inProgressRows = useMemo(
+    () => rows.filter((r) => r.training.status === 'in_progress'),
+    [rows]
+  )
+
   const handleDragStart = useCallback((event) => {
     setActiveId(event.active.id)
   }, [])
@@ -164,6 +172,38 @@ export default function KanbanBoard({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
+      {/* Bandeau « En cours » — au-dessus du Kanban, hors colonnes */}
+      {inProgressRows.length > 0 && (
+        <div className="mb-4 rounded-xl border border-[#B01A19]/20 bg-[#B01A19]/[0.04] px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2 h-2 rounded-full bg-[#B01A19] animate-pulse" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-[#8f1514]">En cours</span>
+            <span className="text-[11px] text-stone-400 font-medium">{inProgressRows.length}</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {inProgressRows.map((row) => (
+              <button
+                key={row.training.id}
+                type="button"
+                onClick={() => onViewTraining?.(row.training.id)}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#B01A19]/20 bg-white px-3 py-2 text-left shadow-sm hover:border-[#B01A19]/40 hover:shadow transition-all"
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: row.trainingType?.color || '#B01A19' }}
+                />
+                <span className="text-sm font-medium text-stone-800">{row.training.title}</span>
+                {row.nextSession && (
+                  <span className="text-xs text-stone-400">
+                    {new Date(row.nextSession.startDate).toLocaleDateString('fr-BE', { day: '2-digit', month: 'short' })}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto pb-4 -mx-4 px-4">
         <div className="flex gap-4 min-w-max">
           {columns.map((col, index) => (
