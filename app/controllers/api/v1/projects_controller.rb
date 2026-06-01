@@ -362,6 +362,15 @@ module Api
         fields = COMMON_UPDATE_FIELDS[type_key] || []
         permitted = params.permit(*fields)
 
+        # Ne jamais écraser une colonne texte NOT NULL avec NULL : un champ vidé
+        # côté client doit rester "" (le défaut DB), jamais null. Sans ça, un
+        # PATCH qui envoie `description: null` (ex. édition d'équipe d'une
+        # formation sans description) viole la contrainte NOT NULL. `pole` reste
+        # volontairement nullable et n'est donc pas filtré.
+        %i[name description].each do |key|
+          permitted.delete(key) if permitted.key?(key) && permitted[key].nil?
+        end
+
         # Academy::Training uses `title` column; frontend sends `name`.
         if type_key == "training" && permitted.key?(:name)
           permitted[:title] = permitted.delete(:name)

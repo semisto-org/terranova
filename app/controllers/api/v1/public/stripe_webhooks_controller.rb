@@ -49,9 +49,19 @@ module Api
 
           registration = nil
 
+          # Inscription en ligne auto-gérée : on crée/relie un Contact par email
+          # (même logique que le chemin admin), pour qu'aucune inscription
+          # n'échappe au carnet de contacts.
+          contact_id = Academy::RegistrationContactResolver.call(
+            name: metadata["contact_name"],
+            email: metadata["contact_email"],
+            phone: metadata["phone"]
+          )
+
           ActiveRecord::Base.transaction do
             registration = Academy::TrainingRegistration.create!(
               training: training,
+              contact_id: contact_id,
               contact_name: metadata["contact_name"],
               contact_email: metadata["contact_email"] || "",
               phone: metadata["phone"] || "",

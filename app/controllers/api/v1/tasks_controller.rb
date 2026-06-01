@@ -145,9 +145,12 @@ module Api
       end
 
       def task_params
-        permitted = params.permit(:name, :description, :status, :due_date, :assignee_id, :assignee_name,
+        # assignee_name n'est PLUS accepté en entrée : il est dérivé du membre
+        # assigné via resolve_assignee. On n'autorise donc que l'assignation par
+        # assignee_id (un membre de l'équipe), jamais du texte libre.
+        permitted = params.permit(:name, :description, :status, :due_date, :assignee_id,
                                    :priority, :time_minutes, :position, :parent_id, tags: [])
-        %i[priority due_date assignee_id assignee_name time_minutes parent_id].each do |key|
+        %i[priority due_date assignee_id time_minutes parent_id].each do |key|
           permitted[key] = nil if permitted[key].is_a?(String) && permitted[key].empty?
         end
         permitted
@@ -157,6 +160,9 @@ module Api
         if task.assignee_id.present?
           member = Member.find_by(id: task.assignee_id)
           task.assignee_name = "#{member.first_name} #{member.last_name}".strip if member
+        elsif task.assignee_id_changed? || task.new_record?
+          # Désassignation explicite : on efface le nom dérivé.
+          task.assignee_name = nil
         end
       end
 

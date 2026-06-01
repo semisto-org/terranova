@@ -68,6 +68,29 @@ class AcademyMailer < ApplicationMailer
     )
   end
 
+  # Rappel envoyé ~24h après la fin d'une session à chacun de ses formateurs,
+  # pour les inviter à déposer leurs documents (slides, ressources) sur la page
+  # de la session dans Terranova. Le lien profond les amène directement sur la
+  # page d'upload. trainer_contact est un Contact (les trainer_ids de la session
+  # référencent des Contacts).
+  def trainer_document_request(session, trainer_contact)
+    @session = session
+    @training = session.training
+    @trainer_name = trainer_contact.name.to_s
+    @session_topic = session.topic.to_s
+    @upload_url = academy_admin_training_url(@training)
+
+    attachments.inline["academy-logo.png"] = File.read(
+      Rails.root.join("public/icons/academy.png")
+    )
+
+    mail(
+      to: trainer_contact.email,
+      cc: "formations@semisto.org",
+      subject: "📎 Vos documents de formation — #{@training.title}"
+    )
+  end
+
   # Relais covoiturage : message d'un inscrit à un autre. L'adresse de
   # l'expéditeur n'apparaît jamais sur la plateforme ; on la place en Reply-To
   # pour que la réponse du destinataire lui parvienne directement.
@@ -139,6 +162,15 @@ class AcademyMailer < ApplicationMailer
           date_label: first ? date_fr_short(first.start_date) : nil,
           url: "#{protocol}://#{app_host}/academy/#{t.id}/register" }
       end
+  end
+
+  # Lien vers la page admin Terranova d'une formation (où l'on dépose les
+  # documents de session). Contrairement au portail participant, c'est l'app
+  # admin (APP_HOST) qui est visée.
+  def academy_admin_training_url(training)
+    app_host = ENV.fetch("APP_HOST", "terranova.semisto.org")
+    protocol = Rails.env.production? ? "https" : "http"
+    "#{protocol}://#{app_host}/academy/#{training.id}"
   end
 
   def date_fr_short(date)

@@ -198,6 +198,63 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
     assert_equal 'pi_test_deposit_456', reg.stripe_payment_intent_id
   end
 
+  test 'webhook creates and links a contact for a new email' do
+    payload = {
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_contact_new',
+          amount: 25000,
+          metadata: {
+            training_id: @training.id.to_s,
+            contact_name: 'Nouvelle Personne',
+            contact_email: 'nouvelle@test.be',
+            payment_type: 'full'
+          }
+        }
+      }
+    }
+
+    assert_difference 'Contact.count', 1 do
+      post '/api/v1/public/stripe-webhooks', params: payload.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      assert_response :ok
+    end
+
+    reg = Academy::TrainingRegistration.last
+    assert_not_nil reg.contact_id, 'la registration doit être reliée à un contact'
+    assert_equal 'nouvelle@test.be', reg.contact.email
+  end
+
+  test 'webhook reuses an existing contact matched by email (case-insensitive)' do
+    existing = Contact.create!(contact_type: 'person', name: 'Déjà Là', email: 'deja@test.be')
+
+    payload = {
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_contact_existing',
+          amount: 25000,
+          metadata: {
+            training_id: @training.id.to_s,
+            contact_name: 'Déjà Là',
+            contact_email: 'DEJA@test.be',
+            payment_type: 'full'
+          }
+        }
+      }
+    }
+
+    assert_no_difference 'Contact.count' do
+      post '/api/v1/public/stripe-webhooks', params: payload.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      assert_response :ok
+    end
+
+    reg = Academy::TrainingRegistration.last
+    assert_equal existing.id, reg.contact_id
+  end
+
   test 'webhook does not duplicate registration for same payment intent' do
     @training.registrations.create!(
       contact_name: 'Already Registered',

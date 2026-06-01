@@ -1,13 +1,58 @@
 import React, { useState, useEffect } from 'react'
-import { usePage } from '@inertiajs/react'
+import { usePage, router } from '@inertiajs/react'
+import { ListTodo, X } from 'lucide-react'
 import { ShellProvider } from './ShellContext'
 import ContextSwitcher from './ContextSwitcher'
 import MainNav from './MainNav'
 import GlobalSearch from './GlobalSearch'
 // import { NovaChat } from '../nova-chat'
 import { TimesheetForm } from '../../lab-management/components'
+import { MyTasksDashboard } from '@/components/tasks'
 import { apiRequest } from '@/lib/api'
 import GlobalSearchPalette from './GlobalSearchPalette'
+
+// Mappe un (projectType, id) vers sa page naturelle pour la navigation depuis
+// le drawer « Mes tâches ».
+const PROJECT_ROUTES = {
+  'training': (id) => `/academy/${id}`,
+  'design-project': (id) => `/design/${id}`,
+  'lab-project': () => `/lab`,
+  'guild': () => `/lab`,
+}
+
+function MyTasksDrawer({ open, onClose }) {
+  if (!open) return null
+  const navigate = (projectType, projectId) => {
+    const build = PROJECT_ROUTES[projectType]
+    if (build) {
+      onClose()
+      router.visit(build(projectId))
+    }
+  }
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
+      <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-stone-50 border-l border-stone-200 shadow-2xl flex flex-col">
+        <div className="h-13 border-b border-stone-200 bg-white flex items-center justify-between px-4 shrink-0">
+          <div className="flex items-center gap-2 text-stone-800 font-semibold text-sm">
+            <ListTodo className="w-4 h-4 text-[#5B5781]" />
+            Mes tâches
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
+            aria-label="Fermer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <MyTasksDashboard onNavigateToProject={navigate} />
+        </div>
+      </aside>
+    </>
+  )
+}
 
 function ShellLayout({ children }) {
   const { auth } = usePage().props
@@ -15,6 +60,7 @@ function ShellLayout({ children }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [timesheetModalOpen, setTimesheetModalOpen] = useState(false)
   const [timesheetBusy, setTimesheetBusy] = useState(false)
+  const [myTasksOpen, setMyTasksOpen] = useState(false)
 
   // Cmd+K / Ctrl+K global shortcut
   useEffect(() => {
@@ -70,6 +116,15 @@ function ShellLayout({ children }) {
 
           <GlobalSearchPalette />
 
+          {/* Mes tâches (drawer) */}
+          <button
+            onClick={() => setMyTasksOpen(true)}
+            className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
+            aria-label="Mes tâches"
+          >
+            <ListTodo className="w-5 h-5" />
+          </button>
+
           {/* Timesheet quick-add */}
           <button
             onClick={() => setTimesheetModalOpen(true)}
@@ -105,6 +160,9 @@ function ShellLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Mes tâches — drawer latéral droit */}
+      <MyTasksDrawer open={myTasksOpen} onClose={() => setMyTasksOpen(false)} />
 
       {/* Global search modal */}
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />

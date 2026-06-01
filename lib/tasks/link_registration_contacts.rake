@@ -13,23 +13,21 @@ namespace :academy do
       .where(contact_id: nil)
       .where.not(contact_email: [nil, ""])
       .find_each do |reg|
-        email = reg.contact_email.strip.downcase
-        contact = Contact.find_by("LOWER(email) = ?", email)
+        existed = Contact.exists?(["LOWER(email) = ?", reg.contact_email.strip.downcase])
 
-        if contact
-          reg.update_column(:contact_id, contact.id)
+        contact_id = Academy::RegistrationContactResolver.call(
+          name: reg.contact_name,
+          email: reg.contact_email,
+          phone: reg.phone
+        )
+        reg.update_column(:contact_id, contact_id)
+
+        if existed
           linked += 1
-          puts "  Linked registration #{reg.id} -> contact #{contact.id} (#{contact.name})"
+          puts "  Linked registration #{reg.id} -> contact #{contact_id}"
         else
-          contact = Contact.create!(
-            contact_type: "person",
-            name: reg.contact_name,
-            email: reg.contact_email.strip,
-            phone: reg.phone.to_s.strip.presence
-          )
-          reg.update_column(:contact_id, contact.id)
           created += 1
-          puts "  Created contact #{contact.id} (#{contact.name}) for registration #{reg.id}"
+          puts "  Created contact #{contact_id} for registration #{reg.id} (#{reg.contact_name})"
         end
       rescue => e
         skipped += 1

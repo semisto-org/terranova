@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_102018) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -203,6 +203,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_102018) do
     t.string "photo_album_url", default: "", null: false
     t.date "start_date", null: false
     t.string "topic"
+    t.datetime "trainer_docs_requested_at"
     t.jsonb "trainer_ids", default: [], null: false
     t.bigint "training_id", null: false
     t.datetime "updated_at", null: false

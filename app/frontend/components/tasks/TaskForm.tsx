@@ -229,13 +229,14 @@ export function TaskForm({ task, onSubmit, onClose, busy, accentColor = '#5B5781
                   accentColor={accentColor}
                 />
               ) : (
-                <input
-                  type="text"
-                  value={assigneeName}
-                  onChange={e => setAssigneeName(e.target.value)}
-                  className={inputClass}
-                  placeholder="Nom du responsable"
-                />
+                /* Une tâche ne peut être assignée qu'à un membre de l'équipe du
+                   projet : pas de saisie en texte libre. Si l'équipe est vide,
+                   on guide vers l'ajout de membres plutôt que d'autoriser un nom
+                   arbitraire (que le backend rejetterait de toute façon). */
+                <p className="text-xs text-stone-400 rounded-xl bg-stone-50 border border-stone-200 px-4 py-2.5">
+                  Ajoutez d'abord des membres à l'équipe du projet pour pouvoir
+                  leur assigner des tâches.
+                </p>
               )}
             </div>
 

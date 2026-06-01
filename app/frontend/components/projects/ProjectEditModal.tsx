@@ -123,7 +123,9 @@ export function ProjectEditModal({ project, onSave, onDelete, onClose }: Project
     setError(null)
     try {
       const body: Record<string, any> = { name: name.trim() }
-      if (showDescription) body.description = description.trim() || null
+      // description est une colonne NOT NULL côté training/guild : on envoie ""
+      // (jamais null) quand le champ est vide, pour ne pas violer la contrainte.
+      if (showDescription) body.description = description.trim()
       if (showPole) body.pole = pole || null
       if (status) body.status = status
 

@@ -1,0 +1,57 @@
+<%
+  def date_fr(date)
+    mois = %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre]
+    "#{date.day} #{mois[date.month - 1]} #{date.year}"
+  end
+%>
+
+<!-- Greeting -->
+<p style="margin: 0 0 20px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.7; color: #1f2937;">
+  Bonjour <%= @trainer_name.present? ? "<strong>#{ERB::Util.h(@trainer_name)}</strong>".html_safe : "" %>,
+</p>
+
+<p style="margin: 0 0 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  Merci pour votre intervention&nbsp;! La session vient de se terminer. Pour que
+  les participant·es retrouvent vos supports, pourriez-vous déposer vos documents
+  (slides, notes, ressources) sur la page de la session&nbsp;?
+</p>
+
+<!-- Session card -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+  <tr>
+    <td style="background-color: #fef2f2; padding: 20px 24px; border-bottom: 1px solid #e5e7eb;">
+      <p style="margin: 0 0 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; color: #B01A19; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+        Session terminée
+      </p>
+      <p style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #1f2937; line-height: 1.4;">
+        <%= @training.title %>
+      </p>
+      <% if @session_topic.present? %>
+        <p style="margin: 4px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #6b7280;">
+          <%= @session_topic %>
+        </p>
+      <% end %>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 16px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #1f2937;">
+      <%= date_fr(@session.start_date) %><% if @session.end_date && @session.end_date != @session.start_date %> &mdash; <%= date_fr(@session.end_date) %><% end %>
+    </td>
+  </tr>
+</table>
+
+<!-- CTA -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px;">
+  <tr>
+    <td align="center">
+      <a href="<%= @upload_url %>" style="display: inline-block; background-color: #B01A19; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 28px; border-radius: 8px;">
+        Déposer mes documents
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.7; color: #9ca3af;">
+  Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur&nbsp;:<br />
+  <a href="<%= @upload_url %>" style="color: #B01A19;"><%= @upload_url %></a>
+</p>
