@@ -302,6 +302,19 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                       </option>
                     ))}
                   </select>
+                  {/* Aide : description du type d'activité — explique comment se
+                      déroule ce type d'activité (séance 2 : « ce serait le minimum »). */}
+                  {(() => {
+                    const selectedType = trainingTypes.find((t) => t.id === trainingTypeId)
+                    const desc = selectedType?.description?.trim()
+                    if (!desc || desc === '<p></p>') return null
+                    return (
+                      <div
+                        className="mt-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-stone-600 leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:mb-0.5"
+                        dangerouslySetInnerHTML={{ __html: desc }}
+                      />
+                    )
+                  })()}
                 </div>
 
                 {/* Title */}
