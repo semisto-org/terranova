@@ -130,15 +130,31 @@ module Api
       # pour que cocher une tâche ne la fasse pas disparaître du drawer : elle
       # reste visible (grisée/barrée) et alimente le fil daté « récemment terminé ».
       def my_tasks
-        recent_days = 14
+        render json: { projects: task_groups_for(current_member.id) }
+      end
+
+      # GET /api/v1/member-tasks/:member_id
+      #
+      # Mêmes données que my-tasks mais pour un autre membre : permet de consulter
+      # la liste d'un collègue et d'y faire « coucou » sur une tâche qu'on juge
+      # importante (la tâche remonte alors dans SA liste).
+      def member_tasks
+        member = Member.find(params[:member_id])
+        render json: {
+          member: { id: member.id.to_s, firstName: member.first_name, lastName: member.last_name, avatar: member.avatar_url },
+          projects: task_groups_for(member.id)
+        }
+      end
+
+      private
+
+      def task_groups_for(member_id, recent_days: 14)
         tasks = Task.includes(:assignee, task_list: :taskable, assigned_by: {}, completed_by: {}, pinged_by: {})
-          .where(assignee_id: current_member.id)
+          .where(assignee_id: member_id)
           .where("tasks.status != 'completed' OR tasks.completed_at >= ?", recent_days.days.ago)
           .order(Arel.sql("due_date ASC NULLS LAST"), created_at: :desc)
 
-        grouped = tasks.group_by { |t| t.task_list.taskable }
-
-        projects = grouped.map do |projectable, project_tasks|
+        tasks.group_by { |t| t.task_list.taskable }.map do |projectable, project_tasks|
           next unless projectable
 
           {
@@ -148,11 +164,7 @@ module Api
             tasks: project_tasks.map { |t| serialize_task(t) }
           }
         end.compact
-
-        render json: { projects: projects }
       end
-
-      private
 
       def set_projectable
         type_key = params[:type]

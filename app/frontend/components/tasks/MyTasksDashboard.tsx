@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePage } from '@inertiajs/react'
 import { apiRequest } from '@/lib/api'
-import { ListTodo, ChevronRight, Inbox, Plus, X, Search, LayoutList, CalendarDays } from 'lucide-react'
+import { ListTodo, ChevronRight, Inbox, Plus, X, Search, LayoutList, CalendarDays, ChevronDown, Users } from 'lucide-react'
 import { TaskRow } from './TaskRow'
 import { TaskForm } from './TaskForm'
 import { TaskDetail } from './TaskDetail'
@@ -49,10 +50,21 @@ function dateGroupFor(task: Task): DateGroup {
 }
 
 export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps) {
+  const page = usePage() as any
+  const currentMemberId: string | null = page?.props?.auth?.member?.id ?? null
+
   const [projects, setProjects] = useState<ProjectGroup[]>([])
   const [myProjects, setMyProjects] = useState<MyProject[]>([])
+  const [members, setMembers] = useState<MemberOption[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+
+  // Membre dont on consulte les tâches (null = moi). Voir un collègue permet de
+  // lui faire « coucou » sur une tâche importante (elle remonte dans SA liste).
+  const [viewedMemberId, setViewedMemberId] = useState<string | null>(null)
+  const [ownerMenuOpen, setOwnerMenuOpen] = useState(false)
+  const isOwn = !viewedMemberId || viewedMemberId === currentMemberId
+  const tasksEndpoint = isOwn ? '/api/v1/my-tasks' : `/api/v1/member-tasks/${viewedMemberId}`
 
   const [search, setSearch] = useState('')
   const [view, setView] = useState<ViewMode>('project')
@@ -68,20 +80,32 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const [tasksRes, projectsRes] = await Promise.all([
-        apiRequest('/api/v1/my-tasks'),
-        apiRequest('/api/v1/my-projects'),
-      ])
+      const tasksRes = await apiRequest(tasksEndpoint)
       setProjects(tasksRes.projects || [])
-      setMyProjects(projectsRes.projects || [])
+      if (isOwn) {
+        const projectsRes = await apiRequest('/api/v1/my-projects')
+        setMyProjects(projectsRes.projects || [])
+      }
     } catch {
       // silently handle
     } finally {
       if (!silent) setLoading(false)
     }
-  }, [])
+  }, [tasksEndpoint, isOwn])
 
   useEffect(() => { load() }, [load])
+
+  // Liste des membres pour le sélecteur « voir la liste d'un collègue ».
+  useEffect(() => {
+    apiRequest('/api/v1/lab/members')
+      .then(res => setMembers((res.items || []).map((m: any) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName, avatar: m.avatar }))))
+      .catch(() => {})
+  }, [])
+
+  const viewedMember = useMemo(
+    () => (isOwn ? null : members.find(m => m.id === viewedMemberId) || null),
+    [isOwn, members, viewedMemberId]
+  )
 
   const membersFor = useCallback(
     (key: string) => myProjects.find(p => projectKey(p.projectType, p.projectId) === key)?.members || [],
@@ -101,14 +125,14 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
     setBusy(true)
     try {
       await apiRequest(path, { method: 'PATCH', ...options })
-      const tasksRes = await apiRequest('/api/v1/my-tasks')
+      const tasksRes = await apiRequest(tasksEndpoint)
       const list: ProjectGroup[] = tasksRes.projects || []
       setProjects(list)
       refreshOpenTask(list)
     } finally {
       setBusy(false)
     }
-  }, [refreshOpenTask])
+  }, [refreshOpenTask, tasksEndpoint])
 
   const handleToggle = useCallback((id: string) => patch(`/api/v1/tasks/${id}/toggle`), [patch])
   const handleStar = useCallback((id: string) => patch(`/api/v1/tasks/${id}/star`), [patch])
@@ -154,6 +178,12 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
 
   const accentForType = (type: string) => PROJECT_ACCENT_COLORS[type as ProjectTypeKey] || '#5B5781'
 
+  // Coucou : sur les tâches d'un collègue (pour faire remonter), ou sur mes
+  // propres tâches uniquement si un coucou y a déjà été posé (pour le retirer).
+  const pingHandlerFor = (task: Task) => (!isOwn || task.pingedAt ? handlePing : undefined)
+  // Étoile « ma sélection » : uniquement sur mes propres tâches.
+  const starHandlerFor = () => (isOwn ? handleStar : undefined)
+
   // Recherche + filtre projet appliqués à toutes les tâches.
   const matches = useCallback((t: Task) => {
     if (projectFilter !== 'all' && projectKey(t.projectType || '', t.projectId || '') !== projectFilter) return false
@@ -195,27 +225,68 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
 
   return (
     <div className="space-y-3">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+      {/* Header — pas d'overflow-hidden : le menu déroulant du sélecteur de
+          personne doit pouvoir déborder sous l'en-tête sans être rogné. */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm">
         <div className="px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#5B5781]/10 flex items-center justify-center">
+          <div className="relative flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#5B5781]/10 flex items-center justify-center shrink-0">
               <ListTodo className="w-4 h-4 text-[#5B5781]" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-stone-900">Mes tâches</h3>
-              <p className="text-xs text-stone-500">{activeCount} en cours</p>
-            </div>
+            {/* Sélecteur de personne : mes tâches, ou la liste d'un collègue */}
+            <button
+              onClick={() => setOwnerMenuOpen(o => !o)}
+              className="flex items-center gap-1.5 text-left rounded-lg px-1.5 py-1 -ml-1 hover:bg-stone-50 transition-colors"
+            >
+              <div>
+                <h3 className="text-sm font-semibold text-stone-900 flex items-center gap-1">
+                  {isOwn ? 'Mes tâches' : `Tâches de ${viewedMember?.firstName || '…'}`}
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                </h3>
+                <p className="text-xs text-stone-500">{activeCount} en cours</p>
+              </div>
+            </button>
+
+            {ownerMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setOwnerMenuOpen(false)} />
+                <div className="absolute top-full left-0 mt-1 z-20 w-60 max-h-72 overflow-y-auto bg-white rounded-xl border border-stone-200 shadow-xl py-1">
+                  <button
+                    onClick={() => { setViewedMemberId(null); setOwnerMenuOpen(false) }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-stone-50 ${isOwn ? 'text-[#5B5781] font-medium' : 'text-stone-700'}`}
+                  >
+                    <ListTodo className="w-4 h-4" /> Mes tâches
+                  </button>
+                  <div className="px-3 py-1 mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-stone-400">
+                    <Users className="w-3 h-3" /> Listes des collègues
+                  </div>
+                  {members.filter(m => m.id !== currentMemberId).map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => { setViewedMemberId(m.id); setOwnerMenuOpen(false) }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-stone-50 ${viewedMemberId === m.id ? 'text-[#5B5781] font-medium' : 'text-stone-700'}`}
+                    >
+                      {m.avatar
+                        ? <img src={m.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                        : <span className="w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center text-[9px] text-stone-500">{m.firstName[0]}{m.lastName[0]}</span>}
+                      {m.firstName} {m.lastName}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          <button
-            onClick={() => setAdding(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#5B5781]/10 text-[#5B5781] hover:bg-[#5B5781]/15 transition-colors"
-            disabled={myProjects.length === 0}
-            title={myProjects.length === 0 ? "Vous n'êtes membre d'aucun projet" : 'Ajouter une tâche'}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Ajouter
-          </button>
+          {isOwn && (
+            <button
+              onClick={() => setAdding(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#5B5781]/10 text-[#5B5781] hover:bg-[#5B5781]/15 transition-colors shrink-0"
+              disabled={myProjects.length === 0}
+              title={myProjects.length === 0 ? "Vous n'êtes membre d'aucun projet" : 'Ajouter une tâche'}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Ajouter
+            </button>
+          )}
         </div>
 
         {/* Recherche + filtres + bascule de vue */}
@@ -296,8 +367,8 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
                     task={task}
                     onToggle={handleToggle}
                     onOpenDetail={t => openDetail(t, key, accent)}
-                    onStar={handleStar}
-                    onPing={handlePing}
+                    onStar={starHandlerFor()}
+                    onPing={pingHandlerFor(task)}
                     busy={busy}
                     accentColor={accent}
                     members={members}
@@ -324,8 +395,8 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
                       task={task}
                       onToggle={handleToggle}
                       onOpenDetail={t => openDetail(t, key, accent)}
-                      onStar={handleStar}
-                      onPing={handlePing}
+                      onStar={starHandlerFor()}
+                      onPing={pingHandlerFor(task)}
                       busy={busy}
                       accentColor={accent}
                       members={membersFor(key)}
@@ -355,8 +426,8 @@ export function MyTasksDashboard({ onNavigateToProject }: MyTasksDashboardProps)
           onClose={() => setDetail(null)}
           onEdit={t => { setEditing({ task: t, key: detail.key, accent: detail.accent }); setDetail(null) }}
           onDelete={handleDelete}
-          onStar={handleStar}
-          onPing={handlePing}
+          onStar={starHandlerFor()}
+          onPing={pingHandlerFor(detail.task)}
           onSaveNotes={handleSaveNotes}
           onNavigateToProject={onNavigateToProject}
         />

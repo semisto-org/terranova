@@ -71,6 +71,28 @@ class MyTasksDrawerTest < ActionDispatch::IntegrationTest
     assert_not_nil task.reload.pinged_at
   end
 
+  test 'member-tasks returns a colleague task list so we can coucou it' do
+    colleague = Member.create!(
+      first_name: 'Ahmad', last_name: 'B', email: "ahmad-#{SecureRandom.hex(4)}@test.be",
+      status: 'active', joined_at: Time.current, member_kind: 'human', membership_type: 'effective'
+    )
+    ProjectMembership.create!(projectable: @project, member: colleague, role: 'member')
+    theirs = @list.tasks.create!(name: 'Tâche du collègue', status: 'pending', assignee_id: colleague.id)
+
+    # @member (courant) consulte la liste d'Ahmad.
+    get "/api/v1/member-tasks/#{colleague.id}", as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal colleague.id.to_s, body['member']['id']
+    ids = body['projects'].flat_map { |p| p['tasks'] }.map { |t| t['id'] }
+    assert_includes ids, theirs.id.to_s
+
+    # Coucou : @member fait remonter la tâche d'Ahmad.
+    patch "/api/v1/tasks/#{theirs.id}/ping", as: :json
+    assert_response :success
+    assert_equal @member.id.to_s, JSON.parse(response.body)['pingedBy']['id']
+  end
+
   test 'toggle stamps completed_by as current member' do
     task = @list.tasks.create!(name: 'À cocher', status: 'pending', assignee_id: @member.id)
 

@@ -147,6 +147,7 @@ Rails.application.routes.draw do
       delete "tasks/:id", to: "tasks#destroy_task"
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"
+      get "member-tasks/:member_id", to: "tasks#member_tasks"
       get "my-projects", to: "projects#my_projects"
 
       # Unified project memberships
