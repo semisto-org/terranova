@@ -56,6 +56,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
   const [color, setColor] = useState('#6B7280')
   const [checklist, setChecklist] = useState([{ id: Date.now().toString(), value: 'Définir contenu' }])
   const [categories, setCategories] = useState([])
+  const [taskTemplates, setTaskTemplates] = useState([])
   const [activeId, setActiveId] = useState(null)
 
   // Register Academy navigation
@@ -103,6 +104,14 @@ export default function TrainingTypeForm({ trainingTypeId }) {
               maxSpots: c.maxSpots || c.max_spots || 0,
               depositAmount: c.depositAmount || c.deposit_amount || 0,
             })))
+            const tpls = trainingType.taskTemplates || []
+            setTaskTemplates(tpls.map((t, i) => ({
+              id: `tpl-${Date.now()}-${i}`,
+              name: t.name || '',
+              scope: t.scope === 'activity' ? 'activity' : 'session',
+              anchor: t.anchor === 'end' ? 'end' : 'start',
+              offset_days: Number(t.offset_days) || 0,
+            })))
           }
           setLoading(false)
         })
@@ -125,6 +134,15 @@ export default function TrainingTypeForm({ trainingTypeId }) {
     setBusy(true)
     setError(null)
 
+    const taskTemplatesPayload = taskTemplates
+      .filter((t) => t.name.trim())
+      .map((t) => ({
+        name: t.name.trim(),
+        scope: t.scope === 'activity' ? 'activity' : 'session',
+        anchor: t.anchor === 'end' ? 'end' : 'start',
+        offset_days: Number(t.offset_days) || 0,
+      }))
+
     try {
       if (isEditing) {
         const categoriesPayload = categories
@@ -139,6 +157,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
             color,
             checklist_template: checklist.map((item) => item.value),
             default_categories: categoriesPayload,
+            task_templates: taskTemplatesPayload,
           }),
         })
       } else {
@@ -154,6 +173,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
             color,
             checklist_template: checklist.map((item) => item.value),
             default_categories: categoriesPayload,
+            task_templates: taskTemplatesPayload,
             photo_gallery: [],
             trainer_ids: [],
           }),
@@ -492,6 +512,87 @@ export default function TrainingTypeForm({ trainingTypeId }) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Tâches automatiques (étapes) — générées à la création d'une
+              activité / d'une session, datées par rapport au début/fin. */}
+          <div className="rounded-xl border border-stone-200 bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-stone-900">Tâches automatiques (étapes)</h2>
+                <p className="mt-0.5 text-sm text-stone-500">
+                  Créées automatiquement à chaque nouvelle activité (ou session) de ce type, avec leur échéance.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTaskTemplates([...taskTemplates, { id: `tpl-${Date.now()}`, name: '', scope: 'session', anchor: 'start', offset_days: 0 }])}
+                className="shrink-0 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              >
+                + Ajouter une étape
+              </button>
+            </div>
+
+            {taskTemplates.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50/50 px-4 py-6 text-center text-sm text-stone-400">
+                Aucune étape. Ajoutez les tâches récurrentes de ce type d'activité.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {taskTemplates.map((tpl) => {
+                  const update = (patch) => setTaskTemplates((arr) => arr.map((t) => (t.id === tpl.id ? { ...t, ...patch } : t)))
+                  const magnitude = Math.abs(Number(tpl.offset_days) || 0)
+                  const direction = (Number(tpl.offset_days) || 0) < 0 ? 'before' : 'after'
+                  const setOffset = (mag, dir) => update({ offset_days: (dir === 'before' ? -1 : 1) * Math.abs(Number(mag) || 0) })
+                  const selCls = 'rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/20'
+                  return (
+                    <div key={tpl.id} className="rounded-lg border border-stone-200 bg-stone-50/50 p-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={tpl.name}
+                          onChange={(e) => update({ name: e.target.value })}
+                          placeholder="Nom de la tâche (ex. Réserver la salle)"
+                          className="flex-1 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setTaskTemplates((arr) => arr.filter((t) => t.id !== tpl.id))}
+                          className="shrink-0 rounded-lg p-2 text-stone-400 hover:bg-rose-50 hover:text-rose-500"
+                          title="Supprimer l'étape"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-stone-600">
+                        <select value={tpl.scope} onChange={(e) => update({ scope: e.target.value })} className={selCls}>
+                          <option value="session">Par session</option>
+                          <option value="activity">Par activité</option>
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          value={magnitude}
+                          onChange={(e) => setOffset(e.target.value, direction)}
+                          className="w-16 rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/20"
+                        />
+                        <span>jours</span>
+                        <select value={direction} onChange={(e) => setOffset(magnitude, e.target.value)} className={selCls}>
+                          <option value="before">avant</option>
+                          <option value="after">après</option>
+                        </select>
+                        <span>le</span>
+                        <select value={tpl.anchor} onChange={(e) => update({ anchor: e.target.value })} className={selCls}>
+                          <option value="start">début</option>
+                          <option value="end">fin</option>
+                        </select>
+                        <span>de {tpl.scope === 'activity' ? "l'activité" : 'la session'}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {error && (

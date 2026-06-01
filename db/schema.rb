@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_01_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -220,6 +220,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_160000) do
     t.text "description", default: "", null: false
     t.string "name", null: false
     t.jsonb "photo_gallery", default: [], null: false
+    t.jsonb "task_templates", default: [], null: false
     t.jsonb "trainer_ids", default: [], null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_academy_training_types_on_deleted_at"
@@ -2420,6 +2421,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_160000) do
   end
 
   create_table "tasks", force: :cascade do |t|
+    t.bigint "academy_training_session_id"
     t.datetime "assigned_at"
     t.bigint "assigned_by_id"
     t.bigint "assignee_id"
@@ -2442,6 +2444,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_160000) do
     t.bigint "task_list_id", null: false
     t.integer "time_minutes"
     t.datetime "updated_at", null: false
+    t.index ["academy_training_session_id"], name: "index_tasks_on_academy_training_session_id"
     t.index ["assigned_by_id"], name: "index_tasks_on_assigned_by_id"
     t.index ["assignee_id", "status"], name: "index_tasks_on_assignee_id_and_status"
     t.index ["assignee_id"], name: "index_tasks_on_assignee_id"

@@ -695,7 +695,9 @@ module Api
       end
 
       def training_type_params
-        params.permit(:name, :description, :color, checklist_template: [], photo_gallery: [], trainer_ids: [], default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount])
+        params.permit(:name, :description, :color, checklist_template: [], photo_gallery: [], trainer_ids: [],
+                      default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount],
+                      task_templates: [:name, :scope, :anchor, :offset_days])
       end
 
       def location_params
@@ -763,6 +765,7 @@ module Api
           color: item.color,
           checklistTemplate: item.checklist_template,
           defaultCategories: item.default_categories,
+          taskTemplates: item.task_templates,
           photoGallery: item.photo_gallery,
           trainerIds: item.trainer_ids,
           createdAt: item.created_at.iso8601

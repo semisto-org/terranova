@@ -11,5 +11,17 @@ module Academy
     validates :photo_album_url,
               format: { with: %r{\Ahttps?://[^\s]+\z}, message: "doit être une URL valide (commençant par http)" },
               allow_blank: true
+
+    # Génère les tâches automatiques (templates du type d'activité) pour la
+    # session dès sa création. Idempotent côté générateur.
+    after_create_commit :generate_template_tasks
+
+    private
+
+    def generate_template_tasks
+      Academy::TaskGenerator.for_session(self)
+    rescue StandardError => e
+      Rails.logger.warn("[Academy::TaskGenerator] session #{id}: #{e.message}")
+    end
   end
 end

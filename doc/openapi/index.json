@@ -869,7 +869,7 @@
       ]
     },
     {
-      "endpointCount": 3,
+      "endpointCount": 4,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -887,6 +887,11 @@
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/bucket",
           "summary": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/task-lists",
+          "summary": "list_task_lists"
         }
       ]
     },
@@ -1060,5 +1065,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 183
+  "totalEndpoints": 184
 }

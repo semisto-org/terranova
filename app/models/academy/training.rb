@@ -21,6 +21,9 @@ module Academy
 
     validates :title, :status, presence: true
     after_update :create_album_when_in_preparation, if: :saved_change_to_status?
+    # Amorce les tâches automatiques de portée « activité » à la création
+    # (dates affinées au fur et à mesure que des sessions sont ajoutées).
+    after_create_commit :seed_template_tasks
     validates :status, inclusion: { in: STATUSES }
     validates :registration_mode, inclusion: { in: REGISTRATION_MODES }, allow_blank: true
     validates :vat_rate, numericality: { greater_than_or_equal_to: 0, less_than: 100 }
@@ -43,6 +46,12 @@ module Academy
     end
 
     private
+
+    def seed_template_tasks
+      Academy::TaskGenerator.for_training(self)
+    rescue StandardError => e
+      Rails.logger.warn("[Academy::TaskGenerator] training #{id}: #{e.message}")
+    end
 
     def create_album_when_in_preparation
       return unless status == "in_preparation"
