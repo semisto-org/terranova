@@ -26,10 +26,12 @@ Le tout en utilisant la config Claude personnelle de Michael (`mhulet/claude-con
 Ce repo est **public** et Nova exécute du code (`claude -p --dangerously-skip-permissions`) à
 partir d’un prompt qui inclut le contenu de l’issue. Donc :
 
-- **`nova:auto` n’est PAS une frontière de sécurité.** La vraie barrière est le **filtre auteur** :
-  sur le run planifié, seules les issues écrites par un `OWNER`/`MEMBER`/`COLLABORATOR` du repo
-  entrent dans la matrice (`discover-issues.sh`). Une issue d’un compte externe portant `nova:auto`
-  est **ignorée** (un warning le signale dans le log du run).
+- **`nova:auto` n’est PAS une frontière de sécurité.** La vraie barrière est le **filtre de
+  permission** : sur le run planifié, seules les issues dont l’**auteur a un accès write au repo**
+  (`admin`/`maintain`/`write`) entrent dans la matrice (`discover-issues.sh`). Une issue d’un
+  compte externe portant `nova:auto` est **ignorée** (un warning le signale dans le log du run).
+  → On se base sur la permission, **pas** sur `author_association` (sur un repo d’organisation, un
+  admin dont l’appartenance est privée apparaît `CONTRIBUTOR` et serait rejeté à tort).
   → Conséquence : pour traiter la demande d’un externe, un mainteneur recrée/ré-ouvre l’issue.
 - Le contenu de l’issue est passé à Claude encadré comme **donnée non fiable** ; le prompt lui
   interdit d’obéir à des instructions qui s’y cacheraient (injection de prompt).
