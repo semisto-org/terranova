@@ -1,0 +1,110 @@
+name: Nova — traitement nocturne des issues
+
+# Routine Claude Code : chaque nuit, Nova trie les issues marquées `nova:auto`.
+# Issue claire → branche + code + tests + PR draft. Issue floue → commentaire de questions.
+# Voir .github/nova/README.md pour la configuration (secrets, labels, réglages repo).
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC ≈ 03:00–04:00 Europe/Brussels
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: "Numéro d’issue à traiter (laisser vide = toutes les issues nova:auto)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: nova-nightly
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Découverte des issues éligibles
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.list.outputs.matrix }}
+      count: ${{ steps.list.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_ISSUE: ${{ github.event.inputs.issue }}
+          MAX_ISSUES: "8"
+        run: bash .github/nova/discover-issues.sh
+
+  process:
+    name: "Issue #${{ matrix.issue }}"
+    needs: discover
+    if: ${{ fromJSON(needs.discover.outputs.count || '0') > 0 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        issue: ${{ fromJSON(needs.discover.outputs.matrix) }}
+
+    env:
+      RAILS_ENV: test
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: yarn
+
+      - name: Enable Yarn
+        run: corepack enable || npm install -g yarn
+
+      - name: Install JS deps
+        run: yarn install --frozen-lockfile
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Install user Claude config (CI-safe)
+        env:
+          CLAUDE_CONFIG_TOKEN: ${{ secrets.CLAUDE_CONFIG_TOKEN }}
+        run: bash .github/nova/install-config.sh
+
+      - name: Process issue
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ matrix.issue }}
+        run: bash .github/nova/run-issue.sh

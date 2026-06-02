@@ -1,0 +1,59 @@
+name: "🐞 Bug"
+description: "Quelque chose ne marche pas. Décris-le pour qu’un agent puisse le reproduire et le corriger."
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Pour qu’un agent corrige seul, il doit pouvoir **reproduire** d’abord. Donne les étapes exactes.
+        Ajoute `nova:auto` pour confier la correction à Nova la nuit.
+  - type: textarea
+    id: repro
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: |
+        1. Aller sur /academy
+        2. Ouvrir une activité passée
+        3. Cliquer sur « Clôturer »
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: textarea
+    id: observe
+    attributes:
+      label: Comportement observé
+      description: Message d’erreur, capture, réponse HTTP, log si possible.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL / page concernée
+    validations:
+      required: false
+  - type: textarea
+    id: zones
+    attributes:
+      label: Zones de code suspectées (si connues)
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine
+      options:
+        - lab
+        - design
+        - academy
+        - nursery
+        - plants
+        - my-semisto
+        - tasks
+        - core / autre
+    validations:
+      required: false

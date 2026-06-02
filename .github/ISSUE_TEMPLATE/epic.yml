@@ -1,0 +1,57 @@
+name: "🗂️ Epic (grosse feature)"
+description: "Un chantier trop gros pour une seule PR. Se découpe en issues filles traitables une par une."
+labels: ["epic"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Un epic n’est **pas** traité directement par Nova : il sert à cadrer puis à générer des
+        **issues filles** atomiques (chacune avec ses critères d’acceptation), que tu pourras
+        marquer `nova:auto` individuellement.
+  - type: textarea
+    id: vision
+    attributes:
+      label: Vision & objectif
+      description: Quel résultat global vise cet epic ? Pour qui ?
+    validations:
+      required: true
+  - type: textarea
+    id: perimetre
+    attributes:
+      label: Périmètre
+      description: Ce qui est inclus — et ce qui est explicitement hors-scope.
+    validations:
+      required: true
+  - type: textarea
+    id: decoupage
+    attributes:
+      label: Découpage en issues filles
+      description: Liste des sous-tâches livrables indépendamment. Chacune deviendra une issue.
+      placeholder: |
+        - [ ] #__ Modèle + migration X
+        - [ ] #__ Endpoint API Y
+        - [ ] #__ Écran Z
+    validations:
+      required: true
+  - type: textarea
+    id: dependances
+    attributes:
+      label: Dépendances / ordre
+      description: Contraintes d’ordre entre les issues filles, dépendances externes.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine principal
+      options:
+        - lab
+        - design
+        - academy
+        - nursery
+        - plants
+        - my-semisto
+        - tasks
+        - core / autre
+    validations:
+      required: false

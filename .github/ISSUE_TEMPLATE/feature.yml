@@ -1,0 +1,81 @@
+name: "✨ Feature / amélioration"
+description: "Une fonctionnalité ou amélioration, décrite pour qu’un agent autonome puisse la traiter."
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Plus c’est précis, plus Nova (l’agent nocturne) peut avancer seul. Les champs ci-dessous
+        sont le contrat minimal pour un traitement autonome. Ajoute le label **`nova:auto`** si tu
+        veux que Nova s’en occupe la nuit.
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte & objectif
+      description: Pourquoi cette feature ? Quel problème utilisateur/métier elle résout ?
+      placeholder: "En tant que formateur, je veux… afin de…"
+    validations:
+      required: true
+  - type: textarea
+    id: comportement
+    attributes:
+      label: Comportement attendu
+      description: Décris concrètement ce qui doit se passer (UI, API, données). Avant / après.
+    validations:
+      required: true
+  - type: textarea
+    id: criteres
+    attributes:
+      label: Critères d’acceptation
+      description: Liste vérifiable, un critère par ligne. C’est la définition de « terminé ».
+      placeholder: |
+        - [ ] L’admin voit un bouton « Archiver » sur la fiche activité
+        - [ ] Cliquer demande confirmation (window.confirm)
+        - [ ] L’activité archivée disparaît du Kanban
+    validations:
+      required: true
+  - type: textarea
+    id: zones
+    attributes:
+      label: Zones de code concernées (si connues)
+      description: Modèles, contrôleurs, pages/ composants, endpoints API probablement touchés. Optionnel mais très utile.
+      placeholder: "Modèle Academy::Training, api/v1/academy_controller, pages/Academy/Index.jsx"
+    validations:
+      required: false
+  - type: textarea
+    id: hors-scope
+    attributes:
+      label: Hors-scope / à NE PAS faire
+      description: Ce qui n’est explicitement pas inclus, pour éviter que l’agent déborde.
+    validations:
+      required: false
+  - type: textarea
+    id: verification
+    attributes:
+      label: Comment vérifier
+      description: Comment toi (ou l’agent) confirme que ça marche. Test, parcours UI, requête.
+      placeholder: "Lancer bin/rails test test/integration/academy_management_test.rb ; ouvrir /academy et archiver une activité."
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine
+      options:
+        - lab
+        - design
+        - academy
+        - nursery
+        - plants
+        - my-semisto
+        - tasks
+        - core / autre
+    validations:
+      required: false
+  - type: dropdown
+    id: priorite
+    attributes:
+      label: Priorité
+      options: ["P1", "P2", "P3"]
+    validations:
+      required: false
