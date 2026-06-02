@@ -66,7 +66,11 @@ module Api
           end
         end
 
-        create_packs_from_params(item, params[:packs]) if params[:packs].present?
+        if params[:packs].present?
+          create_packs_from_params(item, params[:packs])
+        elsif training_type.default_packs.present?
+          create_packs_from_type_defaults(item, training_type.default_packs)
+        end
 
         broadcast_training_change(action: "created", training: item.reload)
         render json: serialize_training(item), status: :created
@@ -697,7 +701,8 @@ module Api
       def training_type_params
         params.permit(:name, :description, :color, checklist_template: [], photo_gallery: [], trainer_ids: [],
                       default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount],
-                      task_templates: [:name, :scope, :anchor, :offset_days])
+                      task_templates: [:name, :scope, :anchor, :offset_days],
+                      default_packs: [:name, :price, :deposit_amount, { items: [:category_label, :quantity] }])
       end
 
       def location_params
@@ -765,6 +770,7 @@ module Api
           color: item.color,
           checklistTemplate: item.checklist_template,
           defaultCategories: item.default_categories,
+          defaultPacks: item.default_packs,
           taskTemplates: item.task_templates,
           photoGallery: item.photo_gallery,
           trainerIds: item.trainer_ids,
@@ -1110,6 +1116,31 @@ module Api
               participant_category_id: ip[:participant_category_id],
               quantity: ip[:quantity].to_i
             )
+          end
+        end
+      end
+
+      # Crée les packs par défaut du type sur une nouvelle activité. Les items
+      # référencent les catégories par libellé → on mappe vers les catégories
+      # qu'on vient de créer sur l'activité (un item dont le libellé ne matche
+      # aucune catégorie est ignoré).
+      def create_packs_from_type_defaults(training, default_packs)
+        label_to_id = training.participant_categories.each_with_object({}) do |cat, map|
+          map[cat.label] = cat.id
+        end
+
+        default_packs.each_with_index do |pp, idx|
+          pack = training.packs.create!(
+            name: pp["name"],
+            price: pp["price"] || 0,
+            deposit_amount: pp["deposit_amount"] || 0,
+            position: idx
+          )
+          Array(pp["items"]).each do |ip|
+            category_id = label_to_id[ip["category_label"]]
+            next unless category_id
+
+            pack.pack_items.create!(participant_category_id: category_id, quantity: ip["quantity"].to_i)
           end
         end
       end

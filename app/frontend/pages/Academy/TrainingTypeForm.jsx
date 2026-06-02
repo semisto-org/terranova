@@ -57,6 +57,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
   const [checklist, setChecklist] = useState([{ id: Date.now().toString(), value: 'Définir contenu' }])
   const [categories, setCategories] = useState([])
   const [taskTemplates, setTaskTemplates] = useState([])
+  const [packs, setPacks] = useState([])
   const [activeId, setActiveId] = useState(null)
 
   // Register Academy navigation
@@ -112,6 +113,18 @@ export default function TrainingTypeForm({ trainingTypeId }) {
               anchor: t.anchor === 'end' ? 'end' : 'start',
               offset_days: Number(t.offset_days) || 0,
             })))
+            const dpacks = trainingType.defaultPacks || []
+            setPacks(dpacks.map((p, i) => ({
+              id: `pack-${Date.now()}-${i}`,
+              name: p.name || '',
+              price: p.price || 0,
+              depositAmount: p.deposit_amount || 0,
+              items: (p.items || []).map((it, j) => ({
+                id: `pi-${Date.now()}-${i}-${j}`,
+                category_label: it.category_label || '',
+                quantity: Number(it.quantity) || 1,
+              })),
+            })))
           }
           setLoading(false)
         })
@@ -143,6 +156,17 @@ export default function TrainingTypeForm({ trainingTypeId }) {
         offset_days: Number(t.offset_days) || 0,
       }))
 
+    const defaultPacksPayload = packs
+      .filter((p) => p.name.trim())
+      .map((p) => ({
+        name: p.name.trim(),
+        price: Number(p.price) || 0,
+        deposit_amount: Number(p.depositAmount) || 0,
+        items: (p.items || [])
+          .filter((it) => it.category_label)
+          .map((it) => ({ category_label: it.category_label, quantity: Number(it.quantity) || 1 })),
+      }))
+
     try {
       if (isEditing) {
         const categoriesPayload = categories
@@ -158,6 +182,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
             checklist_template: checklist.map((item) => item.value),
             default_categories: categoriesPayload,
             task_templates: taskTemplatesPayload,
+            default_packs: defaultPacksPayload,
           }),
         })
       } else {
@@ -174,6 +199,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
             checklist_template: checklist.map((item) => item.value),
             default_categories: categoriesPayload,
             task_templates: taskTemplatesPayload,
+            default_packs: defaultPacksPayload,
             photo_gallery: [],
             trainer_ids: [],
           }),
@@ -185,7 +211,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
     } finally {
       setBusy(false)
     }
-  }, [name, description, color, checklist, categories, taskTemplates, isEditing, trainingTypeId])
+  }, [name, description, color, checklist, categories, taskTemplates, packs, isEditing, trainingTypeId])
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id)
@@ -587,6 +613,83 @@ export default function TrainingTypeForm({ trainingTypeId }) {
                           <option value="end">fin</option>
                         </select>
                         <span>de {tpl.scope === 'activity' ? "l'activité" : 'la session'}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Packs par défaut — copiés sur l'activité à sa création (#36).
+              Les items référencent les catégories par défaut ci-dessus (par libellé). */}
+          <div className="rounded-xl border border-stone-200 bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-stone-900">Packs par défaut</h2>
+                <p className="mt-0.5 text-sm text-stone-500">
+                  Formules pré-remplies à la création d'une activité de ce type (ex. « Duo », « Pack famille »).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPacks([...packs, { id: `pack-${Date.now()}`, name: '', price: 0, depositAmount: 0, items: [] }])}
+                className="shrink-0 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              >
+                + Ajouter un pack
+              </button>
+            </div>
+
+            {packs.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50/50 px-4 py-6 text-center text-sm text-stone-400">
+                Aucun pack. Optionnel — utile si vous proposez des formules groupées.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {packs.map((pack) => {
+                  const updatePack = (patch) => setPacks((arr) => arr.map((p) => (p.id === pack.id ? { ...p, ...patch } : p)))
+                  const availableLabels = categories.map((c) => c.label).filter((l) => l && l.trim())
+                  const inputCls = 'rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#B01A19]/20'
+                  return (
+                    <div key={pack.id} className="rounded-lg border border-stone-200 bg-stone-50/50 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={pack.name}
+                          onChange={(e) => updatePack({ name: e.target.value })}
+                          placeholder="Nom du pack (ex. Duo)"
+                          className={`flex-1 ${inputCls}`}
+                        />
+                        <input type="number" min="0" value={pack.price} onChange={(e) => updatePack({ price: e.target.value })} className={`w-24 ${inputCls}`} placeholder="Prix €" />
+                        <input type="number" min="0" value={pack.depositAmount} onChange={(e) => updatePack({ depositAmount: e.target.value })} className={`w-24 ${inputCls}`} placeholder="Acompte €" />
+                        <button type="button" onClick={() => setPacks((arr) => arr.filter((p) => p.id !== pack.id))} className="shrink-0 rounded-lg p-2 text-stone-400 hover:bg-rose-50 hover:text-rose-500" title="Supprimer le pack">✕</button>
+                      </div>
+
+                      <div className="pl-1 space-y-1.5">
+                        {(pack.items || []).map((it) => {
+                          const updateItem = (patch) => updatePack({ items: pack.items.map((x) => (x.id === it.id ? { ...x, ...patch } : x)) })
+                          return (
+                            <div key={it.id} className="flex items-center gap-2 text-sm text-stone-600">
+                              <span className="text-stone-400">↳</span>
+                              <input type="number" min="1" value={it.quantity} onChange={(e) => updateItem({ quantity: e.target.value })} className={`w-16 ${inputCls}`} />
+                              <span>×</span>
+                              <select value={it.category_label} onChange={(e) => updateItem({ category_label: e.target.value })} className={`flex-1 ${inputCls}`}>
+                                <option value="">Choisir une catégorie…</option>
+                                {availableLabels.map((l) => <option key={l} value={l}>{l}</option>)}
+                              </select>
+                              <button type="button" onClick={() => updatePack({ items: pack.items.filter((x) => x.id !== it.id) })} className="shrink-0 rounded p-1 text-stone-400 hover:text-rose-500" title="Retirer">✕</button>
+                            </div>
+                          )
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => updatePack({ items: [...(pack.items || []), { id: `pi-${Date.now()}`, category_label: '', quantity: 1 }] })}
+                          disabled={availableLabels.length === 0}
+                          className="text-xs font-medium text-[#B01A19] hover:underline disabled:opacity-40 disabled:no-underline"
+                          title={availableLabels.length === 0 ? 'Définissez d\'abord des catégories par défaut ci-dessus' : ''}
+                        >
+                          + Ajouter une catégorie au pack
+                        </button>
                       </div>
                     </div>
                   )
