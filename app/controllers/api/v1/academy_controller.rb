@@ -788,6 +788,23 @@ module Api
         }
       end
 
+      # Préparation à la clôture (#48). Critère bien défini et calculable :
+      # l'encaissement des paiements participants (payment_status). Les autres
+      # critères évoqués (documents envoyés, dépenses fournisseurs reçues) ne
+      # sont pas encore modélisés (pas de flag « envoyé » / pas de dépense
+      # « attendue ») → suivis séparés.
+      def closure_readiness(item)
+        total = item.registrations.count
+        paid = item.registrations.where(payment_status: "paid").count
+        unpaid = total - paid
+        {
+          totalRegistrations: total,
+          paidCount: paid,
+          unpaidCount: unpaid,
+          allPaid: unpaid.zero?
+        }
+      end
+
       def serialize_training(item)
         {
           id: item.id.to_s,
@@ -815,6 +832,7 @@ module Api
           packs: item.packs.includes(pack_items: :participant_category).order(:position).map { |p| serialize_pack(p) },
           totalCapacity: item.total_capacity,
           totalSpotsTaken: item.total_spots_taken,
+          closureReadiness: closure_readiness(item),
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
