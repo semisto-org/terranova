@@ -185,7 +185,7 @@ export default function TrainingTypeForm({ trainingTypeId }) {
     } finally {
       setBusy(false)
     }
-  }, [name, description, color, checklist, categories, isEditing, trainingTypeId])
+  }, [name, description, color, checklist, categories, taskTemplates, isEditing, trainingTypeId])
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id)
