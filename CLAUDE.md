@@ -4,6 +4,18 @@ Digital infrastructure for the Semisto movement — transforming anthropized zon
 
 > **📋 Project ISA — single source of truth for "what v1.0 means" + current-vs-ideal state: [`ISA.md`](ISA.md).** Feature status, scope, decisions, and the v1.0 criteria live there (the ISA is the living spec; this CLAUDE.md is the orientation/conventions layer). ⚠️ Some counts below are stale — actual is **~155 tables across ~13 domains, ~35 API controllers**. `MILESTONES.md` is outdated (contradicts the code); trust `ISA.md` for status.
 
+## Workflow — issue d'abord (défaut)
+
+Pour avancer plus vite, le traitement de Terranova passe par GitHub Issues, traitées la nuit par **Nova** (agent nocturne — voir [`.github/nova/README.md`](.github/nova/README.md)).
+
+**Règle par défaut quand Michael demande une feature ou un fix :**
+1. **Proposer de créer une issue GitHub** (ou un **epic** si c'est une grosse feature à découper). Ne pas coder tout de suite.
+2. Si Michael dit de **traiter tout de suite**, alors implémenter directement dans la session.
+3. À la création d'une issue, **collecter le contrat minimal pour un agent autonome** : contexte/objectif, comportement attendu, **critères d'acceptation vérifiables**, zones de code concernées, hors-scope, comment vérifier. Les gabarits `.github/ISSUE_TEMPLATE/` (feature/bug/epic) encodent ce contrat.
+4. Ajouter le label **`nova:auto`** pour confier l'issue à Nova la nuit. Nova ouvre une **PR draft** si l'issue est claire, sinon commente ses questions et pose `nova:blocked`.
+
+Une issue bien écrite = traitable sans humain en ligne. Si tu ne peux pas en dériver des critères d'acceptation atomiques, l'issue n'est pas prête : précise-la avant de poser `nova:auto`.
+
 ## Tech Stack
 
 | Layer | Technology |
