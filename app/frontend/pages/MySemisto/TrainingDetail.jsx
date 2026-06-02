@@ -135,6 +135,10 @@ export default function TrainingDetail() {
 
   const pastCount = useMemo(() => sessions.filter(isSessionPast).length, [sessions])
 
+  const singleSession = sessions.length === 1
+  const activityPast = sessions.length > 0 && !nextSession
+  const featuredSession = singleSession ? sessions[0] : nextSession
+
   const canDelete = training?.canUpload ? handleDelete : null
 
   return (
@@ -181,19 +185,22 @@ export default function TrainingDetail() {
                 {training.trainingType && (
                   <p className="text-sm text-stone-500 mt-1">{training.trainingType}</p>
                 )}
-                {sessions.length > 0 && (
+                {sessions.length > 1 && (
                   <ProgressStrip pastCount={pastCount} total={sessions.length} />
                 )}
               </div>
             </div>
           </div>
 
-          {/* Hero — the next session, front and center */}
-          {nextSession ? (
+          {/* Hero — featured session, front and center.
+              Multi-session: the next upcoming session.
+              Single session: that one session (even if past). */}
+          {featuredSession ? (
             <NextSessionHero
-              session={nextSession}
-              index={sessions.indexOf(nextSession)}
-              docs={sessionDocMap[nextSession.id] || []}
+              session={featuredSession}
+              index={sessions.indexOf(featuredSession)}
+              docs={sessionDocMap[featuredSession.id] || []}
+              hideCarpoolLink={activityPast}
             />
           ) : null}
 
@@ -208,8 +215,8 @@ export default function TrainingDetail() {
             </div>
           )}
 
-          {/* All sessions — collapsible timeline */}
-          {sessions.length > 0 && (
+          {/* All sessions — collapsible timeline (only when 2+ sessions) */}
+          {sessions.length > 1 && (
             <SessionsTimeline
               sessions={sessions}
               nextSessionId={nextSession?.id}
@@ -230,10 +237,12 @@ export default function TrainingDetail() {
             <DocumentList documents={[]} sessions={[]} />
           )}
 
-          {/* Carpooling */}
-          <div id="covoiturage">
-            <CarpoolingSection trainingId={trainingId} />
-          </div>
+          {/* Carpooling — hidden when the whole activity is past */}
+          {!activityPast && (
+            <div id="covoiturage">
+              <CarpoolingSection trainingId={trainingId} />
+            </div>
+          )}
         </div>
       )}
     </MySemistoShell>
@@ -259,33 +268,39 @@ function ProgressStrip({ pastCount, total }) {
   )
 }
 
-// The centerpiece: the next upcoming (or ongoing) session, fully expanded.
-function NextSessionHero({ session, index, docs }) {
+// The centerpiece: a featured session (next upcoming, ongoing, or — for
+// single-session activities — that one session even if past), fully expanded.
+function NextSessionHero({ session, index, docs, hideCarpoolLink = false }) {
   const ongoing = isSessionOngoing(session)
+  const past = isSessionPast(session)
+  const accent = past ? COLOR_PAST : COLOR_UPCOMING
+  const eyebrow = past ? 'Session passée' : ongoing ? 'Session en cours' : 'Prochaine session'
   return (
     <div
       className="relative overflow-hidden rounded-2xl border bg-white my-animate-section"
-      style={{ borderColor: `${COLOR_UPCOMING}40`, animationDelay: '30ms' }}
+      style={{ borderColor: `${accent}40`, animationDelay: '30ms' }}
     >
-      <div className="absolute top-0 left-0 bottom-0 w-1.5" style={{ backgroundColor: COLOR_UPCOMING }} />
+      <div className="absolute top-0 left-0 bottom-0 w-1.5" style={{ backgroundColor: accent }} />
       <div className="p-6 pl-7">
         {/* Eyebrow + countdown */}
         <div className="flex items-center justify-between gap-3 mb-3">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: COLOR_UPCOMING }}>
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>
             <CalendarClock size={14} />
-            {ongoing ? 'Session en cours' : 'Prochaine session'}
+            {eyebrow}
           </span>
-          <span
-            className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full text-white whitespace-nowrap"
-            style={{ backgroundColor: COLOR_UPCOMING }}
-          >
-            {countdownLabel(session)}
-          </span>
+          {!past && (
+            <span
+              className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full text-white whitespace-nowrap"
+              style={{ backgroundColor: accent }}
+            >
+              {countdownLabel(session)}
+            </span>
+          )}
         </div>
 
         {/* Title */}
         <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-sm font-bold" style={{ color: COLOR_UPCOMING }}>#{index + 1}</span>
+          <span className="text-sm font-bold" style={{ color: accent }}>#{index + 1}</span>
           <h2 className="text-xl text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
             {session.topic || `Session ${index + 1}`}
           </h2>
@@ -330,17 +345,19 @@ function NextSessionHero({ session, index, docs }) {
           </div>
         )}
 
-        {/* Jump to carpooling */}
-        <div className="mt-4 pt-4 border-t border-stone-100">
-          <a
-            href="#covoiturage"
-            className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:underline"
-            style={{ color: COLOR_UPCOMING }}
-          >
-            <Car size={15} />
-            Organiser mon covoiturage
-          </a>
-        </div>
+        {/* Jump to carpooling — hidden when the carpooling section itself is hidden */}
+        {!hideCarpoolLink && (
+          <div className="mt-4 pt-4 border-t border-stone-100">
+            <a
+              href="#covoiturage"
+              className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:underline"
+              style={{ color: accent }}
+            >
+              <Car size={15} />
+              Organiser mon covoiturage
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )
