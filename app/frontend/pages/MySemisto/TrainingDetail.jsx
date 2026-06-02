@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePage, Link } from '@inertiajs/react'
 import {
   ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText,
-  Utensils, BedDouble, Backpack, ChevronDown, Car, CheckCircle2, CalendarClock,
+  Utensils, BedDouble, Backpack, ChevronDown, Car, CalendarClock,
 } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
@@ -195,13 +195,6 @@ export default function TrainingDetail() {
               index={sessions.indexOf(nextSession)}
               docs={sessionDocMap[nextSession.id] || []}
             />
-          ) : sessions.length > 0 ? (
-            <div className="rounded-2xl border border-stone-200 bg-white px-6 py-5 flex items-center gap-3">
-              <CheckCircle2 size={20} style={{ color: COLOR_PAST }} />
-              <p className="text-sm text-stone-600">
-                Toutes les sessions de ce cursus sont passées. Bravo d'être allé·e au bout&nbsp;!
-              </p>
-            </div>
           ) : null}
 
           {/* Upload zone — only for contacts with the upload right */}
