@@ -320,10 +320,19 @@ export default function TrainingDetail({
                   </p>
                 </div>
               </div>
-              <div className="ml-5">
+              <div className="ml-5 flex flex-wrap items-center gap-2">
                 <StatusDropdown
                   currentStatus={training.status || 'idea'}
-                  onChangeStatus={(status) => actions.updateTrainingStatus(training.id, status)}
+                  onChangeStatus={(status) => {
+                    // Préparation à la clôture (#48) : avertir si des paiements
+                    // participants ne sont pas encore encaissés.
+                    const r = training.closureReadiness
+                    if (
+                      status === 'completed' && r && !r.allPaid && r.unpaidCount > 0 &&
+                      !window.confirm(`${r.unpaidCount} paiement(s) participant ne sont pas encore encaissés (${r.paidCount}/${r.totalRegistrations} encaissés). Clôturer quand même ?`)
+                    ) return
+                    actions.updateTrainingStatus(training.id, status)
+                  }}
                   readinessChecks={[
                     { id: 'date', label: 'Date(s)', done: sessions.length > 0 },
                     { id: 'location', label: 'Lieu', done: sessions.length > 0 && sessions.every((s) => (s.locationIds || []).length > 0) },
@@ -331,6 +340,20 @@ export default function TrainingDetail({
                     { id: 'price', label: 'Prix', done: trainingHasPrice(training) },
                   ]}
                 />
+                {training.status === 'post_production' && training.closureReadiness && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                      training.closureReadiness.allPaid
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}
+                    title="Préparation à la clôture : encaissement des paiements participants"
+                  >
+                    {training.closureReadiness.allPaid
+                      ? '✓ Paiements encaissés — prêt à clôturer'
+                      : `Clôture : ${training.closureReadiness.unpaidCount} paiement(s) à encaisser (${training.closureReadiness.paidCount}/${training.closureReadiness.totalRegistrations})`}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
