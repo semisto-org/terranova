@@ -30,6 +30,14 @@ if ENV['OPENAPI']
   end
 
   ActionDispatch::IntegrationTest.openapi!
+
+  # Deterministic test order for the recording run. rspec-openapi infers and MERGES
+  # response schemas in execution order; Rails' default random order (a fresh seed
+  # every run) makes the recorded spec drift run-to-run and machine-to-machine, which
+  # is exactly what breaks the CI drift gate. Sorting by name makes the recording
+  # reproducible. Only applied under OPENAPI=1 so normal runs keep random order
+  # (which still catches order-dependent test bugs).
+  ActiveSupport::TestCase.test_order = :sorted
 end
 
 # Configure deterministic ActiveRecord encryption keys for the test environment.

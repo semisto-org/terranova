@@ -36,32 +36,18 @@ class PlantCardsTest < ActionDispatch::IntegrationTest
     assert_match 'Arbrisseau', response.body
   end
 
-  test 'photos render with role tags and placeholder fallback' do
-    contributor = Plant::Contributor.create!(
-      name: 'Test',
-      avatar_url: '',
-      joined_at: Date.current,
-      lab_id: 'lab-test'
-    )
-    Plant::Photo.create!(
-      target_type: 'species',
-      target_id: @species.id,
-      role: 'flower',
-      url: 'https://example.org/flower.jpg',
-      contributor_id: contributor.id
-    )
-    get "/plants/species/#{@species.id}/card"
-    assert_match 'https://example.org/flower.jpg', response.body
-    assert_match 'Floraison', response.body
-    assert_match 'Photo manquante', response.body  # fruit placeholder
-  end
+  # NOTE: recto floraison/fruit photos with placeholder fallback were removed from the
+  # print card in commit 4da6a23 ("Improve species photos slideshow") — that behavior
+  # now lives in the React slideshow, not the server-rendered card. The corresponding
+  # test was dropped here rather than left asserting removed markup.
 
-  test 'cross-section frame renders with human silhouette' do
+  test 'cross-section frame renders above-ground and below-ground' do
+    # The human-silhouette scale marker was moved out of the print card into the
+    # React photo slideshow (commit 4da6a23); the cross-section frame itself remains.
     get "/plants/species/#{@species.id}/card"
     assert_match 'class="cross-section"', response.body
     assert_match 'class="above-ground"', response.body
     assert_match 'class="below-ground"', response.body
-    assert_match 'href="#human-1m70"', response.body
   end
 
   test 'silhouette partial selected by growth_habit' do

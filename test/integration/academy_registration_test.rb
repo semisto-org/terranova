@@ -110,6 +110,14 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
       payment_amount: 250.0,
       registered_at: Time.current
     )
+    # The serializer reports `computed_expected_amount` (authoritative for modern
+    # trainings priced via participant categories), not the raw payment_amount column,
+    # so the registration needs a line item for the expected amount to be 250.
+    reg.registration_items.create!(
+      participant_category: @training.participant_categories.first,
+      quantity: 1,
+      unit_price: 250.0
+    )
 
     get '/api/v1/academy', as: :json
     assert_response :success
