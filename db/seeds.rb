@@ -204,12 +204,12 @@ SemosRate.find_or_create_by!(rate_type: "cotisation_member_active") do |rate|
   rate.description = "Cotisation membre actif"
 end
 
-Timesheet.find_or_create_by!(member: members.first, date: Date.current, description: "Atelier design") do |record|
+seed_member = members.first
+Timesheet.find_or_create_by!(member_id: seed_member.id.to_s, date: Date.current, description: "Atelier design") do |record|
+  record.member_name = "#{seed_member.first_name} #{seed_member.last_name}"
   record.hours = 3.5
-  record.payment_type = "invoice"
-  record.category = "design"
-  record.invoiced = false
-  record.kilometers = 12
+  record.mode = "billed"
+  record.travel_km = 12
 end
 
 # -----------------------------
@@ -431,7 +431,10 @@ design_project = Design::Project.find_or_create_by!(name: 'Jardin-foret Dupont')
   item.client_email = 'jean.dupont@example.com'
   item.client_phone = '+32 470 10 20 30'
   item.place_id = 'place-dupont-namur'
-  item.address = 'Rue des Tilleuls 12, Namur'
+  item.street = 'Rue des Tilleuls 12'
+  item.postcode = '5000'
+  item.city = 'Namur'
+  item.country_name = 'Belgique'
   item.latitude = 50.4669
   item.longitude = 4.8675
   item.area = 2400

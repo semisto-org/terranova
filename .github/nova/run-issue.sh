@@ -35,8 +35,10 @@ fi
 TITLE="$(jq -r '.title' "$OUT/issue.json")"
 
 # Base de test prête — échec = on s’arrête bruyamment (ne pas bâtir sur du sable).
+# db:test:prepare charge le schéma SANS lancer les seeds (les tests construisent leurs
+# propres données). Évite qu'un bug de seed bloque Nova, et reste aligné sur le job CI.
 echo "::group::Préparation base de test"
-if ! bin/rails db:prepare 2>&1 | tail -15; then
+if ! bin/rails db:test:prepare 2>&1 | tail -40; then
   echo "::endgroup::"
   block_issue "🌙 **Nova — environnement CI cassé**
 
