@@ -6,7 +6,7 @@ Digital infrastructure for the Semisto movement — transforming anthropized zon
 
 ## Workflow — issue d'abord (défaut)
 
-Pour avancer plus vite, le traitement de Terranova passe par GitHub Issues, traitées la nuit par **Nova** (agent nocturne — voir [`.github/nova/README.md`](.github/nova/README.md)).
+Pour avancer plus vite, le traitement de Terranova passe par GitHub Issues, traitées la nuit par **Nova** (agent nocturne tournant **en local** via launchd — voir [`.nova/README.md`](.nova/README.md)).
 
 **Règle par défaut quand Michael demande une feature ou un fix :**
 1. **Proposer de créer une issue GitHub** (ou un **epic** si c'est une grosse feature à découper). Ne pas coder tout de suite.
