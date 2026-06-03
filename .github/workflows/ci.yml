@@ -15,9 +15,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-      - run: npm ci --legacy-peer-deps
-      - run: npx tsc --noEmit
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile
+      - run: yarn tsc --noEmit
 
   lint:
     name: ESLint
@@ -27,9 +27,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-      - run: npm ci --legacy-peer-deps
-      - run: npx eslint app/frontend/ --ext .ts,.tsx,.js,.jsx
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile
+      - run: yarn eslint app/frontend/ --ext .ts,.tsx,.js,.jsx
 
   openapi-drift:
     name: OpenAPI spec up to date
