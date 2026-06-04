@@ -977,7 +977,7 @@ module Api
           :amount, :description, :date, :contact_id, :pole, :projectable_type, :projectable_id,
           :revenue_type, :status, :notes, :label, :amount_excl_vat, :vat_6, :vat_21,
           :payment_method, :category, :vat_rate, :vat_exemption, :invoice_url, :paid_at,
-          :organization_id
+          :organization_id, :contribution_semisto_amount
         )
       end
 
@@ -1121,6 +1121,7 @@ module Api
           category: r.category,
           vatRate: r.vat_rate,
           vatExemption: r.vat_exemption,
+          contributionSemistoAmount: r.contribution_semisto_amount.to_f,
           invoiceUrl: r.invoice_url,
           paidAt: r.paid_at&.iso8601,
           organizationId: r.organization_id&.to_s,

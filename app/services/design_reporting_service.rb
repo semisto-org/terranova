@@ -232,6 +232,8 @@ class DesignReportingService
     rows = filtered_timesheets.group(:member_id, :member_name).sum(:hours)
     revenue_by_project = filtered_revenues.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:amount)
     expense_by_project = filtered_expenses.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:total_incl_vat)
+    # Heures rémunérées (billed) vs non-rémunérées (semos) par designer — délibération #20.
+    hours_by_mode = filtered_timesheets.group(:member_id, :mode).sum(:hours)
 
     rows.map do |(member_id, member_name), hours_value|
       member_timesheets = filtered_timesheets.where(member_id: member_id)
@@ -239,6 +241,8 @@ class DesignReportingService
       revenues = project_ids.sum { |id| revenue_by_project[id].to_f }
       expenses = project_ids.sum { |id| expense_by_project[id].to_f }
       hours = hours_value.to_f
+      paid_hours = hours_by_mode[[member_id, 'billed']].to_f
+      unpaid_hours = hours_by_mode[[member_id, 'semos']].to_f
       margin = revenues - expenses
 
       {
@@ -249,6 +253,9 @@ class DesignReportingService
         gross_margin: margin,
         gross_margin_pct: safe_ratio(margin, revenues),
         hours: hours,
+        paid_hours: paid_hours,
+        unpaid_hours: unpaid_hours,
+        paid_share: safe_ratio(paid_hours, paid_hours + unpaid_hours),
         revenue_per_hour: safe_ratio(revenues, hours),
         cost_per_hour: safe_ratio(expenses, hours)
       }

@@ -68,6 +68,7 @@ export interface RevenueItem {
   category: string | null
   vatRate: string | null
   vatExemption: boolean
+  contributionSemistoAmount?: number
   invoiceUrl: string | null
   paidAt: string | null
   reconciledAmount?: number
