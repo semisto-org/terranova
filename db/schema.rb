@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -640,6 +640,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_140000) do
     t.datetime "updated_at", null: false
     t.index ["plant_record_id"], name: "index_design_interventions_on_plant_record_id"
     t.index ["project_id"], name: "index_design_interventions_on_project_id"
+  end
+
+  create_table "design_interviews", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.bigint "project_id", null: false
+    t.jsonb "responses", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_interviews_on_project_id", unique: true
   end
 
   create_table "design_maintenance_calendars", force: :cascade do |t|
@@ -2585,6 +2594,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_140000) do
   add_foreign_key "design_harvest_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_interventions", "design_plant_records", column: "plant_record_id"
   add_foreign_key "design_interventions", "design_projects", column: "project_id"
+  add_foreign_key "design_interviews", "design_projects", column: "project_id"
   add_foreign_key "design_maintenance_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_media_items", "design_projects", column: "project_id"
   add_foreign_key "design_methodology_items", "design_projects", column: "project_id"

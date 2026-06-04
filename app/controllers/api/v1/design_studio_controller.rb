@@ -627,6 +627,36 @@ module Api
         head :no_content
       end
 
+      # Entrevue du/des porteur·s (étape Observation / entrevue).
+      def interview
+        project = find_project
+        render json: serialize_interview(project.interview || project.build_interview)
+      end
+
+      def upsert_interview
+        project = find_project
+        record = project.interview || project.build_interview
+        if params.key?(:responses)
+          permitted = params.fetch(:responses, {}).permit(*Design::Interview::QUESTION_KEYS).to_h
+          record.assign_responses(permitted)
+        end
+        record.notes = params[:notes] if params.key?(:notes)
+
+        if record.save
+          render json: serialize_interview(record)
+        else
+          render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def upload_interview_audio
+        project = find_project
+        record = project.interview || project.build_interview
+        record.save! if record.new_record?
+        record.audio.attach(params[:audio]) if params[:audio].respond_to?(:read)
+        render json: serialize_interview(record)
+      end
+
       def create_quote
         project = find_project
 
@@ -990,6 +1020,15 @@ module Api
           media: note.media.map do |attachment|
             { id: attachment.id, filename: attachment.filename.to_s, url: url_for(attachment), contentType: attachment.content_type }
           end
+        }
+      end
+
+      def serialize_interview(interview)
+        {
+          questions: Design::Interview::QUESTIONS.map { |q| { 'key' => q[:key], 'label' => q[:label] } },
+          responses: interview.responses || {},
+          notes: interview.notes,
+          audioUrl: interview.audio.attached? ? url_for(interview.audio) : nil
         }
       end
 
