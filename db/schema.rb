@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -581,6 +581,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_160000) do
     t.date "start_date", null: false
     t.string "status", default: "upcoming", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "design_analysis_sections", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "node_key", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "node_key"], name: "index_design_analysis_sections_on_project_and_node", unique: true
+    t.index ["project_id"], name: "index_design_analysis_sections_on_project_id"
   end
 
   create_table "design_annotations", force: :cascade do |t|
@@ -2600,6 +2610,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_160000) do
   add_foreign_key "contacts", "contacts", column: "organization_id"
   add_foreign_key "credentials", "guilds"
   add_foreign_key "credentials", "members", column: "created_by_id"
+  add_foreign_key "design_analysis_sections", "design_projects", column: "project_id"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_follow_up_visits", "design_projects", column: "project_id"
