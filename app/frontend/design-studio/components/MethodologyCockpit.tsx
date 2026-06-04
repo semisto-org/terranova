@@ -15,6 +15,7 @@ import { ObservationNotes } from './ObservationNotes'
 import { Interview } from './Interview'
 import { SoilSurvey } from './SoilSurvey'
 import { TriDonnees, Biome, EchelleTemps, RessourcesLimites, SystemiqueEnPlace } from './AnalysisForms'
+import { SiteMap } from './SiteMap'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -85,9 +86,10 @@ function stepProgress(step: MethodStep, items: Record<string, ItemState>) {
 interface MethodologyCockpitProps {
   projectId: string
   onOpenTool?: (toolId: string) => void
+  coordinates?: { lat: number; lng: number }
 }
 
-export function MethodologyCockpit({ projectId, onOpenTool }: MethodologyCockpitProps) {
+export function MethodologyCockpit({ projectId, onOpenTool, coordinates }: MethodologyCockpitProps) {
   const [data, setData] = useState<MethodologyPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -295,6 +297,9 @@ export function MethodologyCockpit({ projectId, onOpenTool }: MethodologyCockpit
                 )}
                 {activeStep.key === 'analyse-evaluation' && sub.key === 'tri-des-donnees' && (
                   <TriDonnees projectId={projectId} />
+                )}
+                {activeStep.key === 'analyse-evaluation' && sub.key === 'cartographie-du-site' && (
+                  <SiteMap projectId={projectId} coordinates={coordinates} />
                 )}
                 {activeStep.key === 'analyse-evaluation' && sub.key === 'biome' && (
                   <Biome projectId={projectId} />
