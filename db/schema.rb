@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -956,6 +956,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_150000) do
     t.jsonb "zoning", default: {}, null: false
     t.jsonb "zoning_categories", default: [], null: false
     t.index ["project_id"], name: "index_design_site_analyses_on_project_id", unique: true
+  end
+
+  create_table "design_soil_samples", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "depth_cm"
+    t.string "lab_status", default: "pending", null: false
+    t.string "location_label"
+    t.boolean "pollutant_flag", default: false, null: false
+    t.bigint "project_id", null: false
+    t.jsonb "results", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_soil_samples_on_project_id"
   end
 
   create_table "design_team_members", force: :cascade do |t|
@@ -2615,6 +2627,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_150000) do
   add_foreign_key "design_quote_lines", "design_quotes", column: "quote_id"
   add_foreign_key "design_quotes", "design_projects", column: "project_id"
   add_foreign_key "design_site_analyses", "design_projects", column: "project_id"
+  add_foreign_key "design_soil_samples", "design_projects", column: "project_id"
   add_foreign_key "design_team_members", "design_projects", column: "project_id"
   add_foreign_key "economic_inputs", "design_projects"
   add_foreign_key "economic_inputs", "location_zones", column: "zone_id"
