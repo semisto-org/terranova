@@ -657,6 +657,45 @@ module Api
         render json: serialize_interview(record)
       end
 
+      # Relevé & analyse de sol (étape Observation / relevé).
+      def releve
+        project = find_project
+        render json: {
+          planUrl: project.releve_plan.attached? ? url_for(project.releve_plan) : nil,
+          soilSamples: project.soil_samples.order(:created_at).map { |s| serialize_soil_sample(s) }
+        }
+      end
+
+      def upload_releve_plan
+        project = find_project
+        project.releve_plan.attach(params[:plan]) if params[:plan].respond_to?(:read)
+        render json: { planUrl: project.releve_plan.attached? ? url_for(project.releve_plan) : nil }
+      end
+
+      def create_soil_sample
+        project = find_project
+        sample = project.soil_samples.new(soil_sample_params)
+        if sample.save
+          render json: serialize_soil_sample(sample), status: :created
+        else
+          render json: { errors: sample.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def update_soil_sample
+        sample = Design::SoilSample.find(params[:sample_id])
+        if sample.update(soil_sample_params)
+          render json: serialize_soil_sample(sample)
+        else
+          render json: { errors: sample.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_soil_sample
+        Design::SoilSample.find(params[:sample_id]).destroy
+        head :no_content
+      end
+
       def create_quote
         project = find_project
 
@@ -1030,6 +1069,21 @@ module Api
           notes: interview.notes,
           audioUrl: interview.audio.attached? ? url_for(interview.audio) : nil
         }
+      end
+
+      def serialize_soil_sample(sample)
+        {
+          id: sample.id,
+          locationLabel: sample.location_label,
+          depthCm: sample.depth_cm,
+          pollutantFlag: sample.pollutant_flag,
+          labStatus: sample.lab_status,
+          results: sample.results || {}
+        }
+      end
+
+      def soil_sample_params
+        params.permit(:location_label, :depth_cm, :pollutant_flag, :lab_status, results: {})
       end
 
       def full_project_payload(project, palette)

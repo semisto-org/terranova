@@ -13,6 +13,7 @@ import { apiRequest } from '../../lib/api'
 import { ToolboxPanel } from './ToolboxPanel'
 import { ObservationNotes } from './ObservationNotes'
 import { Interview } from './Interview'
+import { SoilSurvey } from './SoilSurvey'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -287,6 +288,9 @@ export function MethodologyCockpit({ projectId, onOpenTool }: MethodologyCockpit
                 )}
                 {activeStep.key === 'observation' && sub.key === 'entrevue' && (
                   <Interview projectId={projectId} />
+                )}
+                {activeStep.key === 'observation' && sub.key === 'releve' && (
+                  <SoilSurvey projectId={projectId} />
                 )}
               </section>
             ))}

@@ -47,6 +47,8 @@ module Design
     has_many :methodology_items, class_name: 'Design::MethodologyItem', foreign_key: :project_id, dependent: :destroy
     has_many :observation_notes, class_name: 'Design::ObservationNote', foreign_key: :project_id, dependent: :destroy
     has_one :interview, class_name: 'Design::Interview', foreign_key: :project_id, dependent: :destroy
+    has_many :soil_samples, class_name: 'Design::SoilSample', foreign_key: :project_id, dependent: :destroy
+    has_one_attached :releve_plan
     has_one :album, as: :albumable, dependent: :destroy
 
     before_validation :normalize_client_interests
