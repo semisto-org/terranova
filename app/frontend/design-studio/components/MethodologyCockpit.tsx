@@ -26,6 +26,8 @@ import {
   PlansModelisation,
   PaletteGuidee,
 } from './DesignForms'
+import { Phaser, GestionProjet } from './MiseEnOeuvreForms'
+import { BouclesRetroaction, VisualisationImpacts, Anticipation, AccelererProcessus } from './EvolutionForms'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -355,6 +357,24 @@ export function MethodologyCockpit({ projectId, onOpenTool, coordinates }: Metho
                 )}
                 {activeStep.key === 'design' && sub.key === 'selection-palette' && (
                   <PaletteGuidee projectId={projectId} />
+                )}
+                {activeStep.key === 'mise-en-oeuvre-maintenance' && sub.key === 'phaser' && (
+                  <Phaser projectId={projectId} />
+                )}
+                {activeStep.key === 'mise-en-oeuvre-maintenance' && sub.key === 'gestion-du-projet' && (
+                  <GestionProjet projectId={projectId} />
+                )}
+                {activeStep.key === 'evolution' && sub.key === 'observation-retroaction' && (
+                  <BouclesRetroaction projectId={projectId} />
+                )}
+                {activeStep.key === 'evolution' && sub.key === 'visualisation' && (
+                  <VisualisationImpacts projectId={projectId} />
+                )}
+                {activeStep.key === 'evolution' && sub.key === 'anticipation' && (
+                  <Anticipation projectId={projectId} />
+                )}
+                {activeStep.key === 'evolution' && sub.key === 'accelerer-processus' && (
+                  <AccelererProcessus projectId={projectId} />
                 )}
               </section>
             ))}
