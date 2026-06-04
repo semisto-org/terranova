@@ -696,6 +696,25 @@ module Api
         head :no_content
       end
 
+      # Sections d'analyse génériques (formulaires structurés par sous-section méthodo).
+      def analysis_sections
+        project = find_project
+        map = project.analysis_sections.each_with_object({}) { |s, acc| acc[s.node_key] = s.data }
+        render json: map
+      end
+
+      def upsert_analysis_section
+        project = find_project
+        section = project.analysis_sections.find_or_initialize_by(node_key: params[:node_key])
+        section.data = params[:data].respond_to?(:to_unsafe_h) ? params[:data].to_unsafe_h : (params[:data] || {})
+
+        if section.save
+          render json: { node_key: section.node_key, data: section.data }
+        else
+          render json: { errors: section.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       def create_quote
         project = find_project
 

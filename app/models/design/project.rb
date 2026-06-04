@@ -48,6 +48,7 @@ module Design
     has_many :observation_notes, class_name: 'Design::ObservationNote', foreign_key: :project_id, dependent: :destroy
     has_one :interview, class_name: 'Design::Interview', foreign_key: :project_id, dependent: :destroy
     has_many :soil_samples, class_name: 'Design::SoilSample', foreign_key: :project_id, dependent: :destroy
+    has_many :analysis_sections, class_name: 'Design::AnalysisSection', foreign_key: :project_id, dependent: :destroy
     has_one_attached :releve_plan
     has_one :album, as: :albumable, dependent: :destroy
 

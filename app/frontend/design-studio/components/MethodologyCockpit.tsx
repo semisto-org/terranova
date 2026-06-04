@@ -14,6 +14,7 @@ import { ToolboxPanel } from './ToolboxPanel'
 import { ObservationNotes } from './ObservationNotes'
 import { Interview } from './Interview'
 import { SoilSurvey } from './SoilSurvey'
+import { TriDonnees, EchelleTemps, RessourcesLimites, SystemiqueEnPlace } from './AnalysisForms'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -291,6 +292,18 @@ export function MethodologyCockpit({ projectId, onOpenTool }: MethodologyCockpit
                 )}
                 {activeStep.key === 'observation' && sub.key === 'releve' && (
                   <SoilSurvey projectId={projectId} />
+                )}
+                {activeStep.key === 'analyse-evaluation' && sub.key === 'tri-des-donnees' && (
+                  <TriDonnees projectId={projectId} />
+                )}
+                {activeStep.key === 'analyse-evaluation' && sub.key === 'echelle-de-temps' && (
+                  <EchelleTemps projectId={projectId} />
+                )}
+                {activeStep.key === 'analyse-evaluation' && sub.key === 'ressources-facteurs-limitants' && (
+                  <RessourcesLimites projectId={projectId} />
+                )}
+                {activeStep.key === 'analyse-evaluation' && sub.key === 'systemique-en-place' && (
+                  <SystemiqueEnPlace projectId={projectId} />
                 )}
               </section>
             ))}

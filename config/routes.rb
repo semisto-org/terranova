@@ -510,6 +510,8 @@ Rails.application.routes.draw do
       post "design/:project_id/soil-samples", to: "design_studio#create_soil_sample"
       patch "design/soil-samples/:sample_id", to: "design_studio#update_soil_sample"
       delete "design/soil-samples/:sample_id", to: "design_studio#destroy_soil_sample"
+      get "design/:project_id/analysis-sections", to: "design_studio#analysis_sections"
+      patch "design/:project_id/analysis-section", to: "design_studio#upsert_analysis_section"
       post "design/:project_id/quotes", to: "design_studio#create_quote"
       patch "design/quotes/:quote_id", to: "design_studio#update_quote"
       delete "design/quotes/:quote_id", to: "design_studio#destroy_quote"
