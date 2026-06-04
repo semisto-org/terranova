@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { apiRequest } from '../../lib/api'
 import { ToolboxPanel } from './ToolboxPanel'
+import { ObservationNotes } from './ObservationNotes'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -280,6 +281,9 @@ export function MethodologyCockpit({ projectId, onOpenTool }: MethodologyCockpit
                     )
                   })}
                 </ul>
+                {activeStep.key === 'observation' && sub.key === 'promenade-sensible' && (
+                  <ObservationNotes projectId={projectId} />
+                )}
               </section>
             ))}
           </div>

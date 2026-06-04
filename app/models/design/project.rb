@@ -45,6 +45,7 @@ module Design
     has_many :follow_up_visits, class_name: 'Design::FollowUpVisit', foreign_key: :project_id, dependent: :destroy
     has_many :interventions, class_name: 'Design::Intervention', foreign_key: :project_id, dependent: :destroy
     has_many :methodology_items, class_name: 'Design::MethodologyItem', foreign_key: :project_id, dependent: :destroy
+    has_many :observation_notes, class_name: 'Design::ObservationNote', foreign_key: :project_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
     before_validation :normalize_client_interests

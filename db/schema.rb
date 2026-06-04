@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -675,6 +675,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_130000) do
     t.datetime "updated_at", null: false
     t.index ["project_id", "node_key"], name: "index_design_methodology_items_on_project_and_node", unique: true
     t.index ["project_id"], name: "index_design_methodology_items_on_project_id"
+  end
+
+  create_table "design_observation_notes", force: :cascade do |t|
+    t.text "body"
+    t.datetime "captured_at"
+    t.datetime "created_at", null: false
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_design_observation_notes_on_project_id"
   end
 
   create_table "design_plant_markers", force: :cascade do |t|
@@ -2577,6 +2588,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_130000) do
   add_foreign_key "design_maintenance_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_media_items", "design_projects", column: "project_id"
   add_foreign_key "design_methodology_items", "design_projects", column: "project_id"
+  add_foreign_key "design_observation_notes", "design_projects", column: "project_id"
   add_foreign_key "design_plant_markers", "design_planting_plans", column: "planting_plan_id"
   add_foreign_key "design_plant_markers", "design_project_palette_items", column: "palette_item_id"
   add_foreign_key "design_plant_records", "design_plant_markers", column: "marker_id"

@@ -599,6 +599,34 @@ module Api
         end
       end
 
+      # Carnet d'observation (étape Observation / promenade sensible).
+      def observation_notes
+        project = find_project
+        render json: project.observation_notes.order(captured_at: :desc).map { |note| serialize_observation_note(note) }
+      end
+
+      def create_observation_note
+        project = find_project
+        note = project.observation_notes.new(
+          body: params[:body],
+          latitude: params[:latitude],
+          longitude: params[:longitude]
+        )
+        Array(params[:media]).each { |file| note.media.attach(file) if file.respond_to?(:read) }
+
+        if note.save
+          render json: serialize_observation_note(note), status: :created
+        else
+          render json: { errors: note.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy_observation_note
+        note = Design::ObservationNote.find(params[:note_id])
+        note.destroy
+        head :no_content
+      end
+
       def create_quote
         project = find_project
 
@@ -950,6 +978,19 @@ module Api
             end
           }
         end
+      end
+
+      def serialize_observation_note(note)
+        {
+          id: note.id,
+          body: note.body,
+          latitude: note.latitude,
+          longitude: note.longitude,
+          capturedAt: note.captured_at,
+          media: note.media.map do |attachment|
+            { id: attachment.id, filename: attachment.filename.to_s, url: url_for(attachment), contentType: attachment.content_type }
+          end
+        }
       end
 
       def full_project_payload(project, palette)
