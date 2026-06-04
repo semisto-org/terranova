@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Search,
+  Compass,
   LayoutDashboard,
   Settings,
   Clock,
@@ -45,6 +46,7 @@ import type { BucketData } from './tabs/BucketTab'
 import type { ProjectPhase } from './shared/PhaseIndicator'
 import type { ProjectStatus } from './shared/StatusIndicator'
 import type { TeamRole } from '../types'
+import { MethodologyCockpit } from './MethodologyCockpit'
 
 export interface ProjectDetailPayload {
   project: {
@@ -254,20 +256,25 @@ export interface ProjectDetailActions {
   onDeleteBucketTransaction: (id: string) => void
 }
 
+// Colonne vertébrale : la Méthodologie d'abord, puis la Vue d'ensemble, puis les
+// outils qui servent le parcours, et enfin le bloc Gestion (commercial/admin).
 const DETAIL_TABS: TabItem[] = [
+  { id: 'methodology', label: 'Méthodologie', icon: <Compass className="w-4 h-4" /> },
   { id: 'overview', label: "Vue d'ensemble", icon: <LayoutDashboard className="w-4 h-4" /> },
+  // Outils du parcours
   { id: 'site-analysis', label: 'Analyse', icon: <Map className="w-4 h-4" /> },
   { id: 'palette', label: 'Palette', icon: <Palette className="w-4 h-4" /> },
   { id: 'planting-plan', label: 'Plan', icon: <MapPin className="w-4 h-4" /> },
+  { id: 'co-gestion', label: 'Co-gestion', icon: <Leaf className="w-4 h-4" /> },
+  { id: 'album', label: 'Album', icon: <ImageIcon className="w-4 h-4" /> },
+  { id: 'documents', label: 'Documents', icon: <FileStack className="w-4 h-4" /> },
+  // Gestion (commercial / admin) — en arrière-plan du parcours
+  { id: 'quotes', label: 'Offre', icon: <FileText className="w-4 h-4" /> },
   { id: 'timesheets', label: 'Timesheets', icon: <Clock className="w-4 h-4" /> },
   { id: 'expenses', label: 'Dépenses', icon: <Euro className="w-4 h-4" /> },
   { id: 'bucket', label: 'Bucket', icon: <Wallet className="w-4 h-4" /> },
-  { id: 'quotes', label: 'Offre', icon: <FileText className="w-4 h-4" /> },
-  { id: 'documents', label: 'Documents', icon: <FileStack className="w-4 h-4" /> },
-  { id: 'album', label: 'Album', icon: <ImageIcon className="w-4 h-4" /> },
   { id: 'meetings', label: 'Dates', icon: <Calendar className="w-4 h-4" /> },
   { id: 'tasks', label: 'Tâches', icon: <ListTodo className="w-4 h-4" /> },
-  { id: 'co-gestion', label: 'Co-gestion', icon: <Leaf className="w-4 h-4" /> },
   { id: 'settings', label: 'Paramètres', icon: <Settings className="w-4 h-4" /> },
 ]
 
@@ -284,7 +291,7 @@ export function ProjectDetailView({
   actions: a,
   searchResults,
 }: ProjectDetailViewProps) {
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('methodology')
   const [searchQuery, setSearchQuery] = useState('')
   const [clientPortalUrl, setClientPortalUrl] = useState<string | null>(null)
   const [portalLinkLoading, setPortalLinkLoading] = useState(false)
@@ -454,6 +461,9 @@ export function ProjectDetailView({
             activeTab={activeTab}
             onTabChange={setActiveTab}
           >
+            {activeTab === 'methodology' && (
+              <MethodologyCockpit projectId={project.id} onOpenTool={setActiveTab} />
+            )}
             {activeTab === 'overview' && (
               <OverviewTab project={project as import('../types').Project} />
             )}

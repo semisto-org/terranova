@@ -200,7 +200,7 @@
       ]
     },
     {
-      "endpointCount": 14,
+      "endpointCount": 16,
       "file": "design.json",
       "name": "design",
       "operations": [
@@ -253,6 +253,16 @@
           "method": "POST",
           "path": "/api/v1/design/{project_id}/duplicate",
           "summary": "duplicate"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/{project_id}/methodology",
+          "summary": "methodology"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/design/{project_id}/methodology/item",
+          "summary": "upsert_methodology_item"
         },
         {
           "method": "POST",
@@ -1065,5 +1075,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 184
+  "totalEndpoints": 186
 }
