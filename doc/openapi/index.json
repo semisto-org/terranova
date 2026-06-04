@@ -200,7 +200,7 @@
       ]
     },
     {
-      "endpointCount": 14,
+      "endpointCount": 15,
       "file": "design.json",
       "name": "design",
       "operations": [
@@ -213,6 +213,11 @@
           "method": "POST",
           "path": "/api/v1/design",
           "summary": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/activity-volumes",
+          "summary": "activity_volumes"
         },
         {
           "method": "DELETE",
@@ -869,7 +874,7 @@
       ]
     },
     {
-      "endpointCount": 4,
+      "endpointCount": 5,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -887,6 +892,11 @@
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/bucket",
           "summary": "create"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/revenues",
+          "summary": "create_revenue"
         },
         {
           "method": "GET",
@@ -1065,5 +1075,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 184
+  "totalEndpoints": 186
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -815,11 +815,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_090000) do
     t.string "client_name", null: false
     t.string "client_phone", default: "", null: false
     t.string "client_portal_token", limit: 16
+    t.datetime "closed_at"
+    t.text "closure_feedback"
     t.string "country_name", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.decimal "designer_rate", precision: 8, scale: 2
     t.decimal "expenses_actual", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "expenses_budget", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "format_code"
     t.string "google_photos_url", default: "", null: false
     t.integer "hours_billed", default: 0, null: false
     t.integer "hours_planned", default: 0, null: false
@@ -839,6 +843,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_090000) do
     t.string "postcode", default: "", null: false
     t.string "project_manager_id", default: "", null: false
     t.string "project_type", default: "", null: false
+    t.decimal "retrocession_rate", precision: 5, scale: 4
     t.date "start_date"
     t.string "status", default: "pending", null: false
     t.string "street", default: "", null: false
@@ -876,6 +881,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_090000) do
     t.string "author_name", default: "", null: false
     t.text "client_comment"
     t.bigint "contact_id"
+    t.decimal "contribution_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "contribution_rate", precision: 5, scale: 4, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.datetime "notion_created_at"
@@ -2010,6 +2017,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_090000) do
     t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
     t.string "category", default: "", null: false
     t.bigint "contact_id"
+    t.decimal "contribution_semisto_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.date "date"
     t.datetime "deleted_at"

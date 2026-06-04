@@ -13,6 +13,13 @@ module Api
         'public' => 'Public'
       }.freeze
 
+      FORMAT_LABELS = {
+        'a' => 'Projet Semisto standard (binôme · ≥ 5 000 €)',
+        'b' => 'Petit projet Semisto (1 designer · < 5 000 €)',
+        'c' => 'Collaboration facilitée (client hors mission)',
+        'd' => 'Projet personnel du designer (hors Semisto)'
+      }.freeze
+
       CLIENT_INTEREST_LABELS = {
         'design' => 'Design',
         'plant_selection' => 'Sélection des plantes',
@@ -69,20 +76,30 @@ module Api
           credits = txns.where(kind: "credit").sum(:amount).to_f
           debits = txns.where(kind: "debit").sum(:amount).to_f
           hours_billed = project.hours_billed.to_f
-          theoretical_revenue = hours_billed * config.hourly_rate.to_f
-          theoretical_asbl = theoretical_revenue * config.asbl_support_rate.to_f
+          # Taux effectifs par projet (délibération #20) : tarif designer libre 40-60 €/h,
+          # rétrocession selon le format. Fallback sur la config globale.
+          designer_rate = project.effective_designer_rate.to_f
+          retrocession_rate = project.effective_retrocession_rate.to_f
+          theoretical_revenue = hours_billed * designer_rate
+          theoretical_asbl = (theoretical_revenue * retrocession_rate).round(2)
 
           {
             projectId: project.id.to_s,
             projectName: project.name,
             clientName: project.client_name,
             phase: project.phase,
+            formatCode: project.format_code.presence,
+            designerRate: designer_rate,
+            retrocessionRate: retrocession_rate,
             hoursBilled: hours_billed,
             theoreticalRevenue: theoretical_revenue,
             theoreticalAsbl: theoretical_asbl,
+            theoreticalContribution: theoretical_asbl,
             bucketCredits: credits,
             bucketDebits: debits,
-            bucketBalance: credits - debits
+            bucketBalance: credits - debits,
+            # Bucket net de rétrocession : budget projet disponible une fois la contribution Semisto retirée.
+            bucketNetBudget: (credits - debits - theoretical_asbl).round(2)
           }
         end
 
@@ -110,14 +127,60 @@ module Api
           totals: {
             theoreticalRevenue: total_theoretical_revenue,
             theoreticalAsbl: total_theoretical_asbl,
+            theoreticalContribution: total_theoretical_asbl,
             bucketCredits: total_credits,
             bucketDebits: total_debits,
             bucketBalance: total_credits - total_debits,
+            bucketNetBudget: (total_credits - total_debits - total_theoretical_asbl).round(2),
             generalExpenses: general_expenses,
             designRevenue: total_design_revenue,
             actualOverheadRate: actual_overhead_rate
           },
           projects: project_summaries
+        }
+      end
+
+      # Visualisation consolidée des volumes d'activité du bureau d'études :
+      # par designer, heures rémunérées (mode "billed") vs non-rémunérées (mode "semos").
+      # Alimente le tableau de bord comptable (délibération #20).
+      def activity_volumes
+        scope = Design::ProjectTimesheet.where(deleted_at: nil)
+        scope = scope.where('date >= ?', Date.parse(params[:from])) if params[:from].present?
+        scope = scope.where('date <= ?', Date.parse(params[:to])) if params[:to].present?
+
+        grouped = scope.group(:member_id, :member_name, :mode).sum(:hours)
+
+        members = Hash.new do |h, k|
+          h[k] = { memberId: k, memberName: nil, paidHours: 0.0, unpaidHours: 0.0 }
+        end
+
+        grouped.each do |(member_id, member_name, mode), hours|
+          row = members[member_id.to_s]
+          row[:memberName] ||= member_name.presence
+          if mode == 'billed'
+            row[:paidHours] += hours.to_f
+          else
+            row[:unpaidHours] += hours.to_f
+          end
+        end
+
+        rows = members.values.map do |row|
+          total = (row[:paidHours] + row[:unpaidHours]).round(2)
+          row[:memberName] ||= 'Membre'
+          row[:paidHours] = row[:paidHours].round(2)
+          row[:unpaidHours] = row[:unpaidHours].round(2)
+          row[:totalHours] = total
+          row[:paidShare] = total.positive? ? (row[:paidHours] / total).round(4) : 0.0
+          row
+        end.sort_by { |r| -r[:totalHours] }
+
+        render json: {
+          members: rows,
+          totals: {
+            paidHours: rows.sum { |r| r[:paidHours] }.round(2),
+            unpaidHours: rows.sum { |r| r[:unpaidHours] }.round(2),
+            totalHours: rows.sum { |r| r[:totalHours] }.round(2)
+          }
         }
       end
 
@@ -870,14 +933,15 @@ module Api
           :name, :client_id, :client_name, :client_email, :client_phone, :place_id, :street, :number, :city, :postcode,
           :country_name, :latitude, :longitude, :area, :phase, :status, :start_date, :planting_date, :project_manager_id,
           :hours_planned, :hours_worked, :hours_billed, :hours_semos, :expenses_budget, :expenses_actual, :project_type,
-          :acquisition_channel, client_interests: []
+          :acquisition_channel, :format_code, :designer_rate, :retrocession_rate, client_interests: []
         )
       end
 
       def project_update_params
         params.permit(
           :name, :client_name, :client_email, :client_phone, :phase, :status, :street, :number, :city, :postcode,
-          :country_name, :latitude, :longitude, :area, :project_type, :acquisition_channel, :google_photos_url, client_interests: []
+          :country_name, :latitude, :longitude, :area, :project_type, :acquisition_channel, :google_photos_url,
+          :format_code, :designer_rate, :retrocession_rate, :closure_feedback, client_interests: []
         )
       end
 
@@ -1139,11 +1203,21 @@ module Api
       end
 
       def recalculate_quote_totals!(quote)
-        subtotal = quote.lines.sum('total')
-        vat_amount = subtotal.to_f * (quote.vat_rate.to_f / 100.0)
-        total = subtotal.to_f + vat_amount
+        subtotal = quote.lines.sum('total').to_f
+        # Contribution Semisto (rétrocession) appliquée en sus du tarif designer (délibération #20).
+        rate = quote.project&.effective_retrocession_rate.to_f
+        contribution = (subtotal * rate).round(2)
+        taxable = subtotal + contribution
+        vat_amount = taxable * (quote.vat_rate.to_f / 100.0)
+        total = taxable + vat_amount
 
-        quote.update!(subtotal: subtotal, vat_amount: vat_amount, total: total)
+        quote.update!(
+          subtotal: subtotal,
+          contribution_rate: rate,
+          contribution_amount: contribution,
+          vat_amount: vat_amount,
+          total: total
+        )
       end
 
       def scoped_reporting_projects
@@ -1297,6 +1371,14 @@ module Api
           clientInterestsLabels: Array(project.client_interests).map { |interest| CLIENT_INTEREST_LABELS[interest] || interest },
           acquisitionChannel: project.acquisition_channel.presence,
           acquisitionChannelLabel: ACQUISITION_CHANNEL_LABELS[project.acquisition_channel],
+          formatCode: project.format_code.presence,
+          formatLabel: FORMAT_LABELS[project.format_code],
+          designerRate: project.designer_rate&.to_f,
+          effectiveDesignerRate: project.effective_designer_rate.to_f,
+          retrocessionRate: project.retrocession_rate&.to_f,
+          effectiveRetrocessionRate: project.effective_retrocession_rate.to_f,
+          closedAt: project.closed_at&.iso8601,
+          closureFeedback: project.closure_feedback.presence,
           budget: {
             hoursPlanned: project.hours_planned,
             hoursWorked: project.hours_worked,
@@ -1532,6 +1614,9 @@ module Api
           clientComment: quote.client_comment,
           lines: quote.lines.order(:id).map { |line| serialize_quote_line(line) },
           subtotal: quote.subtotal.to_f,
+          contributionRate: quote.contribution_rate.to_f,
+          contributionAmount: quote.contribution_amount.to_f,
+          contributionLabel: Design::Quote::CONTRIBUTION_LABEL,
           vatRate: quote.vat_rate.to_f,
           vatAmount: quote.vat_amount.to_f,
           total: quote.total.to_f

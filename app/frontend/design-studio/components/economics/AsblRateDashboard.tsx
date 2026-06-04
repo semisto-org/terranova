@@ -11,6 +11,7 @@ interface BillingOverview {
     bucketCredits: number
     bucketDebits: number
     bucketBalance: number
+    bucketNetBudget: number
     generalExpenses: number
     designRevenue: number
     actualOverheadRate: number
@@ -21,11 +22,14 @@ interface BillingOverview {
     clientName: string
     phase: string
     hoursBilled: number
+    designerRate?: number
+    retrocessionRate?: number
     theoreticalRevenue: number
     theoreticalAsbl: number
     bucketCredits: number
     bucketDebits: number
     bucketBalance: number
+    bucketNetBudget?: number
   }>
 }
 
@@ -168,7 +172,7 @@ export function AsblRateDashboard() {
       )}
 
       {/* Bucket totals */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
         <div className="rounded-2xl border border-stone-200 bg-white p-5">
           <p className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Revenus théoriques</p>
           <p className="text-lg font-semibold text-stone-900">{fmt(totals.theoreticalRevenue)} €</p>
@@ -188,6 +192,13 @@ export function AsblRateDashboard() {
             {fmt(totals.bucketBalance)} €
           </p>
         </div>
+        <div className="rounded-2xl border border-stone-200 bg-white p-5">
+          <p className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Bucket net de rétrocession</p>
+          <p className={`text-lg font-semibold ${(totals.bucketNetBudget ?? 0) >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
+            {fmt(totals.bucketNetBudget ?? 0)} €
+          </p>
+          <p className="text-xs text-stone-500 mt-0.5">solde − contribution Semisto</p>
+        </div>
       </div>
 
       {/* Per-project breakdown */}
@@ -206,24 +217,32 @@ export function AsblRateDashboard() {
                 <th className="px-4 py-3 font-semibold text-stone-600">Client</th>
                 <th className="px-4 py-3 font-semibold text-stone-600 text-right">Heures</th>
                 <th className="px-4 py-3 font-semibold text-stone-600 text-right">Revenus théor.</th>
+                <th className="px-4 py-3 font-semibold text-stone-600 text-right">Rétro.</th>
                 <th className="px-4 py-3 font-semibold text-stone-600 text-right">Bucket crédité</th>
                 <th className="px-4 py-3 font-semibold text-stone-600 text-right">Versé</th>
                 <th className="px-4 py-3 font-semibold text-stone-600 text-right">Solde</th>
+                <th className="px-4 py-3 font-semibold text-stone-600 text-right">Net rétro.</th>
               </tr>
             </thead>
             <tbody>
               {projects.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-stone-400">Aucun projet</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-stone-400">Aucun projet</td></tr>
               ) : projects.map((p) => (
                 <tr key={p.projectId} className="border-b border-stone-100 hover:bg-stone-50/50">
                   <td className="px-4 py-3 font-medium text-stone-900">{p.projectName}</td>
                   <td className="px-4 py-3 text-stone-600">{p.clientName}</td>
                   <td className="px-4 py-3 text-right text-stone-700">{p.hoursBilled}h</td>
                   <td className="px-4 py-3 text-right text-stone-700">{fmt(p.theoreticalRevenue)} €</td>
+                  <td className="px-4 py-3 text-right text-stone-500">
+                    {p.retrocessionRate != null ? `${(p.retrocessionRate * 100).toLocaleString('fr-BE', { maximumFractionDigits: 1 })} %` : '—'}
+                  </td>
                   <td className="px-4 py-3 text-right text-[#6B7A00] font-medium">{fmt(p.bucketCredits)} €</td>
                   <td className="px-4 py-3 text-right text-[#5B5781] font-medium">{fmt(p.bucketDebits)} €</td>
                   <td className={`px-4 py-3 text-right font-medium ${p.bucketBalance >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
                     {fmt(p.bucketBalance)} €
+                  </td>
+                  <td className={`px-4 py-3 text-right font-medium ${(p.bucketNetBudget ?? 0) >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
+                    {fmt(p.bucketNetBudget ?? 0)} €
                   </td>
                 </tr>
               ))}

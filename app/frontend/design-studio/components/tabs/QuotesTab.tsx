@@ -183,6 +183,45 @@ export function QuotesTab({
                   </ul>
                 )}
 
+                {(quote.lines ?? []).length > 0 && (
+                  <dl className="ml-auto w-full max-w-xs space-y-1 text-sm">
+                    <div className="flex items-center justify-between text-stone-600">
+                      <dt>Sous-total</dt>
+                      <dd className="font-medium text-stone-800">
+                        {Number(quote.subtotal ?? 0).toLocaleString('fr-BE')} €
+                      </dd>
+                    </div>
+                    {Number(quote.contributionAmount ?? 0) > 0 && (
+                      <div className="flex items-center justify-between text-stone-600">
+                        <dt>
+                          {quote.contributionLabel ?? 'Contribution Semisto'}
+                          {Number(quote.contributionRate ?? 0) > 0 && (
+                            <span className="text-stone-400">
+                              {' '}
+                              ({(Number(quote.contributionRate) * 100).toLocaleString('fr-BE', { maximumFractionDigits: 1 })} %)
+                            </span>
+                          )}
+                        </dt>
+                        <dd className="font-medium text-[#6B7A00]">
+                          {Number(quote.contributionAmount).toLocaleString('fr-BE')} €
+                        </dd>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-stone-600">
+                      <dt>TVA ({Number(quote.vatRate ?? 0).toLocaleString('fr-BE')} %)</dt>
+                      <dd className="font-medium text-stone-800">
+                        {Number(quote.vatAmount ?? 0).toLocaleString('fr-BE')} €
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-stone-200 pt-1 text-stone-900">
+                      <dt className="font-semibold">Total</dt>
+                      <dd className="font-semibold">
+                        {Number(quote.total ?? 0).toLocaleString('fr-BE')} €
+                      </dd>
+                    </div>
+                  </dl>
+                )}
+
                 {quote.status === 'draft' && (
                   <form
                     onSubmit={(e) => {

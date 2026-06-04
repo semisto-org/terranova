@@ -311,6 +311,9 @@ export interface Quote {
   clientComment: string | null
   lines: QuoteLine[]
   subtotal: number
+  contributionRate?: number
+  contributionAmount?: number
+  contributionLabel?: string
   vatRate: number
   vatAmount: number
   total: number
