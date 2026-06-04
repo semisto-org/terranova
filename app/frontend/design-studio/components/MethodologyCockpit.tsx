@@ -17,6 +17,15 @@ import { SoilSurvey } from './SoilSurvey'
 import { TriDonnees, Biome, EchelleTemps, RessourcesLimites, SystemiqueEnPlace } from './AnalysisForms'
 import { SiteMap } from './SiteMap'
 import { AnalyseFonctionnelle, PositionnementEcosysteme, ContraintesCurseurs, Strategies } from './PositionnementForms'
+import {
+  ReveBrainstorming,
+  DesignFonctionnel,
+  FluxCycles,
+  RenforcementSystemique,
+  EvaluerOptions,
+  PlansModelisation,
+  PaletteGuidee,
+} from './DesignForms'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -325,6 +334,27 @@ export function MethodologyCockpit({ projectId, onOpenTool, coordinates }: Metho
                 )}
                 {activeStep.key === 'positionnement' && sub.key === 'strategies' && (
                   <Strategies projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'reve-brainstorming' && (
+                  <ReveBrainstorming projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'design-fonctionnel' && (
+                  <DesignFonctionnel projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'secteurs-zones-bordures' && (
+                  <FluxCycles projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'renforcement-systemique' && (
+                  <RenforcementSystemique projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'evaluer-options' && (
+                  <EvaluerOptions projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'plans-modelisation' && (
+                  <PlansModelisation projectId={projectId} />
+                )}
+                {activeStep.key === 'design' && sub.key === 'selection-palette' && (
+                  <PaletteGuidee projectId={projectId} />
                 )}
               </section>
             ))}
