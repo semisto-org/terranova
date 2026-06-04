@@ -16,6 +16,7 @@ import { Interview } from './Interview'
 import { SoilSurvey } from './SoilSurvey'
 import { TriDonnees, Biome, EchelleTemps, RessourcesLimites, SystemiqueEnPlace } from './AnalysisForms'
 import { SiteMap } from './SiteMap'
+import { AnalyseFonctionnelle, PositionnementEcosysteme, ContraintesCurseurs, Strategies } from './PositionnementForms'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -312,6 +313,18 @@ export function MethodologyCockpit({ projectId, onOpenTool, coordinates }: Metho
                 )}
                 {activeStep.key === 'analyse-evaluation' && sub.key === 'systemique-en-place' && (
                   <SystemiqueEnPlace projectId={projectId} />
+                )}
+                {activeStep.key === 'positionnement' && sub.key === 'analyse-fonctionnelle' && (
+                  <AnalyseFonctionnelle projectId={projectId} />
+                )}
+                {activeStep.key === 'positionnement' && sub.key === 'positionnement-ecosysteme' && (
+                  <PositionnementEcosysteme projectId={projectId} />
+                )}
+                {activeStep.key === 'positionnement' && sub.key === 'positionnement-contraintes' && (
+                  <ContraintesCurseurs projectId={projectId} />
+                )}
+                {activeStep.key === 'positionnement' && sub.key === 'strategies' && (
+                  <Strategies projectId={projectId} />
                 )}
               </section>
             ))}

@@ -4,7 +4,7 @@ import { apiRequest } from '../../lib/api'
 type SectionData = Record<string, unknown>
 
 // Hook générique : lit/écrit le `data` JSONB d'une sous-section d'analyse.
-function useAnalysisSection(projectId: string, nodeKey: string): [SectionData, (next: SectionData) => void] {
+export function useAnalysisSection(projectId: string, nodeKey: string): [SectionData, (next: SectionData) => void] {
   const [data, setData] = useState<SectionData>({})
 
   useEffect(() => {
@@ -27,13 +27,13 @@ function useAnalysisSection(projectId: string, nodeKey: string): [SectionData, (
   return [data, save]
 }
 
-interface Field {
+export interface Field {
   key: string
   label: string
 }
 
 // Formulaire générique : une zone de texte par champ, sauvegarde au blur.
-function FieldsForm({ projectId, nodeKey, fields }: { projectId: string; nodeKey: string; fields: Field[] }) {
+export function FieldsForm({ projectId, nodeKey, fields }: { projectId: string; nodeKey: string; fields: Field[] }) {
   const [data, save] = useAnalysisSection(projectId, nodeKey)
 
   return (
