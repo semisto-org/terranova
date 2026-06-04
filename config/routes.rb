@@ -496,6 +496,8 @@ Rails.application.routes.draw do
       patch "design/:project_id/harvest-calendar", to: "design_studio#update_harvest_calendar"
       patch "design/:project_id/maintenance-calendar", to: "design_studio#update_maintenance_calendar"
       get "design/:project_id/search", to: "design_studio#search"
+      get "design/:project_id/methodology", to: "design_studio#methodology"
+      patch "design/:project_id/methodology/item", to: "design_studio#upsert_methodology_item"
       post "design/:project_id/quotes", to: "design_studio#create_quote"
       patch "design/quotes/:quote_id", to: "design_studio#update_quote"
       delete "design/quotes/:quote_id", to: "design_studio#destroy_quote"
