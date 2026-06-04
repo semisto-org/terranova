@@ -462,7 +462,7 @@ export function ProjectDetailView({
             onTabChange={setActiveTab}
           >
             {activeTab === 'methodology' && (
-              <MethodologyCockpit projectId={project.id} onOpenTool={setActiveTab} />
+              <MethodologyCockpit projectId={project.id} onOpenTool={setActiveTab} coordinates={project.coordinates} />
             )}
             {activeTab === 'overview' && (
               <OverviewTab project={project as import('../types').Project} />
