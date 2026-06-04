@@ -463,6 +463,7 @@ Rails.application.routes.draw do
       get "design/reporting", to: "design_studio#reporting"
       get "design_studio/reporting", to: "design_studio#reporting"
       get "design/billing-overview", to: "design_studio#billing_overview"
+      get "design/activity-volumes", to: "design_studio#activity_volumes"
       get "design/:project_id", to: "design_studio#show"
       post "design", to: "design_studio#create"
       patch "design/:project_id", to: "design_studio#update"

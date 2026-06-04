@@ -112,6 +112,7 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
     paid_at: '',
     invoice_url: '',
     vat_exemption: false,
+    contribution_semisto_str: '',
     notes: '',
     organization_id: '',
     projectable: null as ProjectableValue | null,
@@ -155,6 +156,9 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
         paid_at: revenue.paidAt ? revenue.paidAt.slice(0, 10) : '',
         invoice_url: revenue.invoiceUrl || '',
         vat_exemption: Boolean(revenue.vatExemption),
+        contribution_semisto_str: revenue.contributionSemistoAmount
+          ? String(revenue.contributionSemistoAmount).replace('.', ',')
+          : '',
         notes: revenue.notes || '',
         organization_id: (revenue as RevenueItem & { organizationId?: string }).organizationId || defaultOrganizationId || '',
         projectable: revenue.projectableType && revenue.projectableId
@@ -240,6 +244,7 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
       paid_at: form.paid_at || null,
       invoice_url: form.invoice_url.trim(),
       vat_exemption: form.vat_exemption,
+      contribution_semisto_amount: parseAmount(form.contribution_semisto_str),
       notes: form.notes || '',
       projectable_type: form.projectable?.type ?? null,
       projectable_id: form.projectable?.id ?? null,
@@ -569,6 +574,31 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
                   accent="#5B5781"
                 />
               </section>
+
+              {/* CONTRIBUTION SEMISTO — bureau d'études (délibération #20) */}
+              {form.pole === 'design_studio' && (
+                <section>
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium mb-2">
+                    Contribution Semisto
+                  </div>
+                  <Field
+                    label="Contribution au fonctionnement de Semisto ASBL"
+                    hint="Part de rétrocession incluse dans cette recette"
+                  >
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={form.contribution_semisto_str}
+                        onChange={(e) => update('contribution_semisto_str', e.target.value.replace(/[^\d.,-]/g, ''))}
+                        placeholder="0,00"
+                        className={`${inputBase} pr-9 font-mono tabular-nums`}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-stone-400">€</span>
+                    </div>
+                  </Field>
+                </section>
+              )}
 
               {/* COLLAPSIBLE — PAIEMENT */}
               <Collapsible

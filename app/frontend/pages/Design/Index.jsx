@@ -374,6 +374,44 @@ function ProjectEditModal({ open, busy, project, values, onChange, onClose, onSu
                   </div>
                 </div>
               </section>
+
+              {/* Cadre économique — délibération #20 */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full bg-[#AFBD00]" />
+                  <h3 className="text-sm font-semibold text-stone-800">Cadre économique</h3>
+                </div>
+                <div className="space-y-4 pl-3">
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Format de projet</span>
+                    <select
+                      className={inputClass}
+                      value={values.format_code || ''}
+                      onChange={(e) => onChange('format_code', e.target.value)}
+                    >
+                      <option value="">— Non défini —</option>
+                      <option value="a">a · Projet Semisto standard (binôme · ≥ 5 000 €) — rétrocession 15 %</option>
+                      <option value="b">b · Petit projet Semisto (1 designer · &lt; 5 000 €) — rétrocession 15 %</option>
+                      <option value="c">c · Collaboration facilitée (client hors mission) — commission 5 %</option>
+                      <option value="d">d · Projet personnel du designer (hors Semisto)</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Taux horaire designer (€/h, 40–60)</span>
+                    <input
+                      type="number"
+                      min="40"
+                      max="60"
+                      step="0.5"
+                      className={inputClass}
+                      value={values.designer_rate ?? ''}
+                      onChange={(e) => onChange('designer_rate', e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="Défaut : 60 €/h"
+                    />
+                    <span className="text-xs text-stone-400">Le tarif client est aligné sur ce taux. Laisser vide pour le taux par défaut.</span>
+                  </label>
+                </div>
+              </section>
             </div>
             <div className="shrink-0 px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex justify-end gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg border border-stone-300 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors">
@@ -438,7 +476,7 @@ export default function DesignIndex({ initialProjectId }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [expenseModal, setExpenseModal] = useState(null)
   const [projectEditModal, setProjectEditModal] = useState(null)
-  const [editProjectForm, setEditProjectForm] = useState({ name: '', client_name: '', client_email: '', client_phone: '', street: '', number: '', city: '', postcode: '', country_name: '', latitude: '', longitude: '', area: 500 })
+  const [editProjectForm, setEditProjectForm] = useState({ name: '', client_name: '', client_email: '', client_phone: '', street: '', number: '', city: '', postcode: '', country_name: '', latitude: '', longitude: '', area: 500, format_code: '', designer_rate: '' })
 
   const loadDashboard = useCallback(async () => {
     const payload = await apiRequest('/api/v1/design')
@@ -734,6 +772,8 @@ export default function DesignIndex({ initialProjectId }) {
         latitude: parseFloat(editProjectForm.latitude) || 0,
         longitude: parseFloat(editProjectForm.longitude) || 0,
         area: Number(editProjectForm.area || 0),
+        format_code: editProjectForm.format_code || '',
+        designer_rate: editProjectForm.designer_rate === '' ? null : editProjectForm.designer_rate,
       }),
     }), { refreshProjectId: projectId })
     if (success) {
@@ -806,6 +846,8 @@ export default function DesignIndex({ initialProjectId }) {
           latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
           longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
           area: p.area || 500,
+          format_code: p.formatCode || '',
+          designer_rate: p.designerRate ?? '',
         })
         setProjectEditModal({ project: p })
       },
@@ -1323,6 +1365,8 @@ export default function DesignIndex({ initialProjectId }) {
                                 latitude: p.coordinates?.lat != null ? String(p.coordinates.lat) : '',
                                 longitude: p.coordinates?.lng != null ? String(p.coordinates.lng) : '',
                                 area: p.area || 500,
+                                format_code: p.formatCode || '',
+                                designer_rate: p.designerRate ?? '',
                               })
                               setProjectEditModal({ project: p })
                             }}

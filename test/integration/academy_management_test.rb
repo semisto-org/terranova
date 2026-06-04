@@ -334,13 +334,14 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_response :created
     training_type_id = JSON.parse(response.body)['id']
 
-    # Attempt to create training without title (required field)
-    assert_raises(ActiveRecord::RecordInvalid) do
-      post '/api/v1/academy/trainings', params: {
-        training_type_id: training_type_id
-        # title is missing
-      }, as: :json
-    end
+    # Attempt to create training without title (required field) — the API now
+    # returns a 422 with the validation messages rather than letting the
+    # RecordInvalid bubble up as a 500 (BaseController rescue_from).
+    post '/api/v1/academy/trainings', params: {
+      training_type_id: training_type_id
+      # title is missing
+    }, as: :json
+    assert_response :unprocessable_entity
   end
 
   test 'create training with valid data and verify checklist inheritance' do

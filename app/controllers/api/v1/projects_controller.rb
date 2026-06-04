@@ -332,7 +332,8 @@ module Api
         params.permit(
           :amount, :amount_excl_vat, :description, :date, :contact_id, :pole,
           :revenue_type, :status, :label, :notes, :vat_rate, :vat_6, :vat_21,
-          :vat_exemption, :payment_method, :invoice_url, :paid_at, :category
+          :vat_exemption, :payment_method, :invoice_url, :paid_at, :category,
+          :contribution_semisto_amount
         )
       end
 
@@ -587,6 +588,8 @@ module Api
           status: r.status,
           label: r.label,
           notes: r.notes,
+          contributionSemistoAmount: r.contribution_semisto_amount.to_f,
+          contributionLabel: Revenue::CONTRIBUTION_LABEL,
           vat6: r.vat_6.to_f,
           vat21: r.vat_21.to_f,
           paymentMethod: r.payment_method,

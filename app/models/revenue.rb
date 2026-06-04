@@ -6,6 +6,11 @@ class Revenue < ApplicationRecord
   POLES = %w[academy design_studio nursery roots shop].freeze
   STATUSES = %w[draft confirmed received].freeze
 
+  # Libellé client unifié pour la contribution au fonctionnement (délibération #20).
+  CONTRIBUTION_LABEL = 'Contribution au fonctionnement de Semisto ASBL'
+
+  validates :contribution_semisto_amount, numericality: { greater_than_or_equal_to: 0 }
+
   has_many :bank_reconciliations, as: :reconcilable, class_name: "BankReconciliation", dependent: :destroy
   has_many_attached :documents
 

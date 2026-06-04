@@ -5,6 +5,9 @@ module Design
 
     STATUSES = %w[draft sent approved rejected expired].freeze
 
+    # Libellé client unifié pour la rétrocession (délibération #20).
+    CONTRIBUTION_LABEL = 'Contribution au fonctionnement de Semisto ASBL'
+
     belongs_to :project, class_name: 'Design::Project', optional: true
     has_many :lines, class_name: 'Design::QuoteLine', foreign_key: :quote_id, dependent: :destroy
 

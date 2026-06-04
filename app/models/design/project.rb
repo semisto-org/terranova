@@ -7,6 +7,17 @@ module Design
     PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion termine].freeze
     STATUSES = %w[active pending completed archived].freeze
     PROJECT_TYPES = %w[prive professionnel collectif public].freeze
+
+    # Délibération #20 — quatre formats de projet reconnus, chacun portant son taux.
+    #   a = Projet Semisto standard (binôme + budget ≥ 5 000 €)  → rétrocession 15 %
+    #   b = Petit projet Semisto (1 designer rémunéré + bénévoles, < 5 000 €) → rétrocession 15 %
+    #   c = Collaboration facilitée pour client hors mission → commission 5 %
+    #   d = Projet personnel du designer → hors Semisto (0 %)
+    FORMAT_CODES = %w[a b c d].freeze
+    FORMAT_DEFAULT_RETROCESSION = { 'a' => 0.15, 'b' => 0.15, 'c' => 0.05, 'd' => 0.0 }.freeze
+    # Bornes du taux horaire designer fixées par la délibération.
+    DESIGNER_RATE_MIN = 40
+    DESIGNER_RATE_MAX = 60
     CLIENT_INTERESTS = %w[
       design
       plant_selection
@@ -45,6 +56,28 @@ module Design
     validates :acquisition_channel, inclusion: { in: ACQUISITION_CHANNELS }, allow_blank: true
     validate :client_interests_are_supported
     validates :google_photos_url, format: { with: /\Ahttps?:\/\//i }, allow_blank: true
+    validates :format_code, inclusion: { in: FORMAT_CODES }, allow_blank: true
+    validates :designer_rate,
+              numericality: { greater_than_or_equal_to: DESIGNER_RATE_MIN, less_than_or_equal_to: DESIGNER_RATE_MAX },
+              allow_nil: true
+    validates :retrocession_rate,
+              numericality: { greater_than_or_equal_to: 0, less_than: 1 },
+              allow_nil: true
+
+    before_save :stamp_closed_at
+
+    # Taux horaire designer effectif (tarif client aligné). Défaut : taux global BillingConfig.
+    def effective_designer_rate
+      designer_rate.presence || BillingConfig.instance.hourly_rate
+    end
+
+    # Taux de rétrocession effectif : explicite > défaut du format > taux global transitoire.
+    def effective_retrocession_rate
+      return retrocession_rate if retrocession_rate.present?
+      return FORMAT_DEFAULT_RETROCESSION[format_code] if format_code.present?
+
+      BillingConfig.instance.asbl_support_rate
+    end
 
     def address_display
       parts = [street, number, postcode, city, country_name].reject(&:blank?)
@@ -77,6 +110,17 @@ module Design
     end
 
     private
+
+    # Horodate la clôture quand le projet passe en "completed" ; efface si on rouvre.
+    def stamp_closed_at
+      return unless will_save_change_to_status?
+
+      if status == 'completed'
+        self.closed_at ||= Time.current
+      elsif status_was == 'completed'
+        self.closed_at = nil
+      end
+    end
 
     def normalize_client_interests
       self.client_interests = Array(client_interests).map(&:to_s).reject(&:blank?).uniq

@@ -4,6 +4,10 @@ module Api
       skip_forgery_protection
       before_action :require_authentication, unless: -> { Rails.env.test? }
 
+      rescue_from ActiveRecord::RecordInvalid do |error|
+        render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
       private
 
       def current_member

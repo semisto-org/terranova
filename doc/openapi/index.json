@@ -200,7 +200,7 @@
       ]
     },
     {
-      "endpointCount": 16,
+      "endpointCount": 15,
       "file": "design.json",
       "name": "design",
       "operations": [
@@ -213,6 +213,11 @@
           "method": "POST",
           "path": "/api/v1/design",
           "summary": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/activity-volumes",
+          "summary": "activity_volumes"
         },
         {
           "method": "DELETE",
@@ -253,16 +258,6 @@
           "method": "POST",
           "path": "/api/v1/design/{project_id}/duplicate",
           "summary": "duplicate"
-        },
-        {
-          "method": "GET",
-          "path": "/api/v1/design/{project_id}/methodology",
-          "summary": "methodology"
-        },
-        {
-          "method": "PATCH",
-          "path": "/api/v1/design/{project_id}/methodology/item",
-          "summary": "upsert_methodology_item"
         },
         {
           "method": "POST",
@@ -879,7 +874,7 @@
       ]
     },
     {
-      "endpointCount": 4,
+      "endpointCount": 5,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -897,6 +892,11 @@
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/bucket",
           "summary": "create"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/revenues",
+          "summary": "create_revenue"
         },
         {
           "method": "GET",

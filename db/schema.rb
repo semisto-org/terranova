@@ -666,17 +666,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
     t.index ["project_id"], name: "index_design_media_items_on_project_id"
   end
 
-  create_table "design_methodology_items", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "node_key", null: false
-    t.text "notes"
-    t.bigint "project_id", null: false
-    t.string "status", default: "todo", null: false
-    t.datetime "updated_at", null: false
-    t.index ["project_id", "node_key"], name: "index_design_methodology_items_on_project_and_node", unique: true
-    t.index ["project_id"], name: "index_design_methodology_items_on_project_id"
-  end
-
   create_table "design_plant_markers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -826,11 +815,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
     t.string "client_name", null: false
     t.string "client_phone", default: "", null: false
     t.string "client_portal_token", limit: 16
+    t.datetime "closed_at"
+    t.text "closure_feedback"
     t.string "country_name", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.decimal "designer_rate", precision: 8, scale: 2
     t.decimal "expenses_actual", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "expenses_budget", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "format_code"
     t.string "google_photos_url", default: "", null: false
     t.integer "hours_billed", default: 0, null: false
     t.integer "hours_planned", default: 0, null: false
@@ -850,6 +843,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
     t.string "postcode", default: "", null: false
     t.string "project_manager_id", default: "", null: false
     t.string "project_type", default: "", null: false
+    t.decimal "retrocession_rate", precision: 5, scale: 4
     t.date "start_date"
     t.string "status", default: "pending", null: false
     t.string "street", default: "", null: false
@@ -887,6 +881,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
     t.string "author_name", default: "", null: false
     t.text "client_comment"
     t.bigint "contact_id"
+    t.decimal "contribution_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "contribution_rate", precision: 5, scale: 4, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.datetime "notion_created_at"
@@ -2021,6 +2017,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
     t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
     t.string "category", default: "", null: false
     t.bigint "contact_id"
+    t.decimal "contribution_semisto_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.date "date"
     t.datetime "deleted_at"
@@ -2568,7 +2565,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
   add_foreign_key "design_interventions", "design_projects", column: "project_id"
   add_foreign_key "design_maintenance_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_media_items", "design_projects", column: "project_id"
-  add_foreign_key "design_methodology_items", "design_projects", column: "project_id"
   add_foreign_key "design_plant_markers", "design_planting_plans", column: "planting_plan_id"
   add_foreign_key "design_plant_markers", "design_project_palette_items", column: "palette_item_id"
   add_foreign_key "design_plant_records", "design_plant_markers", column: "marker_id"
