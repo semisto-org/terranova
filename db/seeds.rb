@@ -458,6 +458,17 @@ Design::ProjectMeeting.find_or_create_by!(project: design_project, title: 'Reuni
   item.location = 'Visio'
 end
 
+# Avancement méthodologique de démo (cf. Design::Methodology).
+{
+  'observation/promenade-sensible/prise-de-contact' => 'done',
+  'observation/releve/analyse-de-sol' => 'done',
+  'observation/entrevue' => 'in_progress'
+}.each do |node_key, status|
+  Design::MethodologyItem.find_or_create_by!(project: design_project, node_key: node_key) do |item|
+    item.status = status
+  end
+end
+
 Design::ProjectMeeting.find_or_create_by!(project: design_project, title: 'Atelier palette vegetale') do |item|
   item.starts_at = 11.days.from_now.change(hour: 14, min: 0)
   item.duration_minutes = 120

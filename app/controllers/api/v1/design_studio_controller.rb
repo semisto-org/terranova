@@ -565,6 +565,40 @@ module Api
         render json: { query: query, results: results.first(50) }
       end
 
+      # Parcours méthodologique : définition canonique (6 étapes) + état de ce projet
+      # + avancement par étape + boîte à outils permacole + références.
+      def methodology
+        project = find_project
+
+        items_map = project.methodology_items.each_with_object({}) do |item, acc|
+          acc[item.node_key] = { status: item.status, notes: item.notes }
+        end
+
+        render json: {
+          version: Design::Methodology::VERSION,
+          steps: serialize_methodology_tree,
+          items: items_map,
+          summary: project.methodology_progress,
+          toolbox: Design::Methodology::TOOLBOX,
+          references: Design::Methodology::REFERENCES
+        }
+      end
+
+      # Upsert de l'état d'un nœud de la méthodologie (cocher / annoter une étape).
+      def upsert_methodology_item
+        project = find_project
+        item = project.methodology_items.find_or_initialize_by(node_key: params[:node_key])
+
+        item.status = params[:status] if params.key?(:status)
+        item.notes = params[:notes] if params.key?(:notes)
+
+        if item.save
+          render json: { node_key: item.node_key, status: item.status, notes: item.notes }
+        else
+          render json: { errors: item.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       def create_quote
         project = find_project
 
@@ -898,6 +932,24 @@ module Api
 
       def find_project
         Design::Project.find(params.require(:project_id))
+      end
+
+      # Arbre méthodo prêt pour le frontend : clés string, sub_sections → subSections.
+      def serialize_methodology_tree
+        Design::Methodology.tree.map do |step|
+          {
+            'key' => step[:key],
+            'label' => step[:label],
+            'subSections' => Array(step[:sub_sections]).map do |sub|
+              {
+                'key' => sub[:key],
+                'label' => sub[:label],
+                'tool' => sub[:tool],
+                'items' => Array(sub[:items]).map { |item| { 'key' => item[:key], 'label' => item[:label] } }
+              }
+            end
+          }
+        end
       end
 
       def full_project_payload(project, palette)

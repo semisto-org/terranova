@@ -44,6 +44,7 @@ module Design
     has_many :plant_records, class_name: 'Design::PlantRecord', foreign_key: :project_id, dependent: :destroy
     has_many :follow_up_visits, class_name: 'Design::FollowUpVisit', foreign_key: :project_id, dependent: :destroy
     has_many :interventions, class_name: 'Design::Intervention', foreign_key: :project_id, dependent: :destroy
+    has_many :methodology_items, class_name: 'Design::MethodologyItem', foreign_key: :project_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
     before_validation :normalize_client_interests
@@ -81,6 +82,20 @@ module Design
     def address_display
       parts = [street, number, postcode, city, country_name].reject(&:blank?)
       parts.join(', ')
+    end
+
+    # Avancement méthodologique par étape, dérivé de la définition + des items 'done'.
+    # => { "observation" => { done: 1, total: 10, percent: 10 }, ... }
+    def methodology_progress
+      done_keys = methodology_items.where(status: 'done').pluck(:node_key).to_set
+
+      Design::Methodology.tree.each_with_object({}) do |step, acc|
+        leaf_keys = Design::Methodology.leaf_keys_for_step(step[:key])
+        total = leaf_keys.size
+        done = leaf_keys.count { |key| done_keys.include?(key) }
+        percent = total.zero? ? 0 : ((done.to_f / total) * 100).round
+        acc[step[:key]] = { done: done, total: total, percent: percent }
+      end
     end
 
     def ensure_client_portal_token!
