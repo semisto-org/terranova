@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, ArrowDownCircle, ArrowUpCircle, Clock, Percent } from 'lucide-react'
+import { BarChart3, ArrowDownCircle, ArrowUpCircle, Clock, Percent, Activity } from 'lucide-react'
 import type { EconomicInput, EconomicOutput, EconomicsDashboard, EconomicsFilters, EconomicsActions } from './types'
 import { EconomicsFilterBar } from './EconomicsFilterBar'
 import { EconomicsDashboardView } from './EconomicsDashboardView'
@@ -9,12 +9,14 @@ import { LaborHoursView } from './LaborHoursView'
 import { InputFormModal } from './InputFormModal'
 import { OutputFormModal } from './OutputFormModal'
 import { AsblRateDashboard } from './AsblRateDashboard'
+import { ActivityVolumesView } from './ActivityVolumesView'
 
 const SUB_TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3 },
   { id: 'inputs', label: 'Coûts', icon: ArrowDownCircle },
   { id: 'outputs', label: 'Revenus', icon: ArrowUpCircle },
   { id: 'labor', label: 'Heures de travail', icon: Clock },
+  { id: 'volumes', label: 'Volumes d\'activité', icon: Activity },
   { id: 'asbl', label: 'Taux ASBL', icon: Percent },
 ] as const
 
@@ -153,6 +155,10 @@ export function EconomicsSection({
           onEdit={(item) => setInputModal({ open: true, editing: item, presetLabor: false })}
           onDelete={actions.onDeleteInput}
         />
+      )}
+
+      {activeTab === 'volumes' && (
+        <ActivityVolumesView />
       )}
 
       {activeTab === 'asbl' && (
