@@ -14,7 +14,7 @@ import { ToolboxPanel } from './ToolboxPanel'
 import { ObservationNotes } from './ObservationNotes'
 import { Interview } from './Interview'
 import { SoilSurvey } from './SoilSurvey'
-import { TriDonnees, EchelleTemps, RessourcesLimites, SystemiqueEnPlace } from './AnalysisForms'
+import { TriDonnees, Biome, EchelleTemps, RessourcesLimites, SystemiqueEnPlace } from './AnalysisForms'
 
 // --- Types (miroir du payload GET /api/v1/design/:id/methodology) ---
 
@@ -295,6 +295,9 @@ export function MethodologyCockpit({ projectId, onOpenTool }: MethodologyCockpit
                 )}
                 {activeStep.key === 'analyse-evaluation' && sub.key === 'tri-des-donnees' && (
                   <TriDonnees projectId={projectId} />
+                )}
+                {activeStep.key === 'analyse-evaluation' && sub.key === 'biome' && (
+                  <Biome projectId={projectId} />
                 )}
                 {activeStep.key === 'analyse-evaluation' && sub.key === 'echelle-de-temps' && (
                   <EchelleTemps projectId={projectId} />

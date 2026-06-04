@@ -70,6 +70,21 @@ export function TriDonnees({ projectId }: { projectId: string }) {
   )
 }
 
+// #67 — Biome
+export function Biome({ projectId }: { projectId: string }) {
+  return (
+    <FieldsForm
+      projectId={projectId}
+      nodeKey="analyse-evaluation/biome"
+      fields={[
+        { key: 'climat_rusticite', label: 'Climat / zone de rusticité' },
+        { key: 'succession_especes_cles', label: 'Succession écologique — espèces clés' },
+        { key: 'sous_sol', label: 'Sous-sol' },
+      ]}
+    />
+  )
+}
+
 // #68 — Échelle de temps
 export function EchelleTemps({ projectId }: { projectId: string }) {
   return (
