@@ -201,6 +201,9 @@ export default function TrainingDetail() {
               index={sessions.indexOf(featuredSession)}
               docs={sessionDocMap[featuredSession.id] || []}
               hideCarpoolLink={activityPast}
+              trainingId={trainingId}
+              canEdit={training.canUpload}
+              onChanged={() => loadTraining()}
             />
           ) : null}
 
@@ -270,7 +273,7 @@ function ProgressStrip({ pastCount, total }) {
 
 // The centerpiece: a featured session (next upcoming, ongoing, or — for
 // single-session activities — that one session even if past), fully expanded.
-function NextSessionHero({ session, index, docs, hideCarpoolLink = false }) {
+function NextSessionHero({ session, index, docs, hideCarpoolLink = false, trainingId, canEdit, onChanged }) {
   const ongoing = isSessionOngoing(session)
   const past = isSessionPast(session)
   const accent = past ? COLOR_PAST : COLOR_UPCOMING
@@ -329,6 +332,14 @@ function NextSessionHero({ session, index, docs, hideCarpoolLink = false }) {
 
         {/* Practical info */}
         <SessionPractical session={session} />
+
+        {/* Google Photos album — link + trainer edit affordance */}
+        <SessionPhotoAlbum
+          trainingId={trainingId}
+          session={session}
+          canEdit={canEdit}
+          onSaved={onChanged}
+        />
 
         {/* Session documents */}
         {docs.length > 0 && (
