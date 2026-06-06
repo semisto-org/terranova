@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* bm-design-system:start */
+@import "./design-system.css";
+/* bm-design-system:end */
+
 /* TipTap lists: collapse <li><p> margins and tighten list spacing */
 .prose :where(li > p) {
   margin-top: 0;

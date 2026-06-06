@@ -209,3 +209,21 @@ bin/dev    # Rails (port 4000) + Vite (port 30362)
 9. **Partner Portal** — Not started
 
 Per-milestone build instructions in `.product-plan/instructions/incremental/`.
+
+<!-- bm-design-system:start -->
+## Design system (scaffolded, confined scope)
+
+A design system reference lives at [`/design-system`](/design-system) (`app#design_system` → `pages/DesignSystem.tsx`). It previews and explains every primitive — colors, typography, structure, base styles, and elements — and shows the exact markup to use. The reusable primitives are under `app/frontend/components/ui/` and the section sources under `app/frontend/components/design-system/sections/`.
+
+**Scope: confined, not global.** This was installed with `.bm-ds`-scoped base styles, so its typography resets and dark palette apply *only* on the `/design-system` page — the existing Terranova pages are untouched and the conventions above (pole colors, Sole Serif/Inter fonts, the admin amber-callout pattern, `window.confirm` guards) remain authoritative for all existing UI. The `@theme` tokens (`bg-page`, `bg-surface`, `text-ink-body`, `bg-accent`, …) and the `.btn`/`.form-control`/`.badge`/`.modal`/`.callout` component classes ARE registered globally and available anywhere, but nothing forces them onto existing markup.
+
+When building **new** UI, prefer the design system:
+
+1. **Check `/design-system` first** before writing fresh markup — reuse the existing tokens and primitives (`<Button>`, `<Input>`, `<Badge>`, `<Select>`, `<Checkbox>`, `<Radio>`, `<RichTextField>`, `<Dialog>`, `<ThemeToggle>` and friends) rather than ad-hoc styles or one-off variant systems.
+2. **If you adopt the bare-element base styles** (auto-styled `<h1>`–`<h6>`, `<p>`, `<a>`, `<ul>`, etc.) you must render the markup inside a `.bm-ds` container — outside it, those elements are NOT auto-styled (that's the confinement). Within a `.bm-ds` subtree, don't re-apply `text-xl`/`font-semibold`/`text-ink-*` to those elements; they're already defined.
+3. **If a needed primitive is missing**, propose adding it to the design system (`components/ui/x.tsx` + a new section on `/design-system`) before building a one-off.
+4. **Re-running the `bm-design-system` skill** is the supported way to add sections or refresh tokens — it detects the existing setup and merges non-destructively.
+
+Theme toggle: the header button on `/design-system` persists to `localStorage["bm-ds-theme"]`; a boot script in `application.html.erb` adds `.dark` to `<html>` pre-paint, but only `.bm-ds` subtrees respond to it.
+<!-- bm-design-system:end -->
+

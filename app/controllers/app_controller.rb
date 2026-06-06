@@ -171,6 +171,12 @@ class AppController < ApplicationController
     }
   end
 
+  def design_system
+    render inertia: "DesignSystem", props: {
+      milestone: "Design System"
+    }
+  end
+
   def fallback
     path = params[:path] || ''
     case path

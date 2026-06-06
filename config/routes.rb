@@ -66,6 +66,7 @@ Rails.application.routes.draw do
 
   # Inertia-powered application frontend
   root "app#index"
+  get "design-system", to: "app#design_system"
   get "lab", to: redirect("/")
   get "academy", to: "app#academy"
   get "academy/calendar", to: "app#academy"

@@ -48,5 +48,23 @@ export default defineConfig(({ mode }) => ({
       '@': frontendRoot,
       '~/': `${frontendRoot}/`,
     },
+    // TipTap (existing) and Milkdown/Crepe (design-system RichTextField) both
+    // depend on ProseMirror. Yarn installs duplicate copies of some prosemirror-*
+    // packages, and two prosemirror-gapcursor copies each try to register the
+    // "gapcursor" selection JSON ID against the single prosemirror-state, throwing
+    // "Duplicate use of selection JSON ID gapcursor" and blanking the app.
+    // Dedupe forces a single copy of each so the registration happens once.
+    dedupe: [
+      'prosemirror-state',
+      'prosemirror-view',
+      'prosemirror-model',
+      'prosemirror-transform',
+      'prosemirror-gapcursor',
+      'prosemirror-keymap',
+      'prosemirror-commands',
+      'prosemirror-history',
+      'prosemirror-inputrules',
+      'prosemirror-schema-list',
+    ],
   },
 }))
