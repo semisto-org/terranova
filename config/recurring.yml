@@ -16,3 +16,6 @@ production:
   trainer_document_request:
     class: TrainerDocumentRequestJob
     schedule: every day at 9am
+  daily_task_recap:
+    class: DailyTaskRecapJob
+    schedule: every day at 11pm
