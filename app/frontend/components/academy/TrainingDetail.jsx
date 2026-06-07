@@ -349,20 +349,26 @@ export default function TrainingDetail({
                     { id: 'price', label: 'Prix', done: trainingHasPrice(training) },
                   ]}
                 />
-                {training.status === 'post_production' && training.closureReadiness && (
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-                      training.closureReadiness.allPaid
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                    }`}
-                    title="Préparation à la clôture : encaissement des paiements participants"
-                  >
-                    {training.closureReadiness.allPaid
-                      ? '✓ Paiements encaissés — prêt à clôturer'
-                      : `Clôture : ${training.closureReadiness.unpaidCount} paiement(s) à encaisser (${training.closureReadiness.paidCount}/${training.closureReadiness.totalRegistrations})`}
-                  </span>
-                )}
+                {training.status === 'post_production' && training.closureReadiness && (() => {
+                  const r = training.closureReadiness
+                  const blockers = []
+                  if (!r.allPaid && r.unpaidCount > 0) blockers.push(`${r.unpaidCount} paiement(s) à encaisser`)
+                  if (r.pendingExpensesCount > 0) blockers.push(`${r.pendingExpensesCount} dépense(s) fournisseur`)
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                        r.readyToClose
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}
+                      title="Préparation à la clôture : paiements participants + dépenses fournisseurs"
+                    >
+                      {r.readyToClose
+                        ? '✓ Prêt à clôturer'
+                        : `Clôture : ${blockers.join(' · ')}`}
+                    </span>
+                  )
+                })()}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">

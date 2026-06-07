@@ -804,21 +804,10 @@ module Api
         }
       end
 
-      # Préparation à la clôture (#48). Critère bien défini et calculable :
-      # l'encaissement des paiements participants (payment_status). Les autres
-      # critères évoqués (documents envoyés, dépenses fournisseurs reçues) ne
-      # sont pas encore modélisés (pas de flag « envoyé » / pas de dépense
-      # « attendue ») → suivis séparés.
+      # Préparation à la clôture (#48) : paiements participants + dépenses
+      # fournisseurs non réglées + documents. Délégué au service dédié.
       def closure_readiness(item)
-        total = item.registrations.count
-        paid = item.registrations.where(payment_status: "paid").count
-        unpaid = total - paid
-        {
-          totalRegistrations: total,
-          paidCount: paid,
-          unpaidCount: unpaid,
-          allPaid: unpaid.zero?
-        }
+        Academy::ClosureChecklist.for(item)
       end
 
       def serialize_training(item)
