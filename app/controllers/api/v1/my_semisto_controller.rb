@@ -110,8 +110,19 @@ module Api
         trainings = Academy::Training.where(id: accessible_training_ids).includes(:training_type, :sessions)
 
         render json: {
-          trainings: trainings.map { |t| serialize_portal_training(t) }
+          trainings: trainings.map { |t| serialize_portal_training(t) },
+          support: support_config
         }
+      end
+
+      # Widget de contact WhatsApp Business (#40). Lien wa.me pré-rempli, exposé
+      # seulement si un numéro est configuré (sinon le widget reste masqué).
+      def support_config
+        number = ENV["WHATSAPP_BUSINESS_NUMBER"].to_s.gsub(/\D/, "")
+        return { whatsapp: nil } if number.blank?
+
+        prefilled = CGI.escape("Bonjour Semisto, j'ai une question à propos d'une activité Academy.")
+        { whatsapp: { number: number, url: "https://wa.me/#{number}?text=#{prefilled}" } }
       end
 
       def academy_training_detail

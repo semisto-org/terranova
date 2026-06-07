@@ -21,6 +21,8 @@ import {
   GraduationCap,
   AlertCircle,
   Wallet,
+  Megaphone,
+  MessageSquare,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -30,6 +32,8 @@ import TrainingDocumentsTab from './TrainingDocumentsTab'
 import TrainingChecklistTab from './TrainingChecklistTab'
 import TrainingFinancesTab from './TrainingFinancesTab'
 import TrainingAlbumTab from './TrainingAlbumTab'
+import TrainingAnnouncementsTab from './TrainingAnnouncementsTab'
+import TrainingMessagesTab from './TrainingMessagesTab'
 import { BucketSection } from '@/components/shared/BucketSection'
 
 const STATUS_LABELS = {
@@ -198,6 +202,8 @@ const TABS = [
   { id: 'registrations', label: 'Inscriptions', icon: Users },
   { id: 'attendances', label: 'Présences', icon: Users },
   { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'announcements', label: 'Actus', icon: Megaphone },
+  { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'album', label: 'Album', icon: Camera },
   { id: 'checklist', label: 'Checklist', icon: CheckSquare },
   { id: 'finances', label: 'Finances', icon: DollarSign },
@@ -219,6 +225,7 @@ export default function TrainingDetail({
   hasNext = false,
 }) {
   const [tab, setTab] = useState('info')
+  const [messagesUnread, setMessagesUnread] = useState(0)
   const isDrawer = layout === 'drawer'
 
   const trainingType = data.trainingTypes?.find((t) => t.id === training.trainingTypeId) || null
@@ -491,21 +498,31 @@ export default function TrainingDetail({
                 checklistItems.length > 0 ? 'pb-4' : ''
               }`}
             >
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setTab(id)}
-                  className={`inline-flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                    tab === id
-                      ? 'bg-[#B01A19] text-white shadow-md'
-                      : 'text-stone-600 hover:bg-stone-100'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              ))}
+              {TABS.map(({ id, label, icon: Icon }) => {
+                const showUnread = id === 'messages' && messagesUnread > 0
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setTab(id)}
+                    className={`relative inline-flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                      tab === id
+                        ? 'bg-[#B01A19] text-white shadow-md'
+                        : 'text-stone-600 hover:bg-stone-100'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="hidden sm:inline">{label}</span>
+                    {showUnread && (
+                      <span className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-semibold leading-none ${
+                        tab === id ? 'bg-white text-[#B01A19]' : 'bg-[#B01A19] text-white'
+                      }`}>
+                        {messagesUnread}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
             {checklistItems.length > 0 && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-stone-200 overflow-hidden">
@@ -574,6 +591,15 @@ export default function TrainingDetail({
                 sessions={sessions}
                 onUploadDocument={() => actions.addDocument(training.id)}
                 onDeleteDocument={(id) => actions.deleteDocument(id)}
+              />
+            )}
+            {tab === 'announcements' && (
+              <TrainingAnnouncementsTab trainingId={training.id} />
+            )}
+            {tab === 'messages' && (
+              <TrainingMessagesTab
+                trainingId={training.id}
+                onUnreadChange={setMessagesUnread}
               />
             )}
             {tab === 'album' && (

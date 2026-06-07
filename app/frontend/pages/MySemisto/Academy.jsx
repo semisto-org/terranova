@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { GraduationCap, Loader2, BookOpen, Zap, Clock } from 'lucide-react'
+import { GraduationCap, Loader2, BookOpen, Zap, Clock, MessageCircle } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import TrainingCard from '../../my-semisto/components/TrainingCard'
 import { myApiRequest } from '../../my-semisto/lib/api'
@@ -35,6 +35,7 @@ function categorize(trainings) {
 
 export default function Academy() {
   const [trainings, setTrainings] = useState([])
+  const [whatsapp, setWhatsapp] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -43,6 +44,7 @@ export default function Academy() {
 
       .then((data) => {
         setTrainings(data.trainings || [])
+        setWhatsapp(data.support?.whatsapp || null)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -117,6 +119,20 @@ export default function Academy() {
             <Section sectionKey="past" trainings={past} delay={300} />
           )}
         </div>
+      )}
+
+      {/* Floating WhatsApp contact button — only when the team has a number */}
+      {whatsapp && whatsapp.url && (
+        <a
+          href={whatsapp.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Nous contacter sur WhatsApp"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#1fb855] transition-colors px-4 py-3"
+        >
+          <MessageCircle size={20} />
+          <span className="text-sm font-medium hidden sm:inline">WhatsApp</span>
+        </a>
       )}
     </MySemistoShell>
   )
