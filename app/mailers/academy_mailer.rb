@@ -79,6 +79,7 @@ class AcademyMailer < ApplicationMailer
     @trainer_name = trainer_contact.name.to_s
     @session_topic = session.topic.to_s
     @upload_url = academy_admin_training_url(@training)
+    @login_email = trainer_contact.email
 
     attachments.inline["academy-logo.png"] = File.read(
       Rails.root.join("public/icons/academy.png")
