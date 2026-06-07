@@ -674,6 +674,16 @@ module Api
       def reply_message
         training = Academy::Training.find(params.require(:training_id))
         contact = Contact.find(params.require(:contact_id))
+
+        # On ne répond que dans un fil existant ou à un·e inscrit·e de l'activité
+        # (cohérent avec le cloisonnement strict côté participant ; pas de
+        # création de fil arbitraire contre n'importe quel contact).
+        known = training.participant_messages.exists?(contact_id: contact.id) ||
+                training.registrations.exists?(contact_id: contact.id)
+        unless known
+          return render json: { error: "Ce contact n'a pas de fil sur cette activité" }, status: :unprocessable_entity
+        end
+
         message = training.participant_messages.create!(
           contact: contact, body: params.require(:body), sender: "team",
           author_member_id: current_member&.id
@@ -910,9 +920,31 @@ module Api
       end
 
       # Préparation à la clôture (#48) : paiements participants + dépenses
-      # fournisseurs non réglées + documents. Délégué au service dédié.
+      # fournisseurs non réglées + documents. Délégué au service dédié, avec des
+      # comptes pré-calculés en masse (mémoïsés sur la requête) pour éviter un
+      # N+1 quand l'index sérialise toutes les activités.
       def closure_readiness(item)
-        Academy::ClosureChecklist.for(item)
+        Academy::ClosureChecklist.for(item, counts: closure_counts[item.id])
+      end
+
+      # 3 requêtes groupées (au lieu de 4×N), mémoïsées par requête.
+      def closure_counts
+        @closure_counts ||= build_closure_counts
+      end
+
+      def build_closure_counts
+        reg = Academy::TrainingRegistration.group(:training_id, :payment_status).count
+        exp = Expense.where(projectable_type: "Academy::Training").where.not(status: "paid").group(:projectable_id).count
+        doc = Academy::TrainingDocument.group(:training_id).count
+
+        totals = Hash.new { |h, k| h[k] = { total: 0, paid: 0, pending_expenses: 0, documents: 0 } }
+        reg.each do |(training_id, status), n|
+          totals[training_id][:total] += n
+          totals[training_id][:paid] += n if status == "paid"
+        end
+        exp.each { |training_id, n| totals[training_id][:pending_expenses] = n }
+        doc.each { |training_id, n| totals[training_id][:documents] = n }
+        totals
       end
 
       def serialize_training(item)

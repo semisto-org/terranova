@@ -194,8 +194,11 @@ module Api
         return unless training
 
         session = training.sessions.find(params.require(:session_id))
-        feedback = session.feedbacks.new(
-          contact_id: current_contact.id,
+        # Un feedback par participant·e et par session : la re-soumission met à
+        # jour la ligne existante (#48 review — évite les doublons qui faussent
+        # les agrégats).
+        feedback = session.feedbacks.where(contact_id: current_contact.id).first_or_initialize
+        feedback.assign_attributes(
           rating: params[:rating].presence,
           comment: params[:comment].to_s,
           anonymous: ActiveModel::Type::Boolean.new.cast(params[:anonymous]) || false

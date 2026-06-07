@@ -73,6 +73,20 @@ class AcademyParticipantMessagesTest < ActionDispatch::IntegrationTest
     assert_not_includes bodies, 'Message de Marie'
   end
 
+  test 'team cannot reply to a contact with no thread and no registration' do
+    stranger = Contact.create!(contact_type: 'person', name: 'Inconnu', email: "x-#{SecureRandom.hex(3)}@t.be")
+    post "/api/v1/academy/trainings/#{@training.id}/messages",
+         params: { contact_id: stranger.id, body: 'Coucou' }, as: :json
+    assert_response :unprocessable_entity
+    assert_equal 0, @training.participant_messages.where(contact_id: stranger.id).count
+  end
+
+  test 'team can reply to a registrant even before any inbound message' do
+    post "/api/v1/academy/trainings/#{@training.id}/messages",
+         params: { contact_id: @bob.id, body: 'Bienvenue !' }, as: :json
+    assert_response :created
+  end
+
   test 'admin sees threads grouped by contact' do
     sign_in_contact(@marie)
     post "/api/v1/my/academy/#{@training.id}/messages", params: { body: 'A' }, as: :json

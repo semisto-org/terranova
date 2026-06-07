@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_07_092140) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_07_094507) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -120,6 +120,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_092140) do
     t.datetime "updated_at", null: false
     t.index ["contact_id"], name: "index_academy_session_feedbacks_on_contact_id"
     t.index ["deleted_at"], name: "index_academy_session_feedbacks_on_deleted_at"
+    t.index ["session_id", "contact_id"], name: "idx_session_feedbacks_unique_per_contact", unique: true, where: "((deleted_at IS NULL) AND (contact_id IS NOT NULL))"
     t.index ["session_id"], name: "index_academy_session_feedbacks_on_session_id"
   end
 

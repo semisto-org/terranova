@@ -10,21 +10,27 @@ module Academy
   #
   # `readyToClose` est volontairement SOUPLE : il n'empêche pas la clôture côté
   # serveur (l'UI avertit seulement). Cf. QUESTIONS.md (#2).
+  #
+  # Pour éviter un N+1 quand on sérialise toutes les activités (index public),
+  # les comptes peuvent être pré-calculés en masse et injectés via `counts:`
+  # (cf. AcademyController#closure_counts_for). Sans `counts`, le service
+  # interroge la base lui-même (usage mono-activité).
   class ClosureChecklist
-    def self.for(training)
-      new(training).as_json
+    def self.for(training, counts: nil)
+      new(training, counts: counts).as_json
     end
 
-    def initialize(training)
+    def initialize(training, counts: nil)
       @training = training
+      @counts = counts
     end
 
     def as_json
-      total = @training.registrations.count
-      paid = @training.registrations.where(payment_status: "paid").count
+      total = @counts ? @counts[:total] : @training.registrations.count
+      paid = @counts ? @counts[:paid] : @training.registrations.where(payment_status: "paid").count
+      pending_expenses = @counts ? @counts[:pending_expenses] : @training.expenses.where.not(status: "paid").count
+      documents = @counts ? @counts[:documents] : @training.documents.count
       unpaid = total - paid
-      pending_expenses = @training.expenses.where.not(status: "paid").count
-      documents = @training.documents.count
       all_paid = unpaid.zero?
 
       {

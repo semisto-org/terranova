@@ -60,6 +60,20 @@ class AcademySessionFeedbackTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test 'resubmitting feedback updates the existing row (one per participant per session)' do
+    sign_in_contact(@contact)
+    post "/api/v1/my/academy/#{@training.id}/sessions/#{@session.id}/feedback",
+         params: { rating: 5, comment: 'Premier jet' }, as: :json
+    assert_response :created
+
+    assert_no_difference -> { @session.feedbacks.count } do
+      post "/api/v1/my/academy/#{@training.id}/sessions/#{@session.id}/feedback",
+           params: { rating: 9, comment: 'Finalement super' }, as: :json
+      assert_response :created
+    end
+    assert_equal 9, @session.feedbacks.first.rating
+  end
+
   test 'feedback requires a rating or a comment' do
     sign_in_contact(@contact)
     post "/api/v1/my/academy/#{@training.id}/sessions/#{@session.id}/feedback",
