@@ -30,6 +30,10 @@ Rails.application.routes.draw do
           post "academy/:training_id/documents", to: "api/v1/my_semisto#create_document", as: false
           delete "academy/:training_id/documents/:document_id", to: "api/v1/my_semisto#destroy_document", as: false
           patch "academy/:training_id/sessions/:session_id/photo-album", to: "api/v1/my_semisto#update_session_photo_album", as: false
+          get "announcements", to: "api/v1/my_semisto#announcements", as: false
+          get "academy/:training_id/messages", to: "api/v1/my_semisto#messages", as: false
+          post "academy/:training_id/messages", to: "api/v1/my_semisto#create_message", as: false
+          post "academy/:training_id/sessions/:session_id/feedback", to: "api/v1/my_semisto#create_feedback", as: false
         end
       end
 
@@ -126,6 +130,10 @@ Rails.application.routes.draw do
         post "academy/:training_id/documents", to: "my_semisto#create_document"
         delete "academy/:training_id/documents/:document_id", to: "my_semisto#destroy_document"
         patch "academy/:training_id/sessions/:session_id/photo-album", to: "my_semisto#update_session_photo_album"
+        get "announcements", to: "my_semisto#announcements"
+        get "academy/:training_id/messages", to: "my_semisto#messages"
+        post "academy/:training_id/messages", to: "my_semisto#create_message"
+        post "academy/:training_id/sessions/:session_id/feedback", to: "my_semisto#create_feedback"
       end
 
       get "health", to: "health#show"
@@ -595,6 +603,16 @@ Rails.application.routes.draw do
       delete "academy/team/:contact_id", to: "academy#remove_team_member"
       get "academy/settings", to: "academy#academy_settings"
       patch "academy/settings", to: "academy#update_academy_settings"
+      # Actus / notifications éditoriales (#17)
+      get "academy/trainings/:training_id/announcements", to: "academy#list_announcements"
+      post "academy/trainings/:training_id/announcements", to: "academy#create_announcement"
+      patch "academy/announcements/:announcement_id", to: "academy#update_announcement"
+      delete "academy/announcements/:announcement_id", to: "academy#destroy_announcement"
+      # Fil de messages participants ↔ équipe (#18/#41)
+      get "academy/trainings/:training_id/messages", to: "academy#list_messages"
+      post "academy/trainings/:training_id/messages", to: "academy#reply_message"
+      # Feedbacks de session (#21/#46)
+      get "academy/trainings/:training_id/feedbacks", to: "academy#list_feedbacks"
 
       get "nursery", to: "nursery#index"
       get "nursery/dashboard", to: "nursery#dashboard"

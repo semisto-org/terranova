@@ -1,0 +1,34 @@
+<%#
+  Email J+1 — demande de feedback de session (#21). Ton chaleureux, tutoiement.
+  Un seul mail (pas de rappel). Lien direct vers le formulaire dans MySemisto.
+%>
+
+<p style="margin: 0 0 20px; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.7; color: #1f2937;">
+  Bonjour <strong><%= @contact_name.presence || "à toi" %></strong>,
+</p>
+
+<p style="margin: 0 0 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  Merci encore pour ta participation à <strong><%= @training.title %></strong>.
+  Si tu as 2 minutes, ton retour nous aide vraiment à améliorer l'expérience pour
+  tout le monde — contenu, rythme, logistique&hellip;
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 28px;">
+  <tr>
+    <td align="center">
+      <a href="<%= @feedback_url %>" style="display: inline-block; padding: 16px 32px; background-color: #B01A19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+        Donner mon retour (anonyme si je veux) &rarr;
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 0 0 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.7; color: #6b7280;">
+  Tu retrouveras aussi (et on ajoutera au fur et à mesure) les documents et
+  ressources dans ton espace MySemisto.
+</p>
+
+<p style="margin: 24px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #374151;">
+  Merci d'avance, et à très vite,<br />
+  L'équipe Semisto
+</p>

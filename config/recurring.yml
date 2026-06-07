@@ -19,3 +19,6 @@ production:
   daily_task_recap:
     class: DailyTaskRecapJob
     schedule: every day at 11pm
+  session_feedback_email:
+    class: SessionFeedbackEmailJob
+    schedule: every day at 10am

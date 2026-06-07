@@ -629,7 +629,112 @@ module Api
         }
       end
 
+      # ─── Actus / notifications (#17) ──────────────────────────────────────
+      def list_announcements
+        training = Academy::Training.find(params.require(:training_id))
+        render json: { items: training.announcements.recent_first.map { |a| serialize_announcement(a) } }
+      end
+
+      def create_announcement
+        training = Academy::Training.find(params.require(:training_id))
+        announcement = training.announcements.create!(announcement_params.merge(created_by_id: current_member&.id))
+        render json: serialize_announcement(announcement), status: :created
+      end
+
+      def update_announcement
+        announcement = Academy::Announcement.find(params.require(:announcement_id))
+        announcement.update!(announcement_params)
+        render json: serialize_announcement(announcement)
+      end
+
+      def destroy_announcement
+        Academy::Announcement.find(params.require(:announcement_id)).soft_delete!
+        head :no_content
+      end
+
+      # ─── Fil de messages participants ↔ équipe (#18/#41) ──────────────────
+      # Renvoie les fils groupés par contact pour une activité.
+      def list_messages
+        training = Academy::Training.find(params.require(:training_id))
+        threads = training.participant_messages.includes(:contact).chronological
+                          .group_by(&:contact_id)
+                          .map do |contact_id, msgs|
+          contact = msgs.first.contact
+          {
+            contactId: contact_id.to_s,
+            contactName: contact&.display_name,
+            unread: msgs.count { |m| m.from_participant? && m.read_at.nil? },
+            messages: msgs.map { |m| serialize_participant_message(m) }
+          }
+        end
+        render json: { threads: threads }
+      end
+
+      # Réponse de l'équipe dans un fil + marque les messages entrants comme lus.
+      def reply_message
+        training = Academy::Training.find(params.require(:training_id))
+        contact = Contact.find(params.require(:contact_id))
+        message = training.participant_messages.create!(
+          contact: contact, body: params.require(:body), sender: "team",
+          author_member_id: current_member&.id
+        )
+        training.participant_messages.where(contact_id: contact.id, sender: "participant", read_at: nil)
+                .update_all(read_at: Time.current)
+        render json: serialize_participant_message(message), status: :created
+      end
+
+      # ─── Feedbacks de session (#21/#46) ───────────────────────────────────
+      def list_feedbacks
+        training = Academy::Training.find(params.require(:training_id))
+        session_ids = training.sessions.pluck(:id)
+        feedbacks = Academy::SessionFeedback.where(session_id: session_ids).recent_first
+        render json: { items: feedbacks.map { |f| serialize_feedback(f) } }
+      end
+
       private
+
+      def announcement_params
+        permitted = params.permit(:title, :body, :status, :published_at)
+        permitted[:status] = "to_confirm" unless Academy::Announcement::STATUSES.include?(permitted[:status])
+        permitted
+      end
+
+      def serialize_announcement(item)
+        {
+          id: item.id.to_s,
+          trainingId: item.training_id.to_s,
+          title: item.title,
+          body: item.body,
+          status: item.status,
+          publishedAt: item.published_at&.iso8601,
+          createdAt: item.created_at.iso8601
+        }
+      end
+
+      def serialize_participant_message(item)
+        {
+          id: item.id.to_s,
+          contactId: item.contact_id.to_s,
+          body: item.body,
+          sender: item.sender,
+          readAt: item.read_at&.iso8601,
+          createdAt: item.created_at.iso8601
+        }
+      end
+
+      # Respecte l'anonymat à l'affichage équipe (#21 / RGPD) : si anonyme, on
+      # ne révèle pas le contact même s'il reste lié en base.
+      def serialize_feedback(item)
+        {
+          id: item.id.to_s,
+          sessionId: item.session_id.to_s,
+          rating: item.rating,
+          comment: item.comment,
+          anonymous: item.anonymous,
+          contactName: item.anonymous ? nil : item.contact&.display_name,
+          createdAt: item.created_at.iso8601
+        }
+      end
 
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
