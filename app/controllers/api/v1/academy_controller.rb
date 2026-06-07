@@ -111,6 +111,16 @@ module Api
 
         item.update!(status: new_status)
 
+        # Tâches auto déclenchées par le statut + checklist d'annulation (#35).
+        # Best-effort : un souci de génération ne doit pas casser le changement
+        # de statut lui-même.
+        begin
+          Academy::TaskGenerator.for_status_change(item, new_status)
+          Academy::TaskGenerator.for_cancellation(item) if new_status == "cancelled"
+        rescue StandardError => e
+          Rails.logger.warn("[Academy::TaskGenerator] status #{item.id}: #{e.message}")
+        end
+
         broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
       end
@@ -701,7 +711,7 @@ module Api
       def training_type_params
         params.permit(:name, :description, :color, checklist_template: [], photo_gallery: [], trainer_ids: [],
                       default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount],
-                      task_templates: [:name, :scope, :anchor, :offset_days],
+                      task_templates: [:name, :scope, :anchor, :offset_days, :trigger],
                       default_packs: [:name, :price, :deposit_amount, { items: [:category_label, :quantity] }])
       end
 

@@ -324,13 +324,22 @@ export default function TrainingDetail({
                 <StatusDropdown
                   currentStatus={training.status || 'idea'}
                   onChangeStatus={(status) => {
-                    // Préparation à la clôture (#48) : avertir si des paiements
-                    // participants ne sont pas encore encaissés.
-                    const r = training.closureReadiness
+                    // Annulation (#35) : confirmation + une checklist de tâches à
+                    // échéance du jour est créée automatiquement côté serveur.
                     if (
-                      status === 'completed' && r && !r.allPaid && r.unpaidCount > 0 &&
-                      !window.confirm(`${r.unpaidCount} paiement(s) participant ne sont pas encore encaissés (${r.paidCount}/${r.totalRegistrations} encaissés). Clôturer quand même ?`)
+                      status === 'cancelled' &&
+                      !window.confirm("Annuler cette activité ? Une checklist d'annulation (contacter étudiant·es, formateur·rice, lieu, repas, logement, remboursements…) sera créée à échéance d'aujourd'hui.")
                     ) return
+                    // Préparation à la clôture (#48) : avertir si la clôture n'est
+                    // pas prête (paiements / dépenses fournisseurs / documents).
+                    const r = training.closureReadiness
+                    if (status === 'completed' && r && r.readyToClose === false) {
+                      const blockers = []
+                      if (!r.allPaid && r.unpaidCount > 0) blockers.push(`${r.unpaidCount} paiement(s) participant à encaisser`)
+                      if (r.pendingExpensesCount > 0) blockers.push(`${r.pendingExpensesCount} dépense(s) fournisseur non réglée(s)`)
+                      if (r.documentsCount === 0) blockers.push('aucun document partagé')
+                      if (!window.confirm(`Clôture pas encore prête :\n— ${blockers.join('\n— ')}\n\nClôturer quand même ?`)) return
+                    }
                     actions.updateTrainingStatus(training.id, status)
                   }}
                   readinessChecks={[
