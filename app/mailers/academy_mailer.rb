@@ -18,6 +18,11 @@ class AcademyMailer < ApplicationMailer
     @payment_amount = registration.payment_amount.to_f
     @payment_method = payment_method
 
+    # Lien one-click vers l'espace MySemisto de l'activité (#39) : infos
+    # pratiques + covoiturage. Magic-link si le contact est connu, sinon lien
+    # générique vers la page (login par email).
+    @my_semisto_url = participant_session_url(@training, registration.contact)
+
     attachments.inline["academy-logo.png"] = File.read(
       Rails.root.join("public/icons/academy.png")
     )
