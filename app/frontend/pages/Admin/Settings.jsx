@@ -862,6 +862,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             }
             setBusy(true)
             setError(null)
+            let saved = null
             try {
               if (documentFile) {
                 const formData = new FormData()
@@ -884,19 +885,26 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 })
                 if (documentFile instanceof File) formData.append('document', documentFile)
                 const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
-                await apiRequest(url, {
+                saved = await apiRequest(url, {
                   method: isEdit ? 'PATCH' : 'POST',
                   body: formData,
                 })
               } else {
                 const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
-                await apiRequest(url, {
+                saved = await apiRequest(url, {
                   method: isEdit ? 'PATCH' : 'POST',
                   body: JSON.stringify(body),
                 })
               }
               setExpenseFormModal(null)
-              await loadExpenses()
+              // Update just the affected row instead of refetching the whole table.
+              if (saved && saved.id) {
+                setExpenses((prev) => (isEdit
+                  ? prev.map((e) => (e.id === saved.id ? saved : e))
+                  : [saved, ...prev]))
+              } else {
+                await loadExpenses()
+              }
             } catch (err) {
               setError(err.message)
               throw err
@@ -952,6 +960,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           }}
           onSave={async (payload, options) => {
             setBusy(true)
+            let saved = null
             try {
               const existing = revenueFormModal.revenue
               const documents = options?.documents || []
@@ -966,12 +975,19 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                   else fd.append(k, String(v))
                 })
                 documents.forEach((file) => fd.append('documents[]', file))
-                await apiRequest(url, { method, body: fd })
+                saved = await apiRequest(url, { method, body: fd })
               } else {
-                await apiRequest(url, { method, body: JSON.stringify(payload) })
+                saved = await apiRequest(url, { method, body: JSON.stringify(payload) })
               }
               setRevenueFormModal(null)
-              loadRevenues()
+              // Update just the affected row instead of refetching the whole table.
+              if (saved && saved.id) {
+                setRevenues((prev) => (existing
+                  ? prev.map((r) => (r.id === saved.id ? saved : r))
+                  : [saved, ...prev]))
+              } else {
+                loadRevenues()
+              }
             } catch (err) {
               alert(err.message || 'Erreur')
             } finally {
