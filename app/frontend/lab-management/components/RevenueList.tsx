@@ -169,6 +169,8 @@ export function RevenueList({
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [periodPreset, setPeriodPreset] = useState<'all' | 'thisMonth' | 'thisQuarter' | 'prevQuarter' | 'pending' | 'received' | 'followUp'>('all')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
   const [density, setDensity] = useState<Density>('comfort')
   const [sort, setSort] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'date', dir: 'desc' }])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -199,6 +201,14 @@ export function RevenueList({
       if (sourceFilter !== 'all' && r.contactName !== sourceFilter) return false
 
       const d = toDate(r.date || r.createdAt)
+      if (dateFrom) {
+        const from = new Date(`${dateFrom}T00:00:00`)
+        if (!d || d < from) return false
+      }
+      if (dateTo) {
+        const to = new Date(`${dateTo}T23:59:59.999`)
+        if (!d || d > to) return false
+      }
       if (periodPreset === 'thisMonth' && (!d || d.getMonth() !== month || d.getFullYear() !== year)) return false
       if (periodPreset === 'thisQuarter' && (!d || !isInQuarter(d, currentQuarter.quarter, currentQuarter.year))) return false
       if (periodPreset === 'prevQuarter' && (!d || !isInQuarter(d, prevQuarter.quarter, prevQuarter.year))) return false
@@ -207,7 +217,7 @@ export function RevenueList({
       if (periodPreset === 'followUp' && r.status !== 'confirmed') return false
       return true
     })
-  }, [revenues, query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, now, prevQuarter, currentQuarter])
+  }, [revenues, query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, dateFrom, dateTo, now, prevQuarter, currentQuarter])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
@@ -304,7 +314,7 @@ export function RevenueList({
 
   useEffect(() => {
     setPage(1)
-  }, [query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, pageSize])
+  }, [query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, dateFrom, dateTo, pageSize])
   useEffect(() => setSelectedIds((ids) => ids.filter((id) => sorted.some((r) => r.id === id))), [sorted])
 
   const allPageSelected = paginated.length > 0 && paginated.every((r) => selectedIds.includes(r.id))
@@ -435,6 +445,33 @@ export function RevenueList({
         {/* Saved-view chips */}
         <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-stone-100">
           <Filter className="w-3.5 h-3.5 text-stone-400 mx-1.5" />
+          <div className="inline-flex items-center gap-1.5 mr-1">
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Du</label>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Au</label>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo('') }}
+                className="px-2 py-1 rounded-full text-[11px] font-medium text-stone-500 hover:bg-stone-100"
+                title="Effacer la plage de dates"
+              >
+                Effacer
+              </button>
+            )}
+          </div>
           {(
             [
               ['all', 'Tout'],
