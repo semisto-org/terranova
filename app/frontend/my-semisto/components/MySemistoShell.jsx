@@ -3,6 +3,7 @@ import { usePage, Link, router } from '@inertiajs/react'
 import { Home, GraduationCap, Users, User, Wallet, LogOut, Menu, X, Leaf } from 'lucide-react'
 import semistoLogo from '../../assets/semisto-square-main.png'
 import { myPath } from '../lib/paths'
+import AnnouncementsBell from './AnnouncementsBell'
 
 const NAV_ITEMS = [
   { label: 'Accueil', href: myPath('/'), icon: Home, color: '#2D6A4F' },
@@ -121,14 +122,17 @@ export default function MySemistoShell({ children, activeNav }) {
               Mon Espace
             </span>
           </div>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
-            aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          <div className="flex items-center gap-1">
+            <AnnouncementsBell />
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
+              aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -196,7 +200,11 @@ export default function MySemistoShell({ children, activeNav }) {
 
       {/* Main content */}
       <main className="flex-1 md:ml-64 pt-[59px] md:pt-0">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Desktop header bar — keeps the announcements bell top-right */}
+        <div className="hidden md:flex items-center justify-end px-6 lg:px-8 pt-5">
+          <AnnouncementsBell />
+        </div>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:pt-3">
           {children}
         </div>
       </main>

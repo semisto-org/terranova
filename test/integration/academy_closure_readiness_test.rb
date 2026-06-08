@@ -47,5 +47,37 @@ class AcademyClosureReadinessTest < ActionDispatch::IntegrationTest
     r = readiness_for(@training.id)
     assert_equal 0, r['totalRegistrations']
     assert_equal true, r['allPaid']
+    assert_equal true, r['readyToClose']
+    assert_equal 0, r['pendingExpensesCount']
+  end
+
+  test 'an unpaid supplier expense blocks closure readiness' do
+    add_registration('paid')
+    Expense.create!(
+      projectable: @training, status: 'processing', expense_type: 'services_and_goods',
+      total_incl_vat: 250, supplier: 'Salle X', invoice_date: Date.current
+    )
+
+    r = readiness_for(@training.id)
+    assert_equal true, r['allPaid']
+    assert_equal 1, r['pendingExpensesCount']
+    assert_equal false, r['readyToClose'], 'une dépense non réglée empêche readyToClose'
+  end
+
+  test 'a paid supplier expense does not block closure' do
+    add_registration('paid')
+    Expense.create!(
+      projectable: @training, status: 'paid', expense_type: 'services_and_goods',
+      total_incl_vat: 250, supplier: 'Salle X', invoice_date: Date.current
+    )
+
+    r = readiness_for(@training.id)
+    assert_equal 0, r['pendingExpensesCount']
+    assert_equal true, r['readyToClose']
+  end
+
+  test 'closure payload exposes document count' do
+    r = readiness_for(@training.id)
+    assert r.key?('documentsCount')
   end
 end

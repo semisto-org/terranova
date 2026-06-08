@@ -22,6 +22,14 @@ module Projectable
     respond_to?(:title) ? title : name
   end
 
+  # Membre « coordinateur » du projet : on privilégie un rôle explicite
+  # (organizer / project-manager), sinon le premier membre de l'équipe. Sert
+  # à assigner par défaut les tâches auto (annulation, message entrant…).
+  def coordinator_member_id
+    project_memberships.where(role: %w[organizer project-manager]).order(:created_at).first&.member_id ||
+      project_memberships.order(:created_at).first&.member_id
+  end
+
   PROJECT_TYPE_KEYS = {
     "PoleProject" => "lab-project",
     "Academy::Training" => "training",

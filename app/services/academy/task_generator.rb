@@ -8,8 +8,28 @@ module Academy
   #   - "session"  : une tâche par session, datée par rapport au début/fin de
   #     cette session.
   # offset_days signé : négatif = avant l'ancre, positif = après.
+  #
+  # Chaque template porte aussi un déclencheur (champ jsonb optionnel `trigger`) :
+  #   - "on_create"           : à la création de l'activité/session (DÉFAUT, rétro-compat)
+  #   - "on_status:<statut>"  : au passage de l'activité dans ce statut (#35)
+  #   - "on_cancel"           : à l'annulation de l'activité (#35)
+  # Les templates sans `trigger` se comportent comme "on_create" — les templates
+  # historiques restent donc valides à l'identique.
   class TaskGenerator
     DEFAULT_LIST_NAME = "À faire"
+    DEFAULT_TRIGGER = "on_create"
+
+    # Checklist d'annulation par défaut (si le type n'a aucun template on_cancel).
+    # À échéance du jour de l'annulation. Cf. #35 et QUESTIONS.md (#1).
+    DEFAULT_CANCELLATION_TASKS = [
+      "Annulation — contacter les étudiant·es",
+      "Annulation — prévenir le·la formateur·rice",
+      "Annulation — prévenir le lieu",
+      "Annulation — prévenir Steph (repas)",
+      "Annulation — prévenir Les 4 Sources (logement)",
+      "Annulation — gérer les remboursements",
+      "Annulation — prévenir partenaires / assistant·es"
+    ].freeze
 
     def self.for_training(training)
       new(training).seed_activity_tasks
@@ -19,6 +39,16 @@ module Academy
       gen = new(session.training)
       gen.refresh_activity_tasks   # les dates d'activité dépendent des sessions
       gen.generate_session_tasks(session)
+    end
+
+    # Tâches déclenchées par l'entrée dans un statut (#35).
+    def self.for_status_change(training, new_status)
+      new(training).generate_status_tasks(new_status)
+    end
+
+    # Checklist d'annulation : templates on_cancel du type, sinon liste par défaut (#35).
+    def self.for_cancellation(training)
+      new(training).generate_cancellation_tasks
     end
 
     def initialize(training)
@@ -73,18 +103,62 @@ module Academy
       end
     end
 
+    # Crée les tâches de portée activité déclenchées par l'entrée dans `new_status`.
+    # Échéance = aujourd'hui + offset_days (défaut 0). Idempotent par nom.
+    def generate_status_tasks(new_status)
+      return unless templates?
+
+      templates_for_trigger("on_status:#{new_status}").each do |tpl|
+        next if activity_task_exists?(tpl["name"])
+
+        create_coordinated_task(tpl["name"], Date.current + tpl["offset_days"].to_i.days)
+      end
+    end
+
+    # Crée la checklist d'annulation (templates on_cancel, sinon liste par défaut).
+    # Toutes les tâches sont à échéance du jour. Idempotent par nom.
+    def generate_cancellation_tasks
+      templates = templates? ? templates_for_trigger("on_cancel") : []
+      names = templates.any? ? templates.map { |t| t["name"] } : DEFAULT_CANCELLATION_TASKS
+
+      names.each do |name|
+        next if activity_task_exists?(name)
+
+        create_coordinated_task(name, Date.current)
+      end
+    end
+
     private
 
     def templates?
       @type.present? && @type.task_templates.present?
     end
 
+    def trigger_of(tpl)
+      tpl["trigger"].presence || DEFAULT_TRIGGER
+    end
+
+    # Templates « on_create » uniquement (les déclenchés par statut/annulation
+    # ne sont pas amorcés à la création).
     def activity_templates
-      @type.task_templates.select { |t| t["scope"] == "activity" }
+      @type.task_templates.select { |t| t["scope"] == "activity" && trigger_of(t) == DEFAULT_TRIGGER }
     end
 
     def session_templates
-      @type.task_templates.select { |t| t["scope"] == "session" }
+      @type.task_templates.select { |t| t["scope"] == "session" && trigger_of(t) == DEFAULT_TRIGGER }
+    end
+
+    def templates_for_trigger(trigger)
+      @type.task_templates.select { |t| trigger_of(t) == trigger }
+    end
+
+    # Tâche de portée activité assignée au coordinateur (si présent et membre
+    # de l'équipe — la validation du modèle l'exige).
+    def create_coordinated_task(name, due_date)
+      attrs = { name: name, status: "pending", due_date: due_date }
+      coordinator_id = @training.coordinator_member_id
+      attrs[:assignee_id] = coordinator_id if coordinator_id.present?
+      default_list.tasks.create!(attrs)
     end
 
     def default_list

@@ -19,4 +19,27 @@ class AcademyMailerTest < ActionMailer::TestCase
     assert_includes Array(mail.cc), 'formations@semisto.org'
     assert_match(/documents/i, mail.subject)
   end
+
+  test 'registration_confirmation contains a MySemisto CTA to the activity page (#39)' do
+    contact = Contact.create!(contact_type: 'person', name: 'Inès', email: 'ines@test.be')
+    registration = Academy::TrainingRegistration.create!(
+      training: @training, contact: contact, contact_name: 'Inès', contact_email: 'ines@test.be',
+      payment_status: 'paid', carpooling: 'none', registered_at: Time.current
+    )
+
+    mail = AcademyMailer.registration_confirmation(registration)
+    body = mail.html_part&.body&.decoded || mail.body.decoded
+
+    assert_match(/MySemisto/i, body)
+    assert_match(%r{/academy/#{@training.id}}, body)
+  end
+
+  test 'registration_confirmation still renders without a resolved contact' do
+    registration = Academy::TrainingRegistration.create!(
+      training: @training, contact_name: 'Sans Contact', contact_email: 'anon@test.be',
+      payment_status: 'paid', carpooling: 'none', registered_at: Time.current
+    )
+
+    assert_nothing_raised { AcademyMailer.registration_confirmation(registration).body }
+  end
 end
