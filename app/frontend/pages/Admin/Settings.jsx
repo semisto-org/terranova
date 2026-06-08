@@ -912,6 +912,13 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               setBusy(false)
             }
           }}
+          onReconciled={(linkedTx) => {
+            const id = expenseFormModal.expense?.id
+            if (!id) return
+            setExpenses((prev) => prev.map((e) => (e.id === id
+              ? { ...e, bankTransactions: [...(e.bankTransactions || []), linkedTx] }
+              : e)))
+          }}
           onCancel={() => setExpenseFormModal(null)}
           busy={busy}
         />
@@ -993,6 +1000,13 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             } finally {
               setBusy(false)
             }
+          }}
+          onReconciled={(linkedTx) => {
+            const id = revenueFormModal.revenue?.id
+            if (!id) return
+            setRevenues((prev) => prev.map((r) => (r.id === id
+              ? { ...r, bankTransactions: [...(r.bankTransactions || []), linkedTx] }
+              : r)))
           }}
           onCancel={() => setRevenueFormModal(null)}
           busy={busy}

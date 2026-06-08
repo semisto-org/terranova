@@ -297,12 +297,14 @@ Rails.application.routes.draw do
       post "lab/expenses", to: "lab_management#create_expense"
       patch "lab/expenses/:id", to: "lab_management#update_expense"
       delete "lab/expenses/:id", to: "lab_management#destroy_expense"
+      get "lab/expenses/:id/transaction_candidates", to: "lab_management#expense_transaction_candidates"
 
       get "lab/revenues", to: "lab_management#list_revenues"
       get "lab/reporting", to: "lab_management#reporting"
       post "lab/revenues", to: "lab_management#create_revenue"
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
+      get "lab/revenues/:id/transaction_candidates", to: "lab_management#revenue_transaction_candidates"
       post "lab/revenues/:id/documents", to: "lab_management#upload_revenue_documents"
       delete "lab/revenues/:id/documents/:document_id", to: "lab_management#destroy_revenue_document"
 

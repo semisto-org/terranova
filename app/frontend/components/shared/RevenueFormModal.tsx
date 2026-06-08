@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Calendar, Check, ChevronDown, ChevronsUpDown, CreditCard, FileText, Image as ImageIcon, Landmark, Link2, Paperclip, Search, Sparkles, StickyNote, Trash2, Upload, User, X } from 'lucide-react'
+import { Calendar, Check, ChevronDown, ChevronsUpDown, CreditCard, FileText, Image as ImageIcon, Link2, Paperclip, Search, Sparkles, StickyNote, Trash2, Upload, User, X } from 'lucide-react'
 import type { RevenueDocument, RevenueItem } from '../../lab-management/components/RevenueList'
 import { ProjectableCombobox, type ProjectableValue } from './ProjectableCombobox'
+import { BankReconcileSection, type LinkedTx } from './BankReconcileSection'
 
 // Shared inputs — stripped-back editorial style matching the new Dépenses ledger
 const inputBase =
@@ -89,10 +90,11 @@ interface RevenueFormModalProps {
   onCancel: () => void
   onCreateContact?: (input: { name: string; contact_type: string }) => Promise<CreatedContact>
   onDeleteDocument?: (documentId: string) => Promise<void>
+  onReconciled?: (linkedTx: LinkedTx) => void
   busy?: boolean
 }
 
-export function RevenueFormModal({ revenue, contacts: contactsProp = [], organizations = [], defaultOrganizationId, onSave, onCancel, onCreateContact, onDeleteDocument, busy = false }: RevenueFormModalProps) {
+export function RevenueFormModal({ revenue, contacts: contactsProp = [], organizations = [], defaultOrganizationId, onSave, onCancel, onCreateContact, onDeleteDocument, onReconciled, busy = false }: RevenueFormModalProps) {
   const isEdit = !!revenue
   const today = new Date().toISOString().slice(0, 10)
   const amountInputRef = useRef<HTMLInputElement>(null)
@@ -708,7 +710,16 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
                 />
               </Collapsible>
 
-              {isEdit && <RevenueBankTransactions transactions={revenue?.bankTransactions ?? []} />}
+              {isEdit && revenue && (
+                <BankReconcileSection
+                  linkedTransactions={(revenue.bankTransactions ?? []) as LinkedTx[]}
+                  reconcilableType="Revenue"
+                  reconcilableId={String(revenue.id)}
+                  candidatesUrl={`/api/v1/lab/revenues/${revenue.id}/transaction_candidates`}
+                  emptyLabel="Aucune transaction bancaire rapprochée à cette recette."
+                  onReconciled={onReconciled}
+                />
+              )}
             </div>
 
             {/* Footer */}
@@ -1281,73 +1292,5 @@ function DocumentsField({
         </div>
       )}
     </div>
-  )
-}
-
-interface LinkedBankTx {
-  reconciliationId: string
-  bankName: string | null
-  provider: string | null
-  date: string | null
-  amount: number
-  allocatedAmount: number
-  counterpartName: string | null
-  remittanceInfo: string | null
-  confidence: string | null
-}
-
-// Read-only list of bank transactions reconciled to this revenue, shown at the
-// bottom of the edit drawer (the document preview lives in the Documents section).
-function RevenueBankTransactions({ transactions }: { transactions: LinkedBankTx[] }) {
-  const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleDateString('fr-FR') : '—')
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-2">
-        <Landmark className="w-3.5 h-3.5 text-stone-400" />
-        <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">Transactions bancaires liées</div>
-        {transactions.length > 0 && (
-          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-stone-100 text-stone-600">
-            {transactions.length}
-          </span>
-        )}
-      </div>
-      {transactions.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-stone-200 p-3 text-xs text-stone-500">
-          Aucune transaction bancaire rapprochée à cette recette.
-        </div>
-      ) : (
-        <ul className="space-y-1.5">
-          {transactions.map((tx) => (
-            <li
-              key={tx.reconciliationId}
-              className={`rounded-lg border px-3 py-2 text-sm flex items-center gap-3 ${
-                tx.confidence === 'auto' ? 'bg-emerald-50/40 border-emerald-200/60' : 'bg-white border-stone-200'
-              }`}
-            >
-              <div className="shrink-0 w-7 h-7 rounded-full bg-stone-100 text-stone-500 inline-flex items-center justify-center">
-                <Landmark className="w-3.5 h-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 text-[11px] text-stone-500">
-                  <span className="font-medium text-stone-600">{tx.bankName || tx.provider || '—'}</span>
-                  <span>·</span>
-                  <span className="font-mono">{fmtDate(tx.date)}</span>
-                  {tx.confidence === 'auto' && (
-                    <span className="text-emerald-700 text-[10px] uppercase tracking-wider font-semibold">auto</span>
-                  )}
-                </div>
-                <div className="text-stone-900 truncate">{tx.counterpartName || tx.remittanceInfo || '—'}</div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="font-mono font-semibold text-stone-900 text-sm">{fmtMoney(Math.abs(tx.allocatedAmount))}</div>
-                {Math.abs(tx.allocatedAmount) !== Math.abs(tx.amount) && (
-                  <div className="text-[10px] text-stone-400 font-mono">sur {fmtMoney(Math.abs(tx.amount))}</div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   )
 }

@@ -238,6 +238,68 @@ class LabManagementFlowsTest < ActionDispatch::IntegrationTest
     assert_equal 0, JSON.parse(response.body)['items'].size
   end
 
+  test 'expense and revenue transaction candidates match amount within 3 months and exclude reconciled' do
+    BankReconciliation.delete_all
+    BankTransaction.delete_all
+    BankConnection.delete_all
+    Revenue.delete_all
+    Expense.delete_all
+
+    organization = Organization.find_or_create_by!(name: 'Org test') do |o|
+      o.is_default = true
+      o.vat_subject = true
+    end
+    connection = BankConnection.create!(
+      provider: 'gocardless', bank_name: 'Triodos', status: 'linked',
+      accounting_scope: 'general', organization: organization, connected_by: @member_a
+    )
+
+    expense = Expense.create!(
+      supplier: 'Supplier', status: 'paid', expense_type: 'services_and_goods',
+      invoice_date: Date.current, total_incl_vat: 100, amount_excl_vat: 82.64
+    )
+    # Matching outflow (same amount, in window); a near-miss amount and an
+    # out-of-window transaction must both be excluded.
+    match_tx = BankTransaction.create!(
+      bank_connection: connection, provider_transaction_id: 'tx_match',
+      date: Date.current - 10, amount: -100.00, counterpart_name: 'Supplier'
+    )
+    BankTransaction.create!(
+      bank_connection: connection, provider_transaction_id: 'tx_wrong_amount',
+      date: Date.current, amount: -101.00
+    )
+    BankTransaction.create!(
+      bank_connection: connection, provider_transaction_id: 'tx_out_of_window',
+      date: Date.current - 200, amount: -100.00
+    )
+
+    get "/api/v1/lab/expenses/#{expense.id}/transaction_candidates", as: :json
+    assert_response :success
+    ids = JSON.parse(response.body)['items'].map { |t| t['transactionId'] }
+    assert_equal [match_tx.id.to_s], ids
+
+    # Once reconciled, the transaction is no longer offered as a candidate.
+    post '/api/v1/bank/reconciliations', params: {
+      bank_transaction_id: match_tx.id, reconcilable_type: 'Expense', reconcilable_id: expense.id
+    }, as: :json
+    assert_response :created
+    get "/api/v1/lab/expenses/#{expense.id}/transaction_candidates", as: :json
+    assert_equal [], JSON.parse(response.body)['items'].map { |t| t['transactionId'] }
+
+    # Revenue: inflow of the same amount.
+    revenue = Revenue.create!(
+      organization: organization, status: 'received', pole: 'academy',
+      amount: 250, amount_excl_vat: 250, date: Date.current
+    )
+    rev_tx = BankTransaction.create!(
+      bank_connection: connection, provider_transaction_id: 'tx_rev',
+      date: Date.current + 5, amount: 250.00
+    )
+    get "/api/v1/lab/revenues/#{revenue.id}/transaction_candidates", as: :json
+    assert_response :success
+    assert_equal [rev_tx.id.to_s], JSON.parse(response.body)['items'].map { |t| t['transactionId'] }
+  end
+
   test 'lab albums CRUD and media list' do
     get '/api/v1/lab/albums', as: :json
     assert_response :success

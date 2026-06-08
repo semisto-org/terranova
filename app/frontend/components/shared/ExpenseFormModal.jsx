@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Building2, Check, ChevronsUpDown, FileText, Globe2, Landmark, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, FileText, Globe2, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
 import SimpleEditor from '../SimpleEditor'
 import { apiRequest } from '@/lib/api'
 import { ProjectableCombobox } from './ProjectableCombobox'
+import { BankReconcileSection } from './BankReconcileSection'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)]'
@@ -109,6 +110,7 @@ export function ExpenseFormModal({
   showDesignProjectLink = true,
   onSubmit,
   onCancel,
+  onReconciled = () => {},
   busy = false,
   accentColor = '#B01A19',
 }) {
@@ -1211,7 +1213,7 @@ export function ExpenseFormModal({
                 )}
               </section>
 
-              {isEdit && <ExpenseAttachments expense={expense} />}
+              {isEdit && <ExpenseAttachments expense={expense} onReconciled={onReconciled} />}
             </div>
 
             <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
@@ -1252,11 +1254,10 @@ export function ExpenseFormModal({
 }
 
 const fmtMoney = (value) => `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
-const fmtDateShort = (v) => (v ? new Date(v).toLocaleDateString('fr-FR') : '—')
 
 // Read-only attachments shown at the bottom of the edit drawer: a preview of the
 // linked document (always openable) plus the reconciled bank transactions.
-function ExpenseAttachments({ expense }) {
+function ExpenseAttachments({ expense, onReconciled }) {
   if (!expense) return null
   const url = expense.documentUrl
   const filename = expense.documentFilename
@@ -1310,54 +1311,14 @@ function ExpenseAttachments({ expense }) {
         </section>
       )}
 
-      <section>
-        <div className="flex items-center gap-2 mb-2">
-          <Landmark className="w-3.5 h-3.5 text-stone-400" />
-          <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">Transactions bancaires liées</div>
-          {bankTransactions.length > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-stone-100 text-stone-600">
-              {bankTransactions.length}
-            </span>
-          )}
-        </div>
-        {bankTransactions.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-stone-200 p-3 text-xs text-stone-500">
-            Aucune transaction bancaire rapprochée à cette dépense.
-          </div>
-        ) : (
-          <ul className="space-y-1.5">
-            {bankTransactions.map((tx) => (
-              <li
-                key={tx.reconciliationId}
-                className={`rounded-lg border px-3 py-2 text-sm flex items-center gap-3 ${
-                  tx.confidence === 'auto' ? 'bg-emerald-50/40 border-emerald-200/60' : 'bg-white border-stone-200'
-                }`}
-              >
-                <div className="shrink-0 w-7 h-7 rounded-full bg-stone-100 text-stone-500 inline-flex items-center justify-center">
-                  <Landmark className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-[11px] text-stone-500">
-                    <span className="font-medium text-stone-600">{tx.bankName || tx.provider || '—'}</span>
-                    <span>·</span>
-                    <span className="font-mono">{fmtDateShort(tx.date)}</span>
-                    {tx.confidence === 'auto' && (
-                      <span className="text-emerald-700 text-[10px] uppercase tracking-wider font-semibold">auto</span>
-                    )}
-                  </div>
-                  <div className="text-stone-900 truncate">{tx.counterpartName || tx.remittanceInfo || '—'}</div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-mono font-semibold text-stone-900 text-sm">{fmtMoney(Math.abs(tx.allocatedAmount))}</div>
-                  {Math.abs(tx.allocatedAmount) !== Math.abs(tx.amount) && (
-                    <div className="text-[10px] text-stone-400 font-mono">sur {fmtMoney(Math.abs(tx.amount))}</div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <BankReconcileSection
+        linkedTransactions={bankTransactions}
+        reconcilableType="Expense"
+        reconcilableId={String(expense.id)}
+        candidatesUrl={`/api/v1/lab/expenses/${expense.id}/transaction_candidates`}
+        emptyLabel="Aucune transaction bancaire rapprochée à cette dépense."
+        onReconciled={onReconciled}
+      />
     </>
   )
 }
