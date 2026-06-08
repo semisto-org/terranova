@@ -714,7 +714,7 @@ module Api
       end
 
       def training_update_params
-        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, :training_type_id, checklist_items: [], checked_items: [], access_contact_ids: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, :training_type_id, :documents_sent, :expenses_received, checklist_items: [], checked_items: [], access_contact_ids: [])
       end
 
       def session_params
@@ -794,20 +794,25 @@ module Api
         }
       end
 
-      # Préparation à la clôture (#48). Critère bien défini et calculable :
-      # l'encaissement des paiements participants (payment_status). Les autres
-      # critères évoqués (documents envoyés, dépenses fournisseurs reçues) ne
-      # sont pas encore modélisés (pas de flag « envoyé » / pas de dépense
-      # « attendue ») → suivis séparés.
+      # Critères de clôture (#48). Trois critères, agrégés en `ready` :
+      #   - paiements participants encaissés (calculé via payment_status) ;
+      #   - documents envoyés aux participants (case manuelle `documents_sent`) ;
+      #   - factures/dépenses fournisseurs reçues (case manuelle `expenses_received`).
+      # Une facture jamais saisie restant indétectable, les deux derniers
+      # critères sont des confirmations manuelles cochées par l'équipe.
       def closure_readiness(item)
         total = item.registrations.count
         paid = item.registrations.where(payment_status: "paid").count
         unpaid = total - paid
+        all_paid = unpaid.zero?
         {
           totalRegistrations: total,
           paidCount: paid,
           unpaidCount: unpaid,
-          allPaid: unpaid.zero?
+          allPaid: all_paid,
+          documentsSent: item.documents_sent,
+          expensesReceived: item.expenses_received,
+          ready: all_paid && item.documents_sent && item.expenses_received
         }
       end
 
