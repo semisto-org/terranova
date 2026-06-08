@@ -45,6 +45,18 @@ module Academy
       total_capacity - total_spots_taken
     end
 
+    # Critères de clôture (#48). Une activité en post-production n'est « prête à
+    # clôturer » que si les trois critères sont remplis. `documents_sent` et
+    # `expenses_received` sont des cases cochées manuellement par l'équipe ;
+    # l'encaissement des paiements participants est calculé.
+    def all_participant_payments_collected?
+      registrations.where.not(payment_status: 'paid').none?
+    end
+
+    def ready_for_closure?
+      documents_sent? && expenses_received? && all_participant_payments_collected?
+    end
+
     private
 
     def seed_template_tasks
