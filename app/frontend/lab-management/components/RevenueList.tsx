@@ -149,6 +149,9 @@ export interface RevenueListProps {
   onDeleteRevenue: (revenueId: string) => void
   onViewRevenue: (revenue: RevenueItem) => void
   onUpdateRevenue?: (revenueId: string, patch: Partial<RevenueItem>) => Promise<void>
+  // Called with the full re-serialized row after the project link changes, so the
+  // parent can replace just that row in state instead of reloading the whole table.
+  onRowReplace?: (updated: RevenueItem) => void
   onBulkUpdateRevenues?: (ids: string[], patch: Partial<RevenueItem>) => Promise<void>
 }
 
@@ -161,6 +164,7 @@ export function RevenueList({
   onDeleteRevenue,
   onViewRevenue,
   onUpdateRevenue,
+  onRowReplace,
   onBulkUpdateRevenues,
 }: RevenueListProps) {
   const [query, setQuery] = useState('')
@@ -872,12 +876,18 @@ export function RevenueList({
               ? { type: quickEdit.revenue.projectableType as ProjectableValue['type'], id: quickEdit.revenue.projectableId }
               : null
           }
-          onSaved={(next) => {
-            patchRevenue(quickEdit.revenue.id, {
-              projectableType: next?.type ?? null,
-              projectableId: next?.id ?? null,
-              projectName: next ? quickEdit.revenue.projectName : null,
-            } as Partial<RevenueItem>)
+          onSaved={(next, updated) => {
+            // Prefer a surgical single-row replace from the PATCH response; fall
+            // back to the patch path (full refetch) only if unavailable.
+            if (updated && onRowReplace) {
+              onRowReplace(updated as unknown as RevenueItem)
+            } else {
+              patchRevenue(quickEdit.revenue.id, {
+                projectableType: next?.type ?? null,
+                projectableId: next?.id ?? null,
+                projectName: next ? quickEdit.revenue.projectName : null,
+              } as Partial<RevenueItem>)
+            }
             setQuickEdit(null)
           }}
           onCancel={() => setQuickEdit(null)}

@@ -602,6 +602,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onEditExpense={callbacks.onEditExpense}
           onDeleteExpense={callbacks.onDeleteExpense}
           onInlineUpdate={callbacks.onInlineExpenseUpdate}
+          onRowReplace={(updated) => setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))}
           onBulkUpdate={callbacks.onBulkExpenseUpdate}
           onBulkDelete={callbacks.onBulkExpenseDelete}
           onManageCategories={() => setCategoriesModalOpen(true)}
@@ -619,6 +620,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onDeleteRevenue={callbacks.onDeleteRevenue}
           onViewRevenue={callbacks.onViewRevenue}
           onUpdateRevenue={callbacks.onUpdateRevenue}
+          onRowReplace={(updated) => setRevenues((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))}
           onBulkUpdateRevenues={callbacks.onBulkUpdateRevenues}
         />
       )}

@@ -165,6 +165,9 @@ export interface ExpenseListProps {
   onEditExpense: (expense: ExpenseItem) => void
   onDeleteExpense: (expenseId: string) => void
   onInlineUpdate?: (expenseId: string, changes: Partial<ExpenseItem>) => Promise<void> | void
+  // Called with the full re-serialized row after the project link changes, so the
+  // parent can replace just that row in state instead of reloading the whole table.
+  onRowReplace?: (updated: ExpenseItem) => void
   onBulkUpdate?: (ids: string[], changes: Partial<ExpenseItem>) => Promise<void> | void
   onBulkDelete?: (ids: string[]) => void
   onManageCategories?: () => void
@@ -181,6 +184,7 @@ export function ExpenseList({
   onEditExpense,
   onDeleteExpense,
   onInlineUpdate,
+  onRowReplace,
   onBulkUpdate,
   onBulkDelete,
   onManageCategories,
@@ -191,6 +195,8 @@ export function ExpenseList({
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [zoneFilter, setZoneFilter] = useState('all')
   const [periodPreset, setPeriodPreset] = useState<'all' | 'thisMonth' | 'thisQuarter' | 'prevQuarter' | 'noCategory' | 'withoutBill' | 'toValidate'>('all')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
   const [density, setDensity] = useState<'compact' | 'comfort'>('comfort')
   const [sort, setSort] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'invoiceDate', dir: 'desc' }])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -235,6 +241,14 @@ export function ExpenseList({
       if (zoneFilter !== 'all' && e.billingZone !== zoneFilter) return false
 
       const d = new Date(e.invoiceDate || e.createdAt)
+      if (dateFrom) {
+        const from = new Date(`${dateFrom}T00:00:00`)
+        if (d < from) return false
+      }
+      if (dateTo) {
+        const to = new Date(`${dateTo}T23:59:59.999`)
+        if (d > to) return false
+      }
       if (periodPreset === 'thisMonth' && !(d.getMonth() === month && d.getFullYear() === year)) return false
       if (periodPreset === 'thisQuarter' && !isInQuarter(d, currentQuarter.quarter, currentQuarter.year)) return false
       if (periodPreset === 'prevQuarter' && !isInQuarter(d, prevQuarter.quarter, prevQuarter.year)) return false
@@ -243,7 +257,7 @@ export function ExpenseList({
       if (periodPreset === 'toValidate' && !['processing', 'ready_for_payment'].includes(e.status)) return false
       return true
     })
-  }, [expenses, query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, now, prevQuarter, currentQuarter])
+  }, [expenses, query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, dateFrom, dateTo, now, prevQuarter, currentQuarter])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
@@ -304,7 +318,7 @@ export function ExpenseList({
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
   const paginated = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize])
 
-  useEffect(() => { setPage(1) }, [query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, pageSize])
+  useEffect(() => { setPage(1) }, [query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, dateFrom, dateTo, pageSize])
   useEffect(() => setSelectedIds((ids) => ids.filter((id) => sorted.some((e) => e.id === id))), [sorted])
 
   const allPageSelected = paginated.length > 0 && paginated.every((e) => selectedIds.includes(e.id))
@@ -417,6 +431,33 @@ export function ExpenseList({
         {/* Saved-view chips */}
         <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-stone-100">
           <Filter className="w-3.5 h-3.5 text-stone-400 mx-1.5" />
+          <div className="inline-flex items-center gap-1.5 mr-1">
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Du</label>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Au</label>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo('') }}
+                className="px-2 py-1 rounded-full text-[11px] font-medium text-stone-500 hover:bg-stone-100"
+                title="Effacer la plage de dates"
+              >
+                Effacer
+              </button>
+            )}
+          </div>
           {([
             ['all', 'Tout'],
             ['thisMonth', 'Ce mois-ci'],
@@ -795,8 +836,12 @@ export function ExpenseList({
               ? { type: quickEdit.expense.projectableType as ProjectableValue['type'], id: quickEdit.expense.projectableId }
               : null
           }
-          onSaved={(next) => {
-            if (onInlineUpdate) {
+          onSaved={(next, updated) => {
+            // Prefer a surgical single-row replace from the PATCH response; fall
+            // back to the inline-update path (full refetch) only if unavailable.
+            if (updated && onRowReplace) {
+              onRowReplace(updated as unknown as ExpenseItem)
+            } else if (onInlineUpdate) {
               onInlineUpdate(quickEdit.expense.id, {
                 projectableType: next?.type ?? null,
                 projectableId: next?.id ?? null,
