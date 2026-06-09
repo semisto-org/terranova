@@ -10,10 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_09_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
+
+  create_table "academy_announcements", force: :cascade do |t|
+    t.text "body", default: "", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.datetime "deleted_at"
+    t.datetime "published_at"
+    t.string "status", default: "to_confirm", null: false
+    t.string "title", default: "", null: false
+    t.bigint "training_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_academy_announcements_on_deleted_at"
+    t.index ["published_at"], name: "index_academy_announcements_on_published_at"
+    t.index ["training_id"], name: "index_academy_announcements_on_training_id"
+  end
 
   create_table "academy_holidays", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -51,6 +66,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.index ["training_id"], name: "index_academy_participant_categories_on_training_id"
   end
 
+  create_table "academy_participant_messages", force: :cascade do |t|
+    t.bigint "author_member_id"
+    t.text "body", default: "", null: false
+    t.bigint "contact_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.datetime "read_at"
+    t.string "sender", default: "participant", null: false
+    t.bigint "training_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_academy_participant_messages_on_contact_id"
+    t.index ["deleted_at"], name: "index_academy_participant_messages_on_deleted_at"
+    t.index ["training_id", "contact_id"], name: "idx_on_training_id_contact_id_7e56636384"
+    t.index ["training_id"], name: "index_academy_participant_messages_on_training_id"
+  end
+
   create_table "academy_registration_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.decimal "discount_percent", precision: 5, scale: 2, default: "0.0", null: false
@@ -76,6 +107,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.index ["pack_id"], name: "index_academy_registration_packs_on_pack_id"
     t.index ["registration_id", "pack_id"], name: "idx_reg_packs_on_registration_and_pack", unique: true
     t.index ["registration_id"], name: "index_academy_registration_packs_on_registration_id"
+  end
+
+  create_table "academy_session_feedbacks", force: :cascade do |t|
+    t.boolean "anonymous", default: false, null: false
+    t.text "comment", default: "", null: false
+    t.bigint "contact_id"
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.integer "rating"
+    t.bigint "session_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_academy_session_feedbacks_on_contact_id"
+    t.index ["deleted_at"], name: "index_academy_session_feedbacks_on_deleted_at"
+    t.index ["session_id", "contact_id"], name: "idx_session_feedbacks_unique_per_contact", unique: true, where: "((deleted_at IS NULL) AND (contact_id IS NOT NULL))"
+    t.index ["session_id"], name: "index_academy_session_feedbacks_on_session_id"
   end
 
   create_table "academy_settings", force: :cascade do |t|
@@ -195,6 +241,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.datetime "deleted_at"
     t.text "description", default: "", null: false
     t.date "end_date", null: false
+    t.datetime "feedback_requested_at"
     t.jsonb "location_ids", default: [], null: false
     t.text "meals_info", default: "", null: false
     t.string "meeting_point", default: "", null: false
@@ -236,6 +283,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.datetime "deleted_at"
     t.decimal "deposit_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.text "description", default: "", null: false
+    t.boolean "documents_sent", default: false, null: false
+    t.boolean "expenses_received", default: false, null: false
     t.jsonb "facilitator_ids", default: [], null: false
     t.text "feedback", default: "", null: false
     t.bigint "location_id"
@@ -251,6 +300,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.string "punchpass_url", default: "", null: false
     t.string "registration_mode", default: "open", null: false
     t.boolean "requires_accommodation", default: false, null: false
+    t.boolean "share_participant_directory", default: false, null: false
     t.string "status", default: "idea", null: false
     t.string "title", null: false
     t.bigint "training_type_id", null: false
@@ -2500,6 +2550,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.bigint "pinged_by_id"
     t.integer "position", default: 0
     t.string "priority"
+    t.datetime "recapped_at"
     t.datetime "starred_at"
     t.string "status", default: "pending", null: false
     t.jsonb "tags", default: []
@@ -2566,11 +2617,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_170000) do
     t.index ["member_id"], name: "index_wallets_on_member_id", unique: true
   end
 
+  add_foreign_key "academy_announcements", "academy_trainings", column: "training_id"
   add_foreign_key "academy_participant_categories", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_participant_messages", "academy_trainings", column: "training_id"
+  add_foreign_key "academy_participant_messages", "contacts"
   add_foreign_key "academy_registration_items", "academy_participant_categories", column: "participant_category_id"
   add_foreign_key "academy_registration_items", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_registration_packs", "academy_training_packs", column: "pack_id"
   add_foreign_key "academy_registration_packs", "academy_training_registrations", column: "registration_id"
+  add_foreign_key "academy_session_feedbacks", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_training_sessions", column: "session_id"

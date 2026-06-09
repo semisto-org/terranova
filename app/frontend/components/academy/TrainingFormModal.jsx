@@ -22,6 +22,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
   const [title, setTitle] = useState(training?.title ?? '')
   const [vatRate, setVatRate] = useState(training?.vatRate ?? 0)
   const [requiresAccommodation, setRequiresAccommodation] = useState(training?.requiresAccommodation ?? false)
+  const [shareParticipantDirectory, setShareParticipantDirectory] = useState(training?.shareParticipantDirectory ?? false)
   const [description, setDescription] = useState(training?.description ?? '')
   const [coordinatorNote, setCoordinatorNote] = useState(training?.coordinatorNote ?? '')
   const [categories, setCategories] = useState(() => {
@@ -220,6 +221,7 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
         title: title.trim(),
         vat_rate: vatRate,
         requires_accommodation: requiresAccommodation,
+        share_participant_directory: shareParticipantDirectory,
         description: description === '<p></p>' ? '' : description,
         coordinator_note: coordinatorNote === '<p></p>' ? '' : coordinatorNote,
         participant_categories: categoriesPayload,
@@ -666,6 +668,46 @@ export function TrainingFormModal({ training, trainingTypes, onSubmit, onCancel,
                       </p>
                     </div>
                   </label>
+                </div>
+
+                {/* Share participant directory — opt-in trombinoscope sur My Semisto */}
+                <div className="pt-2">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={shareParticipantDirectory}
+                        onChange={(e) => setShareParticipantDirectory(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`
+                          w-11 h-6 rounded-full transition-colors duration-200 flex items-center
+                          ${shareParticipantDirectory ? 'bg-[#B01A19]' : 'bg-stone-300'}
+                        `}
+                      >
+                        <div
+                          className={`
+                            w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200
+                            ${shareParticipantDirectory ? 'translate-x-5' : 'translate-x-0.5'}
+                          `}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 pt-0.5">
+                      <div className="font-medium text-sm text-stone-900">
+                        Partager les coordonnées des participants
+                      </div>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Affiche un trombinoscope (nom, email, téléphone) de tous les inscrits sur la page My Semisto de l'activité.
+                      </p>
+                    </div>
+                  </label>
+                  {shareParticipantDirectory && (
+                    <div className="mt-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/60 px-3 py-2.5 text-xs text-amber-700 leading-relaxed">
+                      Les coordonnées (email et téléphone) de chaque participant seront visibles par tous les autres inscrits. Assure-toi qu'ils en sont informés (RGPD).
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}

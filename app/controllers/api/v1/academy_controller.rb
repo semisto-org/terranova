@@ -710,11 +710,11 @@ module Api
       end
 
       def training_params
-        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, checklist_items: [], checked_items: [], access_contact_ids: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :share_participant_directory, :description, :coordinator_note, checklist_items: [], checked_items: [], access_contact_ids: [])
       end
 
       def training_update_params
-        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :description, :coordinator_note, :training_type_id, checklist_items: [], checked_items: [], access_contact_ids: [])
+        params.permit(:title, :status, :price, :deposit_amount, :vat_rate, :max_participants, :requires_accommodation, :share_participant_directory, :description, :coordinator_note, :training_type_id, checklist_items: [], checked_items: [], access_contact_ids: [])
       end
 
       def session_params
@@ -823,6 +823,7 @@ module Api
           priceExclVat: item.price_excl_vat,
           maxParticipants: item.max_participants,
           requiresAccommodation: item.requires_accommodation,
+          shareParticipantDirectory: item.share_participant_directory,
           description: item.description,
           coordinatorNote: item.coordinator_note,
           checklistItems: item.checklist_items,

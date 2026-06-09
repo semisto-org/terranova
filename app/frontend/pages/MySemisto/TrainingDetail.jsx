@@ -3,6 +3,7 @@ import { usePage, Link } from '@inertiajs/react'
 import {
   ArrowLeft, Calendar, Clock, Loader2, MapPin, GraduationCap, FileText,
   Utensils, BedDouble, Backpack, ChevronDown, Car, CalendarClock,
+  Users, Mail, Phone,
 } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
@@ -238,6 +239,11 @@ export default function TrainingDetail() {
 
           {documents.length === 0 && sessions.length === 0 && (
             <DocumentList documents={[]} sessions={[]} />
+          )}
+
+          {/* Participant directory — only when the activity opts in (admin toggle) */}
+          {training.participants?.length > 0 && (
+            <ParticipantsDirectory participants={training.participants} />
           )}
 
           {/* Carpooling — hidden when the whole activity is past */}
@@ -513,6 +519,66 @@ function SessionRow({ session, index, isLast, isNext, open, onToggle, docs, trai
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// Participant directory — names, emails and phones of everyone registered.
+// Shown only when the activity's admin opted in. Email/phone are intentionally
+// revealed here (unlike carpooling), so this section appears solely on demand.
+function ParticipantsDirectory({ participants }) {
+  return (
+    <div className="my-animate-section" style={{ animationDelay: '150ms' }}>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLOR_ACADEMY }} />
+        <h2 className="text-lg text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
+          Participants
+        </h2>
+        <span className="text-sm text-stone-400">({participants.length})</span>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wider text-stone-400">
+              <th className="px-4 py-3 font-medium">
+                <span className="inline-flex items-center gap-1.5"><Users size={13} /> Nom</span>
+              </th>
+              <th className="px-4 py-3 font-medium">
+                <span className="inline-flex items-center gap-1.5"><Mail size={13} /> Email</span>
+              </th>
+              <th className="px-4 py-3 font-medium">
+                <span className="inline-flex items-center gap-1.5"><Phone size={13} /> Téléphone</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {participants.map((p, i) => (
+              <tr key={i} className="border-b border-stone-100 last:border-0">
+                <td className="px-4 py-3 text-stone-800">{p.name}</td>
+                <td className="px-4 py-3">
+                  {p.email ? (
+                    <a href={`mailto:${p.email}`} className="text-[#B01A19] hover:underline break-all">
+                      {p.email}
+                    </a>
+                  ) : (
+                    <span className="text-stone-300">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {p.phone ? (
+                    <a href={`tel:${p.phone}`} className="text-stone-700 hover:underline whitespace-nowrap">
+                      {p.phone}
+                    </a>
+                  ) : (
+                    <span className="text-stone-300">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

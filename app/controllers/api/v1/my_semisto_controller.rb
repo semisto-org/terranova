@@ -520,7 +520,7 @@ module Api
         location_ids = sessions.flat_map(&:location_ids).uniq
         locations_by_id = Academy::TrainingLocation.where(id: location_ids).index_by { |l| l.id.to_s }
 
-        {
+        detail = {
           id: training.id.to_s,
           title: training.title,
           status: training.status,
@@ -529,6 +529,25 @@ module Api
           canUpload: can_upload,
           sessions: sessions.map { |s| serialize_portal_session(s, locations_by_id) },
           documents: documents.map { |d| serialize_portal_document(d) }
+        }
+
+        # Trombinoscope : opt-in par activité (case admin). Quand il est actif, on
+        # révèle volontairement nom/email/téléphone des inscrits aux autres
+        # participants — posture inverse du covoiturage (relais anonyme).
+        if training.share_participant_directory
+          detail[:participants] = training.registrations
+            .order(:contact_name)
+            .map { |r| serialize_portal_participant(r) }
+        end
+
+        detail
+      end
+
+      def serialize_portal_participant(registration)
+        {
+          name: registration.contact_name,
+          email: registration.contact_email.presence,
+          phone: registration.phone.presence
         }
       end
 
