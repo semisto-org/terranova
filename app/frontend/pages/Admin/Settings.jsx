@@ -855,8 +855,8 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               name: payload.name || '',
               notes: payload.notes || '',
               poles: payload.poles || [],
-              training_id: payload.training_id || null,
-              design_project_id: payload.design_project_id || null,
+              projectable_type: payload.projectable_type || null,
+              projectable_id: payload.projectable_id || null,
               organization_id: payload.organization_id || null,
               project_allocations: payload.project_allocations || [],
             }
