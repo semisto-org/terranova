@@ -35,7 +35,7 @@ module Api
           projects << serialize_project_summary(p)
         end
 
-        Academy::Training.where(deleted_at: nil).includes(:project_memberships, :unified_task_lists).find_each do |p|
+        Academy::Training.where(deleted_at: nil).includes(:project_memberships, :unified_task_lists, :sessions).find_each do |p|
           projects << serialize_project_summary(p)
         end
 
@@ -397,6 +397,34 @@ module Api
 
       # ── Serializers ──
 
+      FR_MONTHS = %w[
+        janvier février mars avril mai juin
+        juillet août septembre octobre novembre décembre
+      ].freeze
+
+      # Libellé de date affiché sous le nom dans le sélecteur de projet, pour
+      # distinguer des activités Academy au libellé identique. Une formation
+      # n'a pas de date propre : on dérive la plage de ses sessions
+      # (première date de début → dernière date de fin). `nil` pour les autres
+      # types de projet et les formations sans session. Les sessions sont
+      # préchargées par `index` (includes :sessions) — on filtre en mémoire.
+      def project_date_label(project)
+        return nil unless project.is_a?(Academy::Training)
+
+        sessions = project.sessions.reject(&:deleted_at)
+        starts = sessions.filter_map(&:start_date)
+        return nil if starts.empty?
+
+        ends = sessions.filter_map(&:end_date)
+        first = starts.min
+        last = (ends + starts).max
+        first == last ? format_fr_date(first) : "#{format_fr_date(first)} → #{format_fr_date(last)}"
+      end
+
+      def format_fr_date(date)
+        "#{date.day} #{FR_MONTHS[date.month - 1]} #{date.year}"
+      end
+
       def serialize_project_summary(project)
         tasks = project.unified_task_lists.flat_map(&:tasks)
         total = tasks.size
@@ -406,6 +434,7 @@ module Api
           id: project.id.to_s,
           name: project.project_name,
           typeKey: project.project_type_key,
+          dateLabel: project_date_label(project),
           status: project.respond_to?(:status) ? project.status : nil,
           description: project.respond_to?(:description) ? project.description.to_s : "",
           teamCount: project.project_memberships.size,

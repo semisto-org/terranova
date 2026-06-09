@@ -30,6 +30,10 @@ export interface ProjectableOption {
   id: string
   name: string
   typeKey: ProjectableTypeKey
+  // Plage de dates des sessions pour les activités Academy (typeKey 'training'),
+  // affichée sous le nom pour départager des formations au libellé identique.
+  // Absent/undefined pour les autres types.
+  dateLabel?: string
 }
 
 const GROUPS: { typeKey: ProjectableTypeKey; label: string; color: string; bg: string }[] = [
@@ -245,6 +249,9 @@ export function ProjectableCombobox({
               </span>
             )}
             <span className="text-stone-900 truncate">{selected.name}</span>
+            {selected.dateLabel && (
+              <span className="text-stone-400 text-xs shrink-0 truncate">· {selected.dateLabel}</span>
+            )}
           </span>
         ) : (
           <span className="text-stone-400">{placeholder}</span>
@@ -313,7 +320,12 @@ export function ProjectableCombobox({
                             } ${isSelected ? 'font-medium' : 'text-stone-800'}`}
                             style={isSelected ? { color: group.color } : undefined}
                           >
-                            <span className="flex-1 truncate">{item.name}</span>
+                            <span className="flex-1 min-w-0">
+                              <span className="block truncate">{item.name}</span>
+                              {item.dateLabel && (
+                                <span className="block text-[11px] text-stone-400 truncate">{item.dateLabel}</span>
+                              )}
+                            </span>
                             {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                           </button>
                         </li>
