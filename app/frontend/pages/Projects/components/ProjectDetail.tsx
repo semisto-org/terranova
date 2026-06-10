@@ -110,6 +110,12 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
 
   useEffect(() => { loadProject() }, [loadProject])
 
+  // Marque le projet comme « vu » (éteint le point d'activité sur la grille
+  // « Mon accueil »). Fire-and-forget ; no-op si je ne suis pas membre.
+  useEffect(() => {
+    apiRequest(`/api/v1/my-projects/${typeKey}/${projectId}/visit`, { method: 'POST' }).catch(() => {})
+  }, [typeKey, projectId])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">

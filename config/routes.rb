@@ -150,6 +150,11 @@ Rails.application.routes.draw do
       get "my-tasks", to: "tasks#my_tasks"
       get "member-tasks/:member_id", to: "tasks#member_tasks"
       get "my-projects", to: "projects#my_projects"
+      # Grille « Mon accueil » (home) — placées avant la route dynamique
+      # my-projects/:type/:id/visit pour éviter toute capture de "board"/"reorder".
+      get "my-projects/board", to: "projects#board"
+      patch "my-projects/reorder", to: "projects#reorder"
+      post "my-projects/:type/:id/visit", to: "projects#visit"
 
       # Unified project memberships
       get "projects/:type/:id/members", to: "project_memberships#index"

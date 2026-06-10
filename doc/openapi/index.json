@@ -630,7 +630,7 @@
       ]
     },
     {
-      "endpointCount": 1,
+      "endpointCount": 4,
       "file": "my-projects.json",
       "name": "my-projects",
       "operations": [
@@ -638,6 +638,21 @@
           "method": "GET",
           "path": "/api/v1/my-projects",
           "summary": "my_projects"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my-projects/board",
+          "summary": "board"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/my-projects/reorder",
+          "summary": "reorder"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my-projects/{type}/{id}/visit",
+          "summary": "visit"
         }
       ]
     },
@@ -1165,5 +1180,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 204
+  "totalEndpoints": 207
 }
