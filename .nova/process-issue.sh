@@ -28,7 +28,14 @@ git config user.name  "Nova (agent Semisto)"
 git config user.email "nova@semisto.org"
 
 BRANCH="nova/issue-$N"
-git checkout -B "$BRANCH"   # -B : réinitialise même si la branche locale existe
+# Repartir d'un état VIERGE sur origin/main pour CHAQUE issue. Le bootstrap ne nettoie
+# qu'au début du run ; dans la boucle multi-issues, le WIP non commité d'une issue
+# précédente (verdict blocked/failed, ou build avorté) contaminerait sinon le worktree
+# de la suivante — c'est ce qui a faussement bloqué #102 (elle héritait des fichiers de
+# #107). -f abandonne les modifs trackées, -B recale la branche sur origin/main, et le
+# clean -fd retire les fichiers non suivis laissés derrière.
+git checkout -f -B "$BRANCH" origin/main --quiet
+git clean -fd --quiet
 
 # Contexte issue
 if ! gh issue view "$N" --json number,title,body,labels,comments > "$OUT/issue.json"; then
