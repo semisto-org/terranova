@@ -16,6 +16,27 @@ MAX_ISSUES="${MAX_ISSUES:-8}"
 TRUSTED=" admin maintain write "
 log(){ echo "[nova $(date '+%H:%M:%S')] $*"; }
 
+# Fichier de rapport de session : process-issue.sh y consigne une ligne TSV par issue
+# traitée (numéro <TAB> titre <TAB> statut). On le repart à zéro à chaque run.
+NOVA_REPORT="${NOVA_REPORT:-/tmp/nova/session-report.tsv}"
+export NOVA_REPORT
+mkdir -p "$(dirname "$NOVA_REPORT")"
+: > "$NOVA_REPORT"
+
+# Compile le rapport de session et l'envoie sur Telegram (no-op si non configuré).
+# $1 = en-tête court (ex. "session terminée"). `waiting` est rempli plus bas.
+send_report() {
+  local header="$1" body n=0 footer=''
+  if [ -s "$NOVA_REPORT" ]; then
+    n="$(grep -c '' "$NOVA_REPORT")"
+    body="$(awk -F'\t' '{ printf "• #%s — %s\n  %s\n", $1, $2, $3 }' "$NOVA_REPORT")"
+  fi
+  [ -n "${waiting// }" ] && footer=$'\n'"⏳ En attente de dépendances :${waiting}"
+  printf '🌙 Nova — %s (%s)\n%s issue(s) traitée(s)\n\n%s%s\n' \
+    "$header" "$(date '+%Y-%m-%d %H:%M')" "$n" "${body:-—}" "$footer" \
+    | bash .nova/notify-telegram.sh || true
+}
+
 # Extrait les numéros d'issues bloquantes déclarés dans un corps d'issue.
 # Reconnaît DEUX formats : la section "### Dépendances…" du gabarit GitHub Form
 # (heading + valeur sur lignes séparées) ET les mentions en ligne "Dépend de #104".
@@ -103,7 +124,7 @@ fi
 
 # --- Dépendances (nécessaires à db:test:prepare + outils) — seulement s'il y a du travail ---
 log "bundle install…"
-bundle install --quiet || { log "ERROR: bundle install a échoué"; exit 1; }
+bundle install --quiet || { log "ERROR: bundle install a échoué"; send_report "session interrompue (bundle install)"; exit 1; }
 log "yarn install…"
 yarn install --frozen-lockfile >/dev/null 2>&1 || log "WARN: yarn install (frozen) a échoué"
 
@@ -112,3 +133,4 @@ for N in "${selected[@]}"; do
   ISSUE_NUMBER="$N" bash .nova/process-issue.sh || log "WARN: process-issue #$N a retourné non-zéro"
 done
 log "terminé."
+send_report "session terminée"

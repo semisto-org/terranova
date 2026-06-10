@@ -99,6 +99,23 @@ d'un prompt qui inclut le contenu de l'issue. Donc :
 - `claude` tourne sans `GH_TOKEN` dans son environnement ; les effets git/GitHub (commit, push,
   PR) sont faits de façon déterministe par `process-issue.sh`, après l'exécution du modèle.
 
+## Rapport de fin de session (Telegram)
+
+À la fin de chaque nuit où elle a traité au moins une issue, Nova envoie un **rapport court sur Telegram** : pour chaque issue traitée, son **titre** et son **statut** (✅ PR draft ouverte, ❓ bloqué, ❌ échec…), plus une ligne « en attente de dépendances » s'il y a lieu.
+
+Configuration (secrets — à mettre dans l'env du job, **pas** dans le repo) :
+
+```bash
+export TELEGRAM_BOT_TOKEN="123456:ABC…"   # token du bot (via BotFather)
+export TELEGRAM_CHAT_ID="123456789"        # id du chat/canal destinataire
+```
+
+Ajoute ces deux variables à l'environnement du bootstrap `~/.local/bin/nova-terranova` (ou au bloc `EnvironmentVariables` du plist launchd). Tant qu'elles sont absentes, l'envoi est un **no-op silencieux** : le run nocturne n'est jamais impacté. Un échec d'envoi Telegram (réseau, token invalide) est également non bloquant.
+
+- Pour trouver ton `TELEGRAM_CHAT_ID` : écris un message au bot, puis `curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"` et lis `result[].message.chat.id`.
+- Aucun rapport n'est envoyé les nuits **sans** issue traitée (pas de bruit quotidien). Dis-le si tu veux au contraire un battement de cœur « rien à traiter cette nuit ».
+- Le rapport est aussi envoyé si la session **s'interrompt** sur un échec d'infra (`bundle install`).
+
 ## Compromis vs cloud
 
 - ✅ Environnement PAI complet (skills, agents, voix, hooks).
@@ -115,3 +132,4 @@ d'un prompt qui inclut le contenu de l'issue. Donc :
 | `process-issue.sh` | Traitement d'une issue (triage → code → commit/PR ou blocage). |
 | `triage-and-build.md` | Le prompt/consignes données à Claude (doctrine décide-et-note). |
 | `DEFAULTS.md` | Défauts standing de Michael, chargés dans le prompt à chaque issue. |
+| `notify-telegram.sh` | Envoie un message court sur Telegram (rapport de fin de session). |

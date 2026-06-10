@@ -17,6 +17,15 @@ rm -f "$RESULT"
 
 log() { echo "[nova] $*"; }
 
+# Consigne le verdict FINAL de cette issue (titre + statut) dans le fichier de rapport
+# de session, lu par run-local.sh pour le rapport Telegram de fin de nuit. Une ligne
+# TSV par issue : numéro <TAB> titre <TAB> statut lisible. Appelé une seule fois par
+# issue, juste avant chaque sortie terminale.
+report() {
+  printf '%s\t%s\t%s\n' "$N" "${TITLE:-(titre inconnu)}" "$1" \
+    >> "${NOVA_REPORT:-/tmp/nova/session-report.tsv}" 2>/dev/null || true
+}
+
 # Poste un commentaire + label bloquant, sans jamais divulguer de log brut (fuite de secrets).
 block_issue() {
   local msg="$1"
@@ -39,7 +48,7 @@ git clean -fd --quiet
 
 # Contexte issue
 if ! gh issue view "$N" --json number,title,body,labels,comments > "$OUT/issue.json"; then
-  log "ERROR: lecture de l'issue #$N impossible"; exit 1
+  log "ERROR: lecture de l'issue #$N impossible"; report "❌ échec — lecture de l'issue impossible"; exit 1
 fi
 TITLE="$(jq -r '.title' "$OUT/issue.json")"
 
@@ -51,6 +60,7 @@ if ! bin/rails db:test:prepare 2>&1 | tail -40; then
   block_issue "🌙 **Nova — environnement local cassé**
 
 \`bin/rails db:test:prepare\` a échoué ; je n'ai pas pu préparer la base de test, donc je n'ai rien tenté. (Problème d'infra, pas de l'issue.) Détails dans le log local du run Nova."
+  report "🚫 bloqué — environnement local cassé"
   exit 0
 fi
 
@@ -106,12 +116,14 @@ Je n'ai pas traité cette issue cette nuit : il me manque des éléments pour av
 $Q
 
 _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la reprenne la nuit suivante._"
+    report "❓ bloqué — clarifications nécessaires"
     ;;
 
   built)
     git add -A
     if git diff --cached --quiet; then
       block_issue "🌙 **Nova** a jugé l'issue traitable mais n'a produit aucun changement de code. À vérifier manuellement."
+      report "⚠️ traitable mais aucun changement de code"
       exit 0
     fi
     SUMMARY="$(jq -r '.summary // "Implémentation automatique."' "$RESULT")"
@@ -122,10 +134,12 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
 
     if ! git commit -q -m "$(printf 'Nova: issue #%s\n\n%s' "$N" "$SUMMARY")"; then
       block_issue "🌙 **Nova — commit impossible** (voir log local). Issue laissée bloquée."
+      report "🚫 bloqué — commit impossible"
       exit 0
     fi
     if ! git push -u origin "$BRANCH" --force-with-lease; then
       block_issue "🌙 **Nova — push impossible** (voir log local). Issue laissée bloquée."
+      report "🚫 bloqué — push impossible"
       exit 0
     fi
 
@@ -142,11 +156,17 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
       log "PR #$EXISTING déjà ouverte sur $BRANCH — mise à jour."
     elif ! gh pr create --draft --base main --head "$BRANCH" --title "Nova: $TITLE" --body "$PR_BODY"; then
       block_issue "🌙 **Nova — ouverture de PR impossible**. Le code est poussé sur la branche \`$BRANCH\` ; à finaliser manuellement."
+      report "🚫 bloqué — ouverture de PR impossible"
       exit 0
     fi
     gh issue edit "$N" --add-label "nova:pr-open" || log "WARN: label pr-open impossible sur #$N"
     # Signale à Michael qu'il y a des hypothèses à valider en review.
-    [ -n "${ASSUMPTIONS//[[:space:]]/}" ] && { gh issue edit "$N" --add-label "nova:assumptions" || true; }
+    if [ -n "${ASSUMPTIONS//[[:space:]]/}" ]; then
+      gh issue edit "$N" --add-label "nova:assumptions" || true
+      report "✅ PR draft ouverte (+ hypothèses à valider)"
+    else
+      report "✅ PR draft ouverte"
+    fi
     ;;
 
   *)
@@ -156,5 +176,6 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
 $R
 
 _Le log détaillé est dans le run local. Label \`nova:blocked\` posé : corrige/précise puis retire-le pour relancer._"
+    report "❌ échec"
     ;;
 esac
