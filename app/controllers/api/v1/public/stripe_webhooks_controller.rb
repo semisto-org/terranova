@@ -69,6 +69,9 @@ module Api
               departure_postal_code: metadata["departure_postal_code"] || "",
               departure_country: metadata["departure_country"] || "",
               carpooling: metadata["carpooling"] || "none",
+              # Stripe metadata sont des strings : absence ou "true" => consentement,
+              # seul "false" le désactive (consentement présumé par défaut).
+              photo_consent: metadata["photo_consent"] != "false",
               amount_paid: amount_paid,
               payment_amount: training.price.to_f.positive? ? training.price : amount_paid,
               payment_status: "pending",

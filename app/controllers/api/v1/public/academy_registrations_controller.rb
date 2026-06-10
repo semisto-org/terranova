@@ -172,6 +172,7 @@ module Api
             departure_postal_code: params[:departure_postal_code],
             departure_country: params[:departure_country],
             carpooling: params[:carpooling],
+            photo_consent: params[:photo_consent].to_s,
             payment_type: payment_type
           }
           metadata[:items] = items_data.to_json if items_data.present?

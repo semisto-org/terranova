@@ -33,6 +33,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
   const [amountPaid, setAmountPaid] = useState(registration?.amountPaid ?? 0)
   const [paymentStatus, setPaymentStatus] = useState(registration?.paymentStatus ?? 'pending')
   const [internalNote, setInternalNote] = useState(registration?.internalNote ?? '')
+  const [photoConsent, setPhotoConsent] = useState(registration?.photoConsent ?? true)
   const [items, setItems] = useState(() => {
     if (registration?.items?.length > 0) {
       return registration.items.reduce((acc, item) => {
@@ -244,6 +245,7 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
         amount_paid: amountPaid,
         payment_status: paymentStatus,
         internal_note: internalNote.trim(),
+        photo_consent: photoConsent,
         newsletter_subscribed: newsletterSubscribed,
         items: participantCategories.length > 0 ? itemsPayload : undefined,
         packs: packsPayload.length > 0 ? packsPayload : undefined,
@@ -697,6 +699,26 @@ export function RegistrationFormModal({ registration, trainingPrice, participant
                     className={inputBase}
                     placeholder="Notes pour l'équipe (besoins spéciaux, allergies, etc.)..."
                   />
+                </div>
+
+                {/* Photo consent (RGPD / droit à l'image) */}
+                <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={photoConsent}
+                      onChange={(e) => setPhotoConsent(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#B01A19] focus:ring-[#B01A19]/30"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-stone-900">
+                        J'accepte d'être pris·e en photo pour la communication de Semisto
+                      </span>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Décochez si le participant ne souhaite pas être photographié·e.
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
                 {/* Newsletter Subscription */}
