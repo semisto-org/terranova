@@ -101,7 +101,13 @@ d'un prompt qui inclut le contenu de l'issue. Donc :
 
 ## Rapport de fin de session (Telegram)
 
-À la fin de chaque nuit où elle a traité au moins une issue, Nova envoie un **rapport court sur Telegram** : pour chaque issue traitée, son **titre** et son **statut** (✅ PR draft ouverte, ❓ bloqué, ❌ échec…), plus une ligne « en attente de dépendances » s'il y a lieu.
+À la fin de **chaque** session, Nova envoie un **rapport court sur Telegram** : pour chaque issue traitée, son **titre**, son **statut** (✅ PR draft ouverte, ❓ bloqué, ❌ échec…) et un **lien direct** vers la PR (ou l'issue) ouvrable depuis l'app GitHub. Une ligne « en attente de dépendances » est ajoutée s'il y a lieu.
+
+Le rapport est **toujours** envoyé, y compris :
+- les nuits **sans aucune issue traitée** (« rien à traiter cette nuit »),
+- en cas d'**erreur** ou d'interruption (échec d'infra type `bundle install`, ou sortie inattendue captée par un trap de fin).
+
+Seul le mode `NOVA_DRY_RUN=1` (test de plomberie) n'envoie pas de rapport.
 
 Configuration (secrets — à mettre dans l'env du job, **pas** dans le repo) :
 
@@ -113,8 +119,6 @@ export TELEGRAM_CHAT_ID="123456789"        # id du chat/canal destinataire
 Ajoute ces deux variables à l'environnement du bootstrap `~/.local/bin/nova-terranova` (ou au bloc `EnvironmentVariables` du plist launchd). Tant qu'elles sont absentes, l'envoi est un **no-op silencieux** : le run nocturne n'est jamais impacté. Un échec d'envoi Telegram (réseau, token invalide) est également non bloquant.
 
 - Pour trouver ton `TELEGRAM_CHAT_ID` : écris un message au bot, puis `curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"` et lis `result[].message.chat.id`.
-- Aucun rapport n'est envoyé les nuits **sans** issue traitée (pas de bruit quotidien). Dis-le si tu veux au contraire un battement de cœur « rien à traiter cette nuit ».
-- Le rapport est aussi envoyé si la session **s'interrompt** sur un échec d'infra (`bundle install`).
 
 ## Compromis vs cloud
 

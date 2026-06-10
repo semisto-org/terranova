@@ -17,12 +17,13 @@ rm -f "$RESULT"
 
 log() { echo "[nova] $*"; }
 
-# Consigne le verdict FINAL de cette issue (titre + statut) dans le fichier de rapport
-# de session, lu par run-local.sh pour le rapport Telegram de fin de nuit. Une ligne
-# TSV par issue : numéro <TAB> titre <TAB> statut lisible. Appelé une seule fois par
-# issue, juste avant chaque sortie terminale.
+# Consigne le verdict FINAL de cette issue dans le fichier de rapport de session, lu par
+# run-local.sh pour le rapport Telegram de fin de nuit. Une ligne TSV par issue :
+# numéro <TAB> titre <TAB> statut lisible <TAB> URL (PR si ouverte, sinon l'issue).
+# Appelé une seule fois par issue, juste avant chaque sortie terminale.
+# $1 = statut ; $2 = URL (optionnel ; défaut = URL de l'issue).
 report() {
-  printf '%s\t%s\t%s\n' "$N" "${TITLE:-(titre inconnu)}" "$1" \
+  printf '%s\t%s\t%s\t%s\n' "$N" "${TITLE:-(titre inconnu)}" "$1" "${2:-${ISSUE_URL:-}}" \
     >> "${NOVA_REPORT:-/tmp/nova/session-report.tsv}" 2>/dev/null || true
 }
 
@@ -47,10 +48,11 @@ git checkout -f -B "$BRANCH" origin/main --quiet
 git clean -fd --quiet
 
 # Contexte issue
-if ! gh issue view "$N" --json number,title,body,labels,comments > "$OUT/issue.json"; then
+if ! gh issue view "$N" --json number,title,body,labels,comments,url > "$OUT/issue.json"; then
   log "ERROR: lecture de l'issue #$N impossible"; report "❌ échec — lecture de l'issue impossible"; exit 1
 fi
 TITLE="$(jq -r '.title' "$OUT/issue.json")"
+ISSUE_URL="$(jq -r '.url // ""' "$OUT/issue.json")"
 
 # Base de test prête — échec = on s'arrête bruyamment (ne pas bâtir sur du sable).
 # db:test:prepare charge le schéma SANS lancer les seeds (les tests construisent leurs
@@ -150,22 +152,24 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
     fi
     PR_BODY="$(printf 'Traitement automatique de #%s par **Nova** (agent nocturne, local).\n\n## Résumé\n%s\n\n## Tests\n%s%s\n\n## Non testé / à vérifier en review\n%s\n\nCloses #%s' "$N" "$SUMMARY" "$TESTS" "$ASSUMPTIONS_SECTION" "$NOTES" "$N")"
 
+    PR_URL=""
     EXISTING="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null)"
     if [ -n "$EXISTING" ]; then
       gh pr edit "$EXISTING" --body "$PR_BODY" || true
+      PR_URL="$(gh pr view "$EXISTING" --json url --jq '.url' 2>/dev/null)"
       log "PR #$EXISTING déjà ouverte sur $BRANCH — mise à jour."
-    elif ! gh pr create --draft --base main --head "$BRANCH" --title "Nova: $TITLE" --body "$PR_BODY"; then
+    elif ! PR_URL="$(gh pr create --draft --base main --head "$BRANCH" --title "Nova: $TITLE" --body "$PR_BODY")"; then
       block_issue "🌙 **Nova — ouverture de PR impossible**. Le code est poussé sur la branche \`$BRANCH\` ; à finaliser manuellement."
       report "🚫 bloqué — ouverture de PR impossible"
       exit 0
     fi
     gh issue edit "$N" --add-label "nova:pr-open" || log "WARN: label pr-open impossible sur #$N"
-    # Signale à Michael qu'il y a des hypothèses à valider en review.
+    # Lien du rapport = la PR (fallback : l'issue). Signale les hypothèses à valider en review.
     if [ -n "${ASSUMPTIONS//[[:space:]]/}" ]; then
       gh issue edit "$N" --add-label "nova:assumptions" || true
-      report "✅ PR draft ouverte (+ hypothèses à valider)"
+      report "✅ PR draft ouverte (+ hypothèses à valider)" "${PR_URL:-$ISSUE_URL}"
     else
-      report "✅ PR draft ouverte"
+      report "✅ PR draft ouverte" "${PR_URL:-$ISSUE_URL}"
     fi
     ;;
 

@@ -17,25 +17,43 @@ TRUSTED=" admin maintain write "
 log(){ echo "[nova $(date '+%H:%M:%S')] $*"; }
 
 # Fichier de rapport de session : process-issue.sh y consigne une ligne TSV par issue
-# traitée (numéro <TAB> titre <TAB> statut). On le repart à zéro à chaque run.
+# traitée (numéro <TAB> titre <TAB> statut <TAB> URL). On le repart à zéro à chaque run.
 NOVA_REPORT="${NOVA_REPORT:-/tmp/nova/session-report.tsv}"
 export NOVA_REPORT
 mkdir -p "$(dirname "$NOVA_REPORT")"
 : > "$NOVA_REPORT"
+# Initialisés ici pour que le rapport (y compris via le trap de sortie) reste sûr même
+# en sortie précoce, avant que la découverte ne les remplisse.
+waiting=''; skipped=''
+REPORT_SENT=0
 
 # Compile le rapport de session et l'envoie sur Telegram (no-op si non configuré).
-# $1 = en-tête court (ex. "session terminée"). `waiting` est rempli plus bas.
+# Chaque issue traitée apparaît avec son titre, son statut et un lien (PR ou issue)
+# directement ouvrable depuis l'app GitHub. $1 = en-tête court.
 send_report() {
   local header="$1" body n=0 footer=''
+  REPORT_SENT=1
   if [ -s "$NOVA_REPORT" ]; then
     n="$(grep -c '' "$NOVA_REPORT")"
-    body="$(awk -F'\t' '{ printf "• #%s — %s\n  %s\n", $1, $2, $3 }' "$NOVA_REPORT")"
+    body="$(awk -F'\t' '{ printf "• #%s — %s\n  %s\n", $1, $2, $3; if ($4 != "") printf "  %s\n", $4 }' "$NOVA_REPORT")"
   fi
-  [ -n "${waiting// }" ] && footer=$'\n'"⏳ En attente de dépendances :${waiting}"
+  [ -n "${waiting// }" ] && footer="$footer"$'\n'"⏳ En attente de dépendances :${waiting}"
+  [ -n "${skipped// }" ] && footer="$footer"$'\n'"⚠️ Ignorées (auteur sans accès write) :${skipped}"
   printf '🌙 Nova — %s (%s)\n%s issue(s) traitée(s)\n\n%s%s\n' \
     "$header" "$(date '+%Y-%m-%d %H:%M')" "$n" "${body:-—}" "$footer" \
     | bash .nova/notify-telegram.sh || true
 }
+
+# Filet de sécurité : garantit l'envoi d'un rapport même sur sortie inattendue ou erreur.
+# Si un envoi explicite a déjà eu lieu (REPORT_SENT=1), on ne double pas. Le dry-run
+# (test de plomberie) ne notifie pas.
+finish() {
+  local rc=$?
+  [ "$REPORT_SENT" = 1 ] && return
+  [ "${NOVA_DRY_RUN:-0}" = "1" ] && return
+  if [ "$rc" -ne 0 ]; then send_report "session interrompue (erreur rc=$rc)"; else send_report "session terminée"; fi
+}
+trap finish EXIT
 
 # Extrait les numéros d'issues bloquantes déclarés dans un corps d'issue.
 # Reconnaît DEUX formats : la section "### Dépendances…" du gabarit GitHub Form
@@ -120,7 +138,7 @@ if [ "${NOVA_DRY_RUN:-0}" = "1" ]; then
   exit 0
 fi
 
-[ "${#selected[@]}" -eq 0 ] && { log "rien à faire."; exit 0; }
+[ "${#selected[@]}" -eq 0 ] && { log "rien à faire."; send_report "rien à traiter cette nuit"; exit 0; }
 
 # --- Dépendances (nécessaires à db:test:prepare + outils) — seulement s'il y a du travail ---
 log "bundle install…"
