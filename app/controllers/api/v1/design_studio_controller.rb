@@ -297,6 +297,81 @@ module Api
         head :no_content
       end
 
+      # === Clients / porteurs (Contact) du projet — relation N-N ===
+
+      def clients
+        project = find_project
+        render json: { items: serialize_project_clients(project) }
+      end
+
+      def create_client
+        project = find_project
+
+        contact_id = Academy::RegistrationContactResolver.call(
+          contact_id: params[:contact_id].presence,
+          name: params[:name],
+          email: params[:email],
+          phone: params[:phone]
+        )
+
+        if contact_id.blank?
+          render json: { error: "Un contact existant (contact_id) ou un email est requis." }, status: :unprocessable_entity
+          return
+        end
+
+        if project.project_clients.exists?(contact_id: contact_id)
+          render json: { error: "Ce contact est déjà client de ce projet." }, status: :unprocessable_entity
+          return
+        end
+
+        make_primary = ActiveModel::Type::Boolean.new.cast(params[:is_primary]) ||
+                       project.project_clients.none?
+        next_position = (project.project_clients.maximum(:position) || -1) + 1
+
+        project.project_clients.create!(
+          contact_id: contact_id,
+          is_primary: make_primary,
+          position: next_position
+        )
+        project.sync_primary_client! if make_primary
+
+        render json: { items: serialize_project_clients(project) }, status: :created
+      end
+
+      def update_client
+        project = find_project
+        link = project.project_clients.find(params.require(:client_id))
+
+        if params.key?(:is_primary) && ActiveModel::Type::Boolean.new.cast(params[:is_primary])
+          link.update!(is_primary: true) # le modèle rétrograde les autres
+          project.sync_primary_client!
+        end
+        link.update!(position: params[:position].to_i) if params.key?(:position)
+
+        render json: { items: serialize_project_clients(project) }
+      end
+
+      def destroy_client
+        project = find_project
+        link = project.project_clients.find(params.require(:client_id))
+
+        if project.project_clients.count <= 1
+          render json: { error: "Impossible de retirer le dernier client du projet." }, status: :unprocessable_entity
+          return
+        end
+
+        was_primary = link.is_primary?
+        link.destroy!
+
+        if was_primary
+          replacement = project.project_clients.order(:position, :id).first
+          replacement&.update!(is_primary: true)
+        end
+        project.sync_primary_client!
+
+        render json: { items: serialize_project_clients(project) }
+      end
+
       def create_timesheet
         project = find_project
         item = project.timesheets.create!(timesheet_params)
@@ -1572,6 +1647,7 @@ module Api
           projectManagerId: project.project_manager_id,
           projectType: project.project_type.presence,
           projectTypeLabel: PROJECT_TYPE_LABELS[project.project_type],
+          clientContacts: serialize_project_clients(project),
           clientInterests: project.client_interests || [],
           clientInterestsLabels: Array(project.client_interests).map { |interest| CLIENT_INTEREST_LABELS[interest] || interest },
           acquisitionChannel: project.acquisition_channel.presence,
@@ -1598,6 +1674,25 @@ module Api
           createdAt: project.created_at.iso8601,
           updatedAt: project.updated_at.iso8601
         }
+      end
+
+      # Liste des contacts clients du projet, primaire en tête.
+      def serialize_project_clients(project)
+        project.project_clients
+               .includes(:contact)
+               .order(is_primary: :desc, position: :asc, id: :asc)
+               .map do |link|
+          contact = link.contact
+          {
+            id: link.id.to_s,
+            contactId: contact.id.to_s,
+            name: contact.name,
+            email: contact.email.to_s,
+            phone: contact.phone.to_s,
+            isPrimary: link.is_primary,
+            position: link.position
+          }
+        end
       end
 
       def serialize_template(template)

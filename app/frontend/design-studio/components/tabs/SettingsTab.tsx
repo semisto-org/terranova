@@ -3,6 +3,7 @@ import { Users, Trash2, MapPin, Loader2, Camera } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import type { TeamMember, TeamRole } from '../../types'
 import { EmptyState } from '../shared/EmptyState'
+import { ClientsSection } from './ClientsSection'
 
 interface ProjectAddress {
   street?: string
@@ -214,6 +215,9 @@ export function SettingsTab({
 
   return (
     <div className="space-y-8">
+      {/* Section: Clients / porteurs */}
+      <ClientsSection projectId={projectId} />
+
       {/* Section: Adresse & géolocalisation */}
       <section className="relative">
         <div className="flex items-center gap-3 mb-5">

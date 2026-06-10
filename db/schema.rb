@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_09_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -798,6 +798,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_120000) do
     t.index ["project_id"], name: "index_design_planting_plans_on_project_id", unique: true
   end
 
+  create_table "design_project_clients", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.datetime "created_at", null: false
+    t.boolean "is_primary", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_design_project_clients_on_contact_id"
+    t.index ["project_id", "contact_id"], name: "index_design_project_clients_on_project_and_contact", unique: true
+    t.index ["project_id"], name: "index_design_project_clients_on_project_id"
+  end
+
   create_table "design_project_documents", force: :cascade do |t|
     t.string "category", null: false
     t.datetime "created_at", null: false
@@ -938,6 +950,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_120000) do
     t.date "start_date"
     t.string "status", default: "pending", null: false
     t.string "street", default: "", null: false
+    t.string "tally_submission_id"
     t.bigint "template_id"
     t.datetime "updated_at", null: false
     t.string "website_url", default: "", null: false
@@ -947,6 +960,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_120000) do
     t.index ["notion_id"], name: "index_design_projects_on_notion_id", unique: true
     t.index ["phase"], name: "index_design_projects_on_phase"
     t.index ["status"], name: "index_design_projects_on_status"
+    t.index ["tally_submission_id"], name: "index_design_projects_on_tally_submission_id", unique: true, where: "(tally_submission_id IS NOT NULL)"
     t.index ["template_id"], name: "index_design_projects_on_template_id"
     t.index ["updated_at"], name: "index_design_projects_on_updated_at"
   end
@@ -2683,6 +2697,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_120000) do
   add_foreign_key "design_plant_records", "design_project_palette_items", column: "palette_item_id"
   add_foreign_key "design_plant_records", "design_projects", column: "project_id"
   add_foreign_key "design_planting_plans", "design_projects", column: "project_id"
+  add_foreign_key "design_project_clients", "contacts"
+  add_foreign_key "design_project_clients", "design_projects", column: "project_id"
   add_foreign_key "design_project_documents", "design_projects", column: "project_id"
   add_foreign_key "design_project_meetings", "design_projects", column: "project_id"
   add_foreign_key "design_project_palette_items", "design_project_palettes", column: "palette_id"

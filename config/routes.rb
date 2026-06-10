@@ -474,6 +474,10 @@ Rails.application.routes.draw do
       post "design/:project_id/duplicate", to: "design_studio#duplicate"
       post "design/:project_id/team-members", to: "design_studio#create_team_member"
       delete "design/:project_id/team-members/:member_id", to: "design_studio#destroy_team_member"
+      get "design/:project_id/clients", to: "design_studio#clients"
+      post "design/:project_id/clients", to: "design_studio#create_client"
+      patch "design/:project_id/clients/:client_id", to: "design_studio#update_client"
+      delete "design/:project_id/clients/:client_id", to: "design_studio#destroy_client"
       post "design/:project_id/timesheets", to: "design_studio#create_timesheet"
       patch "design/timesheets/:timesheet_id", to: "design_studio#update_timesheet"
       delete "design/timesheets/:timesheet_id", to: "design_studio#destroy_timesheet"
@@ -551,6 +555,7 @@ Rails.application.routes.draw do
       get "public/academy/trainings/:training_id", to: "public/academy_registrations#training_info"
       post "public/academy/trainings/:training_id/payment-intent", to: "public/academy_registrations#create_payment_intent"
       post "public/stripe-webhooks", to: "public/stripe_webhooks#create"
+      post "public/tally-webhooks", to: "public/tally_webhooks#create"
 
       get "academy", to: "academy#index"
       get "academy/dashboard", to: "academy#dashboard"
