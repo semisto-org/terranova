@@ -11,6 +11,18 @@ module Academy
   class TaskGenerator
     DEFAULT_LIST_NAME = "À faire"
 
+    # Checklist d'annulation (séance 2, validée par Michael 2026-06-01). Codée en
+    # dur : universelle pour tous les types d'activité (pas de template configurable).
+    # Générée à échéance du jour de l'annulation, non assignée. L'ordre fait foi.
+    CANCELLATION_TASKS = [
+      "Prévenir le formateur / la formatrice + assistants éventuels",
+      "Prévenir la personne de contact pour le lieu",
+      "Prévenir les participants",
+      "Procéder aux remboursements",
+      "Prévenir la personne qui prépare les repas",
+      "Marquer l'événement comme annulé sur Facebook"
+    ].freeze
+
     def self.for_training(training)
       new(training).seed_activity_tasks
     end
@@ -19,6 +31,13 @@ module Academy
       gen = new(session.training)
       gen.refresh_activity_tasks   # les dates d'activité dépendent des sessions
       gen.generate_session_tasks(session)
+    end
+
+    # Crée la checklist d'annulation (idempotent par nom : pas de doublon si on
+    # ré-annule après une désannulation). Échéance = jour de l'annulation,
+    # calculée en Europe/Brussels. Indépendant des templates du type d'activité.
+    def self.cancellation_checklist_for(training)
+      new(training).seed_cancellation_tasks
     end
 
     def initialize(training)
@@ -70,6 +89,18 @@ module Academy
           due_date: anchored_date(session_anchor_date(session, tpl["anchor"]), tpl["offset_days"]),
           academy_training_session_id: session.id
         )
+      end
+    end
+
+    # Idempotent : ne recrée pas une tâche d'annulation déjà présente (dédup par
+    # nom, portée activité). Échéance = aujourd'hui en Europe/Brussels.
+    def seed_cancellation_tasks
+      due = Time.find_zone!("Europe/Brussels").today
+
+      CANCELLATION_TASKS.each do |name|
+        next if activity_task_exists?(name)
+
+        default_list.tasks.create!(name: name, status: "pending", due_date: due)
       end
     end
 

@@ -3,6 +3,7 @@ module Api
     class AcademyController < BaseController
       skip_before_action :require_authentication, only: [:index]
       before_action :require_effective_member, except: [:index]
+      before_action :require_admin, only: [:cancel_training]
 
       def index
         render json: academy_payload
@@ -110,6 +111,18 @@ module Api
         end
 
         item.update!(status: new_status)
+
+        broadcast_training_change(action: "updated", training: item)
+        render json: serialize_training(item)
+      end
+
+      # Annule une activité (réservé aux admins) : passe le statut à « cancelled »
+      # ET génère la checklist d'annulation à échéance du jour. Idempotent : une
+      # ré-annulation après désannulation ne recrée pas les tâches (dédup par nom).
+      def cancel_training
+        item = Academy::Training.find(params.require(:training_id))
+        item.update!(status: "cancelled")
+        Academy::TaskGenerator.cancellation_checklist_for(item)
 
         broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
@@ -620,6 +633,12 @@ module Api
       end
 
       private
+
+      def require_admin
+        return if current_member&.is_admin?
+
+        render json: { error: "Accès réservé aux administrateurs" }, status: :forbidden
+      end
 
       def academy_payload
         training_types = Academy::TrainingType.order(:name)

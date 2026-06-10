@@ -455,6 +455,18 @@ export default function AcademyIndex({ initialTrainingId }) {
         ),
       }))
     }, { refresh: true }),
+    cancelTraining: (id) => runMutation(async () => {
+      const updated = await apiRequest(`/api/v1/academy/trainings/${id}/cancel`, {
+        method: 'PATCH',
+      })
+
+      setData((prev) => ({
+        ...prev,
+        trainings: prev.trainings.map((item) =>
+          item.id === id ? { ...item, ...updated } : item
+        ),
+      }))
+    }, { refresh: true }),
     addSession: (trainingId) => {
       setModalData({ isEdit: false, trainingId })
       setActiveModal('session')
