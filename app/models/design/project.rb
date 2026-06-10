@@ -4,7 +4,7 @@ module Design
     include Projectable
     self.table_name = 'design_projects'
 
-    PHASES = %w[offre pre-projet projet-detaille mise-en-oeuvre co-gestion termine].freeze
+    PHASES = %w[reception offre pre-projet projet-detaille mise-en-oeuvre co-gestion termine].freeze
     STATUSES = %w[active pending completed archived].freeze
     PROJECT_TYPES = %w[prive professionnel collectif public].freeze
 
@@ -52,6 +52,11 @@ module Design
     has_one_attached :releve_plan
     has_one :album, as: :albumable, dependent: :destroy
 
+    # Clients/porteurs externes (Contact) liés au projet — distinct des
+    # project_memberships (Member, équipe interne).
+    has_many :project_clients, class_name: 'Design::ProjectClient', foreign_key: :project_id, dependent: :destroy
+    has_many :client_contacts, through: :project_clients, source: :contact
+
     before_validation :normalize_client_interests
 
     validates :name, :client_id, :client_name, :phase, :status, presence: true
@@ -82,6 +87,29 @@ module Design
       return FORMAT_DEFAULT_RETROCESSION[format_code] if format_code.present?
 
       BillingConfig.instance.asbl_support_rate
+    end
+
+    # Le Contact client primaire du projet (ou le premier par position en
+    # l'absence de primaire explicite).
+    def primary_client_contact
+      primary = project_clients.where(is_primary: true).order(:position, :id).first
+      primary ||= project_clients.order(:position, :id).first
+      primary&.contact
+    end
+
+    # Recopie les coordonnées du client primaire dans les champs dénormalisés
+    # (client_name/email/phone) — backing store historique + ancre du carnet.
+    # À appeler après toute mutation de la liste de clients.
+    def sync_primary_client!
+      contact = primary_client_contact
+      return unless contact
+
+      update_columns(
+        client_name: contact.name.presence || client_name,
+        client_email: contact.email.to_s,
+        client_phone: contact.phone.to_s,
+        updated_at: Time.current
+      )
     end
 
     def address_display

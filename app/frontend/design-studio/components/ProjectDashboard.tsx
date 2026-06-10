@@ -3,6 +3,7 @@ import type { ProjectDashboardProps, Project, ProjectPhase, ProjectStatus } from
 import { ProjectsMap } from './ProjectsMap'
 
 const phaseLabels: Record<ProjectPhase, string> = {
+  'reception': 'Réception de la demande',
   'offre': 'Offre',
   'pre-projet': 'Pré-projet',
   'projet-detaille': 'Projet détaillé',
@@ -12,6 +13,7 @@ const phaseLabels: Record<ProjectPhase, string> = {
 }
 
 const phaseColors: Record<ProjectPhase, { bg: string; text: string; dot: string; border: string }> = {
+  'reception': { bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200' },
   'offre': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
   'pre-projet': { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-400', border: 'border-orange-200' },
   'projet-detaille': { bg: 'bg-[#e1e6d8]', text: 'text-[#6B7A00]', dot: 'bg-[#AFBD00]', border: 'border-[#AFBD00]/30' },
@@ -20,7 +22,7 @@ const phaseColors: Record<ProjectPhase, { bg: string; text: string; dot: string;
   'termine': { bg: 'bg-stone-100', text: 'text-stone-600', dot: 'bg-stone-400', border: 'border-stone-300' },
 }
 
-const phaseOrder: ProjectPhase[] = ['offre', 'pre-projet', 'projet-detaille', 'mise-en-oeuvre', 'co-gestion', 'termine']
+const phaseOrder: ProjectPhase[] = ['reception', 'offre', 'pre-projet', 'projet-detaille', 'mise-en-oeuvre', 'co-gestion', 'termine']
 
 export function ProjectDashboard({
   projects,
