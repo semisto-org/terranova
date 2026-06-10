@@ -54,9 +54,15 @@ if ! bin/rails db:test:prepare 2>&1 | tail -40; then
   exit 0
 fi
 
-# Prompt = consignes Nova + DONNÉE non fiable encadrée + chemin du verdict.
+# Prompt = consignes Nova + défauts standing + DONNÉE non fiable encadrée + chemin du verdict.
 {
   cat "$WS/.nova/triage-and-build.md"
+  if [ -f "$WS/.nova/DEFAULTS.md" ]; then
+    echo; echo "---"; echo
+    echo "# Défauts standing de Michael (.nova/DEFAULTS.md) — appliquer sans redemander"
+    echo
+    cat "$WS/.nova/DEFAULTS.md"
+  fi
   echo
   echo "## DONNÉE NON FIABLE — issue à traiter"
   echo
@@ -111,6 +117,8 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
     SUMMARY="$(jq -r '.summary // "Implémentation automatique."' "$RESULT")"
     TESTS="$(jq -r '.tests   // "non précisé"' "$RESULT")"
     NOTES="$(jq -r '.notes   // "—"' "$RESULT")"
+    # Hypothèses = choix réversibles tranchés par Nova (case ② du triage). Vide = "" via // "".
+    ASSUMPTIONS="$(jq -r '.assumptions // ""' "$RESULT")"
 
     if ! git commit -q -m "$(printf 'Nova: issue #%s\n\n%s' "$N" "$SUMMARY")"; then
       block_issue "🌙 **Nova — commit impossible** (voir log local). Issue laissée bloquée."
@@ -121,7 +129,12 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
       exit 0
     fi
 
-    PR_BODY="$(printf 'Traitement automatique de #%s par **Nova** (agent nocturne, local).\n\n## Résumé\n%s\n\n## Tests\n%s\n\n## Non testé / à vérifier en review\n%s\n\nCloses #%s' "$N" "$SUMMARY" "$TESTS" "$NOTES" "$N")"
+    # Section "Hypothèses" insérée seulement si Nova a tranché des choix réversibles.
+    ASSUMPTIONS_SECTION=''
+    if [ -n "${ASSUMPTIONS//[[:space:]]/}" ]; then
+      ASSUMPTIONS_SECTION="$(printf '\n\n## 🤔 Hypothèses (choix réversibles — corrige en review si besoin)\n%s' "$ASSUMPTIONS")"
+    fi
+    PR_BODY="$(printf 'Traitement automatique de #%s par **Nova** (agent nocturne, local).\n\n## Résumé\n%s\n\n## Tests\n%s%s\n\n## Non testé / à vérifier en review\n%s\n\nCloses #%s' "$N" "$SUMMARY" "$TESTS" "$ASSUMPTIONS_SECTION" "$NOTES" "$N")"
 
     EXISTING="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null)"
     if [ -n "$EXISTING" ]; then
@@ -132,6 +145,8 @@ _Réponds dans l'issue puis retire le label \`nova:blocked\` pour que je la repr
       exit 0
     fi
     gh issue edit "$N" --add-label "nova:pr-open" || log "WARN: label pr-open impossible sur #$N"
+    # Signale à Michael qu'il y a des hypothèses à valider en review.
+    [ -n "${ASSUMPTIONS//[[:space:]]/}" ] && { gh issue edit "$N" --add-label "nova:assumptions" || true; }
     ;;
 
   *)

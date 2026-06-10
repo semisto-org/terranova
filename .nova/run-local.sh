@@ -16,6 +16,35 @@ MAX_ISSUES="${MAX_ISSUES:-8}"
 TRUSTED=" admin maintain write "
 log(){ echo "[nova $(date '+%H:%M:%S')] $*"; }
 
+# Extrait les numéros d'issues bloquantes déclarés dans un corps d'issue.
+# Reconnaît DEUX formats : la section "### Dépendances…" du gabarit GitHub Form
+# (heading + valeur sur lignes séparées) ET les mentions en ligne "Dépend de #104".
+# Le marqueur "épend" couvre Dépend/dépend/Dépendances sans IGNORECASE (absent du
+# BSD awk de macOS). Émet les numéros, un par ligne.
+deps_of(){
+  printf '%s' "${1:-}" | awk '
+    function emit(s){ while (match(s, /#[0-9]+/)) { print substr(s, RSTART+1, RLENGTH-1); s = substr(s, RSTART+RLENGTH) } }
+    /^###/ { insec = ($0 ~ /épend/) ? 1 : 0 }   # section "### Dépendances…" en cours ? (toggle sur "épend")
+    {
+      # Inline: exiger la formule réelle "dépend de" (contiguë) — rejette "ne dépend PAS de …,
+      # se branchera sur #102 plus tard" (brique autonome) et ignore le "Epic : #101" devant.
+      if ($0 ~ /épend de/) { p = index($0, "épend de"); emit(substr($0, p)) }
+      else if (insec)      { emit($0) }   # ligne valeur d une section "### Dépendances": tous les #N
+    }'
+}
+
+# Renvoie (sur stdout) les dépendances NON satisfaites (issues encore ouvertes) d'une
+# issue donnée, à partir de son corps. Une dépendance close (= PR mergée) est satisfaite.
+unmet_deps(){
+  local self="$1" body="$2" d st out=''
+  for d in $(deps_of "$body" | sort -u); do
+    [ "$d" = "$self" ] && continue   # pas d'auto-dépendance
+    st="$(gh issue view "$d" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo OPEN)"
+    [ "$st" = "CLOSED" ] || out="$out #$d"
+  done
+  echo "$out"
+}
+
 log "clone $(pwd) @ $(git rev-parse --short HEAD 2>/dev/null)"
 
 # --- Découverte : nova:auto, ouvertes, ni blocked ni pr-open ---
@@ -34,20 +63,35 @@ candidates="$(gh issue list --repo "$REPO" \
 # d'org à appartenance privée apparaît CONTRIBUTOR). Seule la permission réelle compte.
 selected=()
 skipped=''
+waiting=''
 while IFS=$'\t' read -r n login; do
   [ -z "${n:-}" ] && continue
   perm="$(gh api "repos/$REPO/collaborators/$login/permission" --jq '.role_name // .permission' 2>/dev/null || echo none)"
-  if [[ "$TRUSTED" == *" $perm "* ]]; then
-    selected+=("$n")
-  else
+  if [[ "$TRUSTED" != *" $perm "* ]]; then
     skipped="$skipped #$n($login:$perm)"
+    continue
   fi
+  # --- Gate de DÉPENDANCES : ne pas traiter (ni bloquer) une issue dont une dépendance
+  # n'est pas encore mergée. C'est du séquençage, pas une question — l'issue se relance
+  # seule quand la dépendance ferme. Label `nova:waiting` = transparence, zéro action requise.
+  body="$(gh issue view "$n" --repo "$REPO" --json body --jq '.body' 2>/dev/null || echo '')"
+  unmet="$(unmet_deps "$n" "$body")"
+  if [ -n "${unmet// }" ]; then
+    waiting="$waiting #$n→[$unmet ]"
+    # Pas de mutation en dry-run (la découverte doit rester sans effet de bord).
+    [ "${NOVA_DRY_RUN:-0}" = "1" ] || gh issue edit "$n" --repo "$REPO" --add-label "nova:waiting" >/dev/null 2>&1 || true
+    continue
+  fi
+  # Dépendances satisfaites : retirer un éventuel `nova:waiting` résiduel avant traitement.
+  [ "${NOVA_DRY_RUN:-0}" = "1" ] || gh issue edit "$n" --repo "$REPO" --remove-label "nova:waiting" >/dev/null 2>&1 || true
+  selected+=("$n")
 done < <(echo "$candidates" | jq -r '.[] | "\(.number)\t\(.login)"')
 
 # Plafond
 selected=("${selected[@]:0:$MAX_ISSUES}")
 
 [ -n "$skipped" ] && log "WARN: issues nova:auto ignorées (auteur sans accès write) :$skipped"
+[ -n "$waiting" ] && log "EN ATTENTE de dépendances (relancées seules à la fermeture) :$waiting"
 log "${#selected[@]} issue(s) à traiter (plafond $MAX_ISSUES) : ${selected[*]:-aucune}"
 
 if [ "${NOVA_DRY_RUN:-0}" = "1" ]; then

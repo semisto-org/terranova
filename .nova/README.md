@@ -45,12 +45,46 @@ launchctl unload ~/Library/LaunchAgents/org.semisto.nova.plist   # désactiver
 | Label | Sens | Qui le pose |
 |-------|------|-------------|
 | `nova:auto` | Opt-in : Nova traitera cette issue | **toi** |
-| `nova:blocked` | Nova a des questions / a échoué — voir commentaire | Nova |
+| `nova:waiting` | En attente d'une dépendance non mergée — **se retire seul**, aucune action requise | Nova |
+| `nova:blocked` | Nova a une vraie question (irréversible/produit) ou a échoué — voir commentaire | Nova |
+| `nova:assumptions` | PR ouverte avec des **choix réversibles** tranchés par Nova — à valider en review | Nova |
 | `nova:pr-open` | PR draft ouverte, en attente de review | Nova |
 
 - Relancer une issue bloquée : réponds dans l'issue, puis **retire `nova:blocked`**.
-- Une issue `nova:auto` + `nova:pr-open`/`nova:blocked` est ignorée la nuit suivante.
+- `nova:waiting` ne demande **rien** : Nova reprend l'issue d'elle-même dès que ses dépendances ferment.
+- Une issue `nova:auto` + `nova:pr-open`/`nova:blocked`/`nova:waiting` est ignorée la nuit suivante.
 - Plafond : **8 issues/nuit** (`MAX_ISSUES`).
+
+## Dépendances & séquençage (gating)
+
+Une issue peut déclarer ses **dépendances bloquantes** — champ « Dépendances » du gabarit, ou une
+ligne `Dépend de : #102, #103` dans le corps. Tant qu'une dépendance n'est pas **fermée** (= sa PR
+mergée), Nova ne traite pas l'issue : elle pose `nova:waiting` et passe — **sans poser de question**,
+car c'est du séquençage, pas une ambiguïté. L'issue redevient candidate automatiquement à la
+fermeture de ses dépendances.
+
+→ Tu peux donc coller `nova:auto` sur **toute une chaîne d'epic d'un coup** : Nova la déroule dans
+l'ordre, nuit après nuit, au lieu de bloquer tout le lot le premier soir.
+
+## Défauts standing — `DEFAULTS.md`
+
+[`DEFAULTS.md`](DEFAULTS.md) contient les réponses **permanentes** de Michael aux questions
+récurrentes (fuseau, nommage, placement des nouvelles surfaces, champs legacy…). Nova le charge à
+chaque issue et applique ces défauts sans redemander. **Quand un blocage s'avère n'être qu'une
+préférence, ajoute-la dans ce fichier** — c'est l'investissement le plus rentable pour l'autonomie
+de Nova. Une section « à compléter » y liste les décisions produit encore ouvertes.
+
+## Doctrine de triage — décide-et-note plutôt que bloquer
+
+Nova classe chaque incertitude en trois cases (voir `triage-and-build.md`) :
+- **① Dépendance manquante** → `failed`/`waiting`, jamais une question.
+- **② Choix réversible** (forme de table, emplacement d'un champ, nommage avec précédent…) → Nova
+  **tranche, construit, et documente** sous « Hypothèses » dans la PR (+ `nova:assumptions`). La PR
+  draft *est* la question : tu réagis sur du concret en review.
+- **③ Décision irréversible/produit** (changer un écran par défaut, règle métier, argent) → blocage.
+
+Un epic déguisé en issue est **découpé par Nova elle-même** (plus petite tranche utile livrée,
+reste listé dans les hypothèses), sans demander l'autorisation de découper.
 
 ## 🔒 Sécurité
 
@@ -77,6 +111,7 @@ d'un prompt qui inclut le contenu de l'issue. Donc :
 | Fichier | Rôle |
 |---------|------|
 | `install.sh` | Installe bootstrap + launchd (idempotent). |
-| `run-local.sh` | Orchestrateur : découverte + filtre permission + boucle. |
+| `run-local.sh` | Orchestrateur : découverte + filtre permission + **gate de dépendances** + boucle. |
 | `process-issue.sh` | Traitement d'une issue (triage → code → commit/PR ou blocage). |
-| `triage-and-build.md` | Le prompt/consignes données à Claude. |
+| `triage-and-build.md` | Le prompt/consignes données à Claude (doctrine décide-et-note). |
+| `DEFAULTS.md` | Défauts standing de Michael, chargés dans le prompt à chaque issue. |
