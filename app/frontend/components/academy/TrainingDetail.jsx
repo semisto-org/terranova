@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { usePage } from '@inertiajs/react'
 import {
   ArrowLeft,
   X,
@@ -21,6 +22,8 @@ import {
   GraduationCap,
   AlertCircle,
   Wallet,
+  Lock,
+  Ban,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -76,7 +79,11 @@ const STATUS_HOVER = {
   cancelled: 'hover:bg-rose-50',
 }
 
-const STATUS_ORDER = ['idea', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed', 'cancelled']
+// « cancelled » est volontairement hors de cette liste : l'annulation passe par
+// le bouton dédié « Annuler l'activité » (réservé aux admins) qui crée aussi la
+// checklist d'annulation. Le sélecteur sert à la progression normale et à la
+// désannulation (repasser une activité annulée vers un autre statut).
+const STATUS_ORDER = ['idea', 'in_preparation', 'registrations_open', 'in_progress', 'post_production', 'completed']
 
 function formatCurrency(value) {
   return Number(value).toLocaleString('fr-FR', {
@@ -220,6 +227,8 @@ export default function TrainingDetail({
 }) {
   const [tab, setTab] = useState('info')
   const isDrawer = layout === 'drawer'
+  const { auth } = usePage().props
+  const isAdmin = auth?.member?.isAdmin ?? false
 
   const trainingType = data.trainingTypes?.find((t) => t.id === training.trainingTypeId) || null
   const sessions = data.trainingSessions?.filter((s) => s.trainingId === training.id) || []
@@ -353,6 +362,29 @@ export default function TrainingDetail({
                       ? '✓ Paiements encaissés — prêt à clôturer'
                       : `Clôture : ${training.closureReadiness.unpaidCount} paiement(s) à encaisser (${training.closureReadiness.paidCount}/${training.closureReadiness.totalRegistrations})`}
                   </span>
+                )}
+                {isAdmin && training.status !== 'cancelled' && (
+                  <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3">
+                    <div className="flex items-center gap-4">
+                      <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Annuler l'activité « ${training.title} » ?\n\nElle passera au statut « Annulée » et une checklist d'annulation (échéance aujourd'hui) sera créée dans les tâches du projet.`
+                            )
+                          ) {
+                            actions.cancelTraining(training.id)
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors duration-150"
+                      >
+                        <Ban className="w-4 h-4" />
+                        Annuler l'activité
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
