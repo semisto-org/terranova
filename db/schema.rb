@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -223,6 +223,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
     t.decimal "payment_amount", precision: 12, scale: 2, default: "0.0", null: false
     t.string "payment_status", default: "pending", null: false
     t.string "phone", default: "", null: false
+    t.boolean "photo_consent", default: true, null: false
     t.datetime "registered_at", null: false
     t.string "stripe_payment_intent_id"
     t.bigint "training_id", null: false
@@ -544,6 +545,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
     t.index ["created_by_id"], name: "index_chowder_items_on_created_by_id"
     t.index ["deleted_at"], name: "index_chowder_items_on_deleted_at"
     t.index ["pitch_id"], name: "index_chowder_items_on_pitch_id"
+  end
+
+  create_table "comments", force: :cascade do |t|
+    t.bigint "author_id"
+    t.text "body", null: false
+    t.bigint "commentable_id", null: false
+    t.string "commentable_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "edited_at"
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_comments_on_author_id"
+    t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
   end
 
   create_table "contact_tags", force: :cascade do |t|
@@ -1462,6 +1475,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_members_on_email", unique: true
+  end
+
+  create_table "mentions", force: :cascade do |t|
+    t.bigint "comment_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "member_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["comment_id", "member_id"], name: "index_mentions_on_comment_id_and_member_id", unique: true
+    t.index ["comment_id"], name: "index_mentions_on_comment_id"
+    t.index ["member_id"], name: "index_mentions_on_member_id"
   end
 
   create_table "notes", force: :cascade do |t|
@@ -2675,6 +2698,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
   add_foreign_key "bets", "pitches"
   add_foreign_key "chowder_items", "members", column: "created_by_id"
   add_foreign_key "chowder_items", "pitches"
+  add_foreign_key "comments", "members", column: "author_id"
   add_foreign_key "contact_tags", "contacts"
   add_foreign_key "contacts", "contacts", column: "organization_id"
   add_foreign_key "credentials", "guilds"
@@ -2751,6 +2775,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100100) do
   add_foreign_key "location_zones", "locations"
   add_foreign_key "marketplace_listings", "members"
   add_foreign_key "member_roles", "members"
+  add_foreign_key "mentions", "comments"
+  add_foreign_key "mentions", "members"
   add_foreign_key "notes", "pole_projects"
   add_foreign_key "notion_assets", "notion_records"
   add_foreign_key "nursery_documentation_entries", "nursery_nurseries", column: "nursery_id"

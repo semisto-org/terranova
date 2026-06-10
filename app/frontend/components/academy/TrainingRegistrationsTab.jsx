@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Users, Plus, Edit, Trash2, Mail, Euro, CheckCircle2, Clock, AlertCircle, ExternalLink, Link2 } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Mail, Euro, CheckCircle2, Clock, AlertCircle, ExternalLink, Link2, Camera, CameraOff } from 'lucide-react'
 
 function formatDate(dateStr) {
   const date = new Date(dateStr)
@@ -198,6 +198,15 @@ function RegistrationRow({
           {registration.contactId && (
             <span title="Lié à un contact" className="text-emerald-500">
               <Link2 className="w-3.5 h-3.5" />
+            </span>
+          )}
+          {registration.photoConsent === false ? (
+            <span title="N'autorise pas les photos" className="text-red-600">
+              <CameraOff className="w-3.5 h-3.5" />
+            </span>
+          ) : (
+            <span title="Autorise les photos" className="text-emerald-600">
+              <Camera className="w-3.5 h-3.5" />
             </span>
           )}
         </div>

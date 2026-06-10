@@ -722,11 +722,11 @@ module Api
       end
 
       def registration_params
-        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note, :registered_at)
+        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note, :registered_at, :photo_consent)
       end
 
       def registration_update_params
-        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note)
+        params.permit(:contact_id, :contact_name, :contact_email, :phone, :departure_city, :departure_postal_code, :departure_country, :carpooling, :amount_paid, :payment_status, :internal_note, :photo_consent)
       end
 
       def resolve_contact_for_registration(reg_params)
@@ -901,6 +901,7 @@ module Api
           paymentStatus: item.payment_status,
           stripePaymentIntentId: item.stripe_payment_intent_id,
           internalNote: item.internal_note,
+          photoConsent: item.photo_consent,
           registeredAt: item.registered_at.iso8601,
           items: item.registration_items.includes(:participant_category).map { |ri|
             { id: ri.id.to_s, participantCategoryId: ri.participant_category_id.to_s,
