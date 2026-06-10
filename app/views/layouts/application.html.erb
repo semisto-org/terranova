@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Terranova</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <% if ENV['SENTRY_DSN'].present? %>
       <meta name="sentry-dsn" content="<%= ENV['SENTRY_DSN'] %>">
     <% end %>
@@ -12,6 +12,25 @@
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
+    <!-- PWA standalone iOS : barre de statut + écran installé plein écran -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Terranova">
+    <!-- Écrans de démarrage iOS (remplacent le flash blanc au lancement).
+         Matrice partielle (iPhones courants) ; les modèles non couverts retombent
+         sur background_color (#5b5781) du manifest, donc fond violet cohérent. -->
+    <link rel="apple-touch-startup-image" href="/apple-splash-1170x2532.png"
+          media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/apple-splash-1179x2556.png"
+          media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/apple-splash-1290x2796.png"
+          media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/apple-splash-1284x2778.png"
+          media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/apple-splash-1125x2436.png"
+          media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/apple-splash-generic.png">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <!-- bm-design-system:start -->

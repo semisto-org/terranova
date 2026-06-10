@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* iOS PWA safe-area insets (encoche / barre home / notch en paysage).
+   Actifs en plein effet avec viewport-fit=cover (voir layout) ; valent 0 sur
+   les écrans sans zone sûre, donc sans effet sur desktop / Android classique. */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left { padding-left: env(safe-area-inset-left); }
+  .safe-right { padding-right: env(safe-area-inset-right); }
+}
+
 /* bm-design-system:start */
 @import "./design-system.css";
 /* bm-design-system:end */
