@@ -200,7 +200,7 @@
       ]
     },
     {
-      "endpointCount": 27,
+      "endpointCount": 31,
       "file": "design.json",
       "name": "design",
       "operations": [
@@ -278,6 +278,26 @@
           "method": "GET",
           "path": "/api/v1/design/{project_id}/client-portal",
           "summary": "client_portal"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/{project_id}/clients",
+          "summary": "clients"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design/{project_id}/clients",
+          "summary": "create_client"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/design/{project_id}/clients/{client_id}",
+          "summary": "destroy_client"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/design/{project_id}/clients/{client_id}",
+          "summary": "update_client"
         },
         {
           "method": "POST",
@@ -971,7 +991,7 @@
       ]
     },
     {
-      "endpointCount": 2,
+      "endpointCount": 3,
       "file": "public.json",
       "name": "public",
       "operations": [
@@ -983,6 +1003,11 @@
         {
           "method": "POST",
           "path": "/api/v1/public/stripe-webhooks",
+          "summary": "create"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/public/tally-webhooks",
           "summary": "create"
         }
       ]
@@ -1140,5 +1165,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 199
+  "totalEndpoints": 204
 }

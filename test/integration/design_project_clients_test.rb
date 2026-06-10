@@ -101,8 +101,9 @@ class DesignProjectClientsTest < ActionDispatch::IntegrationTest
     get "/api/v1/design/#{@project.id}", as: :json
     assert_response :success
     body = response.parsed_body
-    assert body.key?('clientContacts'), 'project payload should expose clientContacts'
-    assert_equal @alice.id.to_s, body['clientContacts'].first['contactId']
+    project = body.fetch('project')
+    assert project.key?('clientContacts'), 'project payload should expose clientContacts'
+    assert_equal @alice.id.to_s, project['clientContacts'].first['contactId']
   end
 
   test 'GET clients lists linked contacts with primary first' do

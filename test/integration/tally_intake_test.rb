@@ -128,7 +128,11 @@ class TallyIntakeTest < ActionDispatch::IntegrationTest
   end
 
   test 'malformed JSON returns 400' do
-    post_webhook('{ not json')
+    # Content-Type non-JSON : on atteint le `rescue JSON::ParserError` du contrôleur.
+    # En application/json, le middleware Rails lèverait ParseError avant l'action
+    # (renvoie quand même 400) mais ça casse la génération de la spec OpenAPI.
+    post '/api/v1/public/tally-webhooks', params: '{ not json',
+         headers: { 'CONTENT_TYPE' => 'text/plain' }
     assert_response :bad_request
   end
 end
