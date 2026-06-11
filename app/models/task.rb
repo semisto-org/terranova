@@ -37,6 +37,12 @@ class Task < ApplicationRecord
   before_save :stamp_completion, if: :will_save_change_to_status?
   # Abonnement auto (#103) : devenir assigné = suivre la tâche.
   after_save :auto_subscribe_assignee, if: :saved_change_to_assignee_id?
+  # Notifications (#104) — déclarées APRÈS l'abonnement auto pour que
+  # l'assigné soit déjà abonné au moment du fan-out.
+  after_save :record_assignment_activity, if: :saved_change_to_assignee_id?
+  after_save :record_ping_activity, if: :saved_change_to_pinged_at?
+
+  has_many :activity_events, as: :subject, dependent: :destroy
 
   # Une tâche ne peut être assignée qu'à un membre de l'équipe du projet auquel
   # elle appartient. La règle vit dans le modèle (et non seulement dans un
@@ -61,6 +67,24 @@ class Task < ApplicationRecord
 
   def auto_subscribe_assignee
     auto_subscribe!(assignee) if assignee_id.present?
+  end
+
+  def record_assignment_activity
+    return if assignee_id.blank?
+
+    NotificationService.record!(
+      action: "task_assigned", subject: self, actor: assigned_by,
+      kind_for: ->(_) { "assignment" }
+    )
+  end
+
+  def record_ping_activity
+    return if pinged_at.blank? # retrait d'un coucou : pas une notification
+
+    NotificationService.record!(
+      action: "task_pinged", subject: self, actor: pinged_by,
+      kind_for: ->(_) { "ping" }
+    )
   end
 
   def stamp_assignment
