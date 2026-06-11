@@ -389,6 +389,18 @@
       ]
     },
     {
+      "endpointCount": 1,
+      "file": "events.json",
+      "name": "events",
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/v1/events/{event_id}/comments",
+          "summary": "create"
+        }
+      ]
+    },
+    {
       "endpointCount": 7,
       "file": "foundation.json",
       "name": "foundation",
@@ -1147,7 +1159,7 @@
       ]
     },
     {
-      "endpointCount": 3,
+      "endpointCount": 6,
       "file": "tasks.json",
       "name": "tasks",
       "operations": [
@@ -1165,6 +1177,21 @@
           "method": "PATCH",
           "path": "/api/v1/tasks/{id}/toggle",
           "summary": "toggle_task"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/{task_id}/comments",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/tasks/{task_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/tasks/{task_id}/comments/{id}",
+          "summary": "destroy"
         }
       ]
     }
@@ -1180,5 +1207,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 207
+  "totalEndpoints": 211
 }
