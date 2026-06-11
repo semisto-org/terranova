@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import CommentsBlock from '@/components/comments/CommentsBlock'
 import type { Event, Cycle, Member, EventType } from '../types'
 
 interface CyclePeriod {
@@ -1245,6 +1246,14 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Commentaires (#102) — pas pour les sessions de formation
+              synthétiques, qui n'ont pas de ligne Event en base. */}
+          {!(event as any)._isTrainingSession && (
+            <div className="pt-2 border-t border-stone-100">
+              <CommentsBlock parentType="events" parentId={event.id} />
             </div>
           )}
         </div>

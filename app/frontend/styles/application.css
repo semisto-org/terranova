@@ -35,6 +35,16 @@
   padding-left: 1.5em;
 }
 
+/* @mentions — span produit par @tiptap/extension-mention (#102) */
+.mention {
+  background-color: rgba(91, 87, 129, 0.12);
+  color: #5b5781;
+  border-radius: 0.375rem;
+  padding: 0.1em 0.3em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 /* Design Tokens */
 
 :root {
