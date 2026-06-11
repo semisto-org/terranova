@@ -20,9 +20,12 @@ module Api
       end
 
       def create
+        # La présence du body est validée par le modèle → 422 via le rescue
+        # RecordInvalid du BaseController (params.require lèverait un
+        # ParameterMissing au comportement dépendant de l'environnement).
         comment = @commentable.comments.create!(
           author: current_member,
-          body: params.require(:body)
+          body: params[:body]
         )
         render json: { comment: serialize_comment(comment) }, status: :created
       end
