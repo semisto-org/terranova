@@ -389,13 +389,28 @@
       ]
     },
     {
-      "endpointCount": 1,
+      "endpointCount": 4,
       "file": "events.json",
       "name": "events",
       "operations": [
         {
           "method": "POST",
           "path": "/api/v1/events/{event_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/events/{event_id}/subscription",
           "summary": "create"
         }
       ]
@@ -986,7 +1001,7 @@
       ]
     },
     {
-      "endpointCount": 5,
+      "endpointCount": 8,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -1004,6 +1019,21 @@
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/bucket",
           "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "unmute"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "mute_state"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "mute"
         },
         {
           "method": "POST",
@@ -1062,7 +1092,7 @@
       ]
     },
     {
-      "endpointCount": 18,
+      "endpointCount": 21,
       "file": "strategy.json",
       "name": "strategy",
       "operations": [
@@ -1079,6 +1109,21 @@
         {
           "method": "POST",
           "path": "/api/v1/strategy/deliberations",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
           "summary": "create"
         },
         {
@@ -1159,7 +1204,7 @@
       ]
     },
     {
-      "endpointCount": 6,
+      "endpointCount": 9,
       "file": "tasks.json",
       "name": "tasks",
       "operations": [
@@ -1192,6 +1237,21 @@
           "method": "DELETE",
           "path": "/api/v1/tasks/{task_id}/comments/{id}",
           "summary": "destroy"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "create"
         }
       ]
     }
@@ -1207,5 +1267,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 211
+  "totalEndpoints": 223
 }

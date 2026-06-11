@@ -64,12 +64,18 @@ class SubscriptionsTest < ActionDispatch::IntegrationTest
   end
 
   # ── Endpoints suivre / ne plus suivre ────────────────────────────────────
+  # NB rspec-openapi (Minitest) n'enregistre que la DERNIÈRE requête de chaque
+  # test : chaque (chemin, verbe) à documenter termine donc son propre test.
 
-  test 'follow then unfollow a task through the API' do
+  test 'follow a task through the API' do
     post "/api/v1/tasks/#{@task.id}/subscription", as: :json
     assert_response :created
     assert JSON.parse(response.body)['subscribed']
     assert_equal 'explicit', @task.subscription_for(@member).state
+  end
+
+  test 'unfollow a task through the API' do
+    @task.subscribe!(@member)
 
     delete "/api/v1/tasks/#{@task.id}/subscription", as: :json
     assert_response :success
@@ -87,33 +93,70 @@ class SubscriptionsTest < ActionDispatch::IntegrationTest
     assert_equal 'auto', payload['state']
   end
 
-  test 'follow an event and a deliberation through their nested routes' do
-    event_type = EventType.create!(label: "Réunion-#{SecureRandom.hex(3)}")
-    event = Event.create!(title: 'Journée', event_type: event_type,
-                          start_date: Date.tomorrow, end_date: Date.tomorrow, projectable: @project)
-    deliberation = Strategy::Deliberation.create!(title: 'Budget', status: 'open', created_by_id: @other.id)
-
-    post "/api/v1/events/#{event.id}/subscription", as: :json
+  test 'follow an event through its nested route' do
+    post "/api/v1/events/#{create_event.id}/subscription", as: :json
     assert_response :created
-    assert_equal 'explicit', event.subscription_for(@member).state
+  end
+
+  test 'unfollow an event through its nested route' do
+    event = create_event
+    event.subscribe!(@member)
+
+    delete "/api/v1/events/#{event.id}/subscription", as: :json
+    assert_response :success
+    assert_equal 'unsubscribed', event.subscription_for(@member).state
+  end
+
+  test 'subscription state of an event' do
+    get "/api/v1/events/#{create_event.id}/subscription", as: :json
+    assert_response :success
+    refute JSON.parse(response.body)['subscribed']
+  end
+
+  test 'follow a deliberation through its nested route' do
+    deliberation = create_deliberation
 
     post "/api/v1/strategy/deliberations/#{deliberation.id}/subscription", as: :json
     assert_response :created
     assert_equal 'explicit', deliberation.subscription_for(@member).state
   end
 
+  test 'unfollow a deliberation through its nested route' do
+    deliberation = create_deliberation
+    deliberation.subscribe!(@member)
+
+    delete "/api/v1/strategy/deliberations/#{deliberation.id}/subscription", as: :json
+    assert_response :success
+    assert_equal 'unsubscribed', deliberation.subscription_for(@member).state
+  end
+
+  test 'subscription state of a deliberation' do
+    get "/api/v1/strategy/deliberations/#{create_deliberation.id}/subscription", as: :json
+    assert_response :success
+  end
+
   # ── Mute projet ──────────────────────────────────────────────────────────
 
-  test 'mute and unmute a project through the API' do
+  test 'mute a project through the API' do
     post "/api/v1/projects/lab-project/#{@project.id}/mute", as: :json
     assert_response :created
     assert JSON.parse(response.body)['muted']
     assert @project.muted_by?(@member)
+  end
+
+  test 'unmute a project through the API' do
+    @project.mute!(@member)
 
     delete "/api/v1/projects/lab-project/#{@project.id}/mute", as: :json
     assert_response :success
     refute JSON.parse(response.body)['muted']
     refute @project.reload.muted_by?(@member)
+  end
+
+  test 'mute state of a project' do
+    get "/api/v1/projects/lab-project/#{@project.id}/mute", as: :json
+    assert_response :success
+    refute JSON.parse(response.body)['muted']
   end
 
   test 'unknown project type returns bad request' do
@@ -152,6 +195,16 @@ class SubscriptionsTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def create_event
+    event_type = EventType.create!(label: "Réunion-#{SecureRandom.hex(3)}")
+    Event.create!(title: 'Journée', event_type: event_type,
+                  start_date: Date.tomorrow, end_date: Date.tomorrow, projectable: @project)
+  end
+
+  def create_deliberation
+    Strategy::Deliberation.create!(title: "Budget-#{SecureRandom.hex(2)}", status: 'open', created_by_id: @other.id)
+  end
 
   def create_member(first_name:)
     Member.create!(
