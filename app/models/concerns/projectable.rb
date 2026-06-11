@@ -15,11 +15,37 @@ module Projectable
     has_many :timesheets, as: :projectable, dependent: :nullify
     has_many :events, as: :projectable, dependent: :nullify
     has_many :knowledge_sections, as: :projectable, dependent: :nullify
+    has_many :subscriptions, as: :subscribable, dependent: :destroy
     has_many_attached :project_documents
   end
 
   def project_name
     respond_to?(:title) ? title : name
+  end
+
+  # ── Mute projet (#103) ────────────────────────────────────────────────────
+  # Un membre peut couper TOUTES les notifications d'un projet (état `muted`
+  # sur le Projectable lui-même). Le suivi explicite d'un objet du projet
+  # prime sur ce mute (cf. Subscribable#notifiable_member_ids).
+
+  def mute!(member)
+    sub = subscriptions.find_or_initialize_by(member_id: member.id)
+    sub.update!(state: "muted")
+    sub
+  end
+
+  def unmute!(member)
+    subscriptions.where(member_id: member.id, state: "muted").destroy_all
+  end
+
+  def muted_by?(member)
+    return false if member.nil?
+
+    subscriptions.muted.exists?(member_id: member.id)
+  end
+
+  def muted_member_ids
+    subscriptions.muted.pluck(:member_id)
   end
 
   PROJECT_TYPE_KEYS = {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { X, Pencil, Trash2, Star, Hand, ExternalLink, UserCheck, CheckCircle2, CalendarClock } from 'lucide-react'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import CommentsBlock from '@/components/comments/CommentsBlock'
+import FollowButton from '@/components/subscriptions/FollowButton'
 import type { Task, ProjectTypeKey } from './types'
 import { PROJECT_TYPE_LABELS } from './types'
 
@@ -140,6 +141,7 @@ export function TaskDetail({
         {/* Footer actions */}
         <div className="px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-1">
+            <FollowButton parentType="tasks" parentId={task.id} accentColor={accentColor} />
             {onStar && (
               <button onClick={() => onStar(task.id)} disabled={busy} title={starred ? 'Retirer de ma sélection' : 'Ajouter à ma sélection'}
                 className={`p-2 rounded-lg transition-colors ${starred ? 'text-amber-500 bg-amber-50' : 'text-stone-400 hover:bg-stone-100'}`}>

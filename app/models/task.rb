@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Task < ApplicationRecord
+  include Subscribable
+
   STATUSES = %w[pending in_progress completed].freeze
   PRIORITIES = %w[low medium high].freeze
 
@@ -33,6 +35,8 @@ class Task < ApplicationRecord
   # le membre courant) ; ici on garantit la cohérence des horodatages.
   before_save :stamp_assignment, if: :will_save_change_to_assignee_id?
   before_save :stamp_completion, if: :will_save_change_to_status?
+  # Abonnement auto (#103) : devenir assigné = suivre la tâche.
+  after_save :auto_subscribe_assignee, if: :saved_change_to_assignee_id?
 
   # Une tâche ne peut être assignée qu'à un membre de l'équipe du projet auquel
   # elle appartient. La règle vit dans le modèle (et non seulement dans un
@@ -54,6 +58,10 @@ class Task < ApplicationRecord
   end
 
   private
+
+  def auto_subscribe_assignee
+    auto_subscribe!(assignee) if assignee_id.present?
+  end
 
   def stamp_assignment
     if assignee_id.present?
