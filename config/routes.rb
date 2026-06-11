@@ -159,6 +159,20 @@ Rails.application.routes.draw do
       post   "events/:event_id/comments",     to: "comments#create"
       delete "events/:event_id/comments/:id", to: "comments#destroy"
 
+      # Abonnements polymorphes (#103) — suivre / ne plus suivre + mute projet.
+      get    "tasks/:task_id/subscription",                        to: "subscriptions#show"
+      post   "tasks/:task_id/subscription",                        to: "subscriptions#create"
+      delete "tasks/:task_id/subscription",                        to: "subscriptions#destroy"
+      get    "events/:event_id/subscription",                      to: "subscriptions#show"
+      post   "events/:event_id/subscription",                      to: "subscriptions#create"
+      delete "events/:event_id/subscription",                      to: "subscriptions#destroy"
+      get    "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#show"
+      post   "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#create"
+      delete "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#destroy"
+      get    "projects/:type/:id/mute",                            to: "subscriptions#mute_state"
+      post   "projects/:type/:id/mute",                            to: "subscriptions#mute"
+      delete "projects/:type/:id/mute",                            to: "subscriptions#unmute"
+
       get "my-projects", to: "projects#my_projects"
       # Grille « Mon accueil » (home) — placées avant la route dynamique
       # my-projects/:type/:id/visit pour éviter toute capture de "board"/"reorder".

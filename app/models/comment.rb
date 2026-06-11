@@ -27,6 +27,8 @@ class Comment < ApplicationRecord
     extra_attributes: %w[data-type data-id data-label class]
 
   after_save :sync_mentions!, if: :saved_change_to_body?
+  # Abonnement auto (#103) : commenter = suivre l'objet commenté.
+  after_create :auto_subscribe_author
 
   scope :ordered, -> { order(created_at: :asc) }
 
@@ -39,11 +41,22 @@ class Comment < ApplicationRecord
 
   private
 
+  def auto_subscribe_author
+    return unless commentable.respond_to?(:auto_subscribe!)
+
+    commentable.auto_subscribe!(author)
+  end
+
   def sync_mentions!
     target_ids = mentioned_member_ids_from_body
     current_ids = mentions.pluck(:member_id)
 
     mentions.where(member_id: current_ids - target_ids).destroy_all
     (target_ids - current_ids).each { |member_id| mentions.create!(member_id: member_id) }
+
+    # Abonnement auto (#103) : être @mentionné = suivre l'objet du commentaire.
+    if commentable.respond_to?(:auto_subscribe!)
+      Member.where(id: target_ids - current_ids).find_each { |m| commentable.auto_subscribe!(m) }
+    end
   end
 end
