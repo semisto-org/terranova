@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -110,17 +110,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
   end
 
   create_table "academy_session_feedbacks", force: :cascade do |t|
-    t.boolean "anonymous", default: false, null: false
     t.text "comment", default: "", null: false
-    t.bigint "contact_id"
+    t.bigint "contact_id", null: false
     t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.integer "rating"
+    t.integer "rating", null: false
     t.bigint "session_id", null: false
     t.datetime "updated_at", null: false
+    t.boolean "would_recommend", null: false
     t.index ["contact_id"], name: "index_academy_session_feedbacks_on_contact_id"
-    t.index ["deleted_at"], name: "index_academy_session_feedbacks_on_deleted_at"
-    t.index ["session_id", "contact_id"], name: "idx_session_feedbacks_unique_per_contact", unique: true, where: "((deleted_at IS NULL) AND (contact_id IS NOT NULL))"
+    t.index ["session_id", "contact_id"], name: "index_academy_session_feedbacks_on_session_id_and_contact_id", unique: true
     t.index ["session_id"], name: "index_academy_session_feedbacks_on_session_id"
   end
 
@@ -1459,6 +1457,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
 
   create_table "members", force: :cascade do |t|
     t.string "avatar", default: "", null: false
+    t.string "calendar_token"
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "first_name", null: false
@@ -1474,6 +1473,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
     t.string "slack_user_id"
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
+    t.index ["calendar_token"], name: "index_members_on_calendar_token", unique: true
     t.index ["email"], name: "index_members_on_email", unique: true
   end
 
@@ -2663,6 +2663,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
   add_foreign_key "academy_registration_packs", "academy_training_packs", column: "pack_id"
   add_foreign_key "academy_registration_packs", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_session_feedbacks", "academy_training_sessions", column: "session_id"
+  add_foreign_key "academy_session_feedbacks", "contacts"
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_training_sessions", column: "session_id"

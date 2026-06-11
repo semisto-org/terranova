@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Calendar, MapPin, User, Plus, Edit, Trash2, Mail } from 'lucide-react'
+import { Calendar, MapPin, User, Plus, Edit, Trash2, Mail, Star, ThumbsUp, MessageSquareHeart, ChevronDown } from 'lucide-react'
 import SessionReminderModal from './SessionReminderModal'
 
 function formatDate(dateStr) {
@@ -207,6 +207,8 @@ function SessionCard({
               </div>
             </div>
           )}
+
+          <SessionFeedbackSummary feedback={session.feedback} />
         </div>
 
         <div className="relative shrink-0" ref={menuRef}>
@@ -260,6 +262,83 @@ function SessionCard({
 
       {reminderOpen && (
         <SessionReminderModal session={session} onClose={() => setReminderOpen(false)} />
+      )}
+    </div>
+  )
+}
+
+// Avis « à chaud » des participant·es sur la session, côté admin : synthèse
+// (nombre, note moyenne, recommandations) + détail nominatif dépliable.
+function SessionFeedbackSummary({ feedback }) {
+  const [open, setOpen] = useState(false)
+  const count = feedback?.count || 0
+  if (count === 0) return null
+
+  const responses = feedback.responses || []
+
+  return (
+    <div className="mt-3 pt-3 border-t border-stone-100">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900"
+      >
+        <MessageSquareHeart className="w-4 h-4 text-[#B01A19] shrink-0" />
+        <span className="font-medium">
+          {count} avis{count > 1 ? '' : ''}
+        </span>
+        {feedback.averageRating != null && (
+          <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+            <Star className="w-3.5 h-3.5 text-[#EF9B0D]" fill="#EF9B0D" />
+            {feedback.averageRating.toFixed(1)}/5
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+          <ThumbsUp className="w-3.5 h-3.5 text-[#2D6A4F]" />
+          {feedback.recommendCount}/{count} recommandent
+        </span>
+        <ChevronDown
+          className="w-4 h-4 text-stone-400 transition-transform"
+          style={{ transform: open ? 'rotate(180deg)' : 'none' }}
+        />
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2">
+          {responses.map((r) => (
+            <div key={r.id} className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-stone-800">
+                  {r.contactName || 'Participant·e'}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex items-center gap-0.5" aria-label={`${r.rating} sur 5`}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star
+                        key={n}
+                        className="w-3.5 h-3.5"
+                        style={{ color: r.rating >= n ? '#EF9B0D' : '#d6d3d1' }}
+                        fill={r.rating >= n ? '#EF9B0D' : 'none'}
+                      />
+                    ))}
+                  </span>
+                  <span
+                    className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                    style={r.wouldRecommend
+                      ? { backgroundColor: '#2D6A4F18', color: '#2D6A4F' }
+                      : { backgroundColor: '#f5f5f4', color: '#78716c' }}
+                  >
+                    {r.wouldRecommend ? 'Recommande' : 'Ne recommande pas'}
+                  </span>
+                </span>
+              </div>
+              {r.comment && (
+                <p className="text-sm text-stone-600 mt-1 whitespace-pre-line">{r.comment}</p>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
