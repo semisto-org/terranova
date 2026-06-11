@@ -121,10 +121,66 @@ module Api
         documents = training.documents.order(uploaded_at: :desc)
         sessions = training.sessions.order(start_date: :asc)
 
+        # Le feedback « à chaud » est réservé aux participant·es inscrit·es
+        # (pas aux formateurs en accès simple). On précharge l'avis déjà posé
+        # par ce·tte contact pour chaque session, afin que le portail affiche
+        # son avis en lecture plutôt qu'un formulaire vierge.
+        is_participant = contact_registrations.exists?(training_id: training.id)
+        own_feedback_by_session = if is_participant
+          Academy::SessionFeedback
+            .where(contact_id: current_contact.id, session_id: sessions.map(&:id))
+            .index_by(&:session_id)
+        else
+          {}
+        end
+
         render json: serialize_portal_training_detail(
           training, sessions, documents,
-          can_upload: uploadable_training_ids.include?(training.id)
+          can_upload: uploadable_training_ids.include?(training.id),
+          can_give_feedback: is_participant,
+          own_feedback_by_session: own_feedback_by_session
         )
+      end
+
+      # POST /api/v1/my/academy/:training_id/sessions/:session_id/feedback
+      # Feedback « à chaud » d'un·e participant·e sur une session déjà commencée.
+      #  - réservé aux inscrit·es de l'activité (pas les formateurs en accès simple)
+      #  - une seule réponse par (session × participant), non modifiable (409 si déjà posée)
+      #  - rating 1–5 obligatoire, would_recommend oui/non obligatoire, commentaire libre
+      #  - la session doit appartenir à l'activité et avoir commencé (start_date <= aujourd'hui)
+      def create_session_feedback
+        training = find_participant_training!
+        return unless training
+
+        session = training.sessions.find_by(id: params[:session_id])
+        unless session
+          render json: { error: "Session invalide pour cette formation." }, status: :unprocessable_entity
+          return
+        end
+
+        if session.start_date > Date.current
+          render json: { error: "Cette session n'a pas encore eu lieu." }, status: :unprocessable_entity
+          return
+        end
+
+        if Academy::SessionFeedback.exists?(session_id: session.id, contact_id: current_contact.id)
+          render json: { error: "Vous avez déjà laissé un avis pour cette session." }, status: :conflict
+          return
+        end
+
+        feedback = Academy::SessionFeedback.new(
+          session: session,
+          contact: current_contact,
+          rating: params[:rating],
+          would_recommend: parse_boolean(params[:would_recommend]),
+          comment: params[:comment].to_s.strip
+        )
+
+        if feedback.save
+          render json: { feedback: serialize_own_feedback(feedback) }, status: :created
+        else
+          render json: { error: feedback.errors.full_messages.join(", ") }, status: :unprocessable_entity
+        end
       end
 
       # ── Carpooling API ──
@@ -427,6 +483,25 @@ module Api
         registration
       end
 
+      # Loads the target training for a participant-only write action (feedback),
+      # or renders the access error and returns nil. 404 (not 403) keeps the portal
+      # opaque, consistent with find_contact_training! / find_uploadable_training!.
+      def find_participant_training!
+        unless contact_registrations.exists?(training_id: params[:training_id].to_i)
+          render json: { error: "Formation introuvable" }, status: :not_found
+          return nil
+        end
+        Academy::Training.find(params[:training_id])
+      end
+
+      # Coerces a form/JSON value to a strict boolean. Anything outside the truthy
+      # set is false — but a blank/nil value yields nil so the model's presence
+      # validation (inclusion in [true, false]) can reject a missing answer.
+      def parse_boolean(value)
+        return nil if value.nil? || value == ""
+        ActiveModel::Type::Boolean.new.cast(value)
+      end
+
       # No contact details are exposed — only the relay target id (registration),
       # first name and departure location. Contacting goes through #contact_carpooler.
       def serialize_carpooling_participant(registration)
@@ -516,7 +591,8 @@ module Api
         }
       end
 
-      def serialize_portal_training_detail(training, sessions, documents, can_upload: false)
+      def serialize_portal_training_detail(training, sessions, documents, can_upload: false,
+                                           can_give_feedback: false, own_feedback_by_session: {})
         location_ids = sessions.flat_map(&:location_ids).uniq
         locations_by_id = Academy::TrainingLocation.where(id: location_ids).index_by { |l| l.id.to_s }
 
@@ -527,7 +603,10 @@ module Api
           description: training.description,
           trainingType: training.training_type&.name,
           canUpload: can_upload,
-          sessions: sessions.map { |s| serialize_portal_session(s, locations_by_id) },
+          canGiveFeedback: can_give_feedback,
+          sessions: sessions.map { |s|
+            serialize_portal_session(s, locations_by_id, own_feedback: own_feedback_by_session[s.id])
+          },
           documents: documents.map { |d| serialize_portal_document(d) }
         }
 
@@ -551,7 +630,7 @@ module Api
         }
       end
 
-      def serialize_portal_session(session, locations_by_id = {})
+      def serialize_portal_session(session, locations_by_id = {}, own_feedback: nil)
         {
           id: session.id.to_s,
           startDate: session.start_date.iso8601,
@@ -564,11 +643,22 @@ module Api
           mealsInfo: session.meals_info.presence,
           accommodationInfo: session.accommodation_info.presence,
           packingList: session.packing_list || [],
+          # Avis « à chaud » déjà laissé par le·la participant·e courant·e (ou null).
+          myFeedback: own_feedback ? serialize_own_feedback(own_feedback) : nil,
           locations: (session.location_ids || []).filter_map { |id|
             loc = locations_by_id[id.to_s]
             next unless loc
             { id: loc.id.to_s, name: loc.name, address: loc.address }
           }
+        }
+      end
+
+      def serialize_own_feedback(feedback)
+        {
+          rating: feedback.rating,
+          wouldRecommend: feedback.would_recommend,
+          comment: feedback.comment.to_s,
+          createdAt: feedback.created_at.iso8601
         }
       end
 

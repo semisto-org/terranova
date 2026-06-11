@@ -624,7 +624,7 @@ module Api
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
         trainings = Academy::Training.includes(:album, :participant_categories).order(updated_at: :desc)
-        sessions = Academy::TrainingSession.order(start_date: :asc)
+        sessions = Academy::TrainingSession.includes(feedbacks: :contact).order(start_date: :asc)
         locations = Academy::TrainingLocation.order(:name)
         registrations = Academy::TrainingRegistration
           .includes(
@@ -880,7 +880,31 @@ module Api
           meetingTime: item.meeting_time,
           mealsInfo: item.meals_info,
           accommodationInfo: item.accommodation_info,
-          packingList: item.packing_list
+          packingList: item.packing_list,
+          feedback: serialize_session_feedback(item)
+        }
+      end
+
+      # Synthèse des avis « à chaud » des participant·es sur une session, pour la
+      # consultation côté admin : nombre, note moyenne, nombre de recommandations,
+      # et le détail nominatif de chaque réponse.
+      def serialize_session_feedback(item)
+        entries = item.feedbacks.to_a
+        count = entries.size
+        {
+          count: count,
+          averageRating: count.positive? ? (entries.sum(&:rating).to_f / count).round(2) : nil,
+          recommendCount: entries.count(&:would_recommend),
+          responses: entries.sort_by(&:created_at).map { |f|
+            {
+              id: f.id.to_s,
+              rating: f.rating,
+              wouldRecommend: f.would_recommend,
+              comment: f.comment.to_s,
+              contactName: f.contact&.display_name,
+              createdAt: f.created_at.iso8601
+            }
+          }
         }
       end
 
