@@ -4,7 +4,7 @@ task: "Project ISA — Terranova v1.0 (plateforme Semisto)"
 effort: advanced
 effort_source: explicit
 phase: observe
-progress: 0/55
+progress: 2/55
 mode: interactive
 started: 2026-05-27T14:00:00+02:00
 updated: 2026-06-11T14:30:00+02:00
@@ -127,8 +127,8 @@ Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septemb
 - [ ] ISC-44: Délibérations (gouvernance) — créer une proposition, délibérer (commentaires / réactions, décideurs), aboutir à une décision ; déjà utilisé en prod.
 
 **Couche Basecamp (epic #101 — DANS v1, décidé 2026-06-11)**
-- [ ] ISC-45: Substrat commentaires + @mentions polymorphe opérationnel sur Task et Event (#102) — un commentaire avec @mention persiste et la `Mention` est extraite en base.
-- [ ] ISC-46: Abonnements polymorphes + abonnement auto + mute projet (#103) — l'assignation crée une `Subscription` ; le suivi explicite prime sur le mute.
+- [x] ISC-45: Substrat commentaires + @mentions polymorphe opérationnel sur Task et Event (#102) — un commentaire avec @mention persiste et la `Mention` est extraite en base.
+- [x] ISC-46: Abonnements polymorphes + abonnement auto + mute projet (#103) — l'assignation crée une `Subscription` ; le suivi explicite prime sur le mute.
 - [ ] ISC-47: Chaque action notifiable écrit un `ActivityEvent` ; les `Notification` en dérivent, sans doublon ni auto-notification (#104, amendé 11/06) — rejeu d'un événement = 0 doublon.
 - [ ] ISC-48: Le Hey! ne liste que les items adressés au membre (assigné / mentionné / abonné), compteur de non-lus exact (#105).
 - [ ] ISC-49: Activity ambient cross-projets sans compteur, couvrant la liste énumérée et vérifiée des types d'événements (#110) — la complétude conditionne le retrait de Slack.
@@ -303,3 +303,8 @@ Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septemb
 ## Changelog
 
 <!-- Vide jusqu'au premier cycle conjecture/réfutation/apprentissage. Alimenté en phase LEARN via Skill("ISA", "append changelog ..."). -->
+
+## Verification
+
+ISC-45: live-probe (2026-06-11) — PR #121 mergée+déployée ; Interceptor : @mention via picker, POST /api/v1/tasks/48/comments → 201, `Mention` en base (`mentions: ["Mohammad"]`) ; prod : endpoint répond 401 (table créée). 10 tests d'intégration.
+ISC-46: live-probe (2026-06-11) — PR #122 mergée+déployée ; Interceptor : POST subscription → 201 `explicit`, DELETE → 200, mute projet → 201 ; prod : endpoint répond 401 (migration passée). 22 tests d'intégration, primauté explicite-sur-mute testée.
