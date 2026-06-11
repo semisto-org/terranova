@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import CommentsBlock from '@/components/comments/CommentsBlock'
+import FollowButton from '@/components/subscriptions/FollowButton'
 import type { Event, Cycle, Member, EventType } from '../types'
 
 interface CyclePeriod {
@@ -1260,6 +1261,11 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
 
         {/* Actions */}
         <div className="shrink-0 px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-2">
+          {!(event as any)._isTrainingSession && (
+            <div className="mr-auto">
+              <FollowButton parentType="events" parentId={event.id} />
+            </div>
+          )}
           {confirmingDelete ? (
             <>
               <span className="text-sm text-stone-600 mr-auto">

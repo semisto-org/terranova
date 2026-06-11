@@ -37,16 +37,26 @@ module Subscribable
 
   # Suivi choisi — prime sur le mute projet.
   def subscribe!(member)
-    sub = subscriptions.find_or_initialize_by(member_id: member.id)
-    sub.update!(state: "explicit")
-    sub
+    upsert_subscription_state!(member, "explicit")
   end
 
   # Désabonnement choisi — bloque définitivement les autos futurs.
   def unsubscribe!(member)
+    upsert_subscription_state!(member, "unsubscribed")
+  end
+
+  # Deux requêtes simultanées (double-clic) peuvent passer toutes deux par
+  # find_or_initialize → double INSERT → violation d'unicité. Au retry, la
+  # ligne existe et on la met simplement à jour (vu en vérification live, 11/06).
+  def upsert_subscription_state!(member, state, attempted: false)
     sub = subscriptions.find_or_initialize_by(member_id: member.id)
-    sub.update!(state: "unsubscribed")
+    sub.update!(state: state)
     sub
+  rescue ActiveRecord::RecordNotUnique
+    raise if attempted
+
+    subscriptions.reset
+    upsert_subscription_state!(member, state, attempted: true)
   end
 
   # Projet parent au sens "mute" (nil si l'objet n'a pas de projet — cas des
