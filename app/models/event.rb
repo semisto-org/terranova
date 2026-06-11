@@ -6,6 +6,7 @@ class Event < ApplicationRecord
   has_many :event_attendees, dependent: :destroy
   has_many :attendees, through: :event_attendees, source: :member
   has_one :album, as: :albumable, dependent: :destroy
+  has_many :comments, as: :commentable, dependent: :destroy
 
   validates :title, :event_type, :start_date, :end_date, presence: true
 
