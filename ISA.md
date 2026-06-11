@@ -4,10 +4,10 @@ task: "Project ISA — Terranova v1.0 (plateforme Semisto)"
 effort: advanced
 effort_source: explicit
 phase: observe
-progress: 0/44
+progress: 0/55
 mode: interactive
 started: 2026-05-27T14:00:00+02:00
-updated: 2026-05-27T16:30:00+02:00
+updated: 2026-06-11T14:30:00+02:00
 ---
 
 > ⚠️ **SEED — brouillon généré le 2026-05-27, relecture humaine obligatoire avant de le traiter comme autoritatif.** Sourcé du repo (product-overview, MILESTONES, CLAUDE.md, inventaire contrôleurs/modèles/pages, git 30 j). Les bornes de périmètre v1.0 (Goal + Out of Scope) sont des **décisions produit de Michael** : elles sont proposées ici mais marquées « à confirmer ». Affiner via `Skill("ISA", "interview me on /Users/michael/code/terranova/ISA.md")`.
@@ -58,7 +58,7 @@ Terranova est l'infrastructure numérique qui permet l'avènement de l'agrofores
 
 > Audience + capacités porteuses **confirmées en Interview (2026-05-27)**. Reste à trancher : les domaines non cités par Michael (Lab Management/Semos, Economics, Knowledge) et les 3 borderline (Strategy, Marketplace, Website-CMS).
 
-Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septembre 2026** comme **outil opérationnel quotidien du Lab Wallonie-Bruxelles** (seul Lab actuel — designers, coordinateurs, project managers, bénévoles, pépiniériste), **en remplacement de Notion**. Le collectif doit pouvoir depuis Terranova : **réaliser et gérer les projets de design depuis l'interface**, gérer les **activités Academy**, gérer le **stock et les commandes de la pépinière**, **créer des palettes végétales**, et **piloter l'agenda** (plus dans Notion). La **recherche de plantes (espèces / variétés) doit être efficace**. Les **clients** consultent leurs projets et les **inscrits Academy** leurs activités via **My Semisto**. **Aucune surface publique en v1.** Socle transverse : auth, RBAC admin, contrat OpenAPI sans dérive, déploiement Hatchbox vert.
+Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septembre 2026** comme **outil opérationnel quotidien du Lab Wallonie-Bruxelles** (seul Lab actuel — designers, coordinateurs, project managers, bénévoles, pépiniériste), **en remplacement de Notion**. Le collectif doit pouvoir depuis Terranova : **réaliser et gérer les projets de design depuis l'interface**, gérer les **activités Academy**, gérer le **stock et les commandes de la pépinière**, **créer des palettes végétales**, et **piloter l'agenda** (plus dans Notion). La **recherche de plantes (espèces / variétés) doit être efficace**. Les **clients** consultent leurs projets et les **inscrits Academy** leurs activités via **My Semisto**. **Aucune surface publique en v1.** La **communication interne passe de Slack à Terranova** (couche Basecamp, epic #101 : Hey! directed, Activity ambient, digest + heures calmes, outils par projet — décidé 11/06). Socle transverse : auth, RBAC admin, contrat OpenAPI sans dérive, déploiement Hatchbox vert.
 
 ## Criteria
 
@@ -126,11 +126,24 @@ Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septemb
 **Strategy (délibérations uniquement)**
 - [ ] ISC-44: Délibérations (gouvernance) — créer une proposition, délibérer (commentaires / réactions, décideurs), aboutir à une décision ; déjà utilisé en prod.
 
+**Couche Basecamp (epic #101 — DANS v1, décidé 2026-06-11)**
+- [ ] ISC-45: Substrat commentaires + @mentions polymorphe opérationnel sur Task et Event (#102) — un commentaire avec @mention persiste et la `Mention` est extraite en base.
+- [ ] ISC-46: Abonnements polymorphes + abonnement auto + mute projet (#103) — l'assignation crée une `Subscription` ; le suivi explicite prime sur le mute.
+- [ ] ISC-47: Chaque action notifiable écrit un `ActivityEvent` ; les `Notification` en dérivent, sans doublon ni auto-notification (#104, amendé 11/06) — rejeu d'un événement = 0 doublon.
+- [ ] ISC-48: Le Hey! ne liste que les items adressés au membre (assigné / mentionné / abonné), compteur de non-lus exact (#105).
+- [ ] ISC-49: Activity ambient cross-projets sans compteur, couvrant la liste énumérée et vérifiée des types d'événements (#110) — la complétude conditionne le retrait de Slack.
+- [ ] ISC-50: Digest email SES 1×/jour (~8h) + heures calmes respectées ; Slack n'est plus le canal par défaut (#106) — hors plage = 0 email.
+- [ ] ISC-51: Calendrier unifié : `tasks.due_date` affichées (toggle Events + tasks), « Mon planning » cross-projets, flux iCal perso par token signé révocable (#109).
+- [ ] ISC-52: Message Board : posts par projet, commentables, notifiant les abonnés du projet (#118).
+- [ ] ISC-53: Campfire : chat par projet temps réel où seules les @mentions notifient (#119).
+- [ ] ISC-54: Sortie de Notion cadrée pour les docs par projet : inventaire + proposition d'architecture validés (#120).
+
 **Anti-criteria**
 - [ ] ISC-38: Anti : aucun endpoint Citizen Engagement ni Partner Portal n'est exposé/lié en prod v1 (hors périmètre).
 - [ ] ISC-39: Anti : pas de doublon de `Revenue` sur réception multiple du même webhook Stripe (idempotence vérifiée).
 - [ ] ISC-40: Anti : aucune action destructive (delete/remove) dans l'UI sans `window.confirm()`.
 - [ ] ISC-41: Anti : aucune fuite de données admin-only vers un membre non-admin.
+- [ ] ISC-55: Anti : le Hey! ne contient jamais d'activité non adressée au membre — le flux ambiant ne fuit pas dans la boîte directed (c'est LE mécanisme du calme).
 
 ## Test Strategy
 
@@ -245,6 +258,12 @@ Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septemb
   satisfies: []
   depends_on: []
 
+- name: BasecampLayer
+  status: ACTIF  # epic #101 — décidé DANS v1.0 le 11/06 ; #108 (Mon accueil) déjà mergé (PR #115)
+  description: Couche async calme + hub perso + outils par projet — commentaires/@mentions (#102), abonnements (#103), activity_events + notifications (#104), Hey! directed (#105), Activity ambient (#110), digest SES + heures calmes + retrait Slack (#106), calendrier unifié + iCal (#109), Boosts (#111), Message Board (#118), Campfire (#119), docs par projet (#120)
+  satisfies: [ISC-45, ISC-46, ISC-47, ISC-48, ISC-49, ISC-50, ISC-51, ISC-52, ISC-53, ISC-54, ISC-55]
+  depends_on: [Foundation]
+
 - name: CrossCutting
   status: PARTIAL
   description: Health, RBAC admin, contrat OpenAPI + CI, déploiement Hatchbox, recherche globale, multi-org
@@ -278,6 +297,8 @@ Mettre Terranova **v1.0 en production sur `terranova.semisto.org` au 1er septemb
 - 2026-05-27 (Interview, suite): résolution des 3 ouverts — **Shape Up : SUPPRESSION COMPLÈTE pour le moment** (UI/accès retirés ; devient une tâche v1, ISC-14 reformulé en critère de retrait). **Strategy : seules les DÉLIBÉRATIONS dans v1** (déjà en prod, présentes jusque sur le Home ; reste = post-v1 ; ISC-44 ajouté). **Knowledge analysé** : fonctionnellement avancé (éditeur riche TipTap, CRUD topics/sections, révisions, commentaires, bookmarks, recherche, brouillon/publié) mais SANS spec produit ; aucun gap criant dans le code → le « manque pour usage quotidien » reste à définir avec Michael (candidats : Notion-dans-l'UI, finalisation brouillon/publié, sujets liés).
 - 2026-05-27 (probes prod API, lecture seule): Knowledge vérifié — health/profile 200. `status` : **198 publiés / 0 brouillon** (workflow présent mais inutilisé → pas un blocage v1). **Sujets liés** : `GET /knowledge/topics/:id/related` répond 200 mais **VIDE pour 0/10 topics testés** → feature câblée mais ne délivre aucune relation. Notion-dans-l'UI écarté par Michael. ⇒ seul candidat de gap v1 pour Knowledge = **sujets liés** (à confirmer si on le met dans v1).
 - 2026-05-27 (Interview): **sujets liés (related) confirmés HORS v1** par Michael. Knowledge est donc considéré v1-ready (sous réserve d'une passe de vérif live le moment venu). Cadrage du périmètre v1 = **terminé, aucun point ouvert**.
+- 2026-06-11 — **Réconciliation de scope : epic Basecamp #101 non reflété dans cet ISA.** L'epic GitHub #101 « Expérience Basecamp : couche async calme + hub perso » (créé le 09/06, issues filles #102–#111, #108 déjà livré/mergé via PR #115) ajoute une couche majeure alors que le périmètre v1 est marqué « verrouillé » ci-dessus (27/05). Directive de Michael (10/06) : **chaque projet doit offrir les outils de Basecamp 5**, pour **remplacer Slack** et **quitter définitivement Notion**. À trancher avec Michael avant d'intégrer aux Criteria/Features : (1) l'epic #101 fait-il partie de v1.0 (01/09) ou est-il un chantier parallèle ? (2) Message Board et Campfire (actés hors-scope epic le 09/06) sont-ils réouverts par la directive « tous les outils BC5 » ? (3) substrat du flux Activity (#110) : table d'événements dédiée vs notifications+`updated_at`. Une fois tranché : ajouter une Feature `BasecampLayer` + ISCs dédiés (IDs nouveaux, sans renumérotation).
+- 2026-06-11 (suite) — **Tranché par Michael (4 réponses)** : (1) epic #101 **DANS v1.0** ; (2) **Phase 4 complète** — Message Board #118 + Campfire #119 réouverts (annule le hors-scope du 09/06) + cadrage docs/Notion #120 ; (3) **architecture `activity_events`** validée (table d'événements source, notifications dérivées) — amendements posés sur #104 et #110 *avant* leur build, sur exigence de l'audit cross-vendor ; (4) Pings (DM) restent hors outil via la règle d'usage à trois branches (#106). Feature `BasecampLayer` + ISC-45→55 ajoutés. Reste opérationnel : runner Nova en panne (« aucun verdict exploitable » ×3 les 10/06) — le verdict JSON n'est jamais écrit par le run interne ; à diagnostiquer séparément.
 
 ## Changelog
 
