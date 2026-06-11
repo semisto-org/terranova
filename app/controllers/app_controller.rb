@@ -32,6 +32,10 @@ class AppController < ApplicationController
     }
   end
 
+  def activity
+    render inertia: "Activity/Index", props: { milestone: "Activity" }
+  end
+
   def plants
     render inertia: "Plants/Index", props: {
       milestone: "Plant Database",
