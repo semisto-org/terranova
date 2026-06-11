@@ -149,6 +149,16 @@ Rails.application.routes.draw do
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"
       get "member-tasks/:member_id", to: "tasks#member_tasks"
+
+      # Commentaires polymorphes (#102) — routes imbriquées par parent.
+      # Nouveau parent commentable = 3 lignes ici + 1 entrée dans CommentsController::PARENTS.
+      get    "tasks/:task_id/comments",       to: "comments#index"
+      post   "tasks/:task_id/comments",       to: "comments#create"
+      delete "tasks/:task_id/comments/:id",   to: "comments#destroy"
+      get    "events/:event_id/comments",     to: "comments#index"
+      post   "events/:event_id/comments",     to: "comments#create"
+      delete "events/:event_id/comments/:id", to: "comments#destroy"
+
       get "my-projects", to: "projects#my_projects"
       # Grille « Mon accueil » (home) — placées avant la route dynamique
       # my-projects/:type/:id/visit pour éviter toute capture de "board"/"reorder".

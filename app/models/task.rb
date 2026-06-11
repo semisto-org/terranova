@@ -12,6 +12,7 @@ class Task < ApplicationRecord
   belongs_to :parent, class_name: "Task", optional: true
 
   has_many :children, class_name: "Task", foreign_key: :parent_id, dependent: :nullify
+  has_many :comments, as: :commentable, dependent: :destroy
 
   validates :name, presence: true
   validates :status, inclusion: { in: STATUSES }

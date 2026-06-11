@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { X, Pencil, Trash2, Star, Hand, ExternalLink, UserCheck, CheckCircle2, CalendarClock } from 'lucide-react'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
+import CommentsBlock from '@/components/comments/CommentsBlock'
 import type { Task, ProjectTypeKey } from './types'
 import { PROJECT_TYPE_LABELS } from './types'
 
@@ -131,6 +132,9 @@ export function TaskDetail({
               </button>
             )}
           </div>
+
+          {/* Commentaires (#102) */}
+          <CommentsBlock parentType="tasks" parentId={task.id} accentColor={accentColor} />
         </div>
 
         {/* Footer actions */}
