@@ -29,6 +29,12 @@ class Comment < ApplicationRecord
   after_save :sync_mentions!, if: :saved_change_to_body?
   # Abonnement auto (#103) : commenter = suivre l'objet commenté.
   after_create :auto_subscribe_author
+  # Notifications (#104) — en after_save déclaré APRÈS sync_mentions! pour que
+  # les mentions soient extraites et les mentionnés abonnés avant le fan-out.
+  # (after_create s'exécuterait AVANT les after_save → mentions invisibles.)
+  after_save :record_creation_activity, if: :previously_new_record?
+
+  has_many :activity_events, as: :subject, dependent: :destroy
 
   scope :ordered, -> { order(created_at: :asc) }
 
@@ -45,6 +51,21 @@ class Comment < ApplicationRecord
     return unless commentable.respond_to?(:auto_subscribe!)
 
     commentable.auto_subscribe!(author)
+  end
+
+  # Un seul ActivityEvent par commentaire ; le fan-out distingue les kinds :
+  # `mention` pour les membres mentionnés, `comment` pour les autres abonnés.
+  def record_creation_activity
+    mentioned_ids = mentions.pluck(:member_id)
+    subscriber_ids = commentable.respond_to?(:notifiable_member_ids) ? commentable.notifiable_member_ids : []
+
+    NotificationService.record!(
+      action: "comment_created",
+      subject: self,
+      actor: author,
+      recipients: subscriber_ids | mentioned_ids,
+      kind_for: ->(recipient_id) { mentioned_ids.include?(recipient_id) ? "mention" : "comment" }
+    )
   end
 
   def sync_mentions!
