@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2142,7 +2142,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_120100) do
     t.datetime "created_at", null: false
     t.boolean "is_paid", default: false
     t.datetime "joined_at"
+    t.datetime "last_visited_at"
     t.bigint "member_id", null: false
+    t.datetime "pinned_at"
+    t.integer "position"
     t.bigint "projectable_id", null: false
     t.string "projectable_type", null: false
     t.string "role"
