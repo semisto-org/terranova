@@ -85,6 +85,7 @@ Rails.application.routes.draw do
   get "catalogue", to: "app#public_catalog"
   get "projects", to: "app#projects"
   get "projects/:type/:id", to: "app#projects"
+  get "/activity", to: "app#activity"
   get "plants", to: "app#plants"
   get "plants/illustrations", to: "plant_illustrations#index"
   get "plants/species/:id/card", to: "plant_cards#show", as: :plant_card
@@ -172,6 +173,9 @@ Rails.application.routes.draw do
       get    "projects/:type/:id/mute",                            to: "subscriptions#mute_state"
       post   "projects/:type/:id/mute",                            to: "subscriptions#mute"
       delete "projects/:type/:id/mute",                            to: "subscriptions#unmute"
+
+      # Flux d'activité ambiant (#110)
+      get "activity", to: "activity#index"
 
       get "my-projects", to: "projects#my_projects"
       # Grille « Mon accueil » (home) — placées avant la route dynamique
