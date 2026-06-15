@@ -611,6 +611,7 @@ Rails.application.routes.draw do
       patch "academy/trainings/:training_id", to: "academy#update_training"
       delete "academy/trainings/:training_id", to: "academy#destroy_training"
       patch "academy/trainings/:training_id/status", to: "academy#update_training_status"
+      patch "academy/trainings/:training_id/cancel", to: "academy#cancel_training"
       post "academy/trainings/:training_id/sessions", to: "academy#create_session"
       patch "academy/sessions/:session_id", to: "academy#update_session"
       delete "academy/sessions/:session_id", to: "academy#destroy_session"
