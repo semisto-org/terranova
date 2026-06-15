@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
 
 export type ProjectPhase =
+  | 'reception'
   | 'offre'
   | 'pre-projet'
   | 'projet-detaille'
@@ -14,6 +15,11 @@ const phaseColors: Record<
   ProjectPhase,
   { dot: string; bg: string; text: string }
 > = {
+  reception: {
+    dot: 'bg-sky-400',
+    bg: 'bg-sky-50',
+    text: 'text-sky-700',
+  },
   offre: {
     dot: 'bg-amber-400',
     bg: 'bg-amber-50',
@@ -47,6 +53,7 @@ const phaseColors: Record<
 }
 
 const phaseLabels: Record<ProjectPhase, string> = {
+  reception: 'Réception de la demande',
   offre: 'Offre',
   'pre-projet': 'Pré-projet',
   'projet-detaille': 'Projet détaillé',
@@ -56,6 +63,7 @@ const phaseLabels: Record<ProjectPhase, string> = {
 }
 
 const phaseOrder: ProjectPhase[] = [
+  'reception',
   'offre',
   'pre-projet',
   'projet-detaille',

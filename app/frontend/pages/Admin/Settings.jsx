@@ -602,6 +602,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onEditExpense={callbacks.onEditExpense}
           onDeleteExpense={callbacks.onDeleteExpense}
           onInlineUpdate={callbacks.onInlineExpenseUpdate}
+          onRowReplace={(updated) => setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))}
           onBulkUpdate={callbacks.onBulkExpenseUpdate}
           onBulkDelete={callbacks.onBulkExpenseDelete}
           onManageCategories={() => setCategoriesModalOpen(true)}
@@ -619,6 +620,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           onDeleteRevenue={callbacks.onDeleteRevenue}
           onViewRevenue={callbacks.onViewRevenue}
           onUpdateRevenue={callbacks.onUpdateRevenue}
+          onRowReplace={(updated) => setRevenues((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))}
           onBulkUpdateRevenues={callbacks.onBulkUpdateRevenues}
         />
       )}
@@ -853,13 +855,14 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
               name: payload.name || '',
               notes: payload.notes || '',
               poles: payload.poles || [],
-              training_id: payload.training_id || null,
-              design_project_id: payload.design_project_id || null,
+              projectable_type: payload.projectable_type || null,
+              projectable_id: payload.projectable_id || null,
               organization_id: payload.organization_id || null,
               project_allocations: payload.project_allocations || [],
             }
             setBusy(true)
             setError(null)
+            let saved = null
             try {
               if (documentFile) {
                 const formData = new FormData()
@@ -882,25 +885,39 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                 })
                 if (documentFile instanceof File) formData.append('document', documentFile)
                 const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
-                await apiRequest(url, {
+                saved = await apiRequest(url, {
                   method: isEdit ? 'PATCH' : 'POST',
                   body: formData,
                 })
               } else {
                 const url = isEdit ? `/api/v1/lab/expenses/${expenseFormModal.expense.id}` : '/api/v1/lab/expenses'
-                await apiRequest(url, {
+                saved = await apiRequest(url, {
                   method: isEdit ? 'PATCH' : 'POST',
                   body: JSON.stringify(body),
                 })
               }
               setExpenseFormModal(null)
-              await loadExpenses()
+              // Update just the affected row instead of refetching the whole table.
+              if (saved && saved.id) {
+                setExpenses((prev) => (isEdit
+                  ? prev.map((e) => (e.id === saved.id ? saved : e))
+                  : [saved, ...prev]))
+              } else {
+                await loadExpenses()
+              }
             } catch (err) {
               setError(err.message)
               throw err
             } finally {
               setBusy(false)
             }
+          }}
+          onReconciled={(linkedTx) => {
+            const id = expenseFormModal.expense?.id
+            if (!id) return
+            setExpenses((prev) => prev.map((e) => (e.id === id
+              ? { ...e, bankTransactions: [...(e.bankTransactions || []), linkedTx] }
+              : e)))
           }}
           onCancel={() => setExpenseFormModal(null)}
           busy={busy}
@@ -950,6 +967,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           }}
           onSave={async (payload, options) => {
             setBusy(true)
+            let saved = null
             try {
               const existing = revenueFormModal.revenue
               const documents = options?.documents || []
@@ -964,17 +982,31 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
                   else fd.append(k, String(v))
                 })
                 documents.forEach((file) => fd.append('documents[]', file))
-                await apiRequest(url, { method, body: fd })
+                saved = await apiRequest(url, { method, body: fd })
               } else {
-                await apiRequest(url, { method, body: JSON.stringify(payload) })
+                saved = await apiRequest(url, { method, body: JSON.stringify(payload) })
               }
               setRevenueFormModal(null)
-              loadRevenues()
+              // Update just the affected row instead of refetching the whole table.
+              if (saved && saved.id) {
+                setRevenues((prev) => (existing
+                  ? prev.map((r) => (r.id === saved.id ? saved : r))
+                  : [saved, ...prev]))
+              } else {
+                loadRevenues()
+              }
             } catch (err) {
               alert(err.message || 'Erreur')
             } finally {
               setBusy(false)
             }
+          }}
+          onReconciled={(linkedTx) => {
+            const id = revenueFormModal.revenue?.id
+            if (!id) return
+            setRevenues((prev) => prev.map((r) => (r.id === id
+              ? { ...r, bankTransactions: [...(r.bankTransactions || []), linkedTx] }
+              : r)))
           }}
           onCancel={() => setRevenueFormModal(null)}
           busy={busy}

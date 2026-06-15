@@ -34,6 +34,19 @@ body:
         - [ ] L’activité archivée disparaît du Kanban
     validations:
       required: true
+  - type: input
+    id: dependances
+    attributes:
+      label: Dépendances (issues bloquantes)
+      description: >
+        Issues qui DOIVENT être mergées avant celle-ci (fondation, modèle, endpoint…).
+        Liste juste les numéros — Nova lit ce champ et **n'essaiera pas** de traiter
+        l'issue tant qu'elles ne sont pas fermées (elle la met en attente, sans te poser
+        de question). Un epic peut donc être labellisé `nova:auto` en entier : Nova
+        déroule la chaîne dans l'ordre, nuit après nuit. Laisse vide s'il n'y en a pas.
+      placeholder: "#102, #103"
+    validations:
+      required: false
   - type: textarea
     id: zones
     attributes:

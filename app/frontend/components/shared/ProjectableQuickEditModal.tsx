@@ -6,7 +6,9 @@ import { ProjectableCombobox, type ProjectableValue } from './ProjectableCombobo
 interface Props {
   entity: { type: 'expense' | 'revenue'; id: string; label?: string | null }
   currentProjectable: ProjectableValue | null
-  onSaved: (next: ProjectableValue | null) => void
+  // `updated` is the full re-serialized row returned by the PATCH (same shape as
+  // the list rows), so callers can replace a single row instead of refetching all.
+  onSaved: (next: ProjectableValue | null, updated?: Record<string, unknown> | null) => void
   onCancel: () => void
 }
 
@@ -25,14 +27,14 @@ export function ProjectableQuickEditModal({ entity, currentProjectable, onSaved,
     setError(null)
     // onSaved unmounts this modal, so no need to reset busy on success.
     try {
-      await apiRequest(endpoint, {
+      const updated = await apiRequest(endpoint, {
         method: 'PATCH',
         body: JSON.stringify({
           projectable_type: value?.type ?? null,
           projectable_id: value?.id ?? null,
         }),
       })
-      onSaved(value)
+      onSaved(value, updated as Record<string, unknown> | null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour')
       setBusy(false)

@@ -9,6 +9,7 @@ interface ProjectCardProps {
 }
 
 const phaseLabels: Record<ProjectPhase, string> = {
+  'reception': 'Réception de la demande',
   'offre': 'Offre',
   'pre-projet': 'Pré-projet',
   'projet-detaille': 'Projet détaillé',
@@ -18,6 +19,7 @@ const phaseLabels: Record<ProjectPhase, string> = {
 }
 
 const phaseColors: Record<ProjectPhase, { bg: string; text: string; dot: string }> = {
+  'reception': { bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400' },
   'offre': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
   'pre-projet': { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-400' },
   'projet-detaille': { bg: 'bg-[#e1e6d8]', text: 'text-[#6B7A00]', dot: 'bg-[#AFBD00]' },

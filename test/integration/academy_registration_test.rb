@@ -263,6 +263,75 @@ class AcademyRegistrationTest < ActionDispatch::IntegrationTest
     assert_equal existing.id, reg.contact_id
   end
 
+  test 'webhook defaults photo_consent to true when metadata is absent' do
+    payload = {
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_photo_absent',
+          amount: 25000,
+          metadata: {
+            training_id: @training.id.to_s,
+            contact_name: 'Sans Mention',
+            contact_email: 'sans@test.be',
+            payment_type: 'full'
+          }
+        }
+      }
+    }
+
+    post '/api/v1/public/stripe-webhooks', params: payload.to_json,
+      headers: { 'Content-Type' => 'application/json' }
+    assert_response :ok
+
+    assert_equal true, Academy::TrainingRegistration.last.photo_consent
+  end
+
+  test 'webhook stores photo_consent false only when metadata is the string false' do
+    refused = {
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_photo_false', amount: 25000, metadata: {
+        training_id: @training.id.to_s, contact_name: 'Refuse Photo',
+        contact_email: 'refuse@test.be', photo_consent: 'false', payment_type: 'full'
+      } } }
+    }
+    post '/api/v1/public/stripe-webhooks', params: refused.to_json,
+      headers: { 'Content-Type' => 'application/json' }
+    assert_response :ok
+    assert_equal false, Academy::TrainingRegistration.find_by(stripe_payment_intent_id: 'pi_photo_false').photo_consent
+
+    accepted = {
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_photo_true', amount: 25000, metadata: {
+        training_id: @training.id.to_s, contact_name: 'Accepte Photo',
+        contact_email: 'accepte@test.be', photo_consent: 'true', payment_type: 'full'
+      } } }
+    }
+    post '/api/v1/public/stripe-webhooks', params: accepted.to_json,
+      headers: { 'Content-Type' => 'application/json' }
+    assert_response :ok
+    assert_equal true, Academy::TrainingRegistration.find_by(stripe_payment_intent_id: 'pi_photo_true').photo_consent
+  end
+
+  test 'internal create and update persist photo_consent and serializer exposes photoConsent' do
+    post "/api/v1/academy/trainings/#{@training.id}/registrations", params: {
+      contact_name: 'Interne Test',
+      payment_status: 'pending',
+      photo_consent: false
+    }, as: :json
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal false, body['photoConsent']
+
+    registration_id = body['id']
+    patch "/api/v1/academy/registrations/#{registration_id}", params: {
+      photo_consent: true
+    }, as: :json
+    assert_response :success
+    assert_equal true, JSON.parse(response.body)['photoConsent']
+    assert_equal true, Academy::TrainingRegistration.find(registration_id).photo_consent
+  end
+
   test 'webhook does not duplicate registration for same payment intent' do
     @training.registrations.create!(
       contact_name: 'Already Registered',

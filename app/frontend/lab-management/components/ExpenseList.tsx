@@ -165,6 +165,9 @@ export interface ExpenseListProps {
   onEditExpense: (expense: ExpenseItem) => void
   onDeleteExpense: (expenseId: string) => void
   onInlineUpdate?: (expenseId: string, changes: Partial<ExpenseItem>) => Promise<void> | void
+  // Called with the full re-serialized row after the project link changes, so the
+  // parent can replace just that row in state instead of reloading the whole table.
+  onRowReplace?: (updated: ExpenseItem) => void
   onBulkUpdate?: (ids: string[], changes: Partial<ExpenseItem>) => Promise<void> | void
   onBulkDelete?: (ids: string[]) => void
   onManageCategories?: () => void
@@ -181,6 +184,7 @@ export function ExpenseList({
   onEditExpense,
   onDeleteExpense,
   onInlineUpdate,
+  onRowReplace,
   onBulkUpdate,
   onBulkDelete,
   onManageCategories,
@@ -191,12 +195,13 @@ export function ExpenseList({
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [zoneFilter, setZoneFilter] = useState('all')
   const [periodPreset, setPeriodPreset] = useState<'all' | 'thisMonth' | 'thisQuarter' | 'prevQuarter' | 'noCategory' | 'withoutBill' | 'toValidate'>('all')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
   const [density, setDensity] = useState<'compact' | 'comfort'>('comfort')
   const [sort, setSort] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'invoiceDate', dir: 'desc' }])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(100)
-  const [drawerExpenseId, setDrawerExpenseId] = useState<string | null>(null)
   const [quickEdit, setQuickEdit] = useState<{ expense: ExpenseItem } | null>(null)
 
   const statuses = useMemo(() => Array.from(new Set(expenses.map((e) => e.status))), [expenses])
@@ -235,6 +240,14 @@ export function ExpenseList({
       if (zoneFilter !== 'all' && e.billingZone !== zoneFilter) return false
 
       const d = new Date(e.invoiceDate || e.createdAt)
+      if (dateFrom) {
+        const from = new Date(`${dateFrom}T00:00:00`)
+        if (d < from) return false
+      }
+      if (dateTo) {
+        const to = new Date(`${dateTo}T23:59:59.999`)
+        if (d > to) return false
+      }
       if (periodPreset === 'thisMonth' && !(d.getMonth() === month && d.getFullYear() === year)) return false
       if (periodPreset === 'thisQuarter' && !isInQuarter(d, currentQuarter.quarter, currentQuarter.year)) return false
       if (periodPreset === 'prevQuarter' && !isInQuarter(d, prevQuarter.quarter, prevQuarter.year)) return false
@@ -243,7 +256,7 @@ export function ExpenseList({
       if (periodPreset === 'toValidate' && !['processing', 'ready_for_payment'].includes(e.status)) return false
       return true
     })
-  }, [expenses, query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, now, prevQuarter, currentQuarter])
+  }, [expenses, query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, dateFrom, dateTo, now, prevQuarter, currentQuarter])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
@@ -304,13 +317,11 @@ export function ExpenseList({
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
   const paginated = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize])
 
-  useEffect(() => { setPage(1) }, [query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, pageSize])
+  useEffect(() => { setPage(1) }, [query, statusFilter, poleFilter, categoryFilter, zoneFilter, periodPreset, dateFrom, dateTo, pageSize])
   useEffect(() => setSelectedIds((ids) => ids.filter((id) => sorted.some((e) => e.id === id))), [sorted])
 
   const allPageSelected = paginated.length > 0 && paginated.every((e) => selectedIds.includes(e.id))
   const selectedExpenses = sorted.filter((e) => selectedIds.includes(e.id))
-  const drawerIndex = sorted.findIndex((e) => e.id === drawerExpenseId)
-  const drawerExpense = drawerIndex >= 0 ? sorted[drawerIndex] : null
 
   const cycleSort = (key: SortKey) => {
     setSort((prev) => {
@@ -417,6 +428,33 @@ export function ExpenseList({
         {/* Saved-view chips */}
         <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-stone-100">
           <Filter className="w-3.5 h-3.5 text-stone-400 mx-1.5" />
+          <div className="inline-flex items-center gap-1.5 mr-1">
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Du</label>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Au</label>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo('') }}
+                className="px-2 py-1 rounded-full text-[11px] font-medium text-stone-500 hover:bg-stone-100"
+                title="Effacer la plage de dates"
+              >
+                Effacer
+              </button>
+            )}
+          </div>
           {([
             ['all', 'Tout'],
             ['thisMonth', 'Ce mois-ci'],
@@ -555,7 +593,7 @@ export function ExpenseList({
                     <tr
                       key={e.id}
                       className={`group cursor-pointer transition-colors ${rowBg}`}
-                      onClick={() => setDrawerExpenseId(e.id)}
+                      onClick={() => onEditExpense(e)}
                     >
                       <td className="pl-4 pr-2 relative" onClick={(ev) => ev.stopPropagation()}>
                         {/* Status indicator stripe — emerald takes over when fully reconciled */}
@@ -772,21 +810,6 @@ export function ExpenseList({
         </div>
       )}
 
-      {drawerExpense && (
-        <ExpenseDrawer
-          expense={drawerExpense}
-          onClose={() => setDrawerExpenseId(null)}
-          onPrev={() => drawerIndex > 0 && setDrawerExpenseId(sorted[drawerIndex - 1].id)}
-          onNext={() => drawerIndex < sorted.length - 1 && setDrawerExpenseId(sorted[drawerIndex + 1].id)}
-          onEdit={() => onEditExpense(drawerExpense)}
-          onMarkReimbursed={onInlineUpdate ? async (id) => {
-            await onInlineUpdate(id, { reimbursed: true, reimbursementDate: new Date().toISOString().slice(0, 10) })
-          } : undefined}
-          hasPrev={drawerIndex > 0}
-          hasNext={drawerIndex < sorted.length - 1}
-        />
-      )}
-
       {quickEdit && (
         <ProjectableQuickEditModal
           entity={{ type: 'expense', id: quickEdit.expense.id, label: quickEdit.expense.name || quickEdit.expense.supplier }}
@@ -795,8 +818,12 @@ export function ExpenseList({
               ? { type: quickEdit.expense.projectableType as ProjectableValue['type'], id: quickEdit.expense.projectableId }
               : null
           }
-          onSaved={(next) => {
-            if (onInlineUpdate) {
+          onSaved={(next, updated) => {
+            // Prefer a surgical single-row replace from the PATCH response; fall
+            // back to the inline-update path (full refetch) only if unavailable.
+            if (updated && onRowReplace) {
+              onRowReplace(updated as unknown as ExpenseItem)
+            } else if (onInlineUpdate) {
               onInlineUpdate(quickEdit.expense.id, {
                 projectableType: next?.type ?? null,
                 projectableId: next?.id ?? null,
@@ -953,317 +980,5 @@ function SortHeader({ label, dir, onClick, right }: { label: string; dir?: 'asc'
         )}
       </button>
     </th>
-  )
-}
-
-function ExpenseDrawer({
-  expense,
-  onClose,
-  onPrev,
-  onNext,
-  onEdit,
-  onMarkReimbursed,
-  hasPrev,
-  hasNext,
-}: {
-  expense: ExpenseItem
-  onClose: () => void
-  onPrev: () => void
-  onNext: () => void
-  onEdit: () => void
-  onMarkReimbursed?: (id: string) => Promise<void> | void
-  hasPrev: boolean
-  hasNext: boolean
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft' && hasPrev) onPrev()
-      if (e.key === 'ArrowRight' && hasNext) onNext()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose, onPrev, onNext, hasPrev, hasNext])
-
-  const [reimbBusy, setReimbBusy] = useState(false)
-
-  const isMemberAdvance = expense.paymentType === 'reimbursement_michael' || expense.paymentType === 'member'
-  const needsReimbursement = isMemberAdvance && !expense.reimbursed
-
-  // Document rendering classification
-  const docType = (() => {
-    const url = expense.documentUrl
-    if (!url) return null
-    const lower = (expense.documentFilename || url).toLowerCase()
-    if (lower.endsWith('.pdf')) return 'pdf'
-    if (/\.(jpe?g|png|gif|webp|avif|bmp|heic|heif)(\?|$)/.test(lower)) return 'image'
-    return 'other'
-  })()
-
-  return (
-    <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm animate-[fadeIn_.15s_ease-out]" onClick={onClose}>
-      <aside
-        className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-2xl flex flex-col animate-[slideInRight_.25s_cubic-bezier(0.16,1,0.3,1)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header band */}
-        <div className="relative px-6 pt-6 pb-5 border-b border-stone-100">
-          <div className={`absolute left-0 top-6 bottom-5 w-[3px] rounded-full ${STATUS_BAR[expense.status] ?? 'bg-stone-200'}`} aria-hidden />
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 pl-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400 font-medium">
-                Dépense · {fmtDate(expense.invoiceDate)}
-              </p>
-              <h3 className="mt-1 font-serif text-2xl text-stone-900 leading-tight truncate">
-                {expense.supplier || expense.name || 'Sans fournisseur'}
-              </h3>
-              {expense.name && expense.name !== expense.supplier && (
-                <p className="mt-1 text-sm text-stone-500 truncate">{expense.name}</p>
-              )}
-            </div>
-            <button
-              onClick={onClose}
-              className="shrink-0 p-1.5 rounded-md text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors"
-              aria-label="Fermer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Amounts hero */}
-          <div className="mt-5 pl-3 flex items-baseline gap-6">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">Total TTC</div>
-              <div className="font-mono tabular-nums text-3xl font-semibold text-[#5B5781]">{fmtMoney(expense.totalInclVat)}</div>
-            </div>
-            <div className="h-10 w-px bg-stone-200" />
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">HT</div>
-              <div className="font-mono tabular-nums text-base text-stone-600">{fmtMoney(expense.amountExclVat)}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <dl className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
-            <DrawerField label="Statut">
-              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ring-1 ring-inset ${STATUS_PILL[expense.status] ?? 'text-stone-600 ring-stone-300'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_BAR[expense.status] ?? 'bg-stone-300'}`} />
-                {STATUS_LABELS[expense.status] ?? expense.status}
-              </span>
-            </DrawerField>
-            <DrawerField label="Catégorie">
-              {expense.categoryLabel || expense.category || <span className="text-stone-400 italic">Non catégorisée</span>}
-            </DrawerField>
-            <DrawerField label="Type">
-              {EXPENSE_TYPE_LABELS[expense.expenseType] ?? expense.expenseType}
-            </DrawerField>
-            <DrawerField label="Zone facturation">
-              {expense.billingZone ? (BILLING_ZONE_LABELS[expense.billingZone] ?? expense.billingZone) : '—'}
-            </DrawerField>
-            <DrawerField label="Pôles" wide>
-              {(expense.poles || []).length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {(expense.poles || []).map((p) => (
-                    <span key={p} className="inline-flex items-center px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-xs font-medium">
-                      {POLE_LABELS[p] ?? p}
-                    </span>
-                  ))}
-                </div>
-              ) : '—'}
-            </DrawerField>
-            {expense.paymentDate && (
-              <DrawerField label="Payée le">{fmtDate(expense.paymentDate)}</DrawerField>
-            )}
-            {expense.paymentType && (
-              <DrawerField label="Mode paiement">{expense.paymentType}</DrawerField>
-            )}
-          </dl>
-
-          {expense.notes && (
-            <div className="mt-6">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium mb-2">Notes</div>
-              <div className="rounded-lg bg-stone-50 border border-stone-200/60 p-4 text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">
-                {stripHtml(expense.notes)}
-              </div>
-            </div>
-          )}
-
-          {/* Linked bank transactions */}
-          <div className="mt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Landmark className="w-3.5 h-3.5 text-stone-400" />
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">
-                Transactions bancaires liées
-              </div>
-              {(expense.bankTransactions?.length ?? 0) > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-stone-100 text-stone-600">
-                  {expense.bankTransactions!.length}
-                </span>
-              )}
-            </div>
-            {(expense.bankTransactions ?? []).length === 0 ? (
-              <div className="rounded-lg border border-dashed border-stone-200 p-3 text-xs text-stone-500">
-                Aucune transaction bancaire rapprochée à cette dépense.
-              </div>
-            ) : (
-              <ul className="space-y-1.5">
-                {(expense.bankTransactions ?? []).map((tx) => (
-                  <li
-                    key={tx.reconciliationId}
-                    className={`rounded-lg border px-3 py-2 text-sm flex items-center gap-3 ${
-                      tx.confidence === 'auto' ? 'bg-emerald-50/40 border-emerald-200/60' : 'bg-white border-stone-200'
-                    }`}
-                  >
-                    <div className="shrink-0 w-7 h-7 rounded-full bg-stone-100 text-stone-500 inline-flex items-center justify-center">
-                      <Landmark className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-[11px] text-stone-500">
-                        <span className="font-medium text-stone-600">{tx.bankName || tx.provider || '—'}</span>
-                        <span>·</span>
-                        <span className="font-mono">{fmtDate(tx.date)}</span>
-                        {tx.confidence === 'auto' && (
-                          <span className="text-emerald-700 text-[10px] uppercase tracking-wider font-semibold">auto</span>
-                        )}
-                      </div>
-                      <div className="text-stone-900 truncate">{tx.counterpartName || tx.remittanceInfo || '—'}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-mono font-semibold text-stone-900 text-sm">{fmtMoney(Math.abs(tx.allocatedAmount))}</div>
-                      {Math.abs(tx.allocatedAmount) !== Math.abs(tx.amount) && (
-                        <div className="text-[10px] text-stone-400 font-mono">sur {fmtMoney(Math.abs(tx.amount))}</div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Document preview */}
-          {expense.documentUrl && (
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-2">
-                <FileText className="w-3.5 h-3.5 text-stone-400" />
-                <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">
-                  Document
-                </div>
-                {expense.documentFilename && (
-                  <span className="text-[11px] text-stone-500 font-mono truncate">{expense.documentFilename}</span>
-                )}
-                <a
-                  href={expense.documentUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-auto text-[11px] font-medium text-[#5B5781] hover:underline"
-                >
-                  Ouvrir
-                </a>
-              </div>
-              {docType === 'pdf' && (
-                <div className="rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
-                  <object
-                    data={`${expense.documentUrl}#toolbar=0&navpanes=0`}
-                    type="application/pdf"
-                    className="w-full h-[600px] block"
-                  >
-                    <div className="p-6 text-sm text-stone-500 text-center">
-                      Impossible d'afficher le PDF.{' '}
-                      <a href={expense.documentUrl} target="_blank" rel="noreferrer" className="text-[#5B5781] underline">
-                        Cliquez pour l'ouvrir.
-                      </a>
-                    </div>
-                  </object>
-                </div>
-              )}
-              {docType === 'image' && (
-                <a href={expense.documentUrl} target="_blank" rel="noreferrer" className="block rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
-                  <img
-                    src={expense.documentUrl}
-                    alt={expense.documentFilename || 'Document'}
-                    className="w-full h-auto block"
-                  />
-                </a>
-              )}
-              {docType === 'other' && (
-                <a
-                  href={expense.documentUrl}
-                  download={expense.documentFilename || undefined}
-                  className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white p-3 hover:border-stone-300 transition-colors"
-                >
-                  <div className="shrink-0 w-10 h-10 rounded-lg bg-stone-100 inline-flex items-center justify-center text-stone-500">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-stone-800 truncate">
-                      {expense.documentFilename || 'Télécharger le document'}
-                    </div>
-                    <div className="text-[11px] text-stone-400">Cliquez pour télécharger</div>
-                  </div>
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-stone-100 bg-stone-50/40 flex items-center gap-2">
-          <button
-            onClick={onPrev}
-            disabled={!hasPrev}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Dépense précédente"
-            title="Précédente (←)"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onNext}
-            disabled={!hasNext}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Dépense suivante"
-            title="Suivante (→)"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          {needsReimbursement && onMarkReimbursed && (
-            <button
-              onClick={async () => {
-                setReimbBusy(true)
-                try {
-                  await onMarkReimbursed(expense.id)
-                } finally {
-                  setReimbBusy(false)
-                }
-              }}
-              disabled={reimbBusy}
-              className="ml-auto inline-flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700 px-5 py-2 text-sm font-medium transition-colors disabled:opacity-50"
-              title={`Marquer comme remboursée${expense.paidBy ? ` (payée par ${expense.paidBy})` : ''}`}
-            >
-              <Check className="w-4 h-4" />
-              {reimbBusy ? 'Enregistrement…' : 'Marquer remboursée'}
-            </button>
-          )}
-          <button
-            onClick={onEdit}
-            className={`${needsReimbursement ? '' : 'ml-auto'} inline-flex items-center gap-2 rounded-full bg-stone-900 hover:bg-[#5B5781] text-white px-5 py-2 text-sm font-medium transition-colors`}
-          >
-            <Edit3 className="w-4 h-4" />
-            Modifier
-          </button>
-        </div>
-      </aside>
-    </div>
-  )
-}
-
-function DrawerField({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return (
-    <div className={wide ? 'col-span-2' : ''}>
-      <dt className="text-[10px] uppercase tracking-[0.14em] text-stone-400 font-medium">{label}</dt>
-      <dd className="mt-1 text-stone-800">{children}</dd>
-    </div>
   )
 }

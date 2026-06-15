@@ -19,6 +19,7 @@ class Revenue < ApplicationRecord
   belongs_to :organization
 
   before_validation :assign_default_organization, on: :create
+  before_validation :normalize_not_null_strings
 
   validates :amount, numericality: { greater_than_or_equal_to: 0 }
   validates :pole, inclusion: { in: POLES }, allow_blank: true
@@ -61,6 +62,13 @@ class Revenue < ApplicationRecord
 
   def assign_default_organization
     self.organization ||= Organization.default
+  end
+
+  # `vat_rate` is a NOT NULL string column (default ""), but clients (e.g. the
+  # admin revenue form) send `null` when the VAT rate is blank — which raises a
+  # PG::NotNullViolation on update. Coerce nil back to the column default.
+  def normalize_not_null_strings
+    self.vat_rate = "" if vat_rate.nil?
   end
 
   def refresh_linked_registration_payment_status

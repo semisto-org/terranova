@@ -14,8 +14,8 @@ module Api
       before_action :set_expense_category, only: [:update_expense_category, :destroy_expense_category, :reassign_expense_category]
       before_action :set_timesheet_service_type, only: [:update_timesheet_service_type, :destroy_timesheet_service_type]
       before_action :set_timesheet, only: [:update_timesheet, :destroy_timesheet, :mark_invoiced]
-      before_action :set_expense, only: [:update_expense, :destroy_expense]
-      before_action :set_revenue, only: [:update_revenue, :destroy_revenue, :upload_revenue_documents, :destroy_revenue_document]
+      before_action :set_expense, only: [:update_expense, :destroy_expense, :expense_transaction_candidates]
+      before_action :set_revenue, only: [:update_revenue, :destroy_revenue, :upload_revenue_documents, :destroy_revenue_document, :revenue_transaction_candidates]
       before_action :set_album, only: [:update_album, :destroy_album, :album_media, :upload_album_media, :delete_album_media]
 
       def overview
@@ -714,6 +714,30 @@ module Api
         head :no_content
       end
 
+      # Unreconciled bank transactions of the same amount within ±3 months of the
+      # expense date — candidates to reconcile directly from the expense drawer.
+      def expense_transaction_candidates
+        render json: {
+          items: candidate_bank_transactions(
+            target_amount: @expense.total_incl_vat,
+            ref_date: @expense.invoice_date || @expense.created_at.to_date,
+            inflow: false
+          )
+        }
+      end
+
+      # Unreconciled bank transactions of the same amount within ±3 months of the
+      # revenue date — candidates to reconcile directly from the revenue drawer.
+      def revenue_transaction_candidates
+        render json: {
+          items: candidate_bank_transactions(
+            target_amount: @revenue.amount,
+            ref_date: @revenue.date || @revenue.created_at.to_date,
+            inflow: true
+          )
+        }
+      end
+
       def upload_revenue_documents
         files = Array(params[:documents]).reject(&:blank?)
         return render json: { error: "No documents provided" }, status: :unprocessable_entity if files.empty?
@@ -1215,6 +1239,49 @@ module Api
             confidence: r.confidence
           }
         end.compact
+      end
+
+      # Unreconciled bank transactions matching a target amount (±0.01) within
+      # ±3 months of a reference date. `inflow: false` looks for outflows
+      # (expenses, negative amounts); `inflow: true` for inflows (revenues).
+      # Sorted by date proximity to the reference date.
+      def candidate_bank_transactions(target_amount:, ref_date:, inflow:)
+        amount = target_amount.to_d
+        return [] if amount <= 0
+
+        tol = BankReconciliation::AMOUNT_TOLERANCE
+        ref = ref_date || Date.current
+        window = (ref - 3.months)..(ref + 3.months)
+
+        scope = BankTransaction
+          .includes(:bank_connection)
+          .left_joins(:bank_reconciliations)
+          .where(bank_reconciliations: { id: nil })
+          .where(date: window)
+
+        scope = if inflow
+          scope.where(amount: (amount - tol)..(amount + tol))
+        else
+          scope.where(amount: (-(amount + tol))..(-(amount - tol)))
+        end
+
+        scope.to_a
+          .sort_by { |tx| (tx.date - ref).abs }
+          .first(25)
+          .map { |tx| serialize_candidate_bank_transaction(tx) }
+      end
+
+      def serialize_candidate_bank_transaction(tx)
+        {
+          transactionId: tx.id.to_s,
+          connectionId: tx.bank_connection_id.to_s,
+          bankName: tx.bank_connection&.bank_name,
+          provider: tx.bank_connection&.provider,
+          date: tx.date&.iso8601,
+          amount: tx.amount.to_f,
+          counterpartName: tx.counterpart_name,
+          remittanceInfo: tx.remittance_info
+        }
       end
 
       def replace_event_attendees(event, attendee_ids)

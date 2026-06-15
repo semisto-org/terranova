@@ -149,6 +149,9 @@ export interface RevenueListProps {
   onDeleteRevenue: (revenueId: string) => void
   onViewRevenue: (revenue: RevenueItem) => void
   onUpdateRevenue?: (revenueId: string, patch: Partial<RevenueItem>) => Promise<void>
+  // Called with the full re-serialized row after the project link changes, so the
+  // parent can replace just that row in state instead of reloading the whole table.
+  onRowReplace?: (updated: RevenueItem) => void
   onBulkUpdateRevenues?: (ids: string[], patch: Partial<RevenueItem>) => Promise<void>
 }
 
@@ -161,6 +164,7 @@ export function RevenueList({
   onDeleteRevenue,
   onViewRevenue,
   onUpdateRevenue,
+  onRowReplace,
   onBulkUpdateRevenues,
 }: RevenueListProps) {
   const [query, setQuery] = useState('')
@@ -169,12 +173,13 @@ export function RevenueList({
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [periodPreset, setPeriodPreset] = useState<'all' | 'thisMonth' | 'thisQuarter' | 'prevQuarter' | 'pending' | 'received' | 'followUp'>('all')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
   const [density, setDensity] = useState<Density>('comfort')
   const [sort, setSort] = useState<Array<{ key: SortKey; dir: 'asc' | 'desc' }>>([{ key: 'date', dir: 'desc' }])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(100)
-  const [drawerRevenueId, setDrawerRevenueId] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [quickEdit, setQuickEdit] = useState<{ revenue: RevenueItem } | null>(null)
 
@@ -199,6 +204,14 @@ export function RevenueList({
       if (sourceFilter !== 'all' && r.contactName !== sourceFilter) return false
 
       const d = toDate(r.date || r.createdAt)
+      if (dateFrom) {
+        const from = new Date(`${dateFrom}T00:00:00`)
+        if (!d || d < from) return false
+      }
+      if (dateTo) {
+        const to = new Date(`${dateTo}T23:59:59.999`)
+        if (!d || d > to) return false
+      }
       if (periodPreset === 'thisMonth' && (!d || d.getMonth() !== month || d.getFullYear() !== year)) return false
       if (periodPreset === 'thisQuarter' && (!d || !isInQuarter(d, currentQuarter.quarter, currentQuarter.year))) return false
       if (periodPreset === 'prevQuarter' && (!d || !isInQuarter(d, prevQuarter.quarter, prevQuarter.year))) return false
@@ -207,7 +220,7 @@ export function RevenueList({
       if (periodPreset === 'followUp' && r.status !== 'confirmed') return false
       return true
     })
-  }, [revenues, query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, now, prevQuarter, currentQuarter])
+  }, [revenues, query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, dateFrom, dateTo, now, prevQuarter, currentQuarter])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
@@ -304,12 +317,10 @@ export function RevenueList({
 
   useEffect(() => {
     setPage(1)
-  }, [query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, pageSize])
+  }, [query, statusFilter, poleFilter, categoryFilter, sourceFilter, periodPreset, dateFrom, dateTo, pageSize])
   useEffect(() => setSelectedIds((ids) => ids.filter((id) => sorted.some((r) => r.id === id))), [sorted])
 
   const allPageSelected = paginated.length > 0 && paginated.every((r) => selectedIds.includes(r.id))
-  const drawerIndex = sorted.findIndex((r) => r.id === drawerRevenueId)
-  const drawerRevenue = drawerIndex >= 0 ? sorted[drawerIndex] : null
 
   const cycleSort = (key: SortKey) => {
     setSort((prev) => {
@@ -435,6 +446,33 @@ export function RevenueList({
         {/* Saved-view chips */}
         <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-stone-100">
           <Filter className="w-3.5 h-3.5 text-stone-400 mx-1.5" />
+          <div className="inline-flex items-center gap-1.5 mr-1">
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Du</label>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            <label className="text-[11px] uppercase tracking-wider text-stone-400">Au</label>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-stone-200 text-xs text-stone-700 bg-white outline-none focus:border-stone-400"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo('') }}
+                className="px-2 py-1 rounded-full text-[11px] font-medium text-stone-500 hover:bg-stone-100"
+                title="Effacer la plage de dates"
+              >
+                Effacer
+              </button>
+            )}
+          </div>
           {(
             [
               ['all', 'Tout'],
@@ -582,7 +620,7 @@ export function RevenueList({
                       className={`group cursor-pointer transition-colors ${
                         isSelected ? 'bg-[#5B5781]/[0.04]' : 'hover:bg-stone-50/70'
                       }`}
-                      onClick={() => setDrawerRevenueId(r.id)}
+                      onClick={() => onEditRevenue(r)}
                     >
                       <td className="pl-4 pr-2 relative" onClick={(ev) => ev.stopPropagation()}>
                         <span
@@ -815,18 +853,6 @@ export function RevenueList({
         </div>
       )}
 
-      {drawerRevenue && (
-        <RevenueDrawer
-          revenue={drawerRevenue}
-          onClose={() => setDrawerRevenueId(null)}
-          onPrev={() => drawerIndex > 0 && setDrawerRevenueId(sorted[drawerIndex - 1].id)}
-          onNext={() => drawerIndex < sorted.length - 1 && setDrawerRevenueId(sorted[drawerIndex + 1].id)}
-          onEdit={() => onEditRevenue(drawerRevenue)}
-          hasPrev={drawerIndex > 0}
-          hasNext={drawerIndex < sorted.length - 1}
-        />
-      )}
-
       {quickEdit && (
         <ProjectableQuickEditModal
           entity={{ type: 'revenue', id: quickEdit.revenue.id, label: quickEdit.revenue.label || quickEdit.revenue.description }}
@@ -835,12 +861,18 @@ export function RevenueList({
               ? { type: quickEdit.revenue.projectableType as ProjectableValue['type'], id: quickEdit.revenue.projectableId }
               : null
           }
-          onSaved={(next) => {
-            patchRevenue(quickEdit.revenue.id, {
-              projectableType: next?.type ?? null,
-              projectableId: next?.id ?? null,
-              projectName: next ? quickEdit.revenue.projectName : null,
-            } as Partial<RevenueItem>)
+          onSaved={(next, updated) => {
+            // Prefer a surgical single-row replace from the PATCH response; fall
+            // back to the patch path (full refetch) only if unavailable.
+            if (updated && onRowReplace) {
+              onRowReplace(updated as unknown as RevenueItem)
+            } else {
+              patchRevenue(quickEdit.revenue.id, {
+                projectableType: next?.type ?? null,
+                projectableId: next?.id ?? null,
+                projectName: next ? quickEdit.revenue.projectName : null,
+              } as Partial<RevenueItem>)
+            }
             setQuickEdit(null)
           }}
           onCancel={() => setQuickEdit(null)}
@@ -1046,252 +1078,5 @@ function SortHeader({
         )}
       </button>
     </th>
-  )
-}
-
-function RevenueDrawer({
-  revenue,
-  onClose,
-  onPrev,
-  onNext,
-  onEdit,
-  hasPrev,
-  hasNext,
-}: {
-  revenue: RevenueItem
-  onClose: () => void
-  onPrev: () => void
-  onNext: () => void
-  onEdit: () => void
-  hasPrev: boolean
-  hasNext: boolean
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft' && hasPrev) onPrev()
-      if (e.key === 'ArrowRight' && hasNext) onNext()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose, onPrev, onNext, hasPrev, hasNext])
-
-  const descr = revenue.description || revenue.label
-  const totalVat = Number(revenue.vat6 || 0) + Number(revenue.vat21 || 0)
-
-  return (
-    <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm animate-[fadeIn_.15s_ease-out]" onClick={onClose}>
-      <aside
-        className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-2xl flex flex-col animate-[slideInRight_.25s_cubic-bezier(0.16,1,0.3,1)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header band */}
-        <div className="relative px-6 pt-6 pb-5 border-b border-stone-100">
-          <div
-            className={`absolute left-0 top-6 bottom-5 w-[3px] rounded-full ${STATUS_BAR[revenue.status] ?? 'bg-stone-200'}`}
-            aria-hidden
-          />
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 pl-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400 font-medium">
-                Recette · {fmtDate(revenue.date)}
-              </p>
-              <h3 className="mt-1 font-serif text-2xl text-stone-900 leading-tight truncate">
-                {revenue.contactName || revenue.label || 'Sans source'}
-              </h3>
-              {descr && <p className="mt-1 text-sm text-stone-500 truncate">{descr}</p>}
-            </div>
-            <button
-              onClick={onClose}
-              className="shrink-0 p-1.5 rounded-md text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors"
-              aria-label="Fermer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Amounts hero */}
-          <div className="mt-5 pl-3 flex items-baseline gap-6">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">Total TTC</div>
-              <div className="font-mono tabular-nums text-3xl font-semibold text-[#5B5781]">
-                {fmtMoney(revenue.amount)}
-              </div>
-            </div>
-            <div className="h-10 w-px bg-stone-200" />
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">HT</div>
-              <div className="font-mono tabular-nums text-base text-stone-600">{fmtMoney(revenue.amountExclVat)}</div>
-            </div>
-            {totalVat > 0 && (
-              <>
-                <div className="h-10 w-px bg-stone-200" />
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">TVA</div>
-                  <div className="font-mono tabular-nums text-base text-stone-600">{fmtMoney(totalVat)}</div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <dl className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
-            <DrawerField label="Statut">
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ring-1 ring-inset ${
-                  STATUS_PILL[revenue.status] ?? 'text-stone-600 ring-stone-300'
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_BAR[revenue.status] ?? 'bg-stone-300'}`} />
-                {STATUS_LABELS[revenue.status] ?? revenue.status}
-              </span>
-            </DrawerField>
-            <DrawerField label="Catégorie">
-              {revenue.category ? (
-                revenue.category
-              ) : (
-                <span className="text-stone-400 italic">Non catégorisée</span>
-              )}
-            </DrawerField>
-            <DrawerField label="Pôle">
-              {revenue.pole ? POLE_LABELS[revenue.pole] ?? revenue.pole : '—'}
-            </DrawerField>
-            <DrawerField label="Type">{revenue.revenueType || '—'}</DrawerField>
-            {revenue.vatRate && <DrawerField label="Taux TVA">{revenue.vatRate}</DrawerField>}
-            {revenue.vatExemption && <DrawerField label="Exonération TVA">{revenue.vatExemption}</DrawerField>}
-            {revenue.paymentMethod && <DrawerField label="Mode paiement">{revenue.paymentMethod}</DrawerField>}
-            {revenue.paidAt && <DrawerField label="Encaissée le">{fmtDate(revenue.paidAt)}</DrawerField>}
-            {revenue.invoiceUrl && (
-              <DrawerField label="Facture" wide>
-                <a
-                  href={revenue.invoiceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[#5B5781] hover:underline"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  Consulter le document
-                </a>
-              </DrawerField>
-            )}
-          </dl>
-
-          {revenue.notes && (
-            <div className="mt-6">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium mb-2">Notes</div>
-              <div className="rounded-lg bg-stone-50 border border-stone-200/60 p-4 text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">
-                {stripHtml(revenue.notes)}
-              </div>
-            </div>
-          )}
-
-          {(revenue.documents?.length ?? 0) > 0 && (
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Paperclip className="w-3 h-3 text-stone-400" />
-                <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">
-                  Documents · {revenue.documents!.length}
-                </div>
-              </div>
-              <div className="space-y-3">
-                {revenue.documents!.map((doc) => (
-                  <DocumentPreview key={doc.id} doc={doc} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-stone-100 bg-stone-50/40 flex items-center gap-2">
-          <button
-            onClick={onPrev}
-            disabled={!hasPrev}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Recette précédente"
-            title="Précédente (←)"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onNext}
-            disabled={!hasNext}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Recette suivante"
-            title="Suivante (→)"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onEdit}
-            className="ml-auto inline-flex items-center gap-2 rounded-full bg-stone-900 hover:bg-[#5B5781] text-white px-5 py-2 text-sm font-medium transition-colors"
-          >
-            <Edit3 className="w-4 h-4" />
-            Modifier
-          </button>
-        </div>
-      </aside>
-    </div>
-  )
-}
-
-function DrawerField({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return (
-    <div className={wide ? 'col-span-2' : ''}>
-      <dt className="text-[10px] uppercase tracking-[0.14em] text-stone-400 font-medium">{label}</dt>
-      <dd className="mt-1 text-stone-800">{children}</dd>
-    </div>
-  )
-}
-
-function DocumentPreview({ doc }: { doc: RevenueDocument }) {
-  const fmtSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-  }
-  const isImage = Boolean(doc.contentType?.startsWith('image/'))
-  const isPdf = doc.contentType === 'application/pdf'
-
-  return (
-    <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
-      <div className="flex items-center gap-3 px-3 py-2 border-b border-stone-100 bg-stone-50/50">
-        <span className="shrink-0 w-7 h-7 rounded-md bg-white border border-stone-200 text-stone-500 flex items-center justify-center">
-          {isImage ? <ImageIcon className="w-3.5 h-3.5" /> : isPdf ? <FileText className="w-3.5 h-3.5" /> : <Paperclip className="w-3.5 h-3.5" />}
-        </span>
-        <a
-          href={doc.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 min-w-0 text-sm text-stone-800 hover:text-[#5B5781] truncate font-medium"
-          title={doc.filename}
-        >
-          {doc.filename}
-        </a>
-        <span className="shrink-0 text-[11px] font-mono text-stone-400">{fmtSize(doc.byteSize)}</span>
-      </div>
-      {isImage ? (
-        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="block bg-stone-50">
-          <img src={doc.url} alt={doc.filename} className="w-full max-h-[420px] object-contain" />
-        </a>
-      ) : isPdf ? (
-        <object data={doc.url} type="application/pdf" className="w-full h-[480px] bg-stone-50" aria-label={doc.filename}>
-          <div className="px-4 py-6 text-center text-sm text-stone-500">
-            Aperçu indisponible —{' '}
-            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-[#5B5781] hover:underline">
-              ouvrir le PDF
-            </a>
-          </div>
-        </object>
-      ) : (
-        <div className="px-4 py-4 text-center text-xs text-stone-500">
-          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-[#5B5781] hover:underline">
-            Télécharger le fichier
-          </a>
-        </div>
-      )}
-    </div>
   )
 }

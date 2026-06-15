@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
 import { apiRequest } from '../../lib/api'
 
@@ -29,6 +30,10 @@ export interface ProjectableOption {
   id: string
   name: string
   typeKey: ProjectableTypeKey
+  // Plage de dates des sessions pour les activités Academy (typeKey 'training'),
+  // affichée sous le nom pour départager des formations au libellé identique.
+  // Absent/undefined pour les autres types.
+  dateLabel?: string
 }
 
 const GROUPS: { typeKey: ProjectableTypeKey; label: string; color: string; bg: string }[] = [
@@ -75,8 +80,33 @@ export function ProjectableCombobox({
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  // Dropdown is rendered in a portal (position:fixed) so it escapes the
+  // `overflow-hidden` of any modal/table container that would otherwise clip it.
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties | null>(null)
+
+  const positionMenu = useCallback(() => {
+    const btn = buttonRef.current
+    if (!btn) return
+    const rect = btn.getBoundingClientRect()
+    const margin = 6
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    const openUp = spaceBelow < 240 && spaceAbove > spaceBelow
+    const maxHeight = Math.max(180, (openUp ? spaceAbove : spaceBelow) - margin * 2)
+    setMenuStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      maxHeight,
+      ...(openUp
+        ? { bottom: window.innerHeight - rect.top + margin }
+        : { top: rect.bottom + margin }),
+    })
+  }, [])
 
   useEffect(() => {
     if (projectsProp) return
@@ -127,9 +157,25 @@ export function ProjectableCombobox({
   }, [flatItems])
 
   useEffect(() => {
+    if (!open) { setMenuStyle(null); return }
+    positionMenu()
+    const reposition = () => positionMenu()
+    window.addEventListener('resize', reposition)
+    // Capture phase so scrolling inside a modal/table container also repositions.
+    window.addEventListener('scroll', reposition, true)
+    return () => {
+      window.removeEventListener('resize', reposition)
+      window.removeEventListener('scroll', reposition, true)
+    }
+  }, [open, positionMenu])
+
+  useEffect(() => {
     if (!open) return
     const onDocClick = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (wrapperRef.current?.contains(target)) return
+      if (menuRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
@@ -183,6 +229,7 @@ export function ProjectableCombobox({
   return (
     <div ref={wrapperRef} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => !disabled && setOpen((v) => !v)}
         disabled={disabled}
@@ -202,6 +249,9 @@ export function ProjectableCombobox({
               </span>
             )}
             <span className="text-stone-900 truncate">{selected.name}</span>
+            {selected.dateLabel && (
+              <span className="text-stone-400 text-xs shrink-0 truncate">· {selected.dateLabel}</span>
+            )}
           </span>
         ) : (
           <span className="text-stone-400">{placeholder}</span>
@@ -209,9 +259,13 @@ export function ProjectableCombobox({
         <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
       </button>
 
-      {open && (
-        <div className="absolute z-30 mt-1.5 w-full rounded-lg bg-white border border-stone-200 shadow-xl overflow-hidden">
-          <div className="relative border-b border-stone-100">
+      {open && menuStyle && createPortal(
+        <div
+          ref={menuRef}
+          style={menuStyle}
+          className="z-[100] flex flex-col rounded-lg bg-white border border-stone-200 shadow-xl overflow-hidden"
+        >
+          <div className="relative border-b border-stone-100 shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
             <input
               ref={searchRef}
@@ -224,7 +278,7 @@ export function ProjectableCombobox({
             />
           </div>
 
-          <ul ref={listRef} className="max-h-72 overflow-y-auto py-1">
+          <ul ref={listRef} className="flex-1 min-h-0 overflow-y-auto py-1">
             {value && (
               <li>
                 <button
@@ -266,7 +320,12 @@ export function ProjectableCombobox({
                             } ${isSelected ? 'font-medium' : 'text-stone-800'}`}
                             style={isSelected ? { color: group.color } : undefined}
                           >
-                            <span className="flex-1 truncate">{item.name}</span>
+                            <span className="flex-1 min-w-0">
+                              <span className="block truncate">{item.name}</span>
+                              {item.dateLabel && (
+                                <span className="block text-[11px] text-stone-400 truncate">{item.dateLabel}</span>
+                              )}
+                            </span>
                             {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                           </button>
                         </li>
@@ -277,7 +336,8 @@ export function ProjectableCombobox({
               ))
             )}
           </ul>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

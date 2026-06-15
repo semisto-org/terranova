@@ -85,6 +85,7 @@ Rails.application.routes.draw do
   get "catalogue", to: "app#public_catalog"
   get "projects", to: "app#projects"
   get "projects/:type/:id", to: "app#projects"
+  get "/activity", to: "app#activity"
   get "plants", to: "app#plants"
   get "plants/illustrations", to: "plant_illustrations#index"
   get "plants/species/:id/card", to: "plant_cards#show", as: :plant_card
@@ -149,7 +150,39 @@ Rails.application.routes.draw do
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"
       get "member-tasks/:member_id", to: "tasks#member_tasks"
+
+      # Commentaires polymorphes (#102) — routes imbriquées par parent.
+      # Nouveau parent commentable = 3 lignes ici + 1 entrée dans CommentsController::PARENTS.
+      get    "tasks/:task_id/comments",       to: "comments#index"
+      post   "tasks/:task_id/comments",       to: "comments#create"
+      delete "tasks/:task_id/comments/:id",   to: "comments#destroy"
+      get    "events/:event_id/comments",     to: "comments#index"
+      post   "events/:event_id/comments",     to: "comments#create"
+      delete "events/:event_id/comments/:id", to: "comments#destroy"
+
+      # Abonnements polymorphes (#103) — suivre / ne plus suivre + mute projet.
+      get    "tasks/:task_id/subscription",                        to: "subscriptions#show"
+      post   "tasks/:task_id/subscription",                        to: "subscriptions#create"
+      delete "tasks/:task_id/subscription",                        to: "subscriptions#destroy"
+      get    "events/:event_id/subscription",                      to: "subscriptions#show"
+      post   "events/:event_id/subscription",                      to: "subscriptions#create"
+      delete "events/:event_id/subscription",                      to: "subscriptions#destroy"
+      get    "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#show"
+      post   "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#create"
+      delete "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#destroy"
+      get    "projects/:type/:id/mute",                            to: "subscriptions#mute_state"
+      post   "projects/:type/:id/mute",                            to: "subscriptions#mute"
+      delete "projects/:type/:id/mute",                            to: "subscriptions#unmute"
+
+      # Flux d'activité ambiant (#110)
+      get "activity", to: "activity#index"
+
       get "my-projects", to: "projects#my_projects"
+      # Grille « Mon accueil » (home) — placées avant la route dynamique
+      # my-projects/:type/:id/visit pour éviter toute capture de "board"/"reorder".
+      get "my-projects/board", to: "projects#board"
+      patch "my-projects/reorder", to: "projects#reorder"
+      post "my-projects/:type/:id/visit", to: "projects#visit"
 
       # Unified project memberships
       get "projects/:type/:id/members", to: "project_memberships#index"
@@ -297,12 +330,14 @@ Rails.application.routes.draw do
       post "lab/expenses", to: "lab_management#create_expense"
       patch "lab/expenses/:id", to: "lab_management#update_expense"
       delete "lab/expenses/:id", to: "lab_management#destroy_expense"
+      get "lab/expenses/:id/transaction_candidates", to: "lab_management#expense_transaction_candidates"
 
       get "lab/revenues", to: "lab_management#list_revenues"
       get "lab/reporting", to: "lab_management#reporting"
       post "lab/revenues", to: "lab_management#create_revenue"
       patch "lab/revenues/:id", to: "lab_management#update_revenue"
       delete "lab/revenues/:id", to: "lab_management#destroy_revenue"
+      get "lab/revenues/:id/transaction_candidates", to: "lab_management#revenue_transaction_candidates"
       post "lab/revenues/:id/documents", to: "lab_management#upload_revenue_documents"
       delete "lab/revenues/:id/documents/:document_id", to: "lab_management#destroy_revenue_document"
 
@@ -472,6 +507,10 @@ Rails.application.routes.draw do
       post "design/:project_id/duplicate", to: "design_studio#duplicate"
       post "design/:project_id/team-members", to: "design_studio#create_team_member"
       delete "design/:project_id/team-members/:member_id", to: "design_studio#destroy_team_member"
+      get "design/:project_id/clients", to: "design_studio#clients"
+      post "design/:project_id/clients", to: "design_studio#create_client"
+      patch "design/:project_id/clients/:client_id", to: "design_studio#update_client"
+      delete "design/:project_id/clients/:client_id", to: "design_studio#destroy_client"
       post "design/:project_id/timesheets", to: "design_studio#create_timesheet"
       patch "design/timesheets/:timesheet_id", to: "design_studio#update_timesheet"
       delete "design/timesheets/:timesheet_id", to: "design_studio#destroy_timesheet"
@@ -549,6 +588,7 @@ Rails.application.routes.draw do
       get "public/academy/trainings/:training_id", to: "public/academy_registrations#training_info"
       post "public/academy/trainings/:training_id/payment-intent", to: "public/academy_registrations#create_payment_intent"
       post "public/stripe-webhooks", to: "public/stripe_webhooks#create"
+      post "public/tally-webhooks", to: "public/tally_webhooks#create"
 
       get "academy", to: "academy#index"
       get "academy/dashboard", to: "academy#dashboard"

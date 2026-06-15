@@ -18,6 +18,28 @@ if (import.meta.env.PROD) {
   }
 }
 
+// Service worker — coquille PWA pour éliminer l'écran blanc au réveil d'une
+// webview iOS gelée. Uniquement en production (en dev, on ne l'enregistre pas
+// pour ne pas interférer avec le HMR Vite servi sous /vite-dev/).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  // Capturé avant l'enregistrement : si la page n'était pas encore contrôlée,
+  // le premier `controllerchange` est la prise de contrôle initiale (clients.claim)
+  // et ne doit PAS recharger. S'il y avait déjà un contrôleur, un changement = un
+  // nouveau SW déployé → on recharge une fois pour ne pas coincer sur l'ancienne version.
+  const hadController = Boolean(navigator.serviceWorker.controller)
+  let refreshing = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing || !hadController) return
+    refreshing = true
+    window.location.reload()
+  })
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Échec d'enregistrement non bloquant : l'app fonctionne sans SW.
+    })
+  })
+}
+
 const PAGES_WITHOUT_SHELL = ['Auth/Login', 'Auth/ForgotPassword', 'Auth/ResetPassword', 'Design/ClientPortal', 'Academy/Registration', 'MySemisto/Login', 'MySemisto/Dashboard', 'MySemisto/Academy', 'MySemisto/TrainingDetail', 'MySemisto/Directory', 'MySemisto/Profile', 'Public/Catalog', 'Plants/PublicSpecies', 'DesignSystem']
 
 createInertiaApp({
