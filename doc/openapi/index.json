@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 27,
+      "endpointCount": 26,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -119,11 +119,6 @@
           "method": "PATCH",
           "path": "/api/v1/academy/trainings/{training_id}",
           "summary": "update_training"
-        },
-        {
-          "method": "PATCH",
-          "path": "/api/v1/academy/trainings/{training_id}/cancel",
-          "summary": "cancel_training"
         },
         {
           "method": "POST",
@@ -770,6 +765,33 @@
       ]
     },
     {
+      "endpointCount": 4,
+      "file": "notifications.json",
+      "name": "notifications",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications",
+          "summary": "index"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/notifications/read-all",
+          "summary": "mark_all_read"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/unread-count",
+          "summary": "unread_count"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/notifications/{id}/read",
+          "summary": "mark_read"
+        }
+      ]
+    },
+    {
       "endpointCount": 2,
       "file": "notion_records.json",
       "name": "notion_records",
@@ -1284,5 +1306,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 225
+  "totalEndpoints": 228
 }
