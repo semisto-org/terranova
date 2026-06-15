@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -366,6 +366,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "activity_events", force: :cascade do |t|
+    t.string "action", null: false
+    t.bigint "actor_id"
+    t.datetime "created_at", null: false
+    t.bigint "projectable_id"
+    t.string "projectable_type"
+    t.bigint "subject_id", null: false
+    t.string "subject_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_activity_events_on_created_at"
+    t.index ["projectable_type", "projectable_id", "created_at"], name: "index_activity_events_on_projectable_and_created_at"
+    t.index ["subject_type", "subject_id"], name: "index_activity_events_on_subject"
   end
 
   create_table "album_media_items", force: :cascade do |t|
@@ -1506,6 +1520,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
     t.index ["title"], name: "idx_notes_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "activity_event_id", null: false
+    t.bigint "actor_id"
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.bigint "notifiable_id", null: false
+    t.string "notifiable_type", null: false
+    t.datetime "read_at"
+    t.bigint "recipient_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["activity_event_id"], name: "index_notifications_on_activity_event_id"
+    t.index ["recipient_id", "activity_event_id"], name: "index_notifications_on_recipient_and_event", unique: true
+    t.index ["recipient_id", "read_at"], name: "index_notifications_on_recipient_and_read_at"
+    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
+  end
+
   create_table "notion_assets", force: :cascade do |t|
     t.bigint "attachable_id"
     t.string "attachable_type"
@@ -2142,7 +2172,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
     t.datetime "created_at", null: false
     t.boolean "is_paid", default: false
     t.datetime "joined_at"
+    t.datetime "last_visited_at"
     t.bigint "member_id", null: false
+    t.datetime "pinned_at"
+    t.integer "position"
     t.bigint "projectable_id", null: false
     t.string "projectable_type", null: false
     t.string "role"
@@ -2559,6 +2592,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
     t.index ["resource_type"], name: "index_strategy_resources_on_resource_type"
   end
 
+  create_table "subscriptions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "member_id", null: false
+    t.string "state", default: "auto", null: false
+    t.bigint "subscribable_id", null: false
+    t.string "subscribable_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id", "subscribable_type", "subscribable_id"], name: "index_subscriptions_on_member_and_subscribable", unique: true
+    t.index ["member_id"], name: "index_subscriptions_on_member_id"
+    t.index ["subscribable_type", "subscribable_id", "state"], name: "index_subscriptions_on_subscribable_and_state"
+  end
+
   create_table "task_lists", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -2779,6 +2824,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
   add_foreign_key "mentions", "comments"
   add_foreign_key "mentions", "members"
   add_foreign_key "notes", "pole_projects"
+  add_foreign_key "notifications", "activity_events"
+  add_foreign_key "notifications", "members", column: "recipient_id"
   add_foreign_key "notion_assets", "notion_records"
   add_foreign_key "nursery_documentation_entries", "nursery_nurseries", column: "nursery_id"
   add_foreign_key "nursery_order_lines", "nursery_nurseries", column: "nursery_id"
@@ -2849,6 +2896,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_090000) do
   add_foreign_key "strategy_reactions", "members"
   add_foreign_key "strategy_reactions", "strategy_proposals", column: "proposal_id"
   add_foreign_key "strategy_resources", "members", column: "created_by_id"
+  add_foreign_key "subscriptions", "members"
   add_foreign_key "tasks", "members", column: "assignee_id"
   add_foreign_key "tasks", "task_lists"
   add_foreign_key "tasks", "tasks", column: "parent_id"

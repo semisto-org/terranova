@@ -3,6 +3,7 @@
 module Strategy
   class Deliberation < ApplicationRecord
     include SanitizesRichText
+    include Subscribable
 
     self.table_name = "strategy_deliberations"
 
@@ -19,6 +20,9 @@ module Strategy
 
     validates :title, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
+
+    # Abonnement auto (#103) : l'auteur suit sa délibération.
+    after_create -> { auto_subscribe!(creator) }, if: -> { created_by_id.present? }
 
     sanitizes_rich_text :context, :outcome
 

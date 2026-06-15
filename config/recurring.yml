@@ -16,3 +16,8 @@ production:
   trainer_document_request:
     class: TrainerDocumentRequestJob
     schedule: every day at 9am
+  # Échéances proches (#104) : notifie la veille (J-1) les abonnés des tâches
+  # datées ayant un assigné. Idempotent (rejeu sans doublon).
+  task_due_soon_notifications:
+    class: TaskDueSoonNotificationJob
+    schedule: every day at 7am

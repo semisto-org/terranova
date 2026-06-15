@@ -86,6 +86,7 @@ Rails.application.routes.draw do
   get "catalogue", to: "app#public_catalog"
   get "projects", to: "app#projects"
   get "projects/:type/:id", to: "app#projects"
+  get "/activity", to: "app#activity"
   get "plants", to: "app#plants"
   get "plants/illustrations", to: "plant_illustrations#index"
   get "plants/species/:id/card", to: "plant_cards#show", as: :plant_card
@@ -151,7 +152,39 @@ Rails.application.routes.draw do
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"
       get "member-tasks/:member_id", to: "tasks#member_tasks"
+
+      # Commentaires polymorphes (#102) — routes imbriquées par parent.
+      # Nouveau parent commentable = 3 lignes ici + 1 entrée dans CommentsController::PARENTS.
+      get    "tasks/:task_id/comments",       to: "comments#index"
+      post   "tasks/:task_id/comments",       to: "comments#create"
+      delete "tasks/:task_id/comments/:id",   to: "comments#destroy"
+      get    "events/:event_id/comments",     to: "comments#index"
+      post   "events/:event_id/comments",     to: "comments#create"
+      delete "events/:event_id/comments/:id", to: "comments#destroy"
+
+      # Abonnements polymorphes (#103) — suivre / ne plus suivre + mute projet.
+      get    "tasks/:task_id/subscription",                        to: "subscriptions#show"
+      post   "tasks/:task_id/subscription",                        to: "subscriptions#create"
+      delete "tasks/:task_id/subscription",                        to: "subscriptions#destroy"
+      get    "events/:event_id/subscription",                      to: "subscriptions#show"
+      post   "events/:event_id/subscription",                      to: "subscriptions#create"
+      delete "events/:event_id/subscription",                      to: "subscriptions#destroy"
+      get    "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#show"
+      post   "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#create"
+      delete "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#destroy"
+      get    "projects/:type/:id/mute",                            to: "subscriptions#mute_state"
+      post   "projects/:type/:id/mute",                            to: "subscriptions#mute"
+      delete "projects/:type/:id/mute",                            to: "subscriptions#unmute"
+
+      # Flux d'activité ambiant (#110)
+      get "activity", to: "activity#index"
+
       get "my-projects", to: "projects#my_projects"
+      # Grille « Mon accueil » (home) — placées avant la route dynamique
+      # my-projects/:type/:id/visit pour éviter toute capture de "board"/"reorder".
+      get "my-projects/board", to: "projects#board"
+      patch "my-projects/reorder", to: "projects#reorder"
+      post "my-projects/:type/:id/visit", to: "projects#visit"
 
       # Unified project memberships
       get "projects/:type/:id/members", to: "project_memberships#index"

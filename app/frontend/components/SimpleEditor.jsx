@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
+import Mention from '@tiptap/extension-mention'
 
 const ALL_TOOLBAR_ITEMS = [
   'bold', 'italic', 'strike',
@@ -189,10 +190,126 @@ function MenuBar({ editor, toolbar }) {
   )
 }
 
+/* ── @mentions (#102) ──────────────────────────────────────────────────────
+   Liste de suggestion rendue sans tippy : un conteneur positionné en absolu
+   sur document.body, piloté par le plugin Suggestion de TipTap. Le span
+   produit (`<span data-type="mention" data-id="…" data-label="…">`) est le
+   contrat parsé côté serveur (Comment#sync_mentions!) — ne pas dévier. */
+
+const normalizeForSearch = (s) =>
+  (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+const MentionList = forwardRef(function MentionList({ items, command }, ref) {
+  const [selectedIndex, setSelectedIndex] = useState(0)
+
+  useEffect(() => setSelectedIndex(0), [items])
+
+  const selectItem = (index) => {
+    const item = items[index]
+    if (item) command({ id: item.id, label: item.label })
+  }
+
+  useImperativeHandle(ref, () => ({
+    onKeyDown: ({ event }) => {
+      if (event.key === 'ArrowUp') {
+        setSelectedIndex((selectedIndex + items.length - 1) % items.length)
+        return true
+      }
+      if (event.key === 'ArrowDown') {
+        setSelectedIndex((selectedIndex + 1) % items.length)
+        return true
+      }
+      if (event.key === 'Enter') {
+        selectItem(selectedIndex)
+        return true
+      }
+      return false
+    },
+  }), [items, selectedIndex])
+
+  if (!items.length) return null
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white py-1 shadow-lg">
+      {items.map((item, index) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => selectItem(index)}
+          onMouseEnter={() => setSelectedIndex(index)}
+          className={`px-3 py-1.5 text-left text-sm ${
+            index === selectedIndex ? 'bg-stone-100 text-stone-900' : 'text-stone-600'
+          }`}
+        >
+          @{item.label}
+        </button>
+      ))}
+    </div>
+  )
+})
+
+// membersRef est une réf vivante : la liste peut arriver après la création de
+// l'éditeur (chargement async) — items() lit toujours la valeur courante.
+function buildMentionSuggestion(membersRef) {
+  return {
+    items: ({ query }) => {
+      const q = normalizeForSearch(query)
+      return (membersRef.current || [])
+        .filter((m) => normalizeForSearch(m.label).includes(q))
+        .slice(0, 8)
+    },
+    render: () => {
+      let renderer = null
+      let container = null
+
+      const position = (props) => {
+        const rect = props.clientRect?.()
+        if (!rect || !container) return
+        container.style.left = `${rect.left + window.scrollX}px`
+        container.style.top = `${rect.bottom + window.scrollY + 4}px`
+      }
+
+      const destroy = () => {
+        container?.remove()
+        renderer?.destroy()
+        renderer = null
+        container = null
+      }
+
+      return {
+        onStart: (props) => {
+          renderer = new ReactRenderer(MentionList, { props, editor: props.editor })
+          container = document.createElement('div')
+          container.style.position = 'absolute'
+          container.style.zIndex = '100' // au-dessus des modales (z-[60])
+          container.appendChild(renderer.element)
+          document.body.appendChild(container)
+          position(props)
+        },
+        onUpdate: (props) => {
+          renderer?.updateProps(props)
+          position(props)
+        },
+        onKeyDown: (props) => {
+          if (props.event.key === 'Escape') {
+            destroy()
+            return true
+          }
+          return renderer?.ref?.onKeyDown(props) ?? false
+        },
+        onExit: destroy,
+      }
+    },
+  }
+}
+
 const SimpleEditor = forwardRef(function SimpleEditor(
-  { content, onUpdate, placeholder, minHeight = '200px', toolbar },
+  { content, onUpdate, placeholder, minHeight = '200px', toolbar, mentionMembers = null },
   ref,
 ) {
+  const mentionMembersRef = useRef(mentionMembers)
+  useEffect(() => { mentionMembersRef.current = mentionMembers }, [mentionMembers])
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -208,6 +325,16 @@ const SimpleEditor = forwardRef(function SimpleEditor(
           target: '_blank',
         },
       }),
+      // Mention activée seulement quand la prop est fournie au montage —
+      // comportement strictement inchangé pour les autres consommateurs.
+      ...(mentionMembers !== null
+        ? [
+            Mention.configure({
+              HTMLAttributes: { class: 'mention' },
+              suggestion: buildMentionSuggestion(mentionMembersRef),
+            }),
+          ]
+        : []),
     ],
     content: content || '',
     onUpdate: ({ editor }) => {

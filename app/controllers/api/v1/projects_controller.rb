@@ -66,6 +66,85 @@ module Api
         render json: { projects: projectables.map { |p| serialize_my_project(p) } }
       end
 
+      # GET /api/v1/my-projects/board
+      # Grille « Mon accueil » : les projets dont le membre courant fait partie
+      # de l'équipe, tous types confondus, enrichis pour l'affichage en cartes
+      # (compteurs de tâches, couleur du type, épinglage/ordre par membre, et un
+      # point d'activité « a bougé depuis ma dernière visite »).
+      def board
+        memberships = ProjectMembership
+          .where(member_id: current_member.id)
+          .includes(projectable: [:project_memberships, { unified_task_lists: :tasks }])
+
+        # Un membre peut avoir plusieurs rôles (donc plusieurs lignes) sur un même
+        # projet : on regroupe par projectable et on retient une ligne
+        # représentative (la plus ancienne) pour les préférences.
+        projects = memberships
+          .group_by { |pm| [pm.projectable_type, pm.projectable_id] }
+          .filter_map do |_key, pms|
+            representative = pms.min_by(&:id)
+            project = representative.projectable
+            next unless project # projectable supprimé entre-temps → on l'ignore
+
+            serialize_board_project(project, representative)
+          end
+
+        # Ordre par défaut : épinglés d'abord (selon leur position/ordre choisi),
+        # puis le reste par position puis activité la plus récente. Le front
+        # réordonne ensuite en drag-and-drop et persiste via #reorder.
+        projects.sort_by! do |p|
+          [
+            p[:pinnedAt] ? 0 : 1,
+            p[:position] || Float::INFINITY,
+            -Time.iso8601(p[:updatedAt]).to_i
+          ]
+        end
+
+        render json: { projects: projects }
+      end
+
+      # PATCH /api/v1/my-projects/reorder
+      # Persiste l'ordre et l'épinglage de la grille « Mon accueil » pour le
+      # membre courant. Body : { items: [{ type, id, pinned }] } dans l'ordre
+      # d'affichage souhaité (épinglés puis non épinglés).
+      def reorder
+        items = params.permit(items: [:type, :id, :pinned])[:items] || []
+
+        ProjectMembership.transaction do
+          items.each_with_index do |item, index|
+            klass_name = Projectable::PROJECT_TYPE_KEYS.key(item[:type])
+            next unless klass_name
+
+            pinned = ActiveModel::Type::Boolean.new.cast(item[:pinned])
+            ProjectMembership
+              .where(member_id: current_member.id, projectable_type: klass_name, projectable_id: item[:id])
+              .find_each do |pm|
+                pm.update_columns(
+                  position: index,
+                  pinned_at: pinned ? (pm.pinned_at || Time.current) : nil
+                )
+              end
+          end
+        end
+
+        head :no_content
+      end
+
+      # POST /api/v1/my-projects/:type/:id/visit
+      # Marque le projet comme « vu » par le membre courant (éteint le point
+      # d'activité jusqu'au prochain changement du projet). No-op silencieux si
+      # le membre n'a pas de membership sur ce projet (projet hors de sa grille).
+      def visit
+        klass_name = Projectable::PROJECT_TYPE_KEYS.key(params[:type])
+        raise ActiveRecord::RecordNotFound, "Unknown project type: #{params[:type]}" unless klass_name
+
+        ProjectMembership
+          .where(member_id: current_member.id, projectable_type: klass_name, projectable_id: params[:id])
+          .update_all(last_visited_at: Time.current)
+
+        head :no_content
+      end
+
       # POST /api/v1/projects/:type
       def create
         type_key = params[:type]
@@ -443,6 +522,30 @@ module Api
           createdAt: project.created_at.iso8601,
           updatedAt: project.updated_at.iso8601
         }
+      end
+
+      # Couleurs d'accent par type de projet — miroir du TYPE_CONFIG front
+      # (ProjectBoard.tsx / pole colors de CLAUDE.md). Le serveur les renvoie
+      # pour que la grille « Mon accueil » colore chaque carte sans dupliquer la
+      # logique côté client.
+      PROJECT_TYPE_ACCENTS = {
+        "design-project" => "#AFBD00",
+        "training" => "#B01A19",
+        "lab-project" => "#5B5781",
+        "guild" => "#234766"
+      }.freeze
+
+      def serialize_board_project(project, membership)
+        serialize_project_summary(project).merge(
+          membershipId: membership.id.to_s,
+          accent: PROJECT_TYPE_ACCENTS[project.project_type_key],
+          pinnedAt: membership.pinned_at&.iso8601,
+          position: membership.position,
+          lastVisitedAt: membership.last_visited_at&.iso8601,
+          # Jamais visité → considéré comme « nouveau » (point allumé) ; sinon
+          # allumé seulement si le projet a bougé depuis la dernière visite.
+          hasActivity: membership.last_visited_at.nil? || project.updated_at > membership.last_visited_at
+        )
       end
 
       def serialize_my_project(project)
