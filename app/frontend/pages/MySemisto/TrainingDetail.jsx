@@ -10,6 +10,7 @@ import DocumentList, { DocumentItem } from '../../my-semisto/components/Document
 import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
 import CarpoolingSection from '../../my-semisto/components/CarpoolingSection'
 import SessionPhotoAlbum from '../../my-semisto/components/SessionPhotoAlbum'
+import SessionFeedbackForm from '../../my-semisto/components/SessionFeedbackForm'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
@@ -204,6 +205,7 @@ export default function TrainingDetail() {
               hideCarpoolLink={activityPast}
               trainingId={trainingId}
               canEdit={training.canUpload}
+              canGiveFeedback={training.canGiveFeedback}
               onChanged={() => loadTraining()}
             />
           ) : null}
@@ -227,6 +229,7 @@ export default function TrainingDetail() {
               sessionDocMap={sessionDocMap}
               trainingId={trainingId}
               canEdit={training.canUpload}
+              canGiveFeedback={training.canGiveFeedback}
               onDelete={canDelete}
               onChanged={() => loadTraining()}
             />
@@ -279,9 +282,11 @@ function ProgressStrip({ pastCount, total }) {
 
 // The centerpiece: a featured session (next upcoming, ongoing, or — for
 // single-session activities — that one session even if past), fully expanded.
-function NextSessionHero({ session, index, docs, hideCarpoolLink = false, trainingId, canEdit, onChanged }) {
+function NextSessionHero({ session, index, docs, hideCarpoolLink = false, trainingId, canEdit, canGiveFeedback = false, onChanged }) {
   const ongoing = isSessionOngoing(session)
   const past = isSessionPast(session)
+  // « À chaud » : un avis n'a de sens qu'une fois la session commencée.
+  const feedbackOpen = canGiveFeedback && (past || ongoing)
   const accent = past ? COLOR_PAST : COLOR_UPCOMING
   const eyebrow = past ? 'Session passée' : ongoing ? 'Session en cours' : 'Prochaine session'
   return (
@@ -362,6 +367,15 @@ function NextSessionHero({ session, index, docs, hideCarpoolLink = false, traini
           </div>
         )}
 
+        {/* Feedback « à chaud » — sessions commencées, participant·es inscrit·es */}
+        {feedbackOpen && (
+          <SessionFeedbackForm
+            trainingId={trainingId}
+            session={session}
+            onSubmitted={onChanged}
+          />
+        )}
+
         {/* Jump to carpooling — hidden when the carpooling section itself is hidden */}
         {!hideCarpoolLink && (
           <div className="mt-4 pt-4 border-t border-stone-100">
@@ -382,7 +396,7 @@ function NextSessionHero({ session, index, docs, hideCarpoolLink = false, traini
 
 // Collapsible timeline of every session. Collapsed by default; the next
 // session is highlighted but not auto-expanded (it already lives in the hero).
-function SessionsTimeline({ sessions, nextSessionId, sessionDocMap, trainingId, canEdit, onDelete, onChanged }) {
+function SessionsTimeline({ sessions, nextSessionId, sessionDocMap, trainingId, canEdit, canGiveFeedback = false, onDelete, onChanged }) {
   const [openIds, setOpenIds] = useState(() => new Set())
 
   const toggle = (id) =>
@@ -415,6 +429,7 @@ function SessionsTimeline({ sessions, nextSessionId, sessionDocMap, trainingId, 
             docs={sessionDocMap[session.id] || []}
             trainingId={trainingId}
             canEdit={canEdit}
+            canGiveFeedback={canGiveFeedback}
             onDelete={onDelete}
             onChanged={onChanged}
           />
@@ -424,9 +439,10 @@ function SessionsTimeline({ sessions, nextSessionId, sessionDocMap, trainingId, 
   )
 }
 
-function SessionRow({ session, index, isLast, isNext, open, onToggle, docs, trainingId, canEdit, onDelete, onChanged }) {
+function SessionRow({ session, index, isLast, isNext, open, onToggle, docs, trainingId, canEdit, canGiveFeedback = false, onDelete, onChanged }) {
   const past = isSessionPast(session)
   const color = past ? COLOR_PAST : COLOR_UPCOMING
+  const feedbackOpen = canGiveFeedback && (past || isSessionOngoing(session))
   const docCount = docs.length
 
   const statusPill = past
@@ -516,6 +532,14 @@ function SessionRow({ session, index, isLast, isNext, open, onToggle, docs, trai
                 <DocumentItem key={doc.id} doc={doc} colorIndex={i} onDelete={onDelete} />
               ))}
             </div>
+          )}
+
+          {feedbackOpen && (
+            <SessionFeedbackForm
+              trainingId={trainingId}
+              session={session}
+              onSubmitted={onChanged}
+            />
           )}
         </div>
       )}

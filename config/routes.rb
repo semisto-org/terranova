@@ -30,6 +30,7 @@ Rails.application.routes.draw do
           post "academy/:training_id/documents", to: "api/v1/my_semisto#create_document", as: false
           delete "academy/:training_id/documents/:document_id", to: "api/v1/my_semisto#destroy_document", as: false
           patch "academy/:training_id/sessions/:session_id/photo-album", to: "api/v1/my_semisto#update_session_photo_album", as: false
+          post "academy/:training_id/sessions/:session_id/feedback", to: "api/v1/my_semisto#create_session_feedback", as: false
         end
       end
 
@@ -127,6 +128,7 @@ Rails.application.routes.draw do
         post "academy/:training_id/documents", to: "my_semisto#create_document"
         delete "academy/:training_id/documents/:document_id", to: "my_semisto#destroy_document"
         patch "academy/:training_id/sessions/:session_id/photo-album", to: "my_semisto#update_session_photo_album"
+        post "academy/:training_id/sessions/:session_id/feedback", to: "my_semisto#create_session_feedback"
       end
 
       get "health", to: "health#show"
