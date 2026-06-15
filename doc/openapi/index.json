@@ -708,7 +708,7 @@
       ]
     },
     {
-      "endpointCount": 11,
+      "endpointCount": 10,
       "file": "my_semisto.json",
       "name": "my_semisto",
       "operations": [
@@ -748,11 +748,6 @@
           "summary": "destroy_document"
         },
         {
-          "method": "POST",
-          "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/feedback",
-          "summary": "create_session_feedback"
-        },
-        {
           "method": "PATCH",
           "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/photo-album",
           "summary": "update_session_photo_album"
@@ -766,6 +761,33 @@
           "method": "GET",
           "path": "/api/v1/my/auth/verify",
           "summary": "verify"
+        }
+      ]
+    },
+    {
+      "endpointCount": 4,
+      "file": "notifications.json",
+      "name": "notifications",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications",
+          "summary": "index"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/notifications/read-all",
+          "summary": "mark_all_read"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/unread-count",
+          "summary": "unread_count"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/notifications/{id}/read",
+          "summary": "mark_read"
         }
       ]
     },
@@ -1284,5 +1306,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 225
+  "totalEndpoints": 228
 }

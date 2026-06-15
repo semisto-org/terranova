@@ -10,6 +10,7 @@ import { TimesheetForm } from '../../lab-management/components'
 import { MyTasksDashboard } from '@/components/tasks'
 import { apiRequest } from '@/lib/api'
 import GlobalSearchPalette from './GlobalSearchPalette'
+import HeyBell from './HeyBell'
 
 function MyTasksDrawer({ open, onClose }) {
   if (!open) return null
@@ -107,6 +108,9 @@ function ShellLayout({ children }) {
           <div className="flex-1" />
 
           <GlobalSearchPalette />
+
+          {/* Hey! — cloche directed-at-me (#105) */}
+          <HeyBell />
 
           {/* Mes tâches (drawer) */}
           <button
