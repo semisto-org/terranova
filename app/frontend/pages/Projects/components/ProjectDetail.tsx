@@ -27,6 +27,7 @@ import {
 import { ProjectEditModal } from '@/components/projects/ProjectEditModal'
 import { CollaborativeEditor } from '@/components/projects/CollaborativeEditor'
 import { ProjectDocuments, type DocumentData } from '@/components/projects/ProjectDocuments'
+import MuteProjectToggle from '@/components/subscriptions/MuteProjectToggle'
 import {
   ArrowLeft,
   Users,
@@ -110,6 +111,12 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
 
   useEffect(() => { loadProject() }, [loadProject])
 
+  // Marque le projet comme « vu » (éteint le point d'activité sur la grille
+  // « Mon accueil »). Fire-and-forget ; no-op si je ne suis pas membre.
+  useEffect(() => {
+    apiRequest(`/api/v1/my-projects/${typeKey}/${projectId}/visit`, { method: 'POST' }).catch(() => {})
+  }, [typeKey, projectId])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -172,14 +179,17 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
                     </span>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-800 bg-white/70 hover:bg-white border border-stone-200/70 transition-colors shrink-0"
-                >
-                  <Pencil className="w-3 h-3" />
-                  Modifier
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <MuteProjectToggle projectType={typeKey} projectId={projectId} />
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-800 bg-white/70 hover:bg-white border border-stone-200/70 transition-colors shrink-0"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Modifier
+                  </button>
+                </div>
               </div>
 
               <h1

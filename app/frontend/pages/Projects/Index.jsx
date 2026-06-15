@@ -7,6 +7,7 @@ import ProjectBoard from './components/ProjectBoard'
 import ProjectDetail from './components/ProjectDetail'
 
 const LAB_SECTION_TABS = [
+  { id: 'home', label: 'Mon accueil' },
   { id: 'calendar', label: 'Tableau de bord' },
   { id: 'projects', label: 'Projets' },
   { id: 'impact', label: 'Impact' },
@@ -27,7 +28,7 @@ export default function ProjectsIndex() {
 
   const handleSectionChange = useCallback((id) => {
     if (id === 'projects') return
-    if (id === 'calendar') {
+    if (id === 'home') {
       router.visit('/')
     } else {
       router.visit(`/?tab=${id}`)

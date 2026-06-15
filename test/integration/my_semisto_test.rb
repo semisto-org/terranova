@@ -123,6 +123,41 @@ class MySemistoTest < ActionDispatch::IntegrationTest
     assert_equal "Support de cours", body["documents"][0]["name"]
   end
 
+  test "GET /api/v1/my/academy/:id omits participants when directory sharing is off" do
+    get "/api/v1/my/academy/#{@training.id}", as: :json, headers: auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_not body.key?("participants"), "participants must be absent when share_participant_directory is false"
+  end
+
+  test "GET /api/v1/my/academy/:id includes participant directory when sharing is on" do
+    @training.update!(share_participant_directory: true)
+    Academy::TrainingRegistration.create!(
+      training: @training,
+      contact_name: "Jean Martin",
+      contact_email: "jean@example.com",
+      phone: "+32 470 12 34 56",
+      payment_status: "paid",
+      registered_at: 1.week.ago
+    )
+
+    get "/api/v1/my/academy/#{@training.id}", as: :json, headers: auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    participants = body["participants"]
+    assert_equal 2, participants.length
+
+    jean = participants.find { |p| p["name"] == "Jean Martin" }
+    assert_equal "jean@example.com", jean["email"]
+    assert_equal "+32 470 12 34 56", jean["phone"]
+
+    # Marie has no phone on file → serialized as null, not an empty string.
+    marie = participants.find { |p| p["name"] == "Marie Dupont" }
+    assert_nil marie["phone"]
+  end
+
   test "GET /api/v1/my/academy/:id for unrelated training returns 404" do
     other_training = Academy::Training.create!(
       training_type: @training_type,

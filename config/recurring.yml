@@ -22,3 +22,8 @@ production:
   session_feedback_email:
     class: SessionFeedbackEmailJob
     schedule: every day at 10am
+  # Échéances proches (#104) : notifie la veille (J-1) les abonnés des tâches
+  # datées ayant un assigné. Idempotent (rejeu sans doublon).
+  task_due_soon_notifications:
+    class: TaskDueSoonNotificationJob
+    schedule: every day at 7am

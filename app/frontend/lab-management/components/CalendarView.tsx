@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import CommentsBlock from '@/components/comments/CommentsBlock'
+import FollowButton from '@/components/subscriptions/FollowButton'
 import type { Event, Cycle, Member, EventType } from '../types'
 
 interface CyclePeriod {
@@ -1247,10 +1249,23 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
               </div>
             </div>
           )}
+
+          {/* Commentaires (#102) — pas pour les sessions de formation
+              synthétiques, qui n'ont pas de ligne Event en base. */}
+          {!(event as any)._isTrainingSession && (
+            <div className="pt-2 border-t border-stone-100">
+              <CommentsBlock parentType="events" parentId={event.id} />
+            </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="shrink-0 px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-2">
+          {!(event as any)._isTrainingSession && (
+            <div className="mr-auto">
+              <FollowButton parentType="events" parentId={event.id} />
+            </div>
+          )}
           {confirmingDelete ? (
             <>
               <span className="text-sm text-stone-600 mr-auto">

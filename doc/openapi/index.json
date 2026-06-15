@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 31,
+      "endpointCount": 26,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -9,11 +9,6 @@
           "method": "GET",
           "path": "/api/v1/academy",
           "summary": "index"
-        },
-        {
-          "method": "DELETE",
-          "path": "/api/v1/academy/announcements/{announcement_id}",
-          "summary": "destroy_announcement"
         },
         {
           "method": "POST",
@@ -127,26 +122,6 @@
         },
         {
           "method": "POST",
-          "path": "/api/v1/academy/trainings/{training_id}/announcements",
-          "summary": "create_announcement"
-        },
-        {
-          "method": "GET",
-          "path": "/api/v1/academy/trainings/{training_id}/feedbacks",
-          "summary": "list_feedbacks"
-        },
-        {
-          "method": "GET",
-          "path": "/api/v1/academy/trainings/{training_id}/messages",
-          "summary": "list_messages"
-        },
-        {
-          "method": "POST",
-          "path": "/api/v1/academy/trainings/{training_id}/messages",
-          "summary": "reply_message"
-        },
-        {
-          "method": "POST",
           "path": "/api/v1/academy/trainings/{training_id}/registrations",
           "summary": "create_registration"
         },
@@ -159,6 +134,18 @@
           "method": "PATCH",
           "path": "/api/v1/academy/trainings/{training_id}/status",
           "summary": "update_training_status"
+        }
+      ]
+    },
+    {
+      "endpointCount": 1,
+      "file": "activity.json",
+      "name": "activity",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/activity",
+          "summary": "index"
         }
       ]
     },
@@ -225,7 +212,7 @@
       ]
     },
     {
-      "endpointCount": 27,
+      "endpointCount": 31,
       "file": "design.json",
       "name": "design",
       "operations": [
@@ -303,6 +290,26 @@
           "method": "GET",
           "path": "/api/v1/design/{project_id}/client-portal",
           "summary": "client_portal"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/{project_id}/clients",
+          "summary": "clients"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design/{project_id}/clients",
+          "summary": "create_client"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/design/{project_id}/clients/{client_id}",
+          "summary": "destroy_client"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/design/{project_id}/clients/{client_id}",
+          "summary": "update_client"
         },
         {
           "method": "POST",
@@ -390,6 +397,33 @@
           "method": "DELETE",
           "path": "/api/v1/economics/outputs/{id}",
           "summary": "destroy_output"
+        }
+      ]
+    },
+    {
+      "endpointCount": 4,
+      "file": "events.json",
+      "name": "events",
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/v1/events/{event_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "create"
         }
       ]
     },
@@ -523,7 +557,7 @@
       ]
     },
     {
-      "endpointCount": 20,
+      "endpointCount": 21,
       "file": "lab.json",
       "name": "lab",
       "operations": [
@@ -608,6 +642,11 @@
           "summary": "reporting"
         },
         {
+          "method": "GET",
+          "path": "/api/v1/lab/revenues/{id}/transaction_candidates",
+          "summary": "revenue_transaction_candidates"
+        },
+        {
           "method": "POST",
           "path": "/api/v1/lab/semos/transfer",
           "summary": "transfer_semos"
@@ -630,7 +669,7 @@
       ]
     },
     {
-      "endpointCount": 1,
+      "endpointCount": 4,
       "file": "my-projects.json",
       "name": "my-projects",
       "operations": [
@@ -638,6 +677,21 @@
           "method": "GET",
           "path": "/api/v1/my-projects",
           "summary": "my_projects"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my-projects/board",
+          "summary": "board"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/my-projects/reorder",
+          "summary": "reorder"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my-projects/{type}/{id}/visit",
+          "summary": "visit"
         }
       ]
     },
@@ -654,7 +708,7 @@
       ]
     },
     {
-      "endpointCount": 14,
+      "endpointCount": 10,
       "file": "my_semisto.json",
       "name": "my_semisto",
       "operations": [
@@ -694,29 +748,9 @@
           "summary": "destroy_document"
         },
         {
-          "method": "GET",
-          "path": "/api/v1/my/academy/{training_id}/messages",
-          "summary": "messages"
-        },
-        {
-          "method": "POST",
-          "path": "/api/v1/my/academy/{training_id}/messages",
-          "summary": "create_message"
-        },
-        {
-          "method": "POST",
-          "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/feedback",
-          "summary": "create_feedback"
-        },
-        {
           "method": "PATCH",
           "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/photo-album",
           "summary": "update_session_photo_album"
-        },
-        {
-          "method": "GET",
-          "path": "/api/v1/my/announcements",
-          "summary": "announcements"
         },
         {
           "method": "POST",
@@ -979,7 +1013,7 @@
       ]
     },
     {
-      "endpointCount": 5,
+      "endpointCount": 8,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -999,6 +1033,21 @@
           "summary": "create"
         },
         {
+          "method": "DELETE",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "unmute"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "mute_state"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "mute"
+        },
+        {
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/revenues",
           "summary": "create_revenue"
@@ -1011,7 +1060,7 @@
       ]
     },
     {
-      "endpointCount": 2,
+      "endpointCount": 3,
       "file": "public.json",
       "name": "public",
       "operations": [
@@ -1023,6 +1072,11 @@
         {
           "method": "POST",
           "path": "/api/v1/public/stripe-webhooks",
+          "summary": "create"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/public/tally-webhooks",
           "summary": "create"
         }
       ]
@@ -1050,7 +1104,7 @@
       ]
     },
     {
-      "endpointCount": 18,
+      "endpointCount": 21,
       "file": "strategy.json",
       "name": "strategy",
       "operations": [
@@ -1067,6 +1121,21 @@
         {
           "method": "POST",
           "path": "/api/v1/strategy/deliberations",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
           "summary": "create"
         },
         {
@@ -1147,7 +1216,7 @@
       ]
     },
     {
-      "endpointCount": 3,
+      "endpointCount": 9,
       "file": "tasks.json",
       "name": "tasks",
       "operations": [
@@ -1165,6 +1234,36 @@
           "method": "PATCH",
           "path": "/api/v1/tasks/{id}/toggle",
           "summary": "toggle_task"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/{task_id}/comments",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/tasks/{task_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/tasks/{task_id}/comments/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "create"
         }
       ]
     }
@@ -1180,5 +1279,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 207
+  "totalEndpoints": 224
 }

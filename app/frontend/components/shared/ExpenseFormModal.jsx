@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Building2, Check, ChevronsUpDown, Globe2, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, FileText, Globe2, Search, Sliders, Sparkles, Tag, X } from 'lucide-react'
 import SimpleEditor from '../SimpleEditor'
 import { apiRequest } from '@/lib/api'
 import { ProjectableCombobox } from './ProjectableCombobox'
+import { BankReconcileSection } from './BankReconcileSection'
 
 const inputBase =
   'w-full px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--expense-accent,#B01A19)]/30 focus:border-[var(--expense-accent,#B01A19)]'
@@ -109,6 +110,7 @@ export function ExpenseFormModal({
   showDesignProjectLink = true,
   onSubmit,
   onCancel,
+  onReconciled = () => {},
   busy = false,
   accentColor = '#B01A19',
 }) {
@@ -427,9 +429,9 @@ export function ExpenseFormModal({
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onCancel}
       />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-50 flex items-stretch justify-end pointer-events-none">
         <div
-          className="w-full max-w-2xl bg-white rounded-2xl border border-stone-200 shadow-2xl pointer-events-auto max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-200"
+          className="w-full max-w-xl bg-white border-l border-stone-200 shadow-2xl pointer-events-auto h-full overflow-hidden flex flex-col animate-in slide-in-from-right-4 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
           style={{ '--expense-accent': accent }}
         >
@@ -1210,6 +1212,8 @@ export function ExpenseFormModal({
                   <p className="mt-2 text-sm text-stone-500">Fichier actuel : {expense.documentFilename}</p>
                 )}
               </section>
+
+              {isEdit && <ExpenseAttachments expense={expense} onReconciled={onReconciled} />}
             </div>
 
             <div className="shrink-0 px-6 py-4 border-t border-stone-200 bg-stone-50/50 flex items-center justify-end gap-3">
@@ -1250,6 +1254,74 @@ export function ExpenseFormModal({
 }
 
 const fmtMoney = (value) => `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+
+// Read-only attachments shown at the bottom of the edit drawer: a preview of the
+// linked document (always openable) plus the reconciled bank transactions.
+function ExpenseAttachments({ expense, onReconciled }) {
+  if (!expense) return null
+  const url = expense.documentUrl
+  const filename = expense.documentFilename
+  const docType = (() => {
+    if (!url) return null
+    const lower = (filename || url).toLowerCase()
+    if (lower.endsWith('.pdf')) return 'pdf'
+    if (/\.(jpe?g|png|gif|webp|avif|bmp|heic|heif)(\?|$)/.test(lower)) return 'image'
+    return 'other'
+  })()
+  const bankTransactions = expense.bankTransactions ?? []
+
+  return (
+    <>
+      {url && (
+        <section>
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="w-3.5 h-3.5 text-stone-400" />
+            <div className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium">Document joint</div>
+            {filename && <span className="text-[11px] text-stone-500 font-mono truncate">{filename}</span>}
+            <a href={url} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-medium text-[#5B5781] hover:underline">
+              Ouvrir
+            </a>
+          </div>
+          {docType === 'pdf' && (
+            <div className="rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
+              <object data={`${url}#toolbar=0&navpanes=0`} type="application/pdf" className="w-full h-[600px] block">
+                <div className="p-6 text-sm text-stone-500 text-center">
+                  Impossible d'afficher le PDF.{' '}
+                  <a href={url} target="_blank" rel="noreferrer" className="text-[#5B5781] underline">Cliquez pour l'ouvrir.</a>
+                </div>
+              </object>
+            </div>
+          )}
+          {docType === 'image' && (
+            <a href={url} target="_blank" rel="noreferrer" className="block rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
+              <img src={url} alt={filename || 'Document'} className="w-full h-auto block" />
+            </a>
+          )}
+          {docType === 'other' && (
+            <a href={url} download={filename || undefined} className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white p-3 hover:border-stone-300 transition-colors">
+              <div className="shrink-0 w-10 h-10 rounded-lg bg-stone-100 inline-flex items-center justify-center text-stone-500">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-stone-800 truncate">{filename || 'Télécharger le document'}</div>
+                <div className="text-[11px] text-stone-400">Cliquez pour télécharger</div>
+              </div>
+            </a>
+          )}
+        </section>
+      )}
+
+      <BankReconcileSection
+        linkedTransactions={bankTransactions}
+        reconcilableType="Expense"
+        reconcilableId={String(expense.id)}
+        candidatesUrl={`/api/v1/lab/expenses/${expense.id}/transaction_candidates`}
+        emptyLabel="Aucune transaction bancaire rapprochée à cette dépense."
+        onReconciled={onReconciled}
+      />
+    </>
+  )
+}
 
 function BreakdownCell({ value, onChange }) {
   return (

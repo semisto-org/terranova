@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Calendar, Check, ChevronDown, ChevronsUpDown, CreditCard, FileText, Image as ImageIcon, Link2, Paperclip, Search, Sparkles, StickyNote, Trash2, Upload, User, X } from 'lucide-react'
 import type { RevenueDocument, RevenueItem } from '../../lab-management/components/RevenueList'
 import { ProjectableCombobox, type ProjectableValue } from './ProjectableCombobox'
+import { BankReconcileSection, type LinkedTx } from './BankReconcileSection'
 
 // Shared inputs — stripped-back editorial style matching the new Dépenses ledger
 const inputBase =
@@ -89,10 +90,11 @@ interface RevenueFormModalProps {
   onCancel: () => void
   onCreateContact?: (input: { name: string; contact_type: string }) => Promise<CreatedContact>
   onDeleteDocument?: (documentId: string) => Promise<void>
+  onReconciled?: (linkedTx: LinkedTx) => void
   busy?: boolean
 }
 
-export function RevenueFormModal({ revenue, contacts: contactsProp = [], organizations = [], defaultOrganizationId, onSave, onCancel, onCreateContact, onDeleteDocument, busy = false }: RevenueFormModalProps) {
+export function RevenueFormModal({ revenue, contacts: contactsProp = [], organizations = [], defaultOrganizationId, onSave, onCancel, onCreateContact, onDeleteDocument, onReconciled, busy = false }: RevenueFormModalProps) {
   const isEdit = !!revenue
   const today = new Date().toISOString().slice(0, 10)
   const amountInputRef = useRef<HTMLInputElement>(null)
@@ -319,9 +321,9 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
         className="fixed inset-0 z-40 bg-stone-900/40 backdrop-blur-sm animate-[fadeIn_.15s_ease-out]"
         onClick={onCancel}
       />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-50 flex items-stretch justify-end pointer-events-none">
         <div
-          className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl pointer-events-auto max-h-[92vh] overflow-hidden flex flex-col animate-[slideInRight_.25s_cubic-bezier(0.16,1,0.3,1)]"
+          className="w-full max-w-xl bg-white border-l border-stone-200 shadow-2xl pointer-events-auto h-full overflow-hidden flex flex-col animate-in slide-in-from-right-4 fade-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header — editorial */}
@@ -707,6 +709,17 @@ export function RevenueFormModal({ revenue, contacts: contactsProp = [], organiz
                   className={`${inputBase} font-sans resize-y min-h-[96px]`}
                 />
               </Collapsible>
+
+              {isEdit && revenue && (
+                <BankReconcileSection
+                  linkedTransactions={(revenue.bankTransactions ?? []) as LinkedTx[]}
+                  reconcilableType="Revenue"
+                  reconcilableId={String(revenue.id)}
+                  candidatesUrl={`/api/v1/lab/revenues/${revenue.id}/transaction_candidates`}
+                  emptyLabel="Aucune transaction bancaire rapprochée à cette recette."
+                  onReconciled={onReconciled}
+                />
+              )}
             </div>
 
             {/* Footer */}

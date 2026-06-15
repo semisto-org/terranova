@@ -118,6 +118,7 @@ export default function Registration({ trainingId, stripePublicKey }) {
     departure_postal_code: '',
     departure_country: 'BE',
     carpooling: 'none',
+    photo_consent: true,
     payment_type: 'full',
     items: {},
     packs: {},
@@ -828,6 +829,37 @@ export default function Registration({ trainingId, stripePublicKey }) {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Photo consent (RGPD / droit à l'image) */}
+              <div style={styles.section}>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '14px 16px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    backgroundColor: '#f9fafb',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.photo_consent}
+                    onChange={e => updateField('photo_consent', e.target.checked)}
+                    style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#B01A19', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '500', color: '#1f2937', fontFamily: 'var(--font-body)' }}>
+                      J'accepte d'être pris·e en photo pour la communication de Semisto
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px', fontFamily: 'var(--font-body)' }}>
+                      Vous pouvez décocher cette case si vous ne souhaitez pas être photographié·e.
+                    </div>
+                  </div>
+                </label>
               </div>
 
               {/* Pack Selection */}

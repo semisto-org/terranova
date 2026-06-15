@@ -1,6 +1,11 @@
 {
   "name": "Terranova",
   "short_name": "Terranova",
+  "description": "L'infrastructure numérique du mouvement Semisto : transformer les zones anthropisées d'Europe en forêts comestibles et territoires vivants.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

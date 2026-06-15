@@ -43,6 +43,7 @@ export default function Profile() {
   const [avatarFile, setAvatarFile] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [visibilitySaving, setVisibilitySaving] = useState(false)
   const [error, setError] = useState(null)
   const [geocoding, setGeocoding] = useState(false)
   const [geocodeError, setGeocodeError] = useState(null)
@@ -54,6 +55,29 @@ export default function Profile() {
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
     setSaved(false)
+  }
+
+  // The directory toggle persists immediately on click — a switch should take
+  // effect at once, not silently wait for the "Enregistrer" button below.
+  // Optimistic update, reverted if the request fails.
+  async function handleToggleVisibility() {
+    if (visibilitySaving) return
+    const next = !form.visibleInDirectory
+    setForm((prev) => ({ ...prev, visibleInDirectory: next }))
+    setVisibilitySaving(true)
+    setError(null)
+    try {
+      await myApiRequest(myApiPath('/profile'), {
+        method: 'PATCH',
+        body: JSON.stringify({ visible_in_directory: next ? '1' : '0' }),
+      })
+      router.reload({ only: ['auth'] })
+    } catch (err) {
+      setForm((prev) => ({ ...prev, visibleInDirectory: !next }))
+      setError(err.message)
+    } finally {
+      setVisibilitySaving(false)
+    }
   }
 
   function handleAvatarChange(e) {
@@ -185,11 +209,9 @@ export default function Profile() {
         <div className="mb-8 my-animate-section" style={{ animationDelay: '80ms' }}>
           <button
             type="button"
-            onClick={() => {
-              setForm((prev) => ({ ...prev, visibleInDirectory: !prev.visibleInDirectory }))
-              setSaved(false)
-            }}
-            className="w-full group cursor-pointer"
+            onClick={handleToggleVisibility}
+            disabled={visibilitySaving}
+            className="w-full group cursor-pointer disabled:cursor-wait"
           >
             <div
               className="flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-all"
@@ -215,15 +237,20 @@ export default function Profile() {
                   Visible dans l'annuaire
                 </p>
                 <p className="text-xs text-stone-400 mt-0.5">
-                  {form.visibleInDirectory
-                    ? 'Ton profil apparaît dans l\'annuaire Semisto'
-                    : 'Ton profil n\'est pas visible dans l\'annuaire'}
+                  {visibilitySaving
+                    ? 'Enregistrement…'
+                    : form.visibleInDirectory
+                      ? 'Ton profil apparaît dans l\'annuaire Semisto'
+                      : 'Ton profil n\'est pas visible dans l\'annuaire'}
                 </p>
               </div>
               <div
-                className="relative w-11 h-6 rounded-full shrink-0 transition-colors"
+                className="relative w-11 h-6 rounded-full shrink-0 transition-colors flex items-center"
                 style={{ backgroundColor: form.visibleInDirectory ? '#2D6A4F' : '#d6d3d1' }}
               >
+                {visibilitySaving && (
+                  <Loader2 size={12} className="absolute left-1.5 animate-spin text-white/80" />
+                )}
                 <div
                   className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
                   style={{ left: form.visibleInDirectory ? '22px' : '2px' }}
