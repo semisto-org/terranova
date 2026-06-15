@@ -110,8 +110,19 @@ module Api
         trainings = Academy::Training.where(id: accessible_training_ids).includes(:training_type, :sessions)
 
         render json: {
-          trainings: trainings.map { |t| serialize_portal_training(t) }
+          trainings: trainings.map { |t| serialize_portal_training(t) },
+          support: support_config
         }
+      end
+
+      # Widget de contact WhatsApp Business (#40). Lien wa.me pré-rempli, exposé
+      # seulement si un numéro est configuré (sinon le widget reste masqué).
+      def support_config
+        number = ENV["WHATSAPP_BUSINESS_NUMBER"].to_s.gsub(/\D/, "")
+        return { whatsapp: nil } if number.blank?
+
+        prefilled = CGI.escape("Bonjour Semisto, j'ai une question à propos d'une activité Academy.")
+        { whatsapp: { number: number, url: "https://wa.me/#{number}?text=#{prefilled}" } }
       end
 
       def academy_training_detail
@@ -125,6 +136,78 @@ module Api
           training, sessions, documents,
           can_upload: uploadable_training_ids.include?(training.id)
         )
+      end
+
+      # ── Actus / notifications (#17) : cloche transverse à toutes les
+      # activités accessibles au contact. ──
+      def announcements
+        ids = accessible_training_ids
+        items = Academy::Announcement
+          .where(training_id: ids)
+          .includes(:training)
+          .recent_first
+          .map do |a|
+            {
+              id: a.id.to_s,
+              trainingId: a.training_id.to_s,
+              trainingTitle: a.training&.title,
+              title: a.title,
+              body: a.body,
+              status: a.status,
+              toConfirm: a.status == "to_confirm",
+              publishedAt: a.published_at&.iso8601
+            }
+          end
+        render json: { items: items }
+      end
+
+      # ── Fil support participant ↔ équipe (#18) : le contact ne voit QUE son
+      # propre fil pour une activité accessible. ──
+      def messages
+        training = find_contact_training!
+        return unless training
+
+        msgs = Academy::ParticipantMessage
+          .for_thread(training.id, current_contact.id)
+          .map { |m| serialize_my_message(m) }
+        render json: { messages: msgs }
+      end
+
+      # Message entrant (#41) : crée le message + une tâche « Répondre à … »
+      # assignée au coordinateur, dans la même transaction.
+      def create_message
+        training = find_contact_training!
+        return unless training
+
+        body = params.require(:body).to_s.strip
+        return render json: { error: "Message vide" }, status: :unprocessable_entity if body.blank?
+
+        message = Academy::ParticipantMessageRouter.record_participant_message(
+          training: training, contact: current_contact, body: body
+        )
+        render json: serialize_my_message(message), status: :created
+      end
+
+      # ── Feedback de session (#21/#46) ──
+      def create_feedback
+        training = find_contact_training!
+        return unless training
+
+        session = training.sessions.find(params.require(:session_id))
+        # Un feedback par participant·e et par session : la re-soumission met à
+        # jour la ligne existante (#48 review — évite les doublons qui faussent
+        # les agrégats).
+        feedback = session.feedbacks.where(contact_id: current_contact.id).first_or_initialize
+        feedback.assign_attributes(
+          rating: params[:rating].presence,
+          comment: params[:comment].to_s,
+          anonymous: ActiveModel::Type::Boolean.new.cast(params[:anonymous]) || false
+        )
+        if feedback.save
+          render json: { id: feedback.id.to_s, rating: feedback.rating, anonymous: feedback.anonymous }, status: :created
+        else
+          render json: { errors: feedback.errors.full_messages }, status: :unprocessable_entity
+        end
       end
 
       # ── Carpooling API ──
@@ -446,6 +529,16 @@ module Api
           return nil
         end
         Academy::Training.includes(:training_type, :sessions, :documents).find(params[:training_id])
+      end
+
+      def serialize_my_message(message)
+        {
+          id: message.id.to_s,
+          body: message.body,
+          # Du point de vue du participant : ses messages = "me", l'équipe = "team".
+          from: message.sender == "participant" ? "me" : "team",
+          createdAt: message.created_at.iso8601
+        }
       end
 
       def contact_avatar_url(contact)

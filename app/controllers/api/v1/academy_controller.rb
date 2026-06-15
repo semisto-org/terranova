@@ -111,6 +111,16 @@ module Api
 
         item.update!(status: new_status)
 
+        # Tâches auto déclenchées par le statut + checklist d'annulation (#35).
+        # Best-effort : un souci de génération ne doit pas casser le changement
+        # de statut lui-même.
+        begin
+          Academy::TaskGenerator.for_status_change(item, new_status)
+          Academy::TaskGenerator.for_cancellation(item) if new_status == "cancelled"
+        rescue StandardError => e
+          Rails.logger.warn("[Academy::TaskGenerator] status #{item.id}: #{e.message}")
+        end
+
         broadcast_training_change(action: "updated", training: item)
         render json: serialize_training(item)
       end
@@ -619,7 +629,122 @@ module Api
         }
       end
 
+      # ─── Actus / notifications (#17) ──────────────────────────────────────
+      def list_announcements
+        training = Academy::Training.find(params.require(:training_id))
+        render json: { items: training.announcements.recent_first.map { |a| serialize_announcement(a) } }
+      end
+
+      def create_announcement
+        training = Academy::Training.find(params.require(:training_id))
+        announcement = training.announcements.create!(announcement_params.merge(created_by_id: current_member&.id))
+        render json: serialize_announcement(announcement), status: :created
+      end
+
+      def update_announcement
+        announcement = Academy::Announcement.find(params.require(:announcement_id))
+        announcement.update!(announcement_params)
+        render json: serialize_announcement(announcement)
+      end
+
+      def destroy_announcement
+        Academy::Announcement.find(params.require(:announcement_id)).soft_delete!
+        head :no_content
+      end
+
+      # ─── Fil de messages participants ↔ équipe (#18/#41) ──────────────────
+      # Renvoie les fils groupés par contact pour une activité.
+      def list_messages
+        training = Academy::Training.find(params.require(:training_id))
+        threads = training.participant_messages.includes(:contact).chronological
+                          .group_by(&:contact_id)
+                          .map do |contact_id, msgs|
+          contact = msgs.first.contact
+          {
+            contactId: contact_id.to_s,
+            contactName: contact&.display_name,
+            unread: msgs.count { |m| m.from_participant? && m.read_at.nil? },
+            messages: msgs.map { |m| serialize_participant_message(m) }
+          }
+        end
+        render json: { threads: threads }
+      end
+
+      # Réponse de l'équipe dans un fil + marque les messages entrants comme lus.
+      def reply_message
+        training = Academy::Training.find(params.require(:training_id))
+        contact = Contact.find(params.require(:contact_id))
+
+        # On ne répond que dans un fil existant ou à un·e inscrit·e de l'activité
+        # (cohérent avec le cloisonnement strict côté participant ; pas de
+        # création de fil arbitraire contre n'importe quel contact).
+        known = training.participant_messages.exists?(contact_id: contact.id) ||
+                training.registrations.exists?(contact_id: contact.id)
+        unless known
+          return render json: { error: "Ce contact n'a pas de fil sur cette activité" }, status: :unprocessable_entity
+        end
+
+        message = training.participant_messages.create!(
+          contact: contact, body: params.require(:body), sender: "team",
+          author_member_id: current_member&.id
+        )
+        training.participant_messages.where(contact_id: contact.id, sender: "participant", read_at: nil)
+                .update_all(read_at: Time.current)
+        render json: serialize_participant_message(message), status: :created
+      end
+
+      # ─── Feedbacks de session (#21/#46) ───────────────────────────────────
+      def list_feedbacks
+        training = Academy::Training.find(params.require(:training_id))
+        session_ids = training.sessions.pluck(:id)
+        feedbacks = Academy::SessionFeedback.where(session_id: session_ids).recent_first
+        render json: { items: feedbacks.map { |f| serialize_feedback(f) } }
+      end
+
       private
+
+      def announcement_params
+        permitted = params.permit(:title, :body, :status, :published_at)
+        permitted[:status] = "to_confirm" unless Academy::Announcement::STATUSES.include?(permitted[:status])
+        permitted
+      end
+
+      def serialize_announcement(item)
+        {
+          id: item.id.to_s,
+          trainingId: item.training_id.to_s,
+          title: item.title,
+          body: item.body,
+          status: item.status,
+          publishedAt: item.published_at&.iso8601,
+          createdAt: item.created_at.iso8601
+        }
+      end
+
+      def serialize_participant_message(item)
+        {
+          id: item.id.to_s,
+          contactId: item.contact_id.to_s,
+          body: item.body,
+          sender: item.sender,
+          readAt: item.read_at&.iso8601,
+          createdAt: item.created_at.iso8601
+        }
+      end
+
+      # Respecte l'anonymat à l'affichage équipe (#21 / RGPD) : si anonyme, on
+      # ne révèle pas le contact même s'il reste lié en base.
+      def serialize_feedback(item)
+        {
+          id: item.id.to_s,
+          sessionId: item.session_id.to_s,
+          rating: item.rating,
+          comment: item.comment,
+          anonymous: item.anonymous,
+          contactName: item.anonymous ? nil : item.contact&.display_name,
+          createdAt: item.created_at.iso8601
+        }
+      end
 
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
@@ -701,7 +826,7 @@ module Api
       def training_type_params
         params.permit(:name, :description, :color, checklist_template: [], photo_gallery: [], trainer_ids: [],
                       default_categories: [:label, :price, :maxSpots, :max_spots, :depositAmount, :deposit_amount],
-                      task_templates: [:name, :scope, :anchor, :offset_days],
+                      task_templates: [:name, :scope, :anchor, :offset_days, :trigger],
                       default_packs: [:name, :price, :deposit_amount, { items: [:category_label, :quantity] }])
       end
 
@@ -794,21 +919,32 @@ module Api
         }
       end
 
-      # Préparation à la clôture (#48). Critère bien défini et calculable :
-      # l'encaissement des paiements participants (payment_status). Les autres
-      # critères évoqués (documents envoyés, dépenses fournisseurs reçues) ne
-      # sont pas encore modélisés (pas de flag « envoyé » / pas de dépense
-      # « attendue ») → suivis séparés.
+      # Préparation à la clôture (#48) : paiements participants + dépenses
+      # fournisseurs non réglées + documents. Délégué au service dédié, avec des
+      # comptes pré-calculés en masse (mémoïsés sur la requête) pour éviter un
+      # N+1 quand l'index sérialise toutes les activités.
       def closure_readiness(item)
-        total = item.registrations.count
-        paid = item.registrations.where(payment_status: "paid").count
-        unpaid = total - paid
-        {
-          totalRegistrations: total,
-          paidCount: paid,
-          unpaidCount: unpaid,
-          allPaid: unpaid.zero?
-        }
+        Academy::ClosureChecklist.for(item, counts: closure_counts[item.id])
+      end
+
+      # 3 requêtes groupées (au lieu de 4×N), mémoïsées par requête.
+      def closure_counts
+        @closure_counts ||= build_closure_counts
+      end
+
+      def build_closure_counts
+        reg = Academy::TrainingRegistration.group(:training_id, :payment_status).count
+        exp = Expense.where(projectable_type: "Academy::Training").where.not(status: "paid").group(:projectable_id).count
+        doc = Academy::TrainingDocument.group(:training_id).count
+
+        totals = Hash.new { |h, k| h[k] = { total: 0, paid: 0, pending_expenses: 0, documents: 0 } }
+        reg.each do |(training_id, status), n|
+          totals[training_id][:total] += n
+          totals[training_id][:paid] += n if status == "paid"
+        end
+        exp.each { |training_id, n| totals[training_id][:pending_expenses] = n }
+        doc.each { |training_id, n| totals[training_id][:documents] = n }
+        totals
       end
 
       def serialize_training(item)

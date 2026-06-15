@@ -110,15 +110,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
   end
 
   create_table "academy_session_feedbacks", force: :cascade do |t|
+    t.boolean "anonymous", default: false, null: false
     t.text "comment", default: "", null: false
-    t.bigint "contact_id", null: false
+    t.bigint "contact_id"
     t.datetime "created_at", null: false
-    t.integer "rating", null: false
+    t.datetime "deleted_at"
+    t.integer "rating"
     t.bigint "session_id", null: false
     t.datetime "updated_at", null: false
-    t.boolean "would_recommend", null: false
     t.index ["contact_id"], name: "index_academy_session_feedbacks_on_contact_id"
-    t.index ["session_id", "contact_id"], name: "index_academy_session_feedbacks_on_session_id_and_contact_id", unique: true
+    t.index ["deleted_at"], name: "index_academy_session_feedbacks_on_deleted_at"
+    t.index ["session_id", "contact_id"], name: "idx_session_feedbacks_unique_per_contact", unique: true, where: "((deleted_at IS NULL) AND (contact_id IS NOT NULL))"
     t.index ["session_id"], name: "index_academy_session_feedbacks_on_session_id"
   end
 
@@ -2708,7 +2710,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
   add_foreign_key "academy_registration_packs", "academy_training_packs", column: "pack_id"
   add_foreign_key "academy_registration_packs", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_session_feedbacks", "academy_training_sessions", column: "session_id"
-  add_foreign_key "academy_session_feedbacks", "contacts"
   add_foreign_key "academy_training_attendances", "academy_training_registrations", column: "registration_id"
   add_foreign_key "academy_training_attendances", "academy_training_sessions", column: "session_id"
   add_foreign_key "academy_training_documents", "academy_training_sessions", column: "session_id"

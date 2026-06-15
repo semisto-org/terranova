@@ -10,6 +10,8 @@ import DocumentList, { DocumentItem } from '../../my-semisto/components/Document
 import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
 import CarpoolingSection from '../../my-semisto/components/CarpoolingSection'
 import SessionPhotoAlbum from '../../my-semisto/components/SessionPhotoAlbum'
+import SupportThread from '../../my-semisto/components/SupportThread'
+import SessionFeedbackForm from '../../my-semisto/components/SessionFeedbackForm'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
@@ -78,6 +80,13 @@ export default function TrainingDetail() {
   const [training, setTraining] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // The J+1 feedback email links to ?feedback=<sessionId>. Capture it once so
+  // we can auto-open and scroll to that session's feedback form.
+  const feedbackSessionId = useMemo(() => {
+    const raw = new URLSearchParams(window.location.search).get('feedback')
+    return raw ? String(raw) : null
+  }, [])
 
   // Refetches the training detail without a full page reload — used after the
   // initial load and after every upload/delete so the list stays in sync.
@@ -252,9 +261,66 @@ export default function TrainingDetail() {
               <CarpoolingSection trainingId={trainingId} />
             </div>
           )}
+
+          {/* Feedback — one form per past session */}
+          <PastSessionsFeedback
+            sessions={sessions}
+            trainingId={trainingId}
+            feedbackSessionId={feedbackSessionId}
+          />
+
+          {/* Support thread — always available */}
+          <SupportThread trainingId={trainingId} />
         </div>
       )}
     </MySemistoShell>
+  )
+}
+
+// Renders a feedback form for every past session. When the URL carries
+// ?feedback=<sessionId>, that session's form is highlighted and scrolled into
+// view (the J+1 email deep-links here).
+function PastSessionsFeedback({ sessions, trainingId, feedbackSessionId }) {
+  const pastSessions = useMemo(() => sessions.filter(isSessionPast), [sessions])
+
+  useEffect(() => {
+    if (!feedbackSessionId) return
+    // Defer to let the section render before scrolling.
+    const el = document.getElementById(`feedback-${feedbackSessionId}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [feedbackSessionId, pastSessions.length])
+
+  if (pastSessions.length === 0) return null
+
+  return (
+    <div className="my-animate-section" style={{ animationDelay: '160ms' }}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLOR_ACADEMY }} />
+        <h2 className="text-lg text-stone-800" style={{ fontFamily: 'var(--font-heading)' }}>
+          {pastSessions.length > 1 ? 'Tes retours' : 'Ton retour'}
+        </h2>
+      </div>
+
+      <div className="space-y-4">
+        {pastSessions.map((session, i) => {
+          const isTarget = feedbackSessionId === String(session.id)
+          return (
+            <div key={session.id} id={`feedback-${session.id}`}>
+              {pastSessions.length > 1 && (
+                <p className="text-xs font-medium text-stone-500 mb-1.5">
+                  {session.topic || `Session ${i + 1}`} · {formatDateShort(session.startDate)}
+                </p>
+              )}
+              <SessionFeedbackForm
+                trainingId={trainingId}
+                session={session}
+                autoFocus={isTarget}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 

@@ -18,6 +18,11 @@ class AcademyMailer < ApplicationMailer
     @payment_amount = registration.payment_amount.to_f
     @payment_method = payment_method
 
+    # Lien one-click vers l'espace MySemisto de l'activité (#39) : infos
+    # pratiques + covoiturage. Magic-link si le contact est connu, sinon lien
+    # générique vers la page (login par email).
+    @my_semisto_url = participant_session_url(@training, registration.contact)
+
     attachments.inline["academy-logo.png"] = File.read(
       Rails.root.join("public/icons/academy.png")
     )
@@ -113,6 +118,28 @@ class AcademyMailer < ApplicationMailer
     )
   end
 
+  # Demande de feedback envoyée J+1 après une session, à un·e inscrit·e (#21).
+  # Un seul mail, pas de rappel (cf. SessionFeedbackEmailJob). Le lien ouvre le
+  # formulaire de feedback de la session dans MySemisto.
+  def session_feedback_request(session, registration)
+    @session = session
+    @training = session.training
+    @contact_name = registration.contact_name.to_s
+    contact = registration.contact ||
+              (registration.contact_email.present? && Contact.find_by("LOWER(email) = ?", registration.contact_email.downcase)) ||
+              nil
+    @feedback_url = participant_session_url(@training, contact, path: "/academy/#{@training.id}?feedback=#{session.id}")
+
+    attachments.inline["academy-logo.png"] = File.read(
+      Rails.root.join("public/icons/academy.png")
+    )
+
+    mail(
+      to: registration.contact_email,
+      subject: "🌱 Ton retour sur « #{@training.title} »"
+    )
+  end
+
   private
 
   def sanitize_rich(html)
@@ -127,8 +154,7 @@ class AcademyMailer < ApplicationMailer
   # Lien vers la page d'activité du portail participant. Quand un Contact est
   # connu, on génère un magic-link (purpose :contact_login) qui connecte ET
   # redirige vers la page de l'activité — un seul clic depuis l'email.
-  def participant_session_url(training, contact)
-    path = "/academy/#{training.id}"
+  def participant_session_url(training, contact, path: "/academy/#{training.id}")
     my_host = ENV["MY_SEMISTO_HOST"]
     protocol = Rails.env.production? ? "https" : "http"
 

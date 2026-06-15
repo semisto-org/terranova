@@ -21,6 +21,8 @@ import {
   GraduationCap,
   AlertCircle,
   Wallet,
+  Megaphone,
+  MessageSquare,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -30,6 +32,8 @@ import TrainingDocumentsTab from './TrainingDocumentsTab'
 import TrainingChecklistTab from './TrainingChecklistTab'
 import TrainingFinancesTab from './TrainingFinancesTab'
 import TrainingAlbumTab from './TrainingAlbumTab'
+import TrainingAnnouncementsTab from './TrainingAnnouncementsTab'
+import TrainingMessagesTab from './TrainingMessagesTab'
 import { BucketSection } from '@/components/shared/BucketSection'
 
 const STATUS_LABELS = {
@@ -198,6 +202,8 @@ const TABS = [
   { id: 'registrations', label: 'Inscriptions', icon: Users },
   { id: 'attendances', label: 'Présences', icon: Users },
   { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'announcements', label: 'Actus', icon: Megaphone },
+  { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'album', label: 'Album', icon: Camera },
   { id: 'checklist', label: 'Checklist', icon: CheckSquare },
   { id: 'finances', label: 'Finances', icon: DollarSign },
@@ -219,6 +225,7 @@ export default function TrainingDetail({
   hasNext = false,
 }) {
   const [tab, setTab] = useState('info')
+  const [messagesUnread, setMessagesUnread] = useState(0)
   const isDrawer = layout === 'drawer'
 
   const trainingType = data.trainingTypes?.find((t) => t.id === training.trainingTypeId) || null
@@ -324,13 +331,22 @@ export default function TrainingDetail({
                 <StatusDropdown
                   currentStatus={training.status || 'idea'}
                   onChangeStatus={(status) => {
-                    // Préparation à la clôture (#48) : avertir si des paiements
-                    // participants ne sont pas encore encaissés.
-                    const r = training.closureReadiness
+                    // Annulation (#35) : confirmation + une checklist de tâches à
+                    // échéance du jour est créée automatiquement côté serveur.
                     if (
-                      status === 'completed' && r && !r.allPaid && r.unpaidCount > 0 &&
-                      !window.confirm(`${r.unpaidCount} paiement(s) participant ne sont pas encore encaissés (${r.paidCount}/${r.totalRegistrations} encaissés). Clôturer quand même ?`)
+                      status === 'cancelled' &&
+                      !window.confirm("Annuler cette activité ? Une checklist d'annulation (contacter étudiant·es, formateur·rice, lieu, repas, logement, remboursements…) sera créée à échéance d'aujourd'hui.")
                     ) return
+                    // Préparation à la clôture (#48) : avertir si la clôture n'est
+                    // pas prête (paiements / dépenses fournisseurs / documents).
+                    const r = training.closureReadiness
+                    if (status === 'completed' && r && r.readyToClose === false) {
+                      const blockers = []
+                      if (!r.allPaid && r.unpaidCount > 0) blockers.push(`${r.unpaidCount} paiement(s) participant à encaisser`)
+                      if (r.pendingExpensesCount > 0) blockers.push(`${r.pendingExpensesCount} dépense(s) fournisseur non réglée(s)`)
+                      if (r.documentsCount === 0) blockers.push('aucun document partagé')
+                      if (!window.confirm(`Clôture pas encore prête :\n— ${blockers.join('\n— ')}\n\nClôturer quand même ?`)) return
+                    }
                     actions.updateTrainingStatus(training.id, status)
                   }}
                   readinessChecks={[
@@ -340,20 +356,26 @@ export default function TrainingDetail({
                     { id: 'price', label: 'Prix', done: trainingHasPrice(training) },
                   ]}
                 />
-                {training.status === 'post_production' && training.closureReadiness && (
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-                      training.closureReadiness.allPaid
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                    }`}
-                    title="Préparation à la clôture : encaissement des paiements participants"
-                  >
-                    {training.closureReadiness.allPaid
-                      ? '✓ Paiements encaissés — prêt à clôturer'
-                      : `Clôture : ${training.closureReadiness.unpaidCount} paiement(s) à encaisser (${training.closureReadiness.paidCount}/${training.closureReadiness.totalRegistrations})`}
-                  </span>
-                )}
+                {training.status === 'post_production' && training.closureReadiness && (() => {
+                  const r = training.closureReadiness
+                  const blockers = []
+                  if (!r.allPaid && r.unpaidCount > 0) blockers.push(`${r.unpaidCount} paiement(s) à encaisser`)
+                  if (r.pendingExpensesCount > 0) blockers.push(`${r.pendingExpensesCount} dépense(s) fournisseur`)
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                        r.readyToClose
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}
+                      title="Préparation à la clôture : paiements participants + dépenses fournisseurs"
+                    >
+                      {r.readyToClose
+                        ? '✓ Prêt à clôturer'
+                        : `Clôture : ${blockers.join(' · ')}`}
+                    </span>
+                  )
+                })()}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -476,21 +498,31 @@ export default function TrainingDetail({
                 checklistItems.length > 0 ? 'pb-4' : ''
               }`}
             >
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setTab(id)}
-                  className={`inline-flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                    tab === id
-                      ? 'bg-[#B01A19] text-white shadow-md'
-                      : 'text-stone-600 hover:bg-stone-100'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              ))}
+              {TABS.map(({ id, label, icon: Icon }) => {
+                const showUnread = id === 'messages' && messagesUnread > 0
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setTab(id)}
+                    className={`relative inline-flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                      tab === id
+                        ? 'bg-[#B01A19] text-white shadow-md'
+                        : 'text-stone-600 hover:bg-stone-100'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="hidden sm:inline">{label}</span>
+                    {showUnread && (
+                      <span className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-semibold leading-none ${
+                        tab === id ? 'bg-white text-[#B01A19]' : 'bg-[#B01A19] text-white'
+                      }`}>
+                        {messagesUnread}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
             {checklistItems.length > 0 && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-stone-200 overflow-hidden">
@@ -559,6 +591,15 @@ export default function TrainingDetail({
                 sessions={sessions}
                 onUploadDocument={() => actions.addDocument(training.id)}
                 onDeleteDocument={(id) => actions.deleteDocument(id)}
+              />
+            )}
+            {tab === 'announcements' && (
+              <TrainingAnnouncementsTab trainingId={training.id} />
+            )}
+            {tab === 'messages' && (
+              <TrainingMessagesTab
+                trainingId={training.id}
+                onUnreadChange={setMessagesUnread}
               />
             )}
             {tab === 'album' && (

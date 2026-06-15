@@ -17,6 +17,8 @@ module Academy
     has_many :documents, class_name: 'Academy::TrainingDocument', foreign_key: :training_id, dependent: :destroy
     has_many :participant_categories, class_name: 'Academy::ParticipantCategory', foreign_key: :training_id, dependent: :destroy
     has_many :packs, class_name: 'Academy::TrainingPack', foreign_key: :training_id, dependent: :destroy
+    has_many :announcements, class_name: 'Academy::Announcement', foreign_key: :training_id, dependent: :destroy
+    has_many :participant_messages, class_name: 'Academy::ParticipantMessage', foreign_key: :training_id, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
     validates :title, :status, presence: true
