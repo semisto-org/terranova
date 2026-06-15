@@ -138,6 +138,18 @@
       ]
     },
     {
+      "endpointCount": 1,
+      "file": "activity.json",
+      "name": "activity",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/activity",
+          "summary": "index"
+        }
+      ]
+    },
+    {
       "endpointCount": 11,
       "file": "bank.json",
       "name": "bank",
@@ -1294,5 +1306,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 227
+  "totalEndpoints": 228
 }
