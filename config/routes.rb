@@ -160,6 +160,12 @@ Rails.application.routes.draw do
       post   "events/:event_id/comments",     to: "comments#create"
       delete "events/:event_id/comments/:id", to: "comments#destroy"
 
+      # Boîte Hey! (#105) — notifications du membre courant (directed-at-me uniquement).
+      get   "notifications",              to: "notifications#index"
+      get   "notifications/unread-count", to: "notifications#unread_count"
+      patch "notifications/read-all",     to: "notifications#mark_all_read"
+      patch "notifications/:id/read",     to: "notifications#mark_read"
+
       # Abonnements polymorphes (#103) — suivre / ne plus suivre + mute projet.
       get    "tasks/:task_id/subscription",                        to: "subscriptions#show"
       post   "tasks/:task_id/subscription",                        to: "subscriptions#create"
