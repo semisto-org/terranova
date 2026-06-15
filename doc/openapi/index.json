@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 27,
+      "endpointCount": 26,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -121,11 +121,6 @@
           "summary": "update_training"
         },
         {
-          "method": "PATCH",
-          "path": "/api/v1/academy/trainings/{training_id}/cancel",
-          "summary": "cancel_training"
-        },
-        {
           "method": "POST",
           "path": "/api/v1/academy/trainings/{training_id}/registrations",
           "summary": "create_registration"
@@ -139,6 +134,18 @@
           "method": "PATCH",
           "path": "/api/v1/academy/trainings/{training_id}/status",
           "summary": "update_training_status"
+        }
+      ]
+    },
+    {
+      "endpointCount": 1,
+      "file": "activity.json",
+      "name": "activity",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/activity",
+          "summary": "index"
         }
       ]
     },
@@ -394,6 +401,33 @@
       ]
     },
     {
+      "endpointCount": 4,
+      "file": "events.json",
+      "name": "events",
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/v1/events/{event_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/events/{event_id}/subscription",
+          "summary": "create"
+        }
+      ]
+    },
+    {
       "endpointCount": 7,
       "file": "foundation.json",
       "name": "foundation",
@@ -635,7 +669,7 @@
       ]
     },
     {
-      "endpointCount": 1,
+      "endpointCount": 4,
       "file": "my-projects.json",
       "name": "my-projects",
       "operations": [
@@ -643,6 +677,21 @@
           "method": "GET",
           "path": "/api/v1/my-projects",
           "summary": "my_projects"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my-projects/board",
+          "summary": "board"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/my-projects/reorder",
+          "summary": "reorder"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my-projects/{type}/{id}/visit",
+          "summary": "visit"
         }
       ]
     },
@@ -964,7 +1013,7 @@
       ]
     },
     {
-      "endpointCount": 5,
+      "endpointCount": 8,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -982,6 +1031,21 @@
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/bucket",
           "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "unmute"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "mute_state"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/mute",
+          "summary": "mute"
         },
         {
           "method": "POST",
@@ -1040,7 +1104,7 @@
       ]
     },
     {
-      "endpointCount": 18,
+      "endpointCount": 21,
       "file": "strategy.json",
       "name": "strategy",
       "operations": [
@@ -1057,6 +1121,21 @@
         {
           "method": "POST",
           "path": "/api/v1/strategy/deliberations",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/strategy/deliberations/{deliberation_id}/subscription",
           "summary": "create"
         },
         {
@@ -1137,7 +1216,7 @@
       ]
     },
     {
-      "endpointCount": 3,
+      "endpointCount": 9,
       "file": "tasks.json",
       "name": "tasks",
       "operations": [
@@ -1155,6 +1234,36 @@
           "method": "PATCH",
           "path": "/api/v1/tasks/{id}/toggle",
           "summary": "toggle_task"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/{task_id}/comments",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/tasks/{task_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/tasks/{task_id}/comments/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "show"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/tasks/{task_id}/subscription",
+          "summary": "create"
         }
       ]
     }
@@ -1170,5 +1279,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 205
+  "totalEndpoints": 224
 }

@@ -2122,6 +2122,11 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-list/-/extension-list-3.19.0.tgz"
   integrity sha512-N6nKbFB2VwMsPlCw67RlAtYSK48TAsAUgjnD+vd3ieSlIufdQnLXDFUP6hFKx9mwoUVUgZGz02RA6bkxOdYyTw==
 
+"@tiptap/extension-mention@^3.19.0":
+  version "3.26.1"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-mention/-/extension-mention-3.26.1.tgz#9ac3147291d343b8b4edccfb4ac2753d0d503216"
+  integrity sha512-Xz+e++ZOovrWMIkJ82WgpZN3dv2s9P+zeS1uUzC0shVzvDysurnqfYRm9onhDhlL7OIIlhVJjCl0LPsReNwGNA==
+
 "@tiptap/extension-ordered-list@^3.19.0":
   version "3.19.0"
   resolved "https://registry.npmjs.org/@tiptap/extension-ordered-list/-/extension-ordered-list-3.19.0.tgz"
@@ -2217,6 +2222,11 @@
     "@tiptap/extension-underline" "^3.19.0"
     "@tiptap/extensions" "^3.19.0"
     "@tiptap/pm" "^3.19.0"
+
+"@tiptap/suggestion@^3.19.0":
+  version "3.26.1"
+  resolved "https://registry.yarnpkg.com/@tiptap/suggestion/-/suggestion-3.26.1.tgz#d93be8c9e2e73ed8d70b1ba2f370cee239dc8ea7"
+  integrity sha512-Bg8IyuDC92InSPzcHvCT3+ZDCJSMJIEINdFg513RPQzwZTw1dsrU0K00XYcDT6lOhZwLM2IVTiE6sZl2GY25Rg==
 
 "@tybys/wasm-util@^0.10.1":
   version "0.10.1"

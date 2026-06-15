@@ -37,14 +37,14 @@ class Plants::GeminiImageClientTest < ActiveSupport::TestCase
     end
   end
 
-  test "generate raises GenerationError after 3 Net::ReadTimeout" do
+  test "generate raises GenerationError after MAX_ATTEMPTS Net::ReadTimeout" do
     Plants::GeminiImageClient.any_instance.stubs(:sleep)
     Net::HTTP.any_instance.stubs(:request).raises(Net::ReadTimeout.new("timeout"))
 
     err = assert_raises(Plants::GeminiImageClient::GenerationError) do
       Plants::GeminiImageClient.new(api_key: "fake").generate(prompt: "anything")
     end
-    assert_match(/network failure after 3 attempts/, err.message)
+    assert_match(/network failure after #{Plants::GeminiImageClient::MAX_ATTEMPTS} attempts/, err.message)
   end
 
   test "generate raises InvalidImageError on non-image bytes" do

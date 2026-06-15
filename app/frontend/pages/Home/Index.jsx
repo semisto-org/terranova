@@ -14,8 +14,10 @@ import { MyTasksDashboard } from '@/components/tasks'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import DeliberationsSection from '../../strategy/components/DeliberationsSection'
 import FrameworksSection from '../../strategy/components/FrameworksSection'
+import MyProjectsGrid from './components/MyProjectsGrid'
 
 const SECTION_TABS = [
+  { id: 'home', label: 'Mon accueil' },
   { id: 'calendar', label: 'Tableau de bord' },
   { id: 'projects', label: 'Projets' },
   { id: 'impact', label: 'Impact' },
@@ -137,7 +139,7 @@ export default function HomeIndex() {
   const currentMemberId = auth?.member?.id ?? ''
   const firstName = auth?.member?.firstName
 
-  const [tab, setTab] = useUrlState('tab', 'calendar')
+  const [tab, setTab] = useUrlState('tab', 'home')
   const handleSectionChange = useCallback((id) => {
     if (id === 'projects') {
       router.visit('/projects')
@@ -503,7 +505,9 @@ export default function HomeIndex() {
       ),
   }), [currentMemberId, cycles, openForm, pitches, runAndRefresh, scopes, showDetailFromApi])
 
-  if (loading) {
+  // La grille « Mon accueil » charge ses propres données : on ne la bloque pas
+  // derrière le chargement du calendrier/overview du Lab.
+  if (loading && tab !== 'home') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-[#5B5781] rounded-full" />
@@ -518,6 +522,8 @@ export default function HomeIndex() {
           {error}
         </div>
       )}
+
+      {tab === 'home' && <MyProjectsGrid />}
 
       {tab === 'calendar' && (
         <>

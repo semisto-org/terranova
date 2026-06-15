@@ -52,15 +52,8 @@ class PlantCardsHelperTest < ActionView::TestCase
     assert_equal 'Pivotant', root_label('taproot')
   end
 
-  test 'pick_photo returns the first photo with the given role' do
-    photos = [
-      OpenStruct.new(role: 'general', url: 'a'),
-      OpenStruct.new(role: 'flower',  url: 'b'),
-      OpenStruct.new(role: 'flower',  url: 'c')
-    ]
-    assert_equal 'b', pick_photo(photos, 'flower').url
-    assert_nil pick_photo(photos, 'fruit')
-  end
+  # (test « pick_photo » supprimé : le helper n'existe plus en production —
+  # test orphelin qui cassait la suite, cf. PR #102)
 
   test 'cell_state classifies a month' do
     species = Struct.new(:flowering_months, :harvest_months).new(['mar', 'apr'], ['jun', 'jul'])

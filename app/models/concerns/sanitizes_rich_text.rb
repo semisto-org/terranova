@@ -22,7 +22,13 @@ module SanitizesRichText
   ALLOWED_ATTRIBUTES = %w[href target rel].freeze
 
   class_methods do
-    def sanitizes_rich_text(*attributes)
+    # extra_tags / extra_attributes élargissent la whitelist PAR MODÈLE
+    # (ex. Comment autorise <span data-type="mention">) sans toucher aux
+    # autres modèles qui partagent le concern.
+    def sanitizes_rich_text(*attributes, extra_tags: [], extra_attributes: [])
+      allowed_tags = SanitizesRichText::ALLOWED_TAGS + extra_tags
+      allowed_attributes = SanitizesRichText::ALLOWED_ATTRIBUTES + extra_attributes
+
       before_validation do
         attributes.each do |attr|
           value = read_attribute(attr)
@@ -30,8 +36,8 @@ module SanitizesRichText
 
           sanitized = ActionController::Base.helpers.sanitize(
             value,
-            tags: SanitizesRichText::ALLOWED_TAGS,
-            attributes: SanitizesRichText::ALLOWED_ATTRIBUTES
+            tags: allowed_tags,
+            attributes: allowed_attributes
           )
           write_attribute(attr, sanitized)
         end
