@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 26,
+      "endpointCount": 27,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -119,6 +119,11 @@
           "method": "PATCH",
           "path": "/api/v1/academy/trainings/{training_id}",
           "summary": "update_training"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/trainings/{training_id}/cancel",
+          "summary": "cancel_training"
         },
         {
           "method": "POST",
@@ -1279,5 +1284,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 224
+  "totalEndpoints": 225
 }
