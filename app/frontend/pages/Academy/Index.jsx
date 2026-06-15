@@ -455,6 +455,20 @@ export default function AcademyIndex({ initialTrainingId }) {
         ),
       }))
     }, { refresh: true }),
+    // Coche/décoche un critère de clôture manuel (#48) : documents_sent ou expenses_received.
+    setTrainingClosureFlag: (id, flag, value) => runMutation(async () => {
+      const updated = await apiRequest(`/api/v1/academy/trainings/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ [flag]: value }),
+      })
+
+      setData((prev) => ({
+        ...prev,
+        trainings: prev.trainings.map((item) =>
+          item.id === id ? { ...item, ...updated } : item
+        ),
+      }))
+    }),
     addSession: (trainingId) => {
       setModalData({ isEdit: false, trainingId })
       setActiveModal('session')

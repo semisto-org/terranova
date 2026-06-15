@@ -153,6 +153,18 @@ export default function KanbanBoard({
         return
       }
 
+      // Clôture (#48) : avertir (sans bloquer) si les critères ne sont pas remplis.
+      if (targetPhase.defaultStatus === 'completed') {
+        const cr = row.training.closureReadiness
+        if (cr && !cr.ready) {
+          const missing = []
+          if (!cr.allPaid && cr.unpaidCount > 0) missing.push(`${cr.unpaidCount} paiement(s) à encaisser`)
+          if (!cr.documentsSent) missing.push('documents non envoyés')
+          if (!cr.expensesReceived) missing.push('factures/dépenses non confirmées')
+          if (missing.length && !window.confirm(`Critères de clôture non remplis :\n— ${missing.join('\n— ')}\n\nClôturer quand même ?`)) return
+        }
+      }
+
       onUpdateTrainingStatus?.(trainingId, targetPhase.defaultStatus)
     },
     [rowMap, onUpdateTrainingStatus]

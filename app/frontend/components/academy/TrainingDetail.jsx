@@ -14,6 +14,7 @@ import {
   Calendar,
   FileText,
   CheckSquare,
+  Square,
   Camera,
   ChevronDown,
   Check,
@@ -204,6 +205,82 @@ const TABS = [
   { id: 'bucket', label: 'Bucket', icon: Wallet },
 ]
 
+// Critères de clôture (#48) affichés en post-production. Deux cases manuelles
+// (documents envoyés, factures/dépenses reçues) + l'encaissement des paiements,
+// calculé. Le passage en « Clôturée » avertit sans bloquer si tout n'est pas coché.
+function ClosureChecklist({ training, onToggleFlag }) {
+  const r = training.closureReadiness
+  const items = [
+    {
+      key: 'documents_sent',
+      done: r.documentsSent,
+      manual: true,
+      label: 'Documents envoyés aux participants',
+    },
+    {
+      key: 'payments',
+      done: r.allPaid,
+      manual: false,
+      label: 'Paiements participants encaissés',
+      hint: r.totalRegistrations > 0
+        ? `${r.paidCount}/${r.totalRegistrations} encaissé(s)`
+        : 'Aucune inscription',
+    },
+    {
+      key: 'expenses_received',
+      done: r.expensesReceived,
+      manual: true,
+      label: 'Factures / dépenses fournisseurs reçues',
+    },
+  ]
+
+  return (
+    <section
+      className={`rounded-2xl border shadow-sm p-4 sm:p-5 ${
+        r.ready ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/40'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <AlertCircle className={`w-4 h-4 ${r.ready ? 'text-emerald-600' : 'text-amber-600'}`} />
+        <h2 className="text-sm font-semibold text-stone-800">Critères de clôture</h2>
+        <span className={`text-xs font-medium ${r.ready ? 'text-emerald-700' : 'text-amber-700'}`}>
+          {r.ready ? 'Tous remplis — prête à clôturer' : 'À compléter avant la clôture'}
+        </span>
+      </div>
+      <ul className="space-y-2">
+        {items.map((item) => {
+          const Icon = item.done ? CheckSquare : Square
+          const row = (
+            <span className="flex items-center gap-2.5">
+              <Icon className={`w-4 h-4 shrink-0 ${item.done ? 'text-emerald-600' : 'text-stone-400'}`} />
+              <span className={`text-sm ${item.done ? 'text-stone-700' : 'text-stone-600'}`}>
+                {item.label}
+                {item.hint && <span className="text-stone-400"> — {item.hint}</span>}
+                {!item.manual && <span className="ml-2 text-[11px] uppercase tracking-wide text-stone-400">auto</span>}
+              </span>
+            </span>
+          )
+          return (
+            <li key={item.key}>
+              {item.manual ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleFlag(item.key, !item.done)}
+                  className="w-full flex items-center text-left rounded-lg px-2 py-1.5 hover:bg-white/70 transition-colors"
+                >
+                  {row}
+                </button>
+              ) : (
+                <div className="px-2 py-1.5">{row}</div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 export default function TrainingDetail({
   training,
   data,
@@ -324,13 +401,16 @@ export default function TrainingDetail({
                 <StatusDropdown
                   currentStatus={training.status || 'idea'}
                   onChangeStatus={(status) => {
-                    // Préparation à la clôture (#48) : avertir si des paiements
-                    // participants ne sont pas encore encaissés.
+                    // Clôture (#48) : avertir (sans bloquer) si un critère de
+                    // clôture n'est pas rempli au passage en « Clôturée ».
                     const r = training.closureReadiness
-                    if (
-                      status === 'completed' && r && !r.allPaid && r.unpaidCount > 0 &&
-                      !window.confirm(`${r.unpaidCount} paiement(s) participant ne sont pas encore encaissés (${r.paidCount}/${r.totalRegistrations} encaissés). Clôturer quand même ?`)
-                    ) return
+                    if (status === 'completed' && r && !r.ready) {
+                      const missing = []
+                      if (!r.allPaid && r.unpaidCount > 0) missing.push(`${r.unpaidCount} paiement(s) participant à encaisser`)
+                      if (!r.documentsSent) missing.push('documents non envoyés aux participants')
+                      if (!r.expensesReceived) missing.push('factures/dépenses fournisseurs non confirmées reçues')
+                      if (missing.length && !window.confirm(`Critères de clôture non remplis :\n— ${missing.join('\n— ')}\n\nClôturer quand même ?`)) return
+                    }
                     actions.updateTrainingStatus(training.id, status)
                   }}
                   readinessChecks={[
@@ -343,15 +423,15 @@ export default function TrainingDetail({
                 {training.status === 'post_production' && training.closureReadiness && (
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-                      training.closureReadiness.allPaid
+                      training.closureReadiness.ready
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}
-                    title="Préparation à la clôture : encaissement des paiements participants"
+                    title="Critères de clôture"
                   >
-                    {training.closureReadiness.allPaid
-                      ? '✓ Paiements encaissés — prêt à clôturer'
-                      : `Clôture : ${training.closureReadiness.unpaidCount} paiement(s) à encaisser (${training.closureReadiness.paidCount}/${training.closureReadiness.totalRegistrations})`}
+                    {training.closureReadiness.ready
+                      ? '✓ Prête à clôturer'
+                      : 'Clôture : critères à compléter'}
                   </span>
                 )}
               </div>
@@ -376,6 +456,13 @@ export default function TrainingDetail({
             </div>
           </div>
         </header>
+
+        {training.status === 'post_production' && training.closureReadiness && (
+          <ClosureChecklist
+            training={training}
+            onToggleFlag={(flag, value) => actions.setTrainingClosureFlag(training.id, flag, value)}
+          />
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="group bg-white rounded-xl p-5 border border-stone-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden">
