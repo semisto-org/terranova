@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 26,
+      "endpointCount": 31,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -9,6 +9,11 @@
           "method": "GET",
           "path": "/api/v1/academy",
           "summary": "index"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/academy/announcements/{announcement_id}",
+          "summary": "destroy_announcement"
         },
         {
           "method": "POST",
@@ -119,6 +124,26 @@
           "method": "PATCH",
           "path": "/api/v1/academy/trainings/{training_id}",
           "summary": "update_training"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/trainings/{training_id}/announcements",
+          "summary": "create_announcement"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/trainings/{training_id}/feedbacks",
+          "summary": "list_feedbacks"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/trainings/{training_id}/messages",
+          "summary": "list_messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/trainings/{training_id}/messages",
+          "summary": "reply_message"
         },
         {
           "method": "POST",
@@ -708,7 +733,7 @@
       ]
     },
     {
-      "endpointCount": 10,
+      "endpointCount": 14,
       "file": "my_semisto.json",
       "name": "my_semisto",
       "operations": [
@@ -748,9 +773,29 @@
           "summary": "destroy_document"
         },
         {
+          "method": "GET",
+          "path": "/api/v1/my/academy/{training_id}/messages",
+          "summary": "messages"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my/academy/{training_id}/messages",
+          "summary": "create_message"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/feedback",
+          "summary": "create_feedback"
+        },
+        {
           "method": "PATCH",
           "path": "/api/v1/my/academy/{training_id}/sessions/{session_id}/photo-album",
           "summary": "update_session_photo_album"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/my/announcements",
+          "summary": "announcements"
         },
         {
           "method": "POST",
@@ -1306,5 +1351,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 228
+  "totalEndpoints": 237
 }
