@@ -6,15 +6,19 @@ Digital infrastructure for the Semisto movement — transforming anthropized zon
 
 ## Workflow — issue d'abord (défaut)
 
-Pour avancer plus vite, le traitement de Terranova passe par GitHub Issues, traitées la nuit par **Nova** (agent nocturne tournant **en local** via launchd — voir [`.nova/README.md`](.nova/README.md)).
+Pour avancer plus vite, le traitement de Terranova passe par GitHub Issues, traitées la nuit par un **moteur nocturne unifié partagé entre plusieurs repos Rails de Michael** (claudy, d-ici, tranches-de-vie, terranova, silvea, superkiwi…). Source de vérité : [`~/code/nightly/`](file:///Users/michael/code/nightly/README.md) (`run-all.sh` + registre `projects.tsv`, déclenché par le job Pulse `nightly-issues` à 03:15). Terranova y est inscrit. Le moteur clone le repo, copie les secrets, et lance Claude Code headless ; il ouvre **une PR draft par issue prête** (jamais de push sur la branche par défaut).
+
+> ⚠️ L'ancien dispositif **Nova en local** (`.nova/`, launchd, labels `nova:*`) est **obsolète** — remplacé par le moteur unifié ci-dessus. Ne plus utiliser les labels `nova:auto`/`nova:blocked`/… pour confier une issue.
 
 **Règle par défaut quand Michael demande une feature ou un fix :**
 1. **Proposer de créer une issue GitHub** (ou un **epic** si c'est une grosse feature à découper). Ne pas coder tout de suite.
 2. Si Michael dit de **traiter tout de suite**, alors implémenter directement dans la session.
-3. À la création d'une issue, **collecter le contrat minimal pour un agent autonome** : contexte/objectif, comportement attendu, **critères d'acceptation vérifiables**, zones de code concernées, hors-scope, comment vérifier. Les gabarits `.github/ISSUE_TEMPLATE/` (feature/bug/epic) encodent ce contrat.
-4. Ajouter le label **`nova:auto`** pour confier l'issue à Nova la nuit. Nova ouvre une **PR draft** si l'issue est claire, sinon commente ses questions et pose `nova:blocked`.
+3. À la création d'une issue, **collecter le contrat minimal pour un agent autonome** : contexte/objectif, comportement attendu, **critères d'acceptation vérifiables** (≥1 case `- [ ]`), périmètre (in/out), zones de code concernées, stratégie de test, Definition of Done. Les gabarits `.github/ISSUE_TEMPLATE/` encodent ce contrat.
+4. Poser le label **`agent:ready`** (opt-in) pour confier l'issue au moteur nocturne. Un gate GitHub Actions (« Agent-ready completeness gate ») vérifie alors les sections obligatoires : si l'issue est incomplète, il **retire le label + commente** ce qui manque. L'issue n'est donc prise que si elle est complète.
 
-Une issue bien écrite = traitable sans humain en ligne. Si tu ne peux pas en dériver des critères d'acceptation atomiques, l'issue n'est pas prête : précise-la avant de poser `nova:auto`.
+**Labels canoniques unifiés** (anglais, tous projets) : `agent:ready`, `agent:in-progress`, `agent:done`, `agent:blocked`, `agent:needs-info`, `epic`.
+
+Une issue bien écrite = traitable sans humain en ligne. Si tu ne peux pas en dériver des critères d'acceptation atomiques, l'issue n'est pas prête : précise-la avant de poser `agent:ready`.
 
 ## Tech Stack
 
