@@ -963,7 +963,7 @@
       ]
     },
     {
-      "endpointCount": 15,
+      "endpointCount": 16,
       "file": "plants.json",
       "name": "plants",
       "operations": [
@@ -1036,6 +1036,11 @@
           "method": "GET",
           "path": "/api/v1/plants/species/{id}",
           "summary": "species"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/plants/species/{id}",
+          "summary": "update_species"
         },
         {
           "method": "POST",
@@ -1311,5 +1316,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 229
+  "totalEndpoints": 230
 }

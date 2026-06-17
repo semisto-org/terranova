@@ -174,6 +174,27 @@ class PlantsStep1Test < ActionDispatch::IntegrationTest
     assert_operator @contributor.semos_earned, :>=, 10
   end
 
+  test 'update species reassigns genus_id and patches a scalar field' do
+    # Regression/documentation: PATCH /api/v1/plants/species/:id works server-side
+    # but was absent from the OpenAPI spec because no integration test exercised it,
+    # making genus_id appear non-patchable to spec consumers. This test documents the
+    # endpoint and proves genus_id (plus another scalar) is modifiable.
+    genus_b = Plant::Genus.create!(latin_name: 'Pyrus', description: 'Poiriers')
+
+    patch "/api/v1/plants/species/#{@species.id}",
+          params: { genus_id: genus_b.id, origin: 'Asie centrale' },
+          as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert_equal genus_b.id.to_s, body['genusId']
+    assert_equal 'Asie centrale', body['origin']
+
+    @species.reload
+    assert_equal genus_b.id, @species.genus_id
+    assert_equal 'Asie centrale', @species.origin
+  end
+
   test 'create variety is idempotent on (species_id, latin_name)' do
     # Regression: bulk-import scripts that POST the same variety twice used to
     # silently create duplicates because there was no uniqueness check.
