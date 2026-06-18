@@ -5,9 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Un epic n’est **pas** traité directement par Nova : il sert à cadrer puis à générer des
+        Un epic n’est **pas** traité directement par l’agent nocturne : il sert à cadrer puis à générer des
         **issues filles** atomiques (chacune avec ses critères d’acceptation), que tu pourras
-        marquer `nova:auto` individuellement.
+        marquer `agent:ready` individuellement.
   - type: textarea
     id: vision
     attributes:
