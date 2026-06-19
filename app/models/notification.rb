@@ -25,4 +25,39 @@ class Notification < ApplicationRecord
   def mark_read!
     update!(read_at: Time.current) unless read?
   end
+
+  # Libellé lisible pour le digest email (#106). Conçu ouvert : un kind inconnu
+  # retombe sur une forme humanisée plutôt que de planter.
+  KIND_VERBS = {
+    "assignment" => "vous a assigné",
+    "task_assigned" => "vous a assigné",
+    "mention" => "vous a mentionné·e sur",
+    "comment" => "a commenté",
+    "comment_created" => "a commenté",
+    "ping" => "vous a fait coucou sur",
+    "due_soon" => "— échéance proche :",
+    "task_due_soon" => "— échéance proche :"
+  }.freeze
+
+  def summary
+    verb = KIND_VERBS[kind] || kind.to_s.tr("_", " ")
+    [actor_name, verb, target_label].compact.join(" ").strip
+  end
+
+  def actor_name
+    return "Quelqu'un" if actor.nil?
+
+    "#{actor.first_name} #{actor.last_name}".strip
+  end
+
+  def target_label
+    target = notifiable
+    return nil if target.nil?
+
+    if target.respond_to?(:title) && target.title.present?
+      "« #{target.title.to_s.truncate(60)} »"
+    elsif target.respond_to?(:name) && target.name.present?
+      "« #{target.name.to_s.truncate(60)} »"
+    end
+  end
 end

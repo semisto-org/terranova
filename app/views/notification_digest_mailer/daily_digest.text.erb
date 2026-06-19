@@ -1,0 +1,19 @@
+Votre récap du jour
+===================
+
+Bonjour <%= @member.first_name %>,
+
+Voici ce qui s'est passé sur Terranova depuis votre dernier passage —
+<%= @count %> <%= @count > 1 ? "notifications non-lues" : "notification non-lue" %> dans votre boîte Hey!.
+
+<% @notifications.each do |notification| -%>
+- <%= notification.summary %> (<%= notification.created_at.strftime("%d/%m %H:%M") %>)
+<% end -%>
+
+Voir dans Terranova : <%= @app_url %>
+
+Pour rester calme : travail -> on écrit sur l'objet concerné dans Terranova ;
+urgent -> téléphone ; social -> hors outil.
+
+Vous recevez un seul récap par jour. Réglez vos heures calmes ou désactivez
+ce digest depuis votre profil.

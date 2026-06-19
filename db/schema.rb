@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_19_020434) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1473,7 +1473,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
     t.string "avatar", default: "", null: false
     t.string "calendar_token"
     t.datetime "created_at", null: false
+    t.date "digest_last_sent_on"
     t.string "email", null: false
+    t.boolean "email_digest_opt_in", default: true, null: false
     t.string "first_name", null: false
     t.boolean "is_admin", default: false, null: false
     t.date "joined_at", null: false
@@ -1484,6 +1486,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
     t.text "notes"
     t.text "notes_html"
     t.string "password_digest"
+    t.integer "quiet_hours_end_hour", default: 8, null: false
+    t.integer "quiet_hours_start_hour", default: 19, null: false
     t.string "slack_user_id"
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
