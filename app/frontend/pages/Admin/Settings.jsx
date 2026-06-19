@@ -421,20 +421,40 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
             : {}),
       }
       // The projectable quick-edit modal does its own PATCH then calls back here
-      // with { projectableType, projectableId, projectName } — we just need to refetch
-      // to surface the new project name in the list.
+      // with { projectableType, projectableId, projectName } — its primary path
+      // already does a surgical onRowReplace; this callback is only the fallback.
       const projectableChanged =
         Object.prototype.hasOwnProperty.call(changes, 'projectableType') ||
         Object.prototype.hasOwnProperty.call(changes, 'projectableId')
       if (!Object.keys(payload).length && !projectableChanged) return
       await runAndRefresh(async () => {
         if (Object.keys(payload).length) {
-          await apiRequest(`/api/v1/lab/expenses/${expenseId}`, {
+          // Le PATCH renvoie déjà la dépense sérialisée complète : on remplace
+          // uniquement la ligne concernée à partir de cette réponse, sans
+          // refetch global ni flash de chargement du tableau (#131).
+          const updated = await apiRequest(`/api/v1/lab/expenses/${expenseId}`, {
             method: 'PATCH',
             body: JSON.stringify(payload),
           })
+          if (updated?.id) {
+            setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+          }
+        } else if (projectableChanged) {
+          // Fallback du quick-edit projet (réponse PATCH indisponible côté modal) :
+          // mise à jour locale de la seule ligne, sans refetch global.
+          setExpenses((prev) =>
+            prev.map((e) =>
+              e.id === expenseId
+                ? {
+                    ...e,
+                    projectableType: changes.projectableType ?? null,
+                    projectableId: changes.projectableId ?? null,
+                    projectName: changes.projectName ?? null,
+                  }
+                : e
+            )
+          )
         }
-        await loadExpenses()
       })
     },
     onBulkExpenseUpdate: async (ids, changes) => {
