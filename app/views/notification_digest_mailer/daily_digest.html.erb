@@ -1,0 +1,44 @@
+<h2 style="margin: 0 0 16px; font-size: 20px; color: #234766;">
+  Votre récap du jour
+</h2>
+
+<p>Bonjour <%= @member.first_name %>,</p>
+
+<p>
+  Voici ce qui s'est passé sur Terranova depuis votre dernier passage —
+  <strong><%= @count %></strong>
+  <%= @count > 1 ? "notifications non-lues" : "notification non-lue" %>
+  dans votre boîte Hey!.
+</p>
+
+<ul style="padding-left: 18px; margin: 20px 0;">
+  <% @notifications.each do |notification| %>
+    <li style="margin-bottom: 10px;">
+      <%= notification.summary %>
+      <span style="color: #999999; font-size: 12px;">
+        (<%= l(notification.created_at, format: :short) rescue notification.created_at.strftime("%d/%m %H:%M") %>)
+      </span>
+    </li>
+  <% end %>
+</ul>
+
+<p style="text-align: center; margin: 32px 0;">
+  <a href="<%= @app_url %>"
+     style="display: inline-block; padding: 12px 32px; background-color: #5B5781;
+            color: #ffffff; text-decoration: none; border-radius: 8px;
+            font-weight: 600; font-size: 14px;">
+    Voir dans Terranova
+  </a>
+</p>
+
+<p style="font-size: 13px; color: #666666; border-top: 1px solid #eeeeee; padding-top: 16px;">
+  <strong>Pour rester calme&nbsp;:</strong>
+  travail → on écrit sur l'objet concerné dans Terranova ·
+  urgent → téléphone ·
+  social → hors outil.
+</p>
+
+<p style="font-size: 12px; color: #999999;">
+  Vous recevez un seul récap par jour. Réglez vos heures calmes ou désactivez
+  ce digest depuis votre profil.
+</p>

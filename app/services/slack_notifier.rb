@@ -5,8 +5,17 @@ require "uri"
 require "json"
 
 class SlackNotifier
+  # Slack n'est plus le canal par défaut (#106, « remplacer Slack ») : la source
+  # de vérité est la boîte interne Hey! + le digest email. Slack reste un canal
+  # de DÉBORDEMENT optionnel, OFF par défaut — on l'active explicitement en
+  # posant SLACK_OVERFLOW_ENABLED=true.
+  def self.overflow_enabled?
+    ENV["SLACK_OVERFLOW_ENABLED"] == "true"
+  end
+
   def self.post(text:, url: nil)
     return if Rails.env.test?
+    return unless overflow_enabled?
 
     webhook_url = url || ENV["SLACK_WEBHOOK_URL"]
     return if webhook_url.blank?

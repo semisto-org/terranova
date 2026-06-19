@@ -66,4 +66,27 @@ class Member < ApplicationRecord
   def guild_ids_list
     project_memberships.where(projectable_type: "Guild").pluck(:projectable_id)
   end
+
+  # ── Distribution calme (#106) ─────────────────────────────────────────────
+  # Notifications internes (boîte Hey! #105) reçues par ce membre.
+  has_many :received_notifications, class_name: "Notification", foreign_key: :recipient_id, dependent: :destroy
+
+  # Heures calmes — fuseau Europe/Brussels FIXE pour tous (décision 18/06) ;
+  # seule la plage [end, start) est ajustable. Push email autorisé uniquement
+  # dans cette plage (par défaut 8h–19h, soit silence 19h–8h). En dehors, la
+  # boîte interne se remplit toujours, mais aucun email n'est poussé.
+  QUIET_HOURS_TIME_ZONE = "Europe/Brussels"
+
+  def email_push_allowed_at?(time = Time.current)
+    hour = time.in_time_zone(QUIET_HOURS_TIME_ZONE).hour
+    start_hour = quiet_hours_start_hour
+    end_hour = quiet_hours_end_hour
+    if end_hour <= start_hour
+      # Plage de push non-traversante (cas par défaut 8h..19h).
+      hour >= end_hour && hour < start_hour
+    else
+      # Plage de push traversant minuit (silence en milieu de journée).
+      hour >= end_hour || hour < start_hour
+    end
+  end
 end

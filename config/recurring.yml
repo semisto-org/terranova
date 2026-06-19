@@ -21,3 +21,9 @@ production:
   task_due_soon_notifications:
     class: TaskDueSoonNotificationJob
     schedule: every day at 7am
+  # Digest email calme (#106) : un seul récap quotidien par membre des
+  # notifications non-lues, ~8h Europe/Brussels (fuseau explicite — l'app tourne
+  # en UTC). Le job re-filtre par heures calmes du membre et garantit l'unicité.
+  notification_digest:
+    class: NotificationDigestJob
+    schedule: "0 8 * * * Europe/Brussels"
