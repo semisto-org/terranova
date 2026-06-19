@@ -121,6 +121,7 @@ module Api
         render json: {
           imported: result[:imported],
           skipped: result[:skipped],
+          remapped: result[:remapped],
           total: result[:movements_total],
           lastSyncedAt: connection.reload.last_synced_at&.iso8601
         }

@@ -200,4 +200,49 @@ class BankSync::CodaImporterTest < ActiveSupport::TestCase
     assert_equal 2, result[:skipped]
     assert_equal 2, @connection.bank_transactions.count
   end
+
+  test "re-keys transactions imported under an old id scheme instead of duplicating them" do
+    # Simulate the pre-fix state: one row per date (blank-reference collision)
+    # carrying the old "coda_<conn>__<date>" id, with a reconciliation attached.
+    old_row = @connection.bank_transactions.create!(
+      provider_transaction_id: "coda_#{@connection.id}__2026-03-15",
+      date: Date.new(2026, 3, 15),
+      amount: 875.0,
+      currency: "EUR",
+      remittance_info: nil,
+      status: "unmatched"
+    )
+    expense = Expense.create!(
+      organization: @organization,
+      name: "Facture test",
+      status: "planned",
+      expense_type: "services_and_goods",
+      total_incl_vat: 875.0,
+      supplier: "Fournisseur test",
+      poles: ["lab"]
+    )
+    reconciliation = BankReconciliation.create!(
+      bank_transaction: old_row,
+      reconcilable: expense,
+      amount: 875.0,
+      confidence: "manual"
+    )
+
+    result = BankSync::CodaImporter.new(@connection).import(blank_ref_same_date_coda)
+
+    # The +875.00 movement adopts the old row; the -50.00 movement is created.
+    assert_equal 1, result[:remapped]
+    assert_equal 1, result[:imported]
+    assert_equal 2, @connection.bank_transactions.count, "no duplicate of the old row"
+
+    old_row.reload
+    assert_equal "coda_#{@connection.id}_0001_2026-03-15_875.0", old_row.provider_transaction_id
+    assert_equal reconciliation.id, old_row.bank_reconciliations.first&.id, "reconciliation preserved"
+
+    # Idempotent: a second import re-keys nothing and creates nothing.
+    again = BankSync::CodaImporter.new(@connection).import(blank_ref_same_date_coda)
+    assert_equal 0, again[:remapped]
+    assert_equal 0, again[:imported]
+    assert_equal 2, @connection.bank_transactions.count
+  end
 end
