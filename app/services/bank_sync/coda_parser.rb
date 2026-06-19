@@ -88,9 +88,10 @@ module BankSync
 
     def parse_old_balance(line, result)
       result.account_number = extract_account_number(line[5, 37])
-      result.old_balance_sign = line[41] == "0" ? :credit : :debit
-      result.old_balance = parse_amount(line[42, 15])
-      result.old_balance_date = parse_date(line[57, 6])
+      sign, amount, date = parse_balance_fields(line)
+      result.old_balance_sign = sign
+      result.old_balance = amount
+      result.old_balance_date = date
     end
 
     def parse_movement_line1(line)
@@ -139,9 +140,23 @@ module BankSync
     end
 
     def parse_new_balance(line, result)
-      result.new_balance_sign = line[41] == "0" ? :credit : :debit
-      result.new_balance = parse_amount(line[42, 15])
-      result.new_balance_date = parse_date(line[57, 6])
+      sign, amount, date = parse_balance_fields(line)
+      result.new_balance_sign = sign
+      result.new_balance = amount
+      result.new_balance_date = date
+    end
+
+    # The balance records (type 1 = old, type 8 = new) hold a 1-char sign,
+    # a 15-digit amount and a 6-digit date. Triodos shifts the old-balance
+    # record one position to the right versus the spec/new-balance record, so
+    # anchor on the sign column ("0" credit / "1" debit) to locate the fields
+    # rather than hardcoding an offset.
+    def parse_balance_fields(line)
+      offset = %w[0 1].include?(line[41]) ? 41 : 42
+      sign = line[offset] == "0" ? :credit : :debit
+      amount = parse_amount(line[offset + 1, 15])
+      date = parse_date(line[offset + 16, 6])
+      [sign, amount, date]
     end
 
     def parse_amount(raw)
