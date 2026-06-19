@@ -1410,8 +1410,12 @@ export default function DesignIndex({ initialProjectId }) {
             onFilterChange={(key, value) => setReportingFilters((prev) => ({ ...prev, [key]: value }))}
             onExportCsv={() => {
               if (!reporting?.projects?.length) return
-              const header = ['Projet', 'Client', 'CA', 'Coûts', 'Marge', 'Marge %', 'Heures', 'Revenu/h', 'Coût/h']
-              const rows = reporting.projects.map((r) => [r.label, r.client_name, r.revenues, r.expenses, r.gross_margin, (r.gross_margin_pct * 100).toFixed(1), r.hours, r.revenue_per_hour, r.cost_per_hour])
+              // Cohérent avec le tableau : montants HTVA, projets tout-à-0 masqués, statut FR.
+              const statusLabels = { active: 'En cours', pending: 'En attente', completed: 'Terminé', archived: 'Archivé' }
+              const header = ['Statut', 'Projet', 'Client', 'CA', 'Coûts', 'Prestations', 'Refacturés', 'Marge', 'Marge %', 'Heures', 'Revenu/h', 'Coût/h']
+              const rows = reporting.projects
+                .filter((r) => r.revenues !== 0 || r.expenses !== 0)
+                .map((r) => [statusLabels[r.status] || r.status || 'Autre', r.label, r.client_name, r.revenues, r.expenses, r.non_rebilled_expenses, r.rebilled_expenses, r.gross_margin, (r.gross_margin_pct * 100).toFixed(1), r.hours, r.revenue_per_hour, r.cost_per_hour])
               const csv = [header, ...rows].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
               const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
               const url = URL.createObjectURL(blob)

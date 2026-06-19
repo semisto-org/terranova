@@ -1,4 +1,8 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
+import { statusLabels, statusColors } from './shared/StatusIndicator'
+
+// Ordre d'affichage des groupes de statut (statusOrder n'est pas exporté par StatusIndicator).
+const STATUS_GROUP_ORDER = ['active', 'pending', 'completed', 'archived']
 
 // Lignes/membres normalisés pour l'affichage. La source est le payload brut de
 // DesignReportingService (clés snake_case : kpis, timeseries, projects, members…) —
@@ -6,9 +10,12 @@ import { useMemo, useState } from 'react'
 type ReportingRow = {
   projectId: string
   projectName: string
+  status: string
   clientName: string
   revenue: number
   costs: number
+  rebilledCosts: number
+  nonRebilledCosts: number
   margin: number
   marginPct: number
   hours: number
@@ -92,9 +99,12 @@ export function ReportingDashboard({
   const safeRows: ReportingRow[] = asArray<Record<string, unknown>>(data?.projects).map((row) => ({
     projectId: String(row.key ?? ''),
     projectName: String(row.label ?? `Projet #${row.key ?? ''}`),
+    status: String(row.status ?? ''),
     clientName: String(row.client_name ?? ''),
     revenue: num(row.revenues),
     costs: num(row.expenses),
+    rebilledCosts: num(row.rebilled_expenses),
+    nonRebilledCosts: num(row.non_rebilled_expenses),
     margin: num(row.gross_margin),
     marginPct: num(row.gross_margin_pct) * 100,
     hours: num(row.hours),
@@ -118,6 +128,8 @@ export function ReportingDashboard({
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
     const filtered = safeRows.filter((row) => {
+      // Masquer les projets sans aucune valeur € (ni recette, ni dépense).
+      if (row.revenue === 0 && row.costs === 0) return false
       if (!q) return true
       return row.projectName.toLowerCase().includes(q) || row.clientName.toLowerCase().includes(q)
     })
@@ -130,6 +142,32 @@ export function ReportingDashboard({
       return sortDir === 'asc' ? Number(left) - Number(right) : Number(right) - Number(left)
     })
   }, [safeRows, search, sortKey, sortDir])
+
+  // Regroupement par statut (l'ordre interne suit le tri courant). Un groupe « Autre »
+  // récupère tout statut inconnu pour ne jamais perdre une ligne.
+  const groupedRows = useMemo(() => {
+    const byStatus = new Map<string, ReportingRow[]>()
+    for (const row of rows) {
+      const key = STATUS_GROUP_ORDER.includes(row.status) ? row.status : 'other'
+      if (!byStatus.has(key)) byStatus.set(key, [])
+      byStatus.get(key)!.push(row)
+    }
+    const orderedKeys = [...STATUS_GROUP_ORDER.filter((s) => byStatus.has(s)), ...(byStatus.has('other') ? ['other'] : [])]
+    return orderedKeys.map((status) => {
+      const groupRows = byStatus.get(status)!
+      return {
+        status,
+        label: statusLabels[status as keyof typeof statusLabels] ?? 'Autre',
+        rows: groupRows,
+        subtotal: {
+          revenue: groupRows.reduce((sum, r) => sum + r.revenue, 0),
+          costs: groupRows.reduce((sum, r) => sum + r.costs, 0),
+          nonRebilledCosts: groupRows.reduce((sum, r) => sum + r.nonRebilledCosts, 0),
+          rebilledCosts: groupRows.reduce((sum, r) => sum + r.rebilledCosts, 0),
+        },
+      }
+    })
+  }, [rows])
 
   const toggleSort = (key: keyof ReportingRow) => {
     if (sortKey === key) {
@@ -218,28 +256,56 @@ export function ReportingDashboard({
 
       <section className="bg-white border border-stone-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3 gap-3">
-          <h3 className="font-medium text-stone-900">Rentabilité par projet</h3>
+          <div>
+            <h3 className="font-medium text-stone-900">Rentabilité par projet</h3>
+            <p className="text-xs text-stone-400">Montants HTVA · total sur la vie du projet (hors filtre de période) · projets sans recette ni dépense masqués</p>
+          </div>
           <input value={search} onChange={(e) => setSearch(e.target.value)} className="rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="Rechercher projet/client" />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="text-left text-stone-500 border-b border-stone-200">
               {[
-                ['projectName', 'Projet'], ['clientName', 'Client'], ['revenue', 'CA'], ['costs', 'Coûts'], ['marginPct', 'Marge %'], ['revenuePerHour', 'Revenu/h'], ['costPerHour', 'Coût/h'],
+                ['projectName', 'Projet'], ['clientName', 'Client'], ['revenue', 'CA'], ['costs', 'Coûts'], ['nonRebilledCosts', 'Prestations'], ['rebilledCosts', 'Refacturés'], ['marginPct', 'Marge %'], ['revenuePerHour', 'Revenu/h'], ['costPerHour', 'Coût/h'],
               ].map(([key, label]) => <th key={key} className="py-2 pr-3"><button onClick={() => toggleSort(key as keyof ReportingRow)}>{label}</button></th>)}
             </tr></thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.projectId} className="border-b border-stone-100">
-                  <td className="py-2 pr-3 font-medium text-stone-800">{row.projectName}</td>
-                  <td className="py-2 pr-3">{row.clientName}</td>
-                  <td className="py-2 pr-3">{euro.format(row.revenue)}</td>
-                  <td className="py-2 pr-3">{euro.format(row.costs)}</td>
-                  <td className={`py-2 pr-3 ${row.marginPct < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{number.format(row.marginPct)}%</td>
-                  <td className="py-2 pr-3">{euro.format(row.revenuePerHour)}</td>
-                  <td className="py-2 pr-3">{euro.format(row.costPerHour)}</td>
-                </tr>
-              ))}
+              {groupedRows.length === 0 ? (
+                <tr><td colSpan={9} className="py-6 text-center text-stone-400">Aucun projet avec recette ou dépense sur la période.</td></tr>
+              ) : groupedRows.map((group) => {
+                const colors = statusColors[group.status as keyof typeof statusColors] ?? { dot: 'bg-stone-300', bg: 'bg-stone-50', text: 'text-stone-500' }
+                return (
+                  <Fragment key={group.status}>
+                    <tr className={`${colors.bg} border-b border-stone-200`}>
+                      <td className={`py-2 pr-3 font-semibold ${colors.text}`} colSpan={2}>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className={`rounded-full ${colors.dot} w-2 h-2`} />
+                          {group.label}
+                          <span className="font-normal opacity-70">· {group.rows.length}</span>
+                        </span>
+                      </td>
+                      <td className={`py-2 pr-3 font-semibold ${colors.text}`}>{euro.format(group.subtotal.revenue)}</td>
+                      <td className={`py-2 pr-3 font-semibold ${colors.text}`}>{euro.format(group.subtotal.costs)}</td>
+                      <td className={`py-2 pr-3 font-semibold ${colors.text}`}>{euro.format(group.subtotal.nonRebilledCosts)}</td>
+                      <td className={`py-2 pr-3 font-semibold ${colors.text}`}>{euro.format(group.subtotal.rebilledCosts)}</td>
+                      <td colSpan={3} />
+                    </tr>
+                    {group.rows.map((row) => (
+                      <tr key={row.projectId} className="border-b border-stone-100">
+                        <td className="py-2 pr-3 pl-4 font-medium text-stone-800">{row.projectName}</td>
+                        <td className="py-2 pr-3">{row.clientName}</td>
+                        <td className="py-2 pr-3">{euro.format(row.revenue)}</td>
+                        <td className="py-2 pr-3">{euro.format(row.costs)}</td>
+                        <td className="py-2 pr-3" title="Prestations / coûts non refacturés au client">{euro.format(row.nonRebilledCosts)}</td>
+                        <td className="py-2 pr-3" title="Coûts refacturés au client">{euro.format(row.rebilledCosts)}</td>
+                        <td className={`py-2 pr-3 ${row.marginPct < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{number.format(row.marginPct)}%</td>
+                        <td className="py-2 pr-3">{euro.format(row.revenuePerHour)}</td>
+                        <td className="py-2 pr-3">{euro.format(row.costPerHour)}</td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                )
+              })}
             </tbody>
           </table>
         </div>
