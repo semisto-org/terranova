@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 🌙 Comment fonctionne Nova (agent nocturne)
-    url: https://github.com/semisto-org/terranova/blob/main/.github/nova/README.md
-    about: Marque une issue `nova:auto` pour que Nova la traite la nuit (PR draft) ou pose ses questions.
+  - name: 🌙 Comment fonctionne l'agent nocturne
+    url: https://github.com/semisto-org/terranova/blob/main/CLAUDE.md
+    about: Pose le label `agent:ready` pour confier l'issue à l'agent nocturne (PR draft) ou qu'il pose ses questions. Un gate vérifie d'abord la complétude.

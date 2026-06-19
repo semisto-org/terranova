@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Pour qu’un agent corrige seul, il doit pouvoir **reproduire** d’abord. Donne les étapes exactes.
-        Ajoute `nova:auto` pour confier la correction à Nova la nuit.
+        Ajoute le label `agent:ready` pour confier la correction à l’agent nocturne (un gate vérifie d’abord la complétude).
   - type: textarea
     id: repro
     attributes:
