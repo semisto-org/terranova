@@ -227,8 +227,8 @@ module Api
 
       # GET /api/v1/projects/:type/:id/expenses
       def list_expenses
-        expenses = @projectable.expenses.where(deleted_at: nil).order(invoice_date: :desc)
-        render json: { items: expenses.map { |e| serialize_expense(e) } }
+        expenses = @projectable.attributed_expenses.sort_by { |expense| expense.invoice_date || Date.new(0) }.reverse
+        render json: { items: expenses.map { |e| serialize_expense(e, projectable: @projectable) } }
       end
 
       # POST /api/v1/projects/:type/:id/expenses
@@ -597,7 +597,7 @@ module Api
           taskLists: task_lists,
           notes: project.has_attribute?(:notes) ? project.read_attribute(:notes).to_s : "",
           documents: documents_for(project).map { |d| serialize_document(d) },
-          expensesCount: project.expenses.where(deleted_at: nil).count,
+          expensesCount: project.attributed_expenses.count,
           revenuesCount: project.revenues.where(deleted_at: nil).count,
           timesheetsCount: project.timesheets.count,
           eventsCount: project.events.where(deleted_at: nil).count,
@@ -674,10 +674,12 @@ module Api
         end
       end
 
-      def serialize_expense(item)
+      def serialize_expense(item, projectable: nil)
         doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
-        {
-          id: item.id.to_s,
+        amount_excl_vat = projectable ? item.attributed_amount_excl_vat_for(projectable) : item.amount_excl_vat.to_d
+        total_incl_vat = projectable ? item.attributed_amount_incl_vat_for(projectable) : item.total_incl_vat.to_d
+        payload = {
+          id: projectable && item.multi_project? ? "#{item.id}-#{projectable.id}" : item.id.to_s,
           name: item.name,
           supplier: item.supplier_display_name,
           supplierContactId: item.supplier_contact_id&.to_s,
@@ -687,11 +689,11 @@ module Api
           category: item.category,
           billingZone: item.billing_zone,
           vatRate: item.vat_rate,
-          amountExclVat: item.amount_excl_vat.to_f,
+          amountExclVat: amount_excl_vat.to_f,
           vat6: item.vat_6.to_f,
           vat12: item.vat_12.to_f,
           vat21: item.vat_21.to_f,
-          totalInclVat: item.total_incl_vat.to_f,
+          totalInclVat: total_incl_vat.to_f,
           poles: item.poles,
           paymentType: item.payment_type,
           paymentDate: item.payment_date&.iso8601,
@@ -699,11 +701,20 @@ module Api
           rebillingStatus: item.rebilling_status,
           notes: item.notes,
           documentUrl: doc_url,
-          projectableType: item.projectable_type,
-          projectableId: item.projectable_id&.to_s,
-          projectName: item.projectable&.project_name,
+          projectableType: projectable ? projectable.class.name : item.projectable_type,
+          projectableId: projectable ? projectable.id.to_s : item.projectable_id&.to_s,
+          projectName: projectable ? projectable.project_name : item.projectable&.project_name,
           createdAt: item.created_at.iso8601
         }
+        if projectable
+          payload.merge!(
+            attributedAmountInclVat: total_incl_vat.to_f,
+            attributedAmountExclVat: amount_excl_vat.to_f,
+            isAllocation: item.multi_project?,
+            fullTotalInclVat: item.total_incl_vat.to_f
+          )
+        end
+        payload
       end
 
       def serialize_revenue(r)

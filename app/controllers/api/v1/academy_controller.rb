@@ -549,15 +549,24 @@ module Api
             vr > 0 ? (r.amount_paid.to_f / (1 + vr / 100.0)).round(2) : r.amount_paid.to_f
           end
         end
-        expenses = trainings.sum { |item| item.expenses.sum(&:amount_excl_vat).to_f }
+        expenses = trainings.sum do |training|
+          training.attributed_expenses.sum { |expense| expense.attributed_amount_excl_vat_for(training).to_f }
+        end
         total_participants = trainings.sum { |item| item.registrations.size }
 
         by_status = Academy::Training::STATUSES.index_with do |status|
           trainings.count { |t| t.status == status }
         end
 
-        training_ids = trainings.map(&:id)
-        expenses_by_category = Expense.where(projectable_type: 'Academy::Training', projectable_id: training_ids).where.not(category: nil).group(:category).sum(:amount_excl_vat).transform_values(&:to_f)
+        expenses_by_category = Hash.new(0.to_d)
+        trainings.each do |training|
+          training.attributed_expenses.each do |expense|
+            next if expense.category.nil?
+
+            expenses_by_category[expense.category] += expense.attributed_amount_excl_vat_for(training)
+          end
+        end
+        expenses_by_category.transform_values!(&:to_f)
 
         fill_rates = trainings.filter_map do |t|
           cap = t.total_capacity
@@ -635,7 +644,9 @@ module Api
           .order(registered_at: :desc)
         attendances = Academy::TrainingAttendance.where(registration_id: Academy::TrainingRegistration.select(:id)).order(updated_at: :desc)
         documents = Academy::TrainingDocument.order(uploaded_at: :desc)
-        expenses = Expense.where(projectable_type: 'Academy::Training').order(invoice_date: :desc)
+        training_expenses = trainings.flat_map do |training|
+          training.attributed_expenses.map { |expense| [expense, training] }
+        end.sort_by { |expense, _training| expense.invoice_date || Date.new(0) }.reverse
         idea_notes = Academy::IdeaNote.order(created_at: :desc)
         members = Member.order(:first_name, :last_name)
         team = Contact.joins(:contact_tags)
@@ -656,7 +667,7 @@ module Api
           trainingRegistrations: registrations.map { |item| serialize_registration(item) },
           trainingAttendances: attendances.map { |item| serialize_attendance(item) },
           trainingDocuments: documents.map { |item| serialize_document(item) },
-          trainingExpenses: expenses.map { |item| serialize_expense(item) },
+          trainingExpenses: training_expenses.map { |item, training| serialize_expense(item, projectable: training) },
           ideaNotes: idea_notes.map { |item| serialize_idea_note(item) },
           members: members.map { |item| serialize_member(item) },
           academyContacts: team.map { |item| serialize_academy_contact(item) },
@@ -995,12 +1006,14 @@ module Api
         }
       end
 
-      def serialize_expense(item)
+      def serialize_expense(item, projectable: nil)
         doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
-        {
-          id: item.id.to_s,
-          projectableType: item.projectable_type,
-          projectableId: item.projectable_id&.to_s,
+        amount_excl_vat = projectable ? item.attributed_amount_excl_vat_for(projectable) : item.amount_excl_vat.to_d
+        total_incl_vat = projectable ? item.attributed_amount_incl_vat_for(projectable) : item.total_incl_vat.to_d
+        payload = {
+          id: projectable && item.multi_project? ? "#{item.id}-#{projectable.id}" : item.id.to_s,
+          projectableType: projectable ? projectable.class.name : item.projectable_type,
+          projectableId: projectable ? projectable.id.to_s : item.projectable_id&.to_s,
           supplier: item.supplier_display_name,
           supplierContactId: item.supplier_contact_id&.to_s,
           status: item.status,
@@ -1010,12 +1023,12 @@ module Api
           billingZone: item.billing_zone,
           paymentDate: item.payment_date&.iso8601,
           paymentType: item.payment_type,
-          amountExclVat: item.amount_excl_vat.to_f,
+          amountExclVat: amount_excl_vat.to_f,
           vatRate: item.vat_rate,
           vat6: item.vat_6.to_f,
           vat12: item.vat_12.to_f,
           vat21: item.vat_21.to_f,
-          totalInclVat: item.total_incl_vat.to_f,
+          totalInclVat: total_incl_vat.to_f,
           euVatRate: item.eu_vat_rate,
           euVatAmount: item.eu_vat_amount.to_f,
           paidBy: item.paid_by,
@@ -1031,6 +1044,15 @@ module Api
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
+        if projectable
+          payload.merge!(
+            attributedAmountInclVat: total_incl_vat.to_f,
+            attributedAmountExclVat: amount_excl_vat.to_f,
+            isAllocation: item.multi_project?,
+            fullTotalInclVat: item.total_incl_vat.to_f
+          )
+        end
+        payload
       end
 
       def serialize_idea_note(item)
