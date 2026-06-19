@@ -622,6 +622,24 @@ export function ExpenseList({
                               <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
                             </span>
                           )}
+                          {/* Indicateur de justificatif (#131) : icône en évidence et
+                              cliquable si un document est attaché, atténuée sinon. */}
+                          {e.documentUrl ? (
+                            <a
+                              href={e.documentUrl}
+                              target="_blank"
+                              rel="noopener"
+                              onClick={(ev) => ev.stopPropagation()}
+                              title={e.documentFilename || 'Voir le document'}
+                              className="shrink-0 text-[#5B5781] hover:text-[#46426a] transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </a>
+                          ) : (
+                            <span title="Aucun document" className="shrink-0 text-stone-300" aria-hidden>
+                              <FileText className="w-3.5 h-3.5" />
+                            </span>
+                          )}
                           <span className="font-medium text-stone-900 truncate max-w-[260px]">
                             {e.supplier || <span className="text-stone-400 italic">Sans fournisseur</span>}
                           </span>
