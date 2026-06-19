@@ -32,6 +32,10 @@ class DesignReportingService
       top_projects: project_profitability,
       timeseries: timeseries,
       grouped: grouped_breakdown,
+      projects: grouped_project_rows,
+      members: grouped_member_rows,
+      alerts: alerts,
+      filter_options: filter_options,
       data_quality: data_quality(revenues, expenses, timesheets)
     }
   end
@@ -110,21 +114,18 @@ class DesignReportingService
     scope
   end
 
+  # Le Design Studio enregistre ses heures dans design_project_timesheets
+  # (Design::ProjectTimesheet), pas dans la table polymorphe `timesheets`.
   def filtered_timesheets
-    scope = Timesheet.all
+    scope = Design::ProjectTimesheet
       .yield_self { |s| parsed_from.present? ? s.where('date >= ?', parsed_from) : s }
       .yield_self { |s| parsed_to.present? ? s.where('date <= ?', parsed_to) : s }
 
-    scope = if filters[:project_id].present?
-      scope.where(projectable_type: 'Design::Project', projectable_id: filters[:project_id])
-    else
-      scope.where(projectable_type: 'Design::Project')
-    end
-
+    scope = scope.where(project_id: filters[:project_id]) if filters[:project_id].present?
     scope = scope.where(member_id: filters[:member_id]) if filters[:member_id].present?
 
     if filters[:client_id].present?
-      scope = scope.joins("INNER JOIN design_projects ON design_projects.id = timesheets.projectable_id AND timesheets.projectable_type = 'Design::Project'")
+      scope = scope.joins("INNER JOIN design_projects ON design_projects.id = design_project_timesheets.project_id")
         .where('design_projects.client_id = ?', filters[:client_id])
     end
 
@@ -175,9 +176,13 @@ class DesignReportingService
   end
 
   def grouped_project_rows
+    @grouped_project_rows ||= build_grouped_project_rows
+  end
+
+  def build_grouped_project_rows
     revenue_map = filtered_revenues.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:amount)
     expense_map = filtered_expenses.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:total_incl_vat)
-    hours_map = filtered_timesheets.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:hours)
+    hours_map = filtered_timesheets.group(:project_id).sum(:hours)
 
     ids = (revenue_map.keys + expense_map.keys + hours_map.keys).uniq
     projects = Design::Project.where(id: ids).index_by(&:id)
@@ -229,6 +234,10 @@ class DesignReportingService
   end
 
   def grouped_member_rows
+    @grouped_member_rows ||= build_grouped_member_rows
+  end
+
+  def build_grouped_member_rows
     rows = filtered_timesheets.group(:member_id, :member_name).sum(:hours)
     revenue_by_project = filtered_revenues.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:amount)
     expense_by_project = filtered_expenses.where(projectable_type: 'Design::Project').group(:projectable_id).sum(:total_incl_vat)
@@ -237,7 +246,7 @@ class DesignReportingService
 
     rows.map do |(member_id, member_name), hours_value|
       member_timesheets = filtered_timesheets.where(member_id: member_id)
-      project_ids = member_timesheets.where(projectable_type: 'Design::Project').distinct.pluck(:projectable_id)
+      project_ids = member_timesheets.distinct.pluck(:project_id)
       revenues = project_ids.sum { |id| revenue_by_project[id].to_f }
       expenses = project_ids.sum { |id| expense_by_project[id].to_f }
       hours = hours_value.to_f
@@ -262,11 +271,38 @@ class DesignReportingService
     end
   end
 
+  def alerts
+    rows = grouped_project_rows
+    budgets = Design::Project.where(id: rows.map { |row| row[:key] }).pluck(:id, :expenses_budget).to_h
+    rows.flat_map do |row|
+      project_alerts = []
+      if row[:gross_margin].negative?
+        project_alerts << { level: 'high', kind: 'negative_margin', projectId: row[:key], message: "Marge négative sur #{row[:label]}" }
+      end
+      budget = budgets[row[:key].to_i].to_f
+      if budget.positive? && row[:expenses] > budget
+        project_alerts << { level: 'medium', kind: 'cost_overrun', projectId: row[:key], message: "Dépassement de coûts sur #{row[:label]}" }
+      end
+      project_alerts
+    end.first(12)
+  end
+
+  def filter_options
+    {
+      projects: Design::Project.where(deleted_at: nil).order(:name).pluck(:id, :name).map { |id, name| { id: id.to_s, name: name } },
+      clients: Design::Project.where(deleted_at: nil).where.not(client_id: nil).order(:client_name).distinct.pluck(:client_id, :client_name)
+        .map { |id, name| { id: id.to_s, name: name } }.uniq { |client| client[:id] },
+      members: Design::ProjectTimesheet.where.not(member_id: nil).order(:member_name).distinct.pluck(:member_id, :member_name)
+        .map { |id, name| { id: id.to_s, name: name.presence || id.to_s } }
+    }
+  end
+
   def data_quality(revenues, expenses, timesheets)
     {
       orphan_revenues_count: revenues.where.not(projectable_type: 'Design::Project').count,
       orphan_expenses_count: expenses.where.not(projectable_type: 'Design::Project').count,
-      orphan_timesheets_count: timesheets.where.not(projectable_type: 'Design::Project').count,
+      orphan_timesheets_count: 0, # heures sourcées de design_project_timesheets — jamais orphelines
+
       fallback_revenues_count: revenues.where.not(projectable_type: 'Design::Project').where(pole: 'design_studio').count,
       fallback_expenses_count: expenses.where.not(projectable_type: 'Design::Project').where('poles @> ARRAY[?]::varchar[]', 'design').count
     }

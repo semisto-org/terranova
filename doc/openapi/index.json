@@ -374,6 +374,18 @@
       ]
     },
     {
+      "endpointCount": 1,
+      "file": "design_studio.json",
+      "name": "design_studio",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/design_studio/reporting",
+          "summary": "reporting"
+        }
+      ]
+    },
+    {
       "endpointCount": 4,
       "file": "economics.json",
       "name": "economics",
@@ -1316,5 +1328,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 230
+  "totalEndpoints": 231
 }

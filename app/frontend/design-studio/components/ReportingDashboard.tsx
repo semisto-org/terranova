@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 
+// Lignes/membres normalisés pour l'affichage. La source est le payload brut de
+// DesignReportingService (clés snake_case : kpis, timeseries, projects, members…) —
+// l'adaptation snake_case → camelCase se fait dans le composant.
 type ReportingRow = {
   projectId: string
   projectName: string
@@ -11,9 +14,6 @@ type ReportingRow = {
   hours: number
   revenuePerHour: number
   costPerHour: number
-  trend: number
-  alertNegativeMargin: boolean
-  alertCostOverrun: boolean
 }
 
 type ReportingMember = {
@@ -24,30 +24,38 @@ type ReportingMember = {
   revenuePerHour: number
 }
 
+// Payload tel que renvoyé par /api/v1/design_studio/reporting (DesignReportingService).
 type ReportingPayload = {
-  summary: {
-    revenue: number
-    costs: number
-    marginValue: number
-    marginPct: number
-    totalHours: number
-    revenuePerHour: number
+  kpis?: {
+    revenues?: number
+    expenses?: number
+    gross_margin?: number
+    gross_margin_pct?: number
+    total_hours?: number
+    average_hourly_revenue?: number
+    average_hourly_cost?: number
   }
-  series: Array<{ period: string; revenue: number; costs: number; margin: number }>
-  projectProfitability: ReportingRow[]
-  memberProductivity: ReportingMember[]
-  alerts: Array<{ level: string; kind: string; message: string; projectId?: string }>
-  filters: {
-    period: string
-    groupBy: string
-    projects: Array<{ id: string; name: string }>
-    clients: string[]
-    members: Array<{ id: string; name: string }>
+  timeseries?: Array<{ period: string; revenues: number; expenses: number; gross_margin: number }>
+  projects?: Array<Record<string, unknown>>
+  members?: Array<Record<string, unknown>>
+  alerts?: Array<{ level: string; kind: string; message: string; projectId?: string }>
+  filter_options?: {
+    projects?: Array<{ id: string; name: string }>
+    clients?: Array<{ id: string; name: string }>
+    members?: Array<{ id: string; name: string }>
   }
 }
 
 const euro = new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
 const number = new Intl.NumberFormat('fr-BE', { maximumFractionDigits: 1 })
+const num = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0)
+
+// Période ISO (ex. "2026-03-01") → libellé court "mars 26".
+const formatPeriod = (iso: string): string => {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return new Intl.DateTimeFormat('fr-BE', { month: 'short', year: '2-digit' }).format(date)
+}
 
 export function ReportingDashboard({
   data,
@@ -66,15 +74,45 @@ export function ReportingDashboard({
 
   const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
 
-  const safeSummary = data?.summary || { revenue: 0, costs: 0, marginValue: 0, marginPct: 0, totalHours: 0, revenuePerHour: 0 }
-  const safeSeries = asArray<{ period: string; revenue: number; costs: number; margin: number }>(data?.series)
-  const safeRows = asArray<ReportingRow>(data?.projectProfitability)
-  const safeMemberProductivity = asArray<ReportingMember>(data?.memberProductivity)
+  const kpis = data?.kpis || {}
+  const safeSummary = {
+    revenue: num(kpis.revenues),
+    costs: num(kpis.expenses),
+    marginValue: num(kpis.gross_margin),
+    marginPct: num(kpis.gross_margin_pct) * 100,
+    totalHours: num(kpis.total_hours),
+    revenuePerHour: num(kpis.average_hourly_revenue),
+  }
+  const safeSeries = asArray<{ period: string; revenues: number; expenses: number; gross_margin: number }>(data?.timeseries).map((point) => ({
+    period: formatPeriod(point.period),
+    revenue: num(point.revenues),
+    costs: num(point.expenses),
+    margin: num(point.gross_margin),
+  }))
+  const safeRows: ReportingRow[] = asArray<Record<string, unknown>>(data?.projects).map((row) => ({
+    projectId: String(row.key ?? ''),
+    projectName: String(row.label ?? `Projet #${row.key ?? ''}`),
+    clientName: String(row.client_name ?? ''),
+    revenue: num(row.revenues),
+    costs: num(row.expenses),
+    margin: num(row.gross_margin),
+    marginPct: num(row.gross_margin_pct) * 100,
+    hours: num(row.hours),
+    revenuePerHour: num(row.revenue_per_hour),
+    costPerHour: num(row.cost_per_hour),
+  }))
+  const safeMemberProductivity: ReportingMember[] = asArray<Record<string, unknown>>(data?.members).map((member) => ({
+    memberId: String(member.key ?? ''),
+    memberName: String(member.label ?? member.key ?? ''),
+    hours: num(member.hours),
+    revenue: num(member.revenues),
+    revenuePerHour: num(member.revenue_per_hour),
+  }))
   const safeAlerts = asArray<{ level: string; kind: string; message: string; projectId?: string }>(data?.alerts)
   const safeFilterOptions = {
-    projects: asArray<{ id: string; name: string }>(data?.filters?.projects),
-    clients: asArray<string>(data?.filters?.clients),
-    members: asArray<{ id: string; name: string }>(data?.filters?.members),
+    projects: asArray<{ id: string; name: string }>(data?.filter_options?.projects),
+    clients: asArray<{ id: string; name: string }>(data?.filter_options?.clients),
+    members: asArray<{ id: string; name: string }>(data?.filter_options?.members),
   }
 
   const rows = useMemo(() => {
@@ -125,7 +163,7 @@ export function ReportingDashboard({
           <option value="">Tous projets</option>{safeFilterOptions.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <select className="rounded-lg border border-stone-300 px-3 py-2 text-sm" value={filters.client} onChange={(e) => onFilterChange('client', e.target.value)}>
-          <option value="">Tous clients</option>{safeFilterOptions.clients.map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="">Tous clients</option>{safeFilterOptions.clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select className="rounded-lg border border-stone-300 px-3 py-2 text-sm" value={filters.memberId} onChange={(e) => onFilterChange('memberId', e.target.value)}>
           <option value="">Tous membres</option>{safeFilterOptions.members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -187,7 +225,7 @@ export function ReportingDashboard({
           <table className="w-full text-sm">
             <thead><tr className="text-left text-stone-500 border-b border-stone-200">
               {[
-                ['projectName', 'Projet'], ['clientName', 'Client'], ['revenue', 'CA'], ['costs', 'Coûts'], ['marginPct', 'Marge %'], ['revenuePerHour', 'Revenu/h'], ['costPerHour', 'Coût/h'], ['trend', 'Tendance'],
+                ['projectName', 'Projet'], ['clientName', 'Client'], ['revenue', 'CA'], ['costs', 'Coûts'], ['marginPct', 'Marge %'], ['revenuePerHour', 'Revenu/h'], ['costPerHour', 'Coût/h'],
               ].map(([key, label]) => <th key={key} className="py-2 pr-3"><button onClick={() => toggleSort(key as keyof ReportingRow)}>{label}</button></th>)}
             </tr></thead>
             <tbody>
@@ -200,7 +238,6 @@ export function ReportingDashboard({
                   <td className={`py-2 pr-3 ${row.marginPct < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{number.format(row.marginPct)}%</td>
                   <td className="py-2 pr-3">{euro.format(row.revenuePerHour)}</td>
                   <td className="py-2 pr-3">{euro.format(row.costPerHour)}</td>
-                  <td className={`py-2 pr-3 ${row.trend >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{row.trend >= 0 ? '↗' : '↘'} {number.format(Math.abs(row.trend))}%</td>
                 </tr>
               ))}
             </tbody>

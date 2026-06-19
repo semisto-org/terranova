@@ -526,7 +526,7 @@ export default function DesignIndex({ initialProjectId }) {
       const params = new URLSearchParams()
       if (filters.period) params.set('period', filters.period)
       if (filters.projectId) params.set('project_id', filters.projectId)
-      if (filters.client) params.set('client', filters.client)
+      if (filters.client) params.set('client_id', filters.client)
       if (filters.memberId) params.set('member_id', filters.memberId)
       if (filters.groupBy) params.set('group_by', filters.groupBy)
       const payload = await apiRequest(`/api/v1/design_studio/reporting?${params.toString()}`)
@@ -1409,9 +1409,9 @@ export default function DesignIndex({ initialProjectId }) {
             filters={reportingFilters}
             onFilterChange={(key, value) => setReportingFilters((prev) => ({ ...prev, [key]: value }))}
             onExportCsv={() => {
-              if (!reporting?.projectProfitability?.length) return
-              const header = ['Projet', 'Client', 'CA', 'Coûts', 'Marge', 'Marge %', 'Heures', 'Revenu/h', 'Coût/h', 'Tendance']
-              const rows = reporting.projectProfitability.map((r) => [r.projectName, r.clientName, r.revenue, r.costs, r.margin, r.marginPct, r.hours, r.revenuePerHour, r.costPerHour, r.trend])
+              if (!reporting?.projects?.length) return
+              const header = ['Projet', 'Client', 'CA', 'Coûts', 'Marge', 'Marge %', 'Heures', 'Revenu/h', 'Coût/h']
+              const rows = reporting.projects.map((r) => [r.label, r.client_name, r.revenues, r.expenses, r.gross_margin, (r.gross_margin_pct * 100).toFixed(1), r.hours, r.revenue_per_hour, r.cost_per_hour])
               const csv = [header, ...rows].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
               const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
               const url = URL.createObjectURL(blob)
