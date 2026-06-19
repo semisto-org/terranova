@@ -59,9 +59,15 @@ module BankSync
     end
 
     def build_transaction_id(movement)
-      # Combine bank reference with value date for uniqueness
+      # Belgian banks (e.g. Triodos) often leave bank_reference blank, so it
+      # cannot anchor uniqueness on its own. The CODA sequence number is the
+      # bank-assigned, per-statement stable identifier — combined with the value
+      # date and signed amount it uniquely identifies a movement and stays
+      # idempotent when the same file is re-imported.
       date_str = (movement.value_date || movement.booking_date)&.iso8601 || "nodate"
-      "coda_#{@bank_connection.id}_#{movement.bank_reference}_#{date_str}"
+      signed_amount = movement.sign == :credit ? movement.amount : -movement.amount
+      ref = movement.bank_reference.presence || movement.sequence
+      "coda_#{@bank_connection.id}_#{ref}_#{date_str}_#{signed_amount.to_s('F')}"
     end
   end
 end

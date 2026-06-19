@@ -168,4 +168,48 @@ class BankSync::CodaParserTest < ActiveSupport::TestCase
     result = @parser.parse(content)
     assert_equal 1, result.movements.size
   end
+
+  # Triodos writes the old-balance record (type 1) one position to the right of
+  # the new-balance record (type 8): "1000" + account vs "800" + account. The
+  # sign-anchored balance parser must read both correctly.
+  def triodos_old_balance(sign:, amount_milli:, date:)
+    line = " " * 128
+    line[0, 4]  = "1000"
+    line[4, 13] = "2523081435316"
+    line[17, 4] = " EUR"
+    line[42]    = sign # shifted +1 vs the new-balance record
+    line[43, 15] = amount_milli.to_s.rjust(15, "0")
+    line[58, 6] = date
+    line
+  end
+
+  def triodos_new_balance(sign:, amount_milli:, date:)
+    line = " " * 128
+    line[0, 3]  = "800"
+    line[3, 13] = "2523081435316"
+    line[16, 4] = " EUR"
+    line[41]    = sign
+    line[42, 15] = amount_milli.to_s.rjust(15, "0")
+    line[57, 6] = date
+    line
+  end
+
+  test "reads Triodos balances despite the one-position old-balance shift" do
+    content = build_coda(
+      sample_header_line,
+      triodos_old_balance(sign: "0", amount_milli: 5_736_050, date: "190623"),
+      triodos_new_balance(sign: "0", amount_milli: 9_195_750, date: "190626"),
+      sample_trailer_line
+    )
+
+    result = @parser.parse(content)
+
+    assert_equal BigDecimal("5736.05"), result.old_balance
+    assert_equal :credit, result.old_balance_sign
+    assert_equal Date.new(2023, 6, 19), result.old_balance_date
+
+    assert_equal BigDecimal("9195.75"), result.new_balance
+    assert_equal :credit, result.new_balance_sign
+    assert_equal Date.new(2026, 6, 19), result.new_balance_date
+  end
 end

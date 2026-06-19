@@ -46,18 +46,23 @@ module BankSync
           detail_type = line[1]
           case detail_type
           when "1"
+            # A new movement starts: flush the previous one. Lines 22/23 are
+            # optional, so a movement may consist of a 21 line only — it must
+            # still be captured rather than overwritten by the next 21.
+            result.movements << current_movement if current_movement
             current_movement = parse_movement_line1(line)
           when "2"
             parse_movement_line2(line, current_movement) if current_movement
           when "3"
             parse_movement_line3(line, current_movement) if current_movement
-            result.movements << current_movement if current_movement
-            current_movement = nil
           end
         when "3"
           # Information records — skip (supplementary details)
           next
         when "8"
+          # End of a statement: flush the last movement before reading the balance.
+          result.movements << current_movement if current_movement
+          current_movement = nil
           parse_new_balance(line, result)
         when "9"
           # Trailer — skip
@@ -83,9 +88,10 @@ module BankSync
 
     def parse_old_balance(line, result)
       result.account_number = extract_account_number(line[5, 37])
-      result.old_balance_sign = line[41] == "0" ? :credit : :debit
-      result.old_balance = parse_amount(line[42, 15])
-      result.old_balance_date = parse_date(line[57, 6])
+      sign, amount, date = parse_balance_fields(line)
+      result.old_balance_sign = sign
+      result.old_balance = amount
+      result.old_balance_date = date
     end
 
     def parse_movement_line1(line)
@@ -134,9 +140,23 @@ module BankSync
     end
 
     def parse_new_balance(line, result)
-      result.new_balance_sign = line[41] == "0" ? :credit : :debit
-      result.new_balance = parse_amount(line[42, 15])
-      result.new_balance_date = parse_date(line[57, 6])
+      sign, amount, date = parse_balance_fields(line)
+      result.new_balance_sign = sign
+      result.new_balance = amount
+      result.new_balance_date = date
+    end
+
+    # The balance records (type 1 = old, type 8 = new) hold a 1-char sign,
+    # a 15-digit amount and a 6-digit date. Triodos shifts the old-balance
+    # record one position to the right versus the spec/new-balance record, so
+    # anchor on the sign column ("0" credit / "1" debit) to locate the fields
+    # rather than hardcoding an offset.
+    def parse_balance_fields(line)
+      offset = %w[0 1].include?(line[41]) ? 41 : 42
+      sign = line[offset] == "0" ? :credit : :debit
+      amount = parse_amount(line[offset + 1, 15])
+      date = parse_date(line[offset + 16, 6])
+      [sign, amount, date]
     end
 
     def parse_amount(raw)
