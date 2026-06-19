@@ -70,6 +70,23 @@ class Expense < ApplicationRecord
     project_allocations.any?
   end
 
+  def attributed_amount_incl_vat_for(projectable)
+    return total_incl_vat.to_d unless multi_project?
+
+    project_allocations
+      .select { |allocation| allocation.projectable_type == projectable.class.name && allocation.projectable_id.to_s == projectable.id.to_s }
+      .sum(0.to_d) { |allocation| allocation.amount.to_d }
+  end
+
+  def attributed_amount_excl_vat_for(projectable)
+    return amount_excl_vat.to_d unless multi_project?
+
+    total = total_incl_vat.to_d
+    return 0.to_d if total.zero?
+
+    (attributed_amount_incl_vat_for(projectable) / total * amount_excl_vat.to_d).round(2)
+  end
+
   after_save :record_cash_movement!
   after_destroy :unrecord_cash_movement!
 

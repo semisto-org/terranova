@@ -398,7 +398,7 @@ module Api
         project = find_project
         item = project.expenses.create!(expense_params)
         item.document.attach(params[:document]) if params[:document].present?
-        project.update!(expenses_actual: project.expenses.sum(:total_incl_vat))
+        update_expenses_actual!(project)
         render json: serialize_expense(item.reload), status: :created
       end
 
@@ -407,7 +407,7 @@ module Api
         item.update!(expense_params)
         item.document.attach(params[:document]) if params[:document].present?
         project = item.projectable
-        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat)) if project.is_a?(Design::Project)
+        update_expenses_actual!(project) if project.is_a?(Design::Project)
         render json: serialize_expense(item.reload)
       end
 
@@ -415,7 +415,7 @@ module Api
         item = Expense.find(params.require(:expense_id))
         project = item.projectable
         item.soft_delete!
-        project&.update!(expenses_actual: project.expenses.sum(:total_incl_vat)) if project.is_a?(Design::Project)
+        update_expenses_actual!(project) if project.is_a?(Design::Project)
         head :no_content
       end
 
@@ -1187,7 +1187,7 @@ module Api
           project: serialize_project(project),
           teamMembers: project.team_members.order(:assigned_at).map { |item| serialize_team_member(item) },
           timesheets: project.timesheets.order(date: :desc).map { |item| serialize_timesheet(item) },
-          expenses: project.expenses.order(invoice_date: :desc).map { |item| serialize_expense(item) },
+          expenses: project.attributed_expenses.sort_by { |item| item.invoice_date || Date.new(0) }.reverse.map { |item| serialize_expense(item, projectable: project) },
           siteAnalysis: serialize_site_analysis(project.site_analysis),
           plantPalette: serialize_project_palette(palette),
           plantingPlan: serialize_planting_plan(planting_plan),
@@ -1493,11 +1493,17 @@ module Api
       end
 
       def serialize_client_expenses(project)
-        billable = project.expenses.where(billable_to_client: true)
+        billable = project.attributed_expenses.select(&:billable_to_client)
         grouped = billable.group_by(&:category).map do |category, items|
-          { category: category.presence || 'Autres', subtotal: items.sum { |e| e.total_incl_vat.to_f }.round(2), count: items.size }
+          { category: category.presence || 'Autres', subtotal: items.sum { |e| e.attributed_amount_incl_vat_for(project).to_f }.round(2), count: items.size }
         end.sort_by { |g| -g[:subtotal] }
-        { categories: grouped, total: billable.sum(:total_incl_vat).to_f.round(2) }
+        { categories: grouped, total: billable.sum { |e| e.attributed_amount_incl_vat_for(project).to_f }.round(2) }
+      end
+
+      def update_expenses_actual!(project)
+        project.update!(
+          expenses_actual: project.attributed_expenses.sum { |expense| expense.attributed_amount_incl_vat_for(project) }
+        )
       end
 
       def recalculate_quote_totals!(quote)
@@ -1668,13 +1674,15 @@ module Api
         }
       end
 
-      def serialize_expense(item)
+      def serialize_expense(item, projectable: nil)
         doc_url = item.document.attached? ? Rails.application.routes.url_helpers.rails_blob_url(item.document, only_path: true) : nil
-        {
-          id: item.id.to_s,
-          projectableType: item.projectable_type,
-          projectableId: item.projectable_id&.to_s,
-          projectName: item.projectable&.project_name,
+        amount_excl_vat = projectable ? item.attributed_amount_excl_vat_for(projectable) : item.amount_excl_vat.to_d
+        total_incl_vat = projectable ? item.attributed_amount_incl_vat_for(projectable) : item.total_incl_vat.to_d
+        payload = {
+          id: projectable && item.multi_project? ? "#{item.id}-#{projectable.id}" : item.id.to_s,
+          projectableType: projectable ? projectable.class.name : item.projectable_type,
+          projectableId: projectable ? projectable.id.to_s : item.projectable_id&.to_s,
+          projectName: projectable ? projectable.project_name : item.projectable&.project_name,
           supplier: item.supplier_display_name,
           supplierContactId: item.supplier_contact_id&.to_s,
           status: item.status,
@@ -1684,12 +1692,12 @@ module Api
           billingZone: item.billing_zone,
           paymentDate: item.payment_date&.iso8601,
           paymentType: item.payment_type,
-          amountExclVat: item.amount_excl_vat.to_f,
+          amountExclVat: amount_excl_vat.to_f,
           vatRate: item.vat_rate,
           vat6: item.vat_6.to_f,
           vat12: item.vat_12.to_f,
           vat21: item.vat_21.to_f,
-          totalInclVat: item.total_incl_vat.to_f,
+          totalInclVat: total_incl_vat.to_f,
           euVatRate: item.eu_vat_rate,
           euVatAmount: item.eu_vat_amount.to_f,
           paidBy: item.paid_by,
@@ -1705,6 +1713,15 @@ module Api
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
+        if projectable
+          payload.merge!(
+            attributedAmountInclVat: total_incl_vat.to_f,
+            attributedAmountExclVat: amount_excl_vat.to_f,
+            isAllocation: item.multi_project?,
+            fullTotalInclVat: item.total_incl_vat.to_f
+          )
+        end
+        payload
       end
 
       def serialize_site_analysis(item)

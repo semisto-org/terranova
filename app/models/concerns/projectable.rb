@@ -23,6 +23,23 @@ module Projectable
     respond_to?(:title) ? title : name
   end
 
+  def attributed_expenses
+    primary_expenses = expenses
+      .where(deleted_at: nil)
+      .where.not(id: ExpenseProjectAllocation.select(:expense_id))
+      .select(:id)
+
+    allocated_expenses = ExpenseProjectAllocation
+      .where(projectable_type: self.class.name, projectable_id: id)
+      .select(:expense_id)
+
+    Expense
+      .where(id: primary_expenses)
+      .or(Expense.where(deleted_at: nil, id: allocated_expenses))
+      .distinct
+      .includes(:project_allocations)
+  end
+
   # ── Mute projet (#103) ────────────────────────────────────────────────────
   # Un membre peut couper TOUTES les notifications d'un projet (état `muted`
   # sur le Projectable lui-même). Le suivi explicite d'un objet du projet
