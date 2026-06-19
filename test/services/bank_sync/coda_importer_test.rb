@@ -147,4 +147,57 @@ class BankSync::CodaImporterTest < ActiveSupport::TestCase
     assert_equal 1, @connection.bank_transactions.count
     assert_equal 1, other_connection.bank_transactions.count
   end
+
+  # Builds a single type-21 movement line at the exact offsets the parser reads.
+  # Triodos leaves bank_reference (positions 10-30) blank, which used to collapse
+  # every same-day movement onto one provider_transaction_id.
+  def movement21(seq:, sign:, amount_milli:, date:, ref: "")
+    line = " " * 128
+    line[0, 2]   = "21"
+    line[2, 4]   = seq.to_s.rjust(4, "0")
+    line[6, 4]   = "0000"
+    line[10, 21] = ref.ljust(21)
+    line[31]     = sign # "0" credit, "1" debit
+    line[32, 15] = amount_milli.to_s.rjust(15, "0") # divided by 1000 by the parser
+    line[47, 6]  = date # value date ddmmyy
+    line[53, 8]  = "00150000"
+    line[115, 6] = date # booking date
+    line
+  end
+
+  # Two 21-only movements (no 22/23), same date, blank reference, distinct amounts.
+  # Exercises both the parser flush fix (movement without a closing 23 must not be
+  # dropped) and the dedup-key fix (blank bank_reference must not collapse them).
+  def blank_ref_same_date_coda
+    header  = "0000018032600105        00000000   Semisto ASBL              BBRUBEBB   00932942  00000                                         2"
+    old_bal = "10000BE52523080001234 EUR0000000012345670260301          Semisto ASBL              000                                        0"
+    movA    = movement21(seq: 1, sign: "0", amount_milli: 875_000, date: "150326") # +875.00
+    movB    = movement21(seq: 2, sign: "1", amount_milli: 50_000,  date: "150326") # -50.00
+    new_bal = "8000BE52523080001234 EUR0000000013170670260315                                                                                0"
+    trailer = "9               000002000000000000000000000000000000000                                                                    2"
+
+    build_coda(header, old_bal, movA, movB, new_bal, trailer)
+  end
+
+  test "imports all same-day movements when bank_reference is blank (Triodos)" do
+    importer = BankSync::CodaImporter.new(@connection)
+    result = importer.import(blank_ref_same_date_coda)
+
+    assert_equal 2, result[:movements_total], "both 21-only movements must be parsed"
+    assert_equal 2, result[:imported], "blank reference must not deduplicate distinct movements"
+    assert_equal 0, result[:skipped]
+    assert_equal 2, @connection.bank_transactions.count
+
+    amounts = @connection.bank_transactions.order(:amount).pluck(:amount).map(&:to_f)
+    assert_equal [-50.0, 875.0], amounts
+  end
+
+  test "re-importing the same blank-reference file is idempotent" do
+    BankSync::CodaImporter.new(@connection).import(blank_ref_same_date_coda)
+    result = BankSync::CodaImporter.new(@connection).import(blank_ref_same_date_coda)
+
+    assert_equal 0, result[:imported]
+    assert_equal 2, result[:skipped]
+    assert_equal 2, @connection.bank_transactions.count
+  end
 end

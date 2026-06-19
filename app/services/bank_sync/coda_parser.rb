@@ -46,18 +46,23 @@ module BankSync
           detail_type = line[1]
           case detail_type
           when "1"
+            # A new movement starts: flush the previous one. Lines 22/23 are
+            # optional, so a movement may consist of a 21 line only — it must
+            # still be captured rather than overwritten by the next 21.
+            result.movements << current_movement if current_movement
             current_movement = parse_movement_line1(line)
           when "2"
             parse_movement_line2(line, current_movement) if current_movement
           when "3"
             parse_movement_line3(line, current_movement) if current_movement
-            result.movements << current_movement if current_movement
-            current_movement = nil
           end
         when "3"
           # Information records — skip (supplementary details)
           next
         when "8"
+          # End of a statement: flush the last movement before reading the balance.
+          result.movements << current_movement if current_movement
+          current_movement = nil
           parse_new_balance(line, result)
         when "9"
           # Trailer — skip
