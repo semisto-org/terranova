@@ -65,6 +65,13 @@ module Api
         render json: DesignReportingService.new(reporting_filters).call
       end
 
+      # Détail financier d'UN projet (santé), pour la modale du tableau de rentabilité.
+      # Vie entière du projet, HTVA, coûts ventilés — cohérent avec #reporting.
+      def reporting_project
+        project = Design::Project.find(params.require(:id))
+        render json: Design::ProjectReportingService.new(project).call
+      end
+
       def billing_overview
         config = BillingConfig.instance
         projects = Design::Project.includes(:bucket_transactions, :timesheets, :expenses)

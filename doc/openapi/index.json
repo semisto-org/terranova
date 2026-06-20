@@ -379,7 +379,7 @@
       ]
     },
     {
-      "endpointCount": 2,
+      "endpointCount": 3,
       "file": "design_studio.json",
       "name": "design_studio",
       "operations": [
@@ -392,6 +392,11 @@
           "method": "POST",
           "path": "/api/v1/design_studio/reporting",
           "summary": "reporting"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design_studio/reporting/projects/{id}",
+          "summary": "reporting_project"
         }
       ]
     },

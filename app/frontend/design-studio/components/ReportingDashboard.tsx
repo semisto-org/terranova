@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { statusLabels, statusColors } from './shared/StatusIndicator'
+import { ProjectReportingModal } from './ProjectReportingModal'
 
 // Ordre d'affichage des groupes de statut (statusOrder n'est pas exporté par StatusIndicator).
 const STATUS_GROUP_ORDER = ['active', 'pending', 'completed', 'archived']
@@ -78,6 +79,7 @@ export function ReportingDashboard({
   const [sortKey, setSortKey] = useState<keyof ReportingRow>('margin')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
+  const [openProjectId, setOpenProjectId] = useState<string | null>(null)
 
   const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
 
@@ -292,7 +294,7 @@ export function ReportingDashboard({
                     </tr>
                     {group.rows.map((row) => (
                       <tr key={row.projectId} className="border-b border-stone-100">
-                        <td className="py-2 pr-3 pl-4 font-medium text-stone-800">{row.projectName}</td>
+                        <td className="py-2 pr-3 pl-4 font-medium"><button type="button" onClick={() => setOpenProjectId(row.projectId)} className="text-left text-stone-800 hover:text-[#AFBD00] hover:underline">{row.projectName}</button></td>
                         <td className="py-2 pr-3">{row.clientName}</td>
                         <td className="py-2 pr-3">{euro.format(row.revenue)}</td>
                         <td className="py-2 pr-3">{euro.format(row.costs)}</td>
@@ -323,6 +325,8 @@ export function ReportingDashboard({
           ))}
         </div>
       </section>
+
+      <ProjectReportingModal projectId={openProjectId} open={openProjectId !== null} onClose={() => setOpenProjectId(null)} />
     </div>
   )
 }

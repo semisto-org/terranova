@@ -508,6 +508,7 @@ Rails.application.routes.draw do
       get "design", to: "design_studio#index"
       get "design/reporting", to: "design_studio#reporting"
       get "design_studio/reporting", to: "design_studio#reporting"
+      get "design_studio/reporting/projects/:id", to: "design_studio#reporting_project"
       get "design/billing-overview", to: "design_studio#billing_overview"
       get "design/activity-volumes", to: "design_studio#activity_volumes"
       get "design/:project_id", to: "design_studio#show"
