@@ -135,4 +135,67 @@ class TallyIntakeTest < ActionDispatch::IntegrationTest
          headers: { 'CONTENT_TYPE' => 'text/plain' }
     assert_response :bad_request
   end
+
+  # === #158 : résolution robuste du nom + lead jamais perdu ===
+
+  def payload_with(fields, submission_id: 'sub-x', form_id: 'w77j70')
+    {
+      eventType: 'FORM_RESPONSE',
+      data: { submissionId: submission_id, responseId: "resp-#{submission_id}", formId: form_id, fields: fields }
+    }.to_json
+  end
+
+  # Cas exact qui plantait en prod (Sentry 7561838370) : libellé court « Nom ».
+  test 'short "Nom" label is captured and creates project + named primary contact' do
+    fields = [
+      { label: 'Nom', type: 'INPUT_TEXT', value: 'Carl' },
+      { label: 'Votre adresse e-mail', type: 'INPUT_EMAIL', value: 'onthespiderweb@gmail.com' }
+    ]
+    assert_difference ['Design::Project.count', 'Contact.count'], 1 do
+      post_webhook(payload_with(fields, submission_id: 'sub-nom'))
+    end
+    assert_response :success
+    project = Design::Project.find_by(tally_submission_id: 'sub-nom')
+    assert_equal 'Carl', project.client_name
+    assert_equal 'Carl', project.primary_client_contact.name
+  end
+
+  # Les libellés multi-mots restent prioritaires sur un champ « Prénom ».
+  test 'multi-word name label keeps priority over a bare "Prénom" field' do
+    fields = [
+      { label: 'Prénom', type: 'INPUT_TEXT', value: 'Bob' },
+      { label: 'Nom et prénom', type: 'INPUT_TEXT', value: 'Alice Martin' },
+      { label: 'Votre adresse e-mail', type: 'INPUT_EMAIL', value: 'alice@example.com' }
+    ]
+    post_webhook(payload_with(fields, submission_id: 'sub-prio'))
+    assert_response :success
+    assert_equal 'Alice Martin', Design::Project.find_by(tally_submission_id: 'sub-prio').client_name
+  end
+
+  # Un champ « Prénom » seul ne doit jamais être capté comme nom.
+  test 'a "Prénom" field alone is never captured as the name' do
+    fields = [
+      { label: 'Prénom', type: 'INPUT_TEXT', value: 'Bob' },
+      { label: 'Votre adresse e-mail', type: 'INPUT_EMAIL', value: 'bob@example.com' }
+    ]
+    post_webhook(payload_with(fields, submission_id: 'sub-prenom'))
+    assert_response :success
+    refute_equal 'Bob', Design::Project.find_by(tally_submission_id: 'sub-prenom').client_name
+  end
+
+  # Garantie anti-perte de lead : nom non résolu + email présent → tout est créé.
+  test 'unresolved name label + email present still creates project AND contact' do
+    fields = [
+      { label: 'Champ inconnu', type: 'INPUT_TEXT', value: 'peu importe' },
+      { label: 'Votre adresse e-mail', type: 'INPUT_EMAIL', value: 'lead@example.com' }
+    ]
+    assert_difference ['Design::Project.count', 'Contact.count'], 1 do
+      post_webhook(payload_with(fields, submission_id: 'sub-noname'))
+    end
+    assert_response :success
+    contact = Design::Project.find_by(tally_submission_id: 'sub-noname').primary_client_contact
+    assert_not_nil contact
+    assert contact.name.present?, 'le contact doit recevoir un nom de repli non-vide'
+    assert_equal 'lead@example.com', contact.email
+  end
 end
