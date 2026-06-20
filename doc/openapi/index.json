@@ -1,7 +1,7 @@
 {
   "domains": [
     {
-      "endpointCount": 26,
+      "endpointCount": 30,
       "file": "academy.json",
       "name": "academy",
       "operations": [
@@ -119,6 +119,26 @@
           "method": "PATCH",
           "path": "/api/v1/academy/trainings/{training_id}",
           "summary": "update_training"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/academy/trainings/{training_id}/comments",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/academy/trainings/{training_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/academy/trainings/{training_id}/comments/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/academy/trainings/{training_id}/comments/{id}",
+          "summary": "update"
         },
         {
           "method": "POST",
@@ -374,12 +394,17 @@
       ]
     },
     {
-      "endpointCount": 1,
+      "endpointCount": 2,
       "file": "design_studio.json",
       "name": "design_studio",
       "operations": [
         {
           "method": "GET",
+          "path": "/api/v1/design_studio/reporting",
+          "summary": "reporting"
+        },
+        {
+          "method": "POST",
           "path": "/api/v1/design_studio/reporting",
           "summary": "reporting"
         }
@@ -1328,5 +1353,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 231
+  "totalEndpoints": 236
 }

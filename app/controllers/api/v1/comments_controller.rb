@@ -10,6 +10,7 @@ module Api
       PARENTS = {
         "task_id" => Task,
         "event_id" => Event,
+        "training_id" => Academy::Training,
       }.freeze
 
       before_action :set_commentable
@@ -28,6 +29,17 @@ module Api
           body: params[:body]
         )
         render json: { comment: serialize_comment(comment) }, status: :created
+      end
+
+      def update
+        comment = @commentable.comments.find(params[:id])
+
+        unless can_edit?(comment)
+          return render json: { error: "Seul l'auteur ou un admin peut modifier ce commentaire." }, status: :forbidden
+        end
+
+        comment.update!(body: params[:body], edited_at: Time.current)
+        render json: { comment: serialize_comment(comment) }
       end
 
       def destroy
@@ -56,6 +68,9 @@ module Api
         comment.author_id == current_member.id || current_member.is_admin
       end
 
+      # L'édition suit la même règle que la suppression : auteur ou admin.
+      alias_method :can_edit?, :can_delete?
+
       def serialize_comment(comment)
         author = comment.author
         {
@@ -69,7 +84,9 @@ module Api
           },
           createdAt: comment.created_at&.iso8601,
           updatedAt: comment.updated_at&.iso8601,
+          editedAt: comment.edited_at&.iso8601,
           canDelete: can_delete?(comment),
+          canEdit: can_edit?(comment),
         }
       end
     end

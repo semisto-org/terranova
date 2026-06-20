@@ -20,6 +20,9 @@ class CommentsTest < ActionDispatch::IntegrationTest
       title: 'Journée collective', event_type: event_type,
       start_date: Date.tomorrow, end_date: Date.tomorrow, projectable: project
     )
+
+    training_type = Academy::TrainingType.create!(name: "Stage-#{SecureRandom.hex(3)}", description: 'Intro')
+    @training = Academy::Training.create!(training_type: training_type, title: 'Taille douce', status: 'idea')
   end
 
   teardown { Thread.current[:test_member] = nil }
@@ -46,6 +49,75 @@ class CommentsTest < ActionDispatch::IntegrationTest
     post "/api/v1/events/#{@event.id}/comments", params: { body: '<p>Présent !</p>' }, as: :json
     assert_response :created
     assert_equal @event, Comment.last.commentable
+  end
+
+  test 'create an exchange on an academy training works through the nested route' do
+    post "/api/v1/academy/trainings/#{@training.id}/comments", params: { body: '<p>Email du formateur reçu.</p>' }, as: :json
+    assert_response :created
+    assert_equal @training, Comment.last.commentable
+  end
+
+  test 'index lists exchanges of an academy training' do
+    @training.comments.create!(author: @author, body: '<p>premier échange</p>')
+    get "/api/v1/academy/trainings/#{@training.id}/comments", as: :json
+    assert_response :success
+    comments = JSON.parse(response.body)['comments']
+    assert_equal 1, comments.length
+    assert comments.first['canEdit']
+  end
+
+  test 'author can edit their own exchange and edited_at is set' do
+    comment = @training.comments.create!(author: @author, body: '<p>avant</p>')
+    patch "/api/v1/academy/trainings/#{@training.id}/comments/#{comment.id}",
+          params: { body: '<p>après</p>' }, as: :json
+    assert_response :success
+
+    payload = JSON.parse(response.body)['comment']
+    assert_includes payload['body'], 'après'
+    assert payload['editedAt'].present?, 'editedAt doit être renseigné après édition'
+    assert_includes comment.reload.body, 'après'
+  end
+
+  test 'a non-author non-admin member cannot edit the exchange' do
+    comment = @training.comments.create!(author: @author, body: '<p>protégé</p>')
+    Thread.current[:test_member] = @other
+
+    patch "/api/v1/academy/trainings/#{@training.id}/comments/#{comment.id}",
+          params: { body: '<p>tentative</p>' }, as: :json
+    assert_response :forbidden
+    assert_includes comment.reload.body, 'protégé'
+  end
+
+  test 'an admin can edit any exchange' do
+    comment = @training.comments.create!(author: @author, body: '<p>original</p>')
+    Thread.current[:test_member] = @admin
+
+    patch "/api/v1/academy/trainings/#{@training.id}/comments/#{comment.id}",
+          params: { body: '<p>modéré</p>' }, as: :json
+    assert_response :success
+    assert_includes comment.reload.body, 'modéré'
+  end
+
+  test 'editing with an empty body is rejected' do
+    comment = @training.comments.create!(author: @author, body: '<p>contenu</p>')
+    patch "/api/v1/academy/trainings/#{@training.id}/comments/#{comment.id}",
+          params: { body: '' }, as: :json
+    assert_response :unprocessable_entity
+  end
+
+  test 'author can delete their own exchange on an academy training' do
+    comment = @training.comments.create!(author: @author, body: '<p>à retirer</p>')
+    assert_difference -> { Comment.count } => -1 do
+      delete "/api/v1/academy/trainings/#{@training.id}/comments/#{comment.id}", as: :json
+    end
+    assert_response :no_content
+  end
+
+  test 'deleting an academy training cascades its exchanges' do
+    @training.comments.create!(author: @author, body: '<p>contexte</p>')
+    assert_difference -> { Comment.count } => -1 do
+      @training.destroy
+    end
   end
 
   test 'index lists comments chronologically with author info' do

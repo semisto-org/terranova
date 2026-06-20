@@ -21,6 +21,7 @@ import {
   GraduationCap,
   AlertCircle,
   Wallet,
+  MessagesSquare,
 } from 'lucide-react'
 import TrainingInfoTab from './TrainingInfoTab'
 import TrainingSessionsTab from './TrainingSessionsTab'
@@ -30,6 +31,7 @@ import TrainingDocumentsTab from './TrainingDocumentsTab'
 import TrainingChecklistTab from './TrainingChecklistTab'
 import TrainingFinancesTab from './TrainingFinancesTab'
 import TrainingAlbumTab from './TrainingAlbumTab'
+import TrainingExchangesTab from './TrainingExchangesTab'
 import { BucketSection } from '@/components/shared/BucketSection'
 
 const STATUS_LABELS = {
@@ -198,6 +200,7 @@ const TABS = [
   { id: 'registrations', label: 'Inscriptions', icon: Users },
   { id: 'attendances', label: 'Présences', icon: Users },
   { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'exchanges', label: 'Échanges', icon: MessagesSquare },
   { id: 'album', label: 'Album', icon: Camera },
   { id: 'checklist', label: 'Checklist', icon: CheckSquare },
   { id: 'finances', label: 'Finances', icon: DollarSign },
@@ -560,6 +563,9 @@ export default function TrainingDetail({
                 onUploadDocument={() => actions.addDocument(training.id)}
                 onDeleteDocument={(id) => actions.deleteDocument(id)}
               />
+            )}
+            {tab === 'exchanges' && (
+              <TrainingExchangesTab trainingId={training.id} />
             )}
             {tab === 'album' && (
               <TrainingAlbumTab
