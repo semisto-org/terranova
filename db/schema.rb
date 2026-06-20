@@ -10,25 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
-
-  create_table "academy_announcements", force: :cascade do |t|
-    t.text "body", default: "", null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.datetime "deleted_at"
-    t.datetime "published_at"
-    t.string "status", default: "to_confirm", null: false
-    t.string "title", default: "", null: false
-    t.bigint "training_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["deleted_at"], name: "index_academy_announcements_on_deleted_at"
-    t.index ["published_at"], name: "index_academy_announcements_on_published_at"
-    t.index ["training_id"], name: "index_academy_announcements_on_training_id"
-  end
 
   create_table "academy_holidays", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -2724,7 +2709,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_120000) do
     t.index ["member_id"], name: "index_wallets_on_member_id", unique: true
   end
 
-  add_foreign_key "academy_announcements", "academy_trainings", column: "training_id"
   add_foreign_key "academy_participant_categories", "academy_trainings", column: "training_id"
   add_foreign_key "academy_participant_messages", "academy_trainings", column: "training_id"
   add_foreign_key "academy_participant_messages", "contacts"
