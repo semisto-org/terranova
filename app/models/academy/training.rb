@@ -51,6 +51,53 @@ module Academy
       vat_rate.to_f > 0 ? (price / (1 + vat_rate / 100.0)).round(2) : price
     end
 
+    # Première date de session (min start_date) ; nil si aucune session.
+    def first_session_date
+      sessions.filter_map(&:start_date).min
+    end
+
+    # Dernière date de session (max end_date, sinon start_date) ; nil si aucune.
+    def last_session_date
+      sessions.filter_map { |s| s.end_date || s.start_date }.max
+    end
+
+    # Recettes HTVA — somme des paiements participants hors TVA.
+    # Calcul identique à l'action `reporting` du contrôleur Academy.
+    def revenue_excl_vat
+      vr = vat_rate.to_f
+      registrations.sum do |r|
+        vr > 0 ? (r.amount_paid.to_f / (1 + vr / 100.0)).round(2) : r.amount_paid.to_f
+      end
+    end
+
+    # Dépenses HTVA attribuées à l'activité (multi-projets réparties incluses).
+    def expenses_excl_vat
+      attributed_expenses.sum { |e| e.attributed_amount_excl_vat_for(self).to_f }
+    end
+
+    # Marge en euros : recettes HTVA − dépenses HTVA.
+    def profit_excl_vat
+      revenue_excl_vat - expenses_excl_vat
+    end
+
+    # Marge en ratio (0..1) ; nil si recettes nulles (% non calculable).
+    def profit_margin
+      rev = revenue_excl_vat
+      return nil if rev.zero?
+
+      profit_excl_vat / rev
+    end
+
+    # Nombre d'inscriptions ayant un paiement (cohérent avec les recettes).
+    def paid_registrations_count
+      registrations.select { |r| r.amount_paid.to_f > 0 }.size
+    end
+
+    # Tarifs disponibles : prix des catégories de participants (packs exclus).
+    def category_prices
+      participant_categories.sort_by { |c| c.position.to_i }.map { |c| c.price.to_f }
+    end
+
     def total_capacity
       participant_categories.sum(:max_spots)
     end

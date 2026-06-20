@@ -1856,4 +1856,70 @@ class AcademyManagementTest < ActionDispatch::IntegrationTest
     assert_equal true, body['test']
     assert_equal ['coordo@example.com'], ActionMailer::Base.deliveries.last.to
   end
+
+  # ── Vue tableau Academy : 10 colonnes supplémentaires (#139) ───────────────
+  test 'training payload exposes the financial/operational table columns' do
+    type = Academy::TrainingType.create!(name: 'Stage HTVA', description: 'Test #139')
+    training = Academy::Training.create!(
+      training_type: type, title: 'Activité complète', status: 'registrations_open', vat_rate: 21
+    )
+    training.sessions.create!(start_date: Date.new(2026, 3, 12), end_date: Date.new(2026, 3, 12))
+    training.sessions.create!(start_date: Date.new(2026, 3, 14), end_date: Date.new(2026, 3, 14))
+    Academy::ParticipantCategory.create!(training: training, label: 'Standard', price: 150.0, max_spots: 10, position: 0)
+    Academy::ParticipantCategory.create!(training: training, label: 'Réduit', price: 90.0, max_spots: 10, position: 1)
+    Academy::TrainingRegistration.create!(
+      training: training, contact_name: 'Alice', payment_status: 'paid',
+      carpooling: 'none', registered_at: Time.current, amount_paid: 100.0
+    )
+    Academy::TrainingRegistration.create!(
+      training: training, contact_name: 'Bob', payment_status: 'paid',
+      carpooling: 'none', registered_at: Time.current, amount_paid: 50.0
+    )
+    Expense.create!(
+      name: 'Matériel', supplier: 'Fournisseur', status: 'paid', expense_type: 'services_and_goods',
+      invoice_date: Date.new(2026, 3, 1), amount_excl_vat: 50.0, total_incl_vat: 60.5, projectable: training
+    )
+    Academy::TrainingDocument.create!(training: training, name: 'Programme', uploaded_at: Time.current, url: 'https://example.com/prog.pdf')
+
+    get '/api/v1/academy', as: :json
+    assert_response :success
+    t = JSON.parse(response.body)['trainings'].find { |x| x['id'] == training.id.to_s }
+    assert t.present?
+
+    assert_equal 21.0, t['vatRate']
+    assert_equal '2026-03-12', t['firstSessionDate']
+    assert_equal '2026-03-14', t['lastSessionDate']
+    # 100/1.21 + 50/1.21, chaque terme arrondi à 2 décimales (= reporting)
+    assert_in_delta 123.96, t['revenueExclVat'], 0.01
+    assert_in_delta 50.0, t['expensesExclVat'], 0.01
+    assert_in_delta 73.96, t['profit'], 0.01
+    assert_in_delta 0.5966, t['profitMargin'], 0.001
+    assert_equal 2, t['sessionsCount']
+    assert_equal 1, t['documentsCount']
+    assert_equal 2, t['paidRegistrationsCount']
+    assert_equal 1, t['expensesCount']
+    assert_equal [150.0, 90.0], t['categoryPrices']
+  end
+
+  test 'training payload uses neutral values for an empty training' do
+    type = Academy::TrainingType.create!(name: 'Vide', description: 'Test #139 vide')
+    training = Academy::Training.create!(training_type: type, title: 'Sans rien', status: 'idea', vat_rate: 21)
+
+    get '/api/v1/academy', as: :json
+    assert_response :success
+    t = JSON.parse(response.body)['trainings'].find { |x| x['id'] == training.id.to_s }
+    assert t.present?
+
+    assert_nil t['firstSessionDate']
+    assert_nil t['lastSessionDate']
+    assert_equal 0.0, t['revenueExclVat']
+    assert_equal 0.0, t['expensesExclVat']
+    assert_equal 0.0, t['profit']
+    assert_nil t['profitMargin']
+    assert_equal 0, t['sessionsCount']
+    assert_equal 0, t['documentsCount']
+    assert_equal 0, t['paidRegistrationsCount']
+    assert_equal 0, t['expensesCount']
+    assert_equal [], t['categoryPrices']
+  end
 end

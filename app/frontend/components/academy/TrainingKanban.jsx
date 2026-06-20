@@ -56,6 +56,43 @@ function formatDate(dateString) {
   return date.toLocaleDateString('fr-BE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+const EUR_FORMAT = new Intl.NumberFormat('fr-BE', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+function formatEuro(value) {
+  if (value === null || value === undefined) return '—'
+  const n = Number(value)
+  if (Number.isNaN(n)) return '—'
+  return EUR_FORMAT.format(n)
+}
+
+function formatVat(value) {
+  if (value === null || value === undefined) return '—'
+  const n = Number(value)
+  if (Number.isNaN(n)) return '—'
+  return `${n} %`
+}
+
+function formatPercent(value) {
+  if (value === null || value === undefined) return '—'
+  const n = Number(value)
+  if (Number.isNaN(n)) return '—'
+  return `${(n * 100).toFixed(1)} %`
+}
+
+// min(start) → max(end) ; une seule date si début == fin ; '—' si aucune.
+function formatSessionRange(start, end) {
+  if (!start && !end) return '—'
+  const s = formatDate(start)
+  const e = formatDate(end)
+  if (!end || s === e) return s
+  return `${s} → ${e}`
+}
+
 const READINESS_ICON_MAP = {
   date: CalendarIcon,
   location: MapPin,
@@ -313,6 +350,16 @@ export default function TrainingKanban({
                     <th className="px-4 py-3 text-left">Prochaine date</th>
                     <th className="px-4 py-3 text-left">Checks</th>
                     <th className="px-4 py-3 text-left">Participants</th>
+                    <th className="px-4 py-3 text-left">TVA</th>
+                    <th className="px-4 py-3 text-left">Dates sessions</th>
+                    <th className="px-4 py-3 text-right">Recettes HT</th>
+                    <th className="px-4 py-3 text-right">Dépenses HT</th>
+                    <th className="px-4 py-3 text-right">Rentabilité</th>
+                    <th className="px-4 py-3 text-right">Sessions</th>
+                    <th className="px-4 py-3 text-right">Docs</th>
+                    <th className="px-4 py-3 text-right">Nb recettes</th>
+                    <th className="px-4 py-3 text-right">Nb dépenses</th>
+                    <th className="px-4 py-3 text-left">Tarifs</th>
                     <th className="px-4 py-3 text-left">Actions</th>
                   </tr>
                 </thead>
@@ -320,7 +367,7 @@ export default function TrainingKanban({
                   <tbody key={group.status}>
                     <tr className="bg-stone-50/80">
                       <td className={`w-1 border-l-[3px] ${STATUS_LEFT_BORDER[group.status] || 'border-l-stone-200'}`} />
-                      <td colSpan={5} className="px-4 py-2.5">
+                      <td colSpan={15} className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${STATUS_TONE[group.status] || 'bg-stone-100 text-stone-600 border-stone-200'}`}>
                             {group.label}
@@ -379,6 +426,25 @@ export default function TrainingKanban({
                                 </div>
                               )}
                             </div>
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums">{formatVat(row.training.vatRate)}</td>
+                          <td className="px-4 py-3 text-stone-700 text-xs whitespace-nowrap">{formatSessionRange(row.training.firstSessionDate, row.training.lastSessionDate)}</td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums whitespace-nowrap">{formatEuro(row.training.revenueExclVat)}</td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums whitespace-nowrap">{formatEuro(row.training.expensesExclVat)}</td>
+                          <td className="px-4 py-3 text-right text-xs tabular-nums whitespace-nowrap">
+                            <span className={`font-medium ${Number(row.training.profit) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                              {formatEuro(row.training.profit)}
+                            </span>
+                            <span className="text-stone-400"> ({formatPercent(row.training.profitMargin)})</span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums">{row.training.sessionsCount ?? 0}</td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums">{row.training.documentsCount ?? 0}</td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums">{row.training.paidRegistrationsCount ?? 0}</td>
+                          <td className="px-4 py-3 text-right text-xs text-stone-700 tabular-nums">{row.training.expensesCount ?? 0}</td>
+                          <td className="px-4 py-3 text-stone-700 text-xs whitespace-nowrap">
+                            {(row.training.categoryPrices || []).length > 0
+                              ? row.training.categoryPrices.map((p) => formatEuro(p)).join(' · ')
+                              : '—'}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
