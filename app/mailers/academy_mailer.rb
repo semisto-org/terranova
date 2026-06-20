@@ -18,6 +18,14 @@ class AcademyMailer < ApplicationMailer
     @payment_amount = registration.payment_amount.to_f
     @payment_method = payment_method
 
+    # Lien MySemisto (#39) — magic-link basé sur le contact (login par code
+    # email, pas de doublon de compte). Mène à la page de l'activité, où
+    # l'inscrit voit les détails et le covoiturage des autres inscrits.
+    contact = registration.contact ||
+              (registration.contact_email.present? && Contact.find_by("LOWER(email) = ?", registration.contact_email.downcase)) ||
+              nil
+    @my_semisto_url = participant_session_url(@training, contact)
+
     attachments.inline["academy-logo.png"] = File.read(
       Rails.root.join("public/icons/academy.png")
     )
