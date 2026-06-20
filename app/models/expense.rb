@@ -2,6 +2,7 @@
 
 class Expense < ApplicationRecord
   include SoftDeletable
+  include FinanceGuarded # refuse la finance sur un projet interne (#159)
   STATUSES = %w[planned processing ready_for_payment paid].freeze
   EXPENSE_TYPES = %w[
     services_and_goods salaries merchandise other corporate_tax

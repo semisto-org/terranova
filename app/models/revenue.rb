@@ -2,6 +2,7 @@
 
 class Revenue < ApplicationRecord
   include SoftDeletable
+  include FinanceGuarded # refuse la finance sur un projet interne (#159)
 
   POLES = %w[academy design_studio nursery roots shop].freeze
   STATUSES = %w[draft confirmed received].freeze

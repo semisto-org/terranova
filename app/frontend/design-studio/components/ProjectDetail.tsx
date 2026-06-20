@@ -52,6 +52,7 @@ export interface ProjectDetailPayload {
   project: {
     id: string
     name: string
+    isInternal?: boolean
     clientName: string
     clientEmail?: string
     clientPhone?: string
@@ -298,6 +299,12 @@ export function ProjectDetailView({
   const [portalLinkCopied, setPortalLinkCopied] = useState(false)
   const project = detail.project
 
+  // Projet interne (#159) : aucune section finance (offre, dépenses, bucket).
+  const FINANCE_TABS = ['quotes', 'expenses', 'bucket']
+  const visibleTabs = project.isInternal
+    ? DETAIL_TABS.filter(tab => !FINANCE_TABS.includes(tab.id))
+    : DETAIL_TABS
+
   const handleGeneratePortalLink = async () => {
     if (clientPortalUrl) {
       await navigator.clipboard.writeText(clientPortalUrl)
@@ -457,7 +464,7 @@ export function ProjectDetailView({
           )}
 
           <TabLayout
-            tabs={DETAIL_TABS}
+            tabs={visibleTabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           >

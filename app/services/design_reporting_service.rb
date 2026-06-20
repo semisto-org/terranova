@@ -99,7 +99,7 @@ class DesignReportingService
         .where('design_projects.client_id = ?', filters[:client_id])
     end
 
-    scope
+    exclude_internal_projects(scope)
   end
 
   def filtered_expenses(period: true)
@@ -122,7 +122,14 @@ class DesignReportingService
         .where('design_projects.client_id = ?', filters[:client_id])
     end
 
-    scope
+    exclude_internal_projects(scope)
+  end
+
+  # Exclut les projets internes (#159) du reporting : ils n'acceptent aucune
+  # finance et ne doivent apparaître dans aucun groupement. No-op s'il n'y en a
+  # pas (IN vide → 1=0 → la condition NOT(...) garde toutes les lignes).
+  def exclude_internal_projects(scope)
+    scope.where.not(projectable_type: "Design::Project", projectable_id: Design::Project.internal.select(:id))
   end
 
   # Coût imputé par projet, ventilé refacturé/non-refacturé. Source double :

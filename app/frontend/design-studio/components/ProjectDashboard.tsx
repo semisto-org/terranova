@@ -59,16 +59,21 @@ export function ProjectDashboard({
     return result
   }, [projects, selectedStatuses, searchQuery])
 
+  // Les projets internes (#159) sont listés à part — jamais dans le pipeline
+  // commercial groupé par phase.
+  const clientProjects = useMemo(() => filteredProjects.filter(p => !p.isInternal), [filteredProjects])
+  const internalProjects = useMemo(() => filteredProjects.filter(p => p.isInternal), [filteredProjects])
+
   const projectsByPhase = useMemo(() => {
     const grouped = new Map<ProjectPhase, Project[]>()
     for (const phase of phaseOrder) {
-      const phaseProjects = filteredProjects.filter(p => p.phase === phase)
+      const phaseProjects = clientProjects.filter(p => p.phase === phase)
       if (phaseProjects.length > 0) {
         grouped.set(phase, phaseProjects)
       }
     }
     return grouped
-  }, [filteredProjects])
+  }, [clientProjects])
 
   const toggleCollapse = (phase: ProjectPhase) => {
     setCollapsedPhases(prev => {
@@ -490,6 +495,75 @@ export function ProjectDashboard({
               >
                 Effacer tous les filtres
               </button>
+            </div>
+          )}
+
+          {/* Projets internes (#159) — sans client, hors pipeline commercial */}
+          {internalProjects.length > 0 && (
+            <div className="mt-6 bg-white rounded-xl border border-stone-200 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3 bg-stone-100 border-b border-stone-200">
+                <span className="w-2.5 h-2.5 rounded-full bg-stone-400" />
+                <span className="font-medium text-stone-700">Projets internes (sans client)</span>
+                <span className="text-sm opacity-70 text-stone-700">({internalProjects.length})</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-stone-100">
+                      <th className="text-left text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5">Projet</th>
+                      <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[10%]">Surface</th>
+                      <th className="text-center text-xs font-medium text-stone-400 uppercase tracking-wider px-3 py-2.5 w-[10%]">Tâches</th>
+                      <th className="text-right text-xs font-medium text-stone-400 uppercase tracking-wider px-5 py-2.5 w-[6%]"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {internalProjects.map((project, idx) => {
+                      const isLast = idx === internalProjects.length - 1
+                      return (
+                        <tr
+                          key={project.id}
+                          onClick={() => onViewProject?.(project.id)}
+                          className={`group cursor-pointer hover:bg-stone-50 transition-colors ${!isLast ? 'border-b border-stone-50' : ''}`}
+                        >
+                          <td className="px-5 py-3">
+                            <div className="font-medium text-stone-900 group-hover:text-[#AFBD00] transition-colors truncate">
+                              {project.name}
+                            </div>
+                            {project.address && (
+                              <div className="text-xs text-stone-400 truncate mt-0.5" title={project.address}>
+                                {project.address.length > 30 ? `${project.address.slice(0, 30)}…` : project.address}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <span className="text-sm text-stone-600 tabular-nums">
+                              {project.area > 0 ? `${project.area} m²` : '—'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <span className={`text-sm tabular-nums ${project.taskCount > 0 ? 'text-stone-600' : 'text-stone-300'}`}>
+                              {project.taskCount}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onDeleteProject?.(project.id) }}
+                                title="Supprimer"
+                                className="p-1.5 text-stone-400 hover:text-red-500 rounded-lg hover:bg-stone-100 transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </section>

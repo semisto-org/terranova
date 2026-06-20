@@ -69,6 +69,11 @@ module Api
       # Vie entière du projet, HTVA, coûts ventilés — cohérent avec #reporting.
       def reporting_project
         project = Design::Project.find(params.require(:id))
+        # Un projet interne (#159) n'a aucune finance → pas de bloc financier.
+        if project.internal?
+          return render json: { error: "Pas de reporting financier pour un projet interne." }, status: :unprocessable_entity
+        end
+
         render json: Design::ProjectReportingService.new(project).call
       end
 
@@ -207,6 +212,9 @@ module Api
         project.project_manager_id = Member.order(:id).pick(:id)&.to_s || 'unassigned' if project.project_manager_id.blank?
         project.status = 'pending' if project.status.blank?
         project.client_id = "client-#{SecureRandom.hex(4)}" if project.client_id.blank?
+        # Projet interne (#159) : pas d'étape client → on remplit les colonnes
+        # NOT NULL avec le nom du projet, sans créer de contact réel.
+        project.client_name = project.name if project.client_name.blank?
 
         project.save!
         ensure_palette(project)
@@ -1238,7 +1246,7 @@ module Api
           :name, :client_id, :client_name, :client_email, :client_phone, :place_id, :street, :number, :city, :postcode,
           :country_name, :latitude, :longitude, :area, :phase, :status, :start_date, :planting_date, :project_manager_id,
           :hours_planned, :hours_worked, :hours_billed, :hours_semos, :expenses_budget, :expenses_actual, :project_type,
-          :acquisition_channel, :format_code, :designer_rate, :retrocession_rate, client_interests: []
+          :acquisition_channel, :format_code, :designer_rate, :retrocession_rate, :kind, client_interests: []
         )
       end
 
@@ -1535,6 +1543,8 @@ module Api
         {
           id: project.id.to_s,
           name: project.name,
+          kind: project.kind,
+          isInternal: project.internal?,
           clientId: project.client_id,
           clientName: project.client_name,
           clientEmail: project.client_email,

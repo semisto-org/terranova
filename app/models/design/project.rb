@@ -64,10 +64,21 @@ module Design
 
     before_validation :normalize_client_interests
 
+    # « Interne vs client » (#159) — 3e axe, orthogonal à phase et status.
+    # Un projet interne (ex. Les 4 Sources) est une coquille purement design :
+    # zéro finance possible (cf. accepts_finance?), hors reporting, listé à part.
+    enum :kind, { client: "client", internal: "internal" }, default: "client", validate: true
+
     validates :name, :client_id, :client_name, :phase, :status, presence: true
     validates :phase, inclusion: { in: PHASES }
     validates :status, inclusion: { in: STATUSES }
     validate :project_type_is_supported_when_provided
+
+    # Contrat lu par FinanceGuarded (Revenue/Expense/ExpenseProjectAllocation) :
+    # un projet interne n'accepte AUCUNE finance, au niveau modèle.
+    def accepts_finance?
+      !internal?
+    end
     validates :acquisition_channel, inclusion: { in: ACQUISITION_CHANNELS }, allow_blank: true
     validate :client_interests_are_supported
     validates :google_photos_url, format: { with: /\Ahttps?:\/\//i }, allow_blank: true

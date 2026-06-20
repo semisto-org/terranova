@@ -17,6 +17,7 @@ export type VisitType = 'follow-up' | 'intervention' | 'client-meeting'
 export type InterventionType = 'planting' | 'mulching' | 'pruning' | 'watering' | 'treatment' | 'replacement' | 'other'
 export type UsageMapType = 'passage' | 'preserve-view' | 'favorite' | 'avoid' | 'wet-zone' | 'sunny-zone'
 export type HarvestProduct = 'fruits' | 'feuilles' | 'fleurs' | 'racines' | 'écorce' | 'sève'
+export type ProjectKind = 'client' | 'internal'
 
 // =============================================================================
 // Coordinates
@@ -43,6 +44,8 @@ export interface ProjectBudget {
 export interface Project {
   id: string
   name: string
+  kind: ProjectKind
+  isInternal: boolean
   clientId: string
   clientName: string
   clientEmail: string

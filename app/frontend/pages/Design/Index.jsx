@@ -10,6 +10,7 @@ import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 function defaultProjectForm() {
   return {
+    kind: 'client',
     name: '',
     client_name: '',
     client_email: '',
@@ -25,6 +26,9 @@ function defaultProjectForm() {
 
 function ProjectModal({ open, busy, templates, selectedTemplateId, values, onChange, onClose, onSubmit }) {
   if (!open) return null
+
+  // Projet interne (#159) : sans client, on saute les champs client.
+  const isInternal = values.kind === 'internal'
 
   return (
     <>
@@ -59,16 +63,31 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
               </select>
             </label>
 
+            <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isInternal}
+                onChange={(event) => onChange('kind', event.target.checked ? 'internal' : 'client')}
+                className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[#AFBD00] focus:ring-[#AFBD00]"
+              />
+              <span>
+                <span className="block text-sm font-medium text-stone-800">Projet interne (sans client)</span>
+                <span className="block text-xs text-stone-500">Coquille purement design (ex. Les 4 Sources) — aucune finance, hors reporting.</span>
+              </span>
+            </label>
+
             <label className="grid gap-1">
               <span className="text-sm font-medium text-stone-700">Nom du projet</span>
               <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.name} onChange={(event) => onChange('name', event.target.value)} required />
             </label>
 
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="grid gap-1">
-                <span className="text-sm font-medium text-stone-700">Client</span>
-                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.client_name} onChange={(event) => onChange('client_name', event.target.value)} required />
-              </label>
+              {!isInternal && (
+                <label className="grid gap-1">
+                  <span className="text-sm font-medium text-stone-700">Client</span>
+                  <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.client_name} onChange={(event) => onChange('client_name', event.target.value)} required />
+                </label>
+              )}
 
               <label className="grid gap-1">
                 <span className="text-sm font-medium text-stone-700">Surface (m²)</span>
@@ -79,7 +98,7 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="grid gap-1">
                 <span className="text-sm font-medium text-stone-700">Rue</span>
-                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.street} onChange={(e) => onChange('street', e.target.value)} required />
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.street} onChange={(e) => onChange('street', e.target.value)} required={!isInternal} />
               </label>
               <label className="grid gap-1">
                 <span className="text-sm font-medium text-stone-700">Numéro</span>
@@ -89,29 +108,31 @@ function ProjectModal({ open, busy, templates, selectedTemplateId, values, onCha
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="grid gap-1">
                 <span className="text-sm font-medium text-stone-700">Code postal</span>
-                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.postcode} onChange={(e) => onChange('postcode', e.target.value)} required />
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.postcode} onChange={(e) => onChange('postcode', e.target.value)} required={!isInternal} />
               </label>
               <label className="grid gap-1">
                 <span className="text-sm font-medium text-stone-700">Localité</span>
-                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.city} onChange={(e) => onChange('city', e.target.value)} required />
+                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.city} onChange={(e) => onChange('city', e.target.value)} required={!isInternal} />
               </label>
             </div>
             <label className="grid gap-1">
               <span className="text-sm font-medium text-stone-700">Pays</span>
-              <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.country_name} onChange={(e) => onChange('country_name', e.target.value)} required />
+              <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.country_name} onChange={(e) => onChange('country_name', e.target.value)} required={!isInternal} />
             </label>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <label className="grid gap-1">
-                <span className="text-sm font-medium text-stone-700">Email</span>
-                <input type="email" className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.client_email} onChange={(event) => onChange('client_email', event.target.value)} />
-              </label>
+            {!isInternal && (
+              <div className="grid sm:grid-cols-2 gap-3">
+                <label className="grid gap-1">
+                  <span className="text-sm font-medium text-stone-700">Email</span>
+                  <input type="email" className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.client_email} onChange={(event) => onChange('client_email', event.target.value)} />
+                </label>
 
-              <label className="grid gap-1">
-                <span className="text-sm font-medium text-stone-700">Téléphone</span>
-                <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.client_phone} onChange={(event) => onChange('client_phone', event.target.value)} />
-              </label>
-            </div>
+                <label className="grid gap-1">
+                  <span className="text-sm font-medium text-stone-700">Téléphone</span>
+                  <input className="rounded-xl border border-stone-300 px-3 py-2 text-sm" value={values.client_phone} onChange={(event) => onChange('client_phone', event.target.value)} />
+                </label>
+              </div>
+            )}
 
             </div>
             <div className="shrink-0 px-5 py-4 border-t border-stone-200 flex justify-end gap-2">
@@ -689,6 +710,7 @@ export default function DesignIndex({ initialProjectId }) {
         method: 'POST',
         body: JSON.stringify({
           template_id: selectedTemplateId,
+          kind: projectForm.kind,
           name: projectForm.name,
           client_name: projectForm.client_name,
           client_email: projectForm.client_email,
