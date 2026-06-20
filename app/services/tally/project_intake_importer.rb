@@ -30,7 +30,11 @@ module Tally
       existing = Design::Project.find_by(tally_submission_id: submission_id)
       return Result.new(project: existing, created: false) if existing
 
+      # Libellés multi-mots spécifiques d'abord (prioritaires), puis le libellé
+      # court « Nom » en égalité stricte (sinon « Prénom » ou « Nom et prénom »
+      # seraient captés à tort). Cf. #158 : le vrai formulaire utilise « Nom ».
       name  = text_for("nom et prénom", "nom et prenom", "votre nom")
+      name  = text_for("nom", exact: true) if name.blank?
       email = text_for("e-mail", "email")
       phone = text_for("téléphone", "telephone")
       street = text_for("rue")
@@ -66,7 +70,10 @@ module Tally
           tally_submission_id: submission_id
         )
 
-        contact_id = Academy::RegistrationContactResolver.call(name: name, email: email, phone: phone)
+        # Nom de repli non-vide : un lead n'est jamais perdu. Sans ce repli,
+        # Contact.create!(name: "") lèverait une validation et ferait un ROLLBACK
+        # total (projet + contact) → 422 renvoyée à Tally. Cf. #158.
+        contact_id = Academy::RegistrationContactResolver.call(name: name.presence || "Demande web", email: email, phone: phone)
         if contact_id
           project.project_clients.create!(contact_id: contact_id, is_primary: true, position: 0)
           project.sync_primary_client!
@@ -77,15 +84,26 @@ module Tally
 
     # === Résolution des champs Tally ===
 
-    def field_by_label(*keywords)
-      @fields.find do |f|
-        label = utf8(f[:label]).downcase
-        keywords.any? { |k| label.include?(k.downcase) }
+    # Recherche d'un champ par libellé, **en priorité par mot-clé** : on parcourt
+    # les mots-clés dans l'ordre donné et on renvoie le premier champ qui matche
+    # le mot-clé courant. Les libellés spécifiques l'emportent ainsi sur les
+    # génériques (ex. « Nom et prénom » avant le « Nom » nu).
+    # `exact: true` exige une égalité stricte du libellé — indispensable pour le
+    # libellé court « Nom » afin de ne capter ni « Prénom » ni « Nom et prénom ».
+    def field_by_label(*keywords, exact: false)
+      keywords.each do |keyword|
+        k = utf8(keyword).downcase.strip
+        match = @fields.find do |f|
+          label = utf8(f[:label]).downcase.strip
+          exact ? label == k : label.include?(k)
+        end
+        return match if match
       end
+      nil
     end
 
-    def text_for(*keywords)
-      field = field_by_label(*keywords)
+    def text_for(*keywords, exact: false)
+      field = field_by_label(*keywords, exact: exact)
       field ? display_value(field) : ""
     end
 
