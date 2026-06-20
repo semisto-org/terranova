@@ -348,6 +348,7 @@ module Api
         render json: {
           cycles: serialize_cycles,
           events: serialize_events,
+          tasks: serialize_calendar_tasks,
           cyclePeriods: serialize_cycle_periods,
           cycleEvents: serialize_cycle_period_events
         }
@@ -1502,9 +1503,42 @@ module Api
         Event.includes(:event_attendees, :event_type).order(start_date: :asc).map { |event| serialize_event(event) }
       end
 
+      # To-dos datés du calendrier (#141, tranche 109a) : toutes les tâches
+      # ayant une `due_date` ET un assigné (les tâches legacy en texte libre,
+      # sans `assignee_id`, sont hors scope). On rattache chaque tâche à son
+      # projet parent (`projectable`) pour permettre le clic → projet + drawer.
+      # Une tâche dont le projet n'expose pas de `project_type_key` (cas
+      # théorique) est ignorée plutôt que sérialisée à moitié.
+      def serialize_calendar_tasks
+        Task
+          .where.not(due_date: nil)
+          .where.not(assignee_id: nil)
+          .includes(:assignee, task_list: :taskable)
+          .order(:due_date)
+          .filter_map do |task|
+            projectable = task.task_list&.taskable
+            type_key = projectable&.project_type_key
+            next if type_key.nil?
+
+            {
+              id: task.id.to_s,
+              kind: "task",
+              title: task.name,
+              status: task.status,
+              dueDate: task.due_date.iso8601,
+              priority: task.priority,
+              assigneeId: task.assignee_id&.to_s,
+              projectType: type_key,
+              projectId: projectable.id.to_s,
+              projectName: projectable.project_name
+            }
+          end
+      end
+
       def serialize_event(event)
         {
           id: event.id.to_s,
+          kind: "event",
           title: event.title,
           type: event.event_type.label,
           eventTypeId: event.event_type_id.to_s,

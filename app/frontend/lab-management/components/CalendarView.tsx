@@ -14,10 +14,27 @@ interface CyclePeriod {
   active: boolean
 }
 
+// To-do daté du calendrier (#141) : tâche ayant une `due_date`, rattachée à
+// son projet parent. Cliquer un to-do ouvre le projet parent + son drawer de
+// tâches (pas de page détail dédiée).
+export interface CalendarTask {
+  id: string
+  kind: 'task'
+  title: string
+  status: string
+  dueDate: string
+  priority: string | null
+  assigneeId: string | null
+  projectType: string
+  projectId: string
+  projectName: string | null
+}
+
 export interface CalendarViewProps {
   events: Event[]
   cycles: Cycle[]
   cyclePeriods?: CyclePeriod[]
+  tasks?: CalendarTask[]
   members: Member[]
   currentMemberId: string
   firstName?: string
@@ -26,6 +43,7 @@ export interface CalendarViewProps {
   onViewEvent?: (eventId: string) => void
   onEditEvent?: (eventId: string) => void
   onDeleteEvent?: (eventId: string) => void
+  onSelectTask?: (projectType: string, projectId: string) => void
 }
 
 type ViewMode = 'month' | 'week'
@@ -46,6 +64,42 @@ const defaultEventConfig = { label: 'Événement', icon: '📌', color: 'text-st
 
 function getEventConfig(type: string) {
   return eventTypeConfig[type] || { ...defaultEventConfig, label: type || 'Événement' }
+}
+
+// Chip d'un to-do daté (#141) — visuellement distinct des events : bordure
+// gauche violette (#5B5781), case ☐/✓ selon le statut, rouge si en retard et
+// non terminé, texte barré si terminé. Cliquer ouvre le projet parent + drawer.
+function CalendarTaskChip({
+  task,
+  onSelectTask,
+}: {
+  task: CalendarTask
+  onSelectTask?: (projectType: string, projectId: string) => void
+}) {
+  const completed = task.status === 'completed'
+  const due = new Date(task.dueDate)
+  due.setHours(23, 59, 59, 999)
+  const overdue = !completed && due.getTime() < Date.now()
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectTask?.(task.projectType, task.projectId)}
+      className={`
+        w-full text-left pl-1.5 pr-1.5 py-1 rounded bg-white border-l-2 border-[#5B5781]
+        transition-opacity hover:opacity-80
+        ${overdue ? 'text-red-600' : completed ? 'text-stone-400' : 'text-stone-700'}
+      `}
+      title={`${task.title}${task.projectName ? ` — ${task.projectName}` : ''}`}
+    >
+      <span className="flex items-start gap-1">
+        <span className="text-[11px] leading-tight shrink-0">{completed ? '✓' : '☐'}</span>
+        <span className={`text-[11px] font-medium truncate ${completed ? 'line-through' : ''}`}>
+          {task.title}
+        </span>
+      </span>
+    </button>
+  )
 }
 
 const DAYS_FR = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.']
@@ -119,6 +173,7 @@ export function CalendarView({
   events,
   cycles,
   cyclePeriods = [],
+  tasks = [],
   members,
   currentMemberId,
   firstName,
@@ -127,11 +182,26 @@ export function CalendarView({
   onViewEvent,
   onEditEvent,
   onDeleteEvent,
+  onSelectTask,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [filterTypes, setFilterTypes] = useState<EventType[]>([])
+  // Toggle Basecamp « Events / Events + tasks » (#141) — to-dos datés visibles
+  // par défaut.
+  const [showTasks, setShowTasks] = useState(true)
+
+  // To-dos datés échéant un jour donné (comparaison par date locale YYYY-MM-DD).
+  const getTasksForDate = (date: Date): CalendarTask[] => {
+    if (!showTasks) return []
+    const key = toDateString(date)
+    return tasks.filter((task) => {
+      if (!task.dueDate) return false
+      const due = new Date(task.dueDate)
+      return toDateString(due) === key
+    })
+  }
 
   // Current member
   const currentMember = members.find((m) => m.id === currentMemberId)
@@ -513,6 +583,34 @@ export function CalendarView({
                 </button>
               </div>
 
+              {/* Toggle Events / Events + tasks (#141) */}
+              <div className="flex bg-stone-100 rounded-lg p-1">
+                <button
+                  onClick={() => setShowTasks(false)}
+                  className={`
+                    px-3 py-1.5 text-sm font-medium rounded-md transition-all
+                    ${!showTasks
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-600 hover:text-stone-900'
+                    }
+                  `}
+                >
+                  Events
+                </button>
+                <button
+                  onClick={() => setShowTasks(true)}
+                  className={`
+                    px-3 py-1.5 text-sm font-medium rounded-md transition-all
+                    ${showTasks
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-600 hover:text-stone-900'
+                    }
+                  `}
+                >
+                  Events + tasks
+                </button>
+              </div>
+
               <button
                 onClick={goToToday}
                 className="px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
@@ -574,9 +672,11 @@ export function CalendarView({
                 calendarDays={calendarDays}
                 getSingleDayEventsForDate={getSingleDayEventsForDate}
                 getSpanningEventsForWeekDates={getSpanningEventsForWeekDates}
+                getTasksForDate={getTasksForDate}
                 getCyclePhase={getCyclePhase}
                 isToday={isToday}
                 onSelectEvent={setSelectedEventId}
+                onSelectTask={onSelectTask}
                 members={members}
                 onCreateEvent={onCreateEvent}
               />
@@ -585,9 +685,11 @@ export function CalendarView({
                 weekDays={weekDays}
                 getSingleDayEventsForDate={getSingleDayEventsForDate}
                 getSpanningEventsForWeekDates={getSpanningEventsForWeekDates}
+                getTasksForDate={getTasksForDate}
                 getCyclePhase={getCyclePhase}
                 isToday={isToday}
                 onSelectEvent={setSelectedEventId}
+                onSelectTask={onSelectTask}
                 members={members}
               />
             )}
@@ -623,9 +725,11 @@ interface MonthViewProps {
   calendarDays: { date: Date; isCurrentMonth: boolean }[]
   getSingleDayEventsForDate: (date: Date) => SingleDayEvent[]
   getSpanningEventsForWeekDates: (weekDates: Date[]) => SpanningEvent[]
+  getTasksForDate: (date: Date) => CalendarTask[]
   getCyclePhase: (date: Date) => 'work' | 'cooldown' | null
   isToday: (date: Date) => boolean
   onSelectEvent: (eventId: string) => void
+  onSelectTask?: (projectType: string, projectId: string) => void
   members: Member[]
   onCreateEvent?: () => void
 }
@@ -634,9 +738,11 @@ function MonthView({
   calendarDays,
   getSingleDayEventsForDate,
   getSpanningEventsForWeekDates,
+  getTasksForDate,
   getCyclePhase,
   isToday,
   onSelectEvent,
+  onSelectTask,
   members,
   onCreateEvent,
 }: MonthViewProps) {
@@ -840,6 +946,28 @@ function MonthView({
                           +{singleDayEvents.length - 2} autres
                         </p>
                       )}
+
+                      {/* To-dos datés (#141) */}
+                      {(() => {
+                        const dayTasks = getTasksForDate(dayInfo.date)
+                        if (dayTasks.length === 0) return null
+                        return (
+                          <>
+                            {dayTasks.slice(0, 2).map((task) => (
+                              <CalendarTaskChip
+                                key={`task-${task.id}`}
+                                task={task}
+                                onSelectTask={onSelectTask}
+                              />
+                            ))}
+                            {dayTasks.length > 2 && (
+                              <p className="text-[10px] text-stone-400 px-1">
+                                +{dayTasks.length - 2} tâches
+                              </p>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                 )
@@ -860,9 +988,11 @@ interface WeekViewProps {
   weekDays: Date[]
   getSingleDayEventsForDate: (date: Date) => SingleDayEvent[]
   getSpanningEventsForWeekDates: (weekDates: Date[]) => SpanningEvent[]
+  getTasksForDate: (date: Date) => CalendarTask[]
   getCyclePhase: (date: Date) => 'work' | 'cooldown' | null
   isToday: (date: Date) => boolean
   onSelectEvent: (eventId: string) => void
+  onSelectTask?: (projectType: string, projectId: string) => void
   members: Member[]
 }
 
@@ -870,9 +1000,11 @@ function WeekView({
   weekDays,
   getSingleDayEventsForDate,
   getSpanningEventsForWeekDates,
+  getTasksForDate,
   getCyclePhase,
   isToday,
   onSelectEvent,
+  onSelectTask,
   members,
 }: WeekViewProps) {
   const spanningEvents = getSpanningEventsForWeekDates(weekDays)
@@ -995,6 +1127,7 @@ function WeekView({
           const isTodayDate = isToday(date)
           const cyclePhase = getCyclePhase(date)
           const singleDayEvents = getSingleDayEventsForDate(date)
+          const dayTasks = getTasksForDate(date)
           const hasSpanning = dayHasSpanningEvent(dayIndex)
           // Calculate left margin based on number of spanning events active for this day
           const spanningCount = spanningEvents.filter(
@@ -1037,10 +1170,21 @@ function WeekView({
                 className={`flex-1 min-h-[60px] rounded-xl p-2 transition-colors ${getBgClass(date)}`}
                 style={{ marginLeft: hasSpanning ? `${spanningCount * 36 + 8}px` : undefined }}
               >
-                {singleDayEvents.length === 0 ? (
+                {singleDayEvents.length === 0 && dayTasks.length === 0 ? (
                   <div className="h-full" />
                 ) : (
                   <div className="flex flex-wrap gap-2">
+                    {dayTasks.length > 0 && (
+                      <div className="w-full flex flex-col gap-1 sm:max-w-[280px]">
+                        {dayTasks.map((task) => (
+                          <CalendarTaskChip
+                            key={`task-${task.id}`}
+                            task={task}
+                            onSelectTask={onSelectTask}
+                          />
+                        ))}
+                      </div>
+                    )}
                     {singleDayEvents.map((singleEvent) => {
                       const config = getEventConfig(singleEvent.event.type)
                       const attendees = singleEvent.event.attendeeIds
