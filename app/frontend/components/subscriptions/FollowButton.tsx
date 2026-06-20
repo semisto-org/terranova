@@ -5,7 +5,7 @@ import { apiRequest } from '@/lib/api'
 type SubscriptionState = 'auto' | 'explicit' | 'unsubscribed' | null
 
 interface FollowButtonProps {
-  parentType: 'tasks' | 'events'
+  parentType: 'tasks' | 'events' | 'posts'
   parentId: string
   accentColor?: string
 }

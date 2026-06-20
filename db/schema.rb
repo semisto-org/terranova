@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_064645) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2177,6 +2177,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_064645) do
     t.index ["notion_id"], name: "index_post_its_on_notion_id", unique: true
     t.index ["pole_project_id"], name: "index_post_its_on_pole_project_id"
     t.index ["training_id"], name: "index_post_its_on_training_id"
+  end
+
+  create_table "posts", force: :cascade do |t|
+    t.bigint "author_id"
+    t.text "body", default: "", null: false
+    t.datetime "created_at", null: false
+    t.bigint "projectable_id", null: false
+    t.string "projectable_type", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_posts_on_author_id"
+    t.index ["projectable_type", "projectable_id", "created_at"], name: "index_posts_on_projectable_and_created_at"
   end
 
   create_table "project_memberships", force: :cascade do |t|
