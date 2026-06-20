@@ -31,7 +31,30 @@ module Api
         render json: serialize_member(current_member.reload)
       end
 
+      # Flux iCal personnel (#143) : renvoie l'URL signée du membre courant.
+      def calendar_feed
+        render json: calendar_feed_payload(current_member)
+      end
+
+      # Régénère le nonce du membre → invalide l'ancien token, renvoie la nouvelle URL.
+      def regenerate_calendar_feed
+        current_member.regenerate_calendar_token!
+        render json: calendar_feed_payload(current_member)
+      end
+
       private
+
+      def calendar_feed_payload(member)
+        token = CalendarFeedToken.issue_member(member)
+        {
+          url: "#{request.base_url}/calendar/my/#{token}.ics",
+          instructions: [
+            "Dans Google Agenda, cliquez sur + à côté de ‘Autres agendas’.",
+            "Choisissez ‘À partir de l’URL’, collez le lien puis validez.",
+            "Le lien est personnel : ne le partagez pas. En cas de fuite, régénérez-le."
+          ]
+        }
+      end
 
       def profile_params
         params.permit(:first_name, :last_name, :email, :password, :password_confirmation, :avatar_image)

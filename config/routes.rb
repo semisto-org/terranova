@@ -106,6 +106,10 @@ Rails.application.routes.draw do
 
   get "calendar/semisto.ics", to: "calendar_feeds#semisto"
   get "calendar/trainings.ics", to: "calendar_feeds#trainings"
+  # Flux iCal personnel par membre (#143). Le token signé peut contenir des points
+  # et tirets ; la contrainte capture tout jusqu'au suffixe « .ics » (qui n'est donc
+  # pas interprété comme un format Rails).
+  get "calendar/my/:token.ics", to: "calendar_feeds#member", constraints: { token: /[^\/]+/ }, format: "ics"
 
   mount ActionCable.server => "/cable"
 
@@ -281,6 +285,8 @@ Rails.application.routes.draw do
       get "profile", to: "profile#show"
       patch "profile", to: "profile#update"
       delete "profile/avatar", to: "profile#remove_avatar"
+      get "profile/calendar-feed", to: "profile#calendar_feed"
+      post "profile/calendar-feed/regenerate", to: "profile#regenerate_calendar_feed"
 
       get "lab", to: "lab_management#overview"
       get "lab/overview", to: "lab_management#overview"

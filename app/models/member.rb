@@ -66,4 +66,23 @@ class Member < ApplicationRecord
   def guild_ids_list
     project_memberships.where(projectable_type: "Guild").pluck(:projectable_id)
   end
+
+  # Nonce du flux iCal personnel (#143). S'assure qu'un calendar_token existe ;
+  # ne le régénère pas s'il est déjà présent.
+  def ensure_calendar_token!
+    return calendar_token if calendar_token.present?
+
+    update_column(:calendar_token, self.class.generate_calendar_token)
+    calendar_token
+  end
+
+  # Régénère le nonce → invalide tous les anciens tokens de flux iCal du membre.
+  def regenerate_calendar_token!
+    update_column(:calendar_token, self.class.generate_calendar_token)
+    calendar_token
+  end
+
+  def self.generate_calendar_token
+    SecureRandom.urlsafe_base64(24)
+  end
 end
