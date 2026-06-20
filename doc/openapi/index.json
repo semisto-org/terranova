@@ -1203,10 +1203,15 @@
       ]
     },
     {
-      "endpointCount": 3,
+      "endpointCount": 4,
       "file": "public.json",
       "name": "public",
       "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/public/academy/trainings",
+          "summary": "index"
+        },
         {
           "method": "GET",
           "path": "/api/v1/public/academy/trainings/{training_id}",
@@ -1449,5 +1454,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 251
+  "totalEndpoints": 252
 }
