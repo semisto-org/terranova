@@ -170,6 +170,12 @@ Rails.application.routes.draw do
       get    "events/:event_id/comments",     to: "comments#index"
       post   "events/:event_id/comments",     to: "comments#create"
       delete "events/:event_id/comments/:id", to: "comments#destroy"
+
+      # Réunion → tâches (#47) : compte-rendu (points proposés) → validation → tâche.
+      get    "event-action-items/pending",       to: "event_action_items#pending"
+      get    "events/:event_id/action-items",    to: "event_action_items#index"
+      post   "events/:event_id/action-items",    to: "event_action_items#create"
+      patch  "event-action-items/:id/validate",  to: "event_action_items#validate_item"
       get    "posts/:post_id/comments",        to: "comments#index"
       post   "posts/:post_id/comments",        to: "comments#create"
       delete "posts/:post_id/comments/:id",    to: "comments#destroy"

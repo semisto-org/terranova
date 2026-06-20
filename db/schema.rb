@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1118,6 +1118,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_160000) do
     t.index ["location_id"], name: "index_economic_outputs_on_location_id"
     t.index ["species_id"], name: "index_economic_outputs_on_species_id"
     t.index ["zone_id"], name: "index_economic_outputs_on_zone_id"
+  end
+
+  create_table "event_action_items", force: :cascade do |t|
+    t.bigint "assignee_id"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "description", null: false
+    t.bigint "event_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "status", default: "proposed", null: false
+    t.bigint "task_id"
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_event_action_items_on_event_id"
+    t.index ["status"], name: "index_event_action_items_on_status"
+    t.index ["task_id"], name: "index_event_action_items_on_task_id"
   end
 
   create_table "event_attendees", force: :cascade do |t|
@@ -2802,6 +2817,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_160000) do
   add_foreign_key "economic_outputs", "location_zones", column: "zone_id"
   add_foreign_key "economic_outputs", "locations"
   add_foreign_key "economic_outputs", "plant_species", column: "species_id"
+  add_foreign_key "event_action_items", "events"
+  add_foreign_key "event_action_items", "tasks"
   add_foreign_key "event_attendees", "events"
   add_foreign_key "event_attendees", "members"
   add_foreign_key "events", "cycles"
