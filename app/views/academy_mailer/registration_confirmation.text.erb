@@ -52,6 +52,11 @@ Méthode de paiement : <%= @payment_method %>
 Solde restant : <%= format_eur_text(@payment_amount - @amount_paid) %>
 Une demande de paiement pour le solde te sera envoyée ultérieurement par l'équipe Semisto Academy.
 <% end %>
+<% if @my_semisto_url.present? %>
+
+Voir mon activité sur MySemisto (détails pratiques + covoiturage avec les autres inscrit·es) :
+<%= @my_semisto_url %>
+<% end %>
 
 À très bientôt !
 
