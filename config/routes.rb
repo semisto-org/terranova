@@ -154,13 +154,18 @@ Rails.application.routes.draw do
       get "member-tasks/:member_id", to: "tasks#member_tasks"
 
       # Commentaires polymorphes (#102) — routes imbriquées par parent.
-      # Nouveau parent commentable = 3 lignes ici + 1 entrée dans CommentsController::PARENTS.
+      # Nouveau parent commentable = 4 lignes ici + 1 entrée dans CommentsController::PARENTS.
       get    "tasks/:task_id/comments",       to: "comments#index"
       post   "tasks/:task_id/comments",       to: "comments#create"
       delete "tasks/:task_id/comments/:id",   to: "comments#destroy"
       get    "events/:event_id/comments",     to: "comments#index"
       post   "events/:event_id/comments",     to: "comments#create"
       delete "events/:event_id/comments/:id", to: "comments#destroy"
+      # Échanges / Contexte d'une activité Academy (#16) — même substrat.
+      get    "academy/trainings/:training_id/comments",     to: "comments#index"
+      post   "academy/trainings/:training_id/comments",     to: "comments#create"
+      patch  "academy/trainings/:training_id/comments/:id", to: "comments#update"
+      delete "academy/trainings/:training_id/comments/:id", to: "comments#destroy"
 
       # Boîte Hey! (#105) — notifications du membre courant (directed-at-me uniquement).
       get   "notifications",              to: "notifications#index"

@@ -17,6 +17,8 @@ module Academy
     has_many :documents, class_name: 'Academy::TrainingDocument', foreign_key: :training_id, dependent: :destroy
     has_many :participant_categories, class_name: 'Academy::ParticipantCategory', foreign_key: :training_id, dependent: :destroy
     has_many :packs, class_name: 'Academy::TrainingPack', foreign_key: :training_id, dependent: :destroy
+    # Échanges / Contexte (#16) : notes & commentaires polymorphes (#102).
+    has_many :comments, as: :commentable, dependent: :destroy
     has_one :album, as: :albumable, dependent: :destroy
 
     validates :title, :status, presence: true
