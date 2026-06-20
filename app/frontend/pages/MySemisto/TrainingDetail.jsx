@@ -9,6 +9,7 @@ import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import DocumentList, { DocumentItem } from '../../my-semisto/components/DocumentList'
 import DocumentUploadForm from '../../my-semisto/components/DocumentUploadForm'
 import CarpoolingSection from '../../my-semisto/components/CarpoolingSection'
+import WhatsAppContactWidget from '../../my-semisto/components/WhatsAppContactWidget'
 import SessionPhotoAlbum from '../../my-semisto/components/SessionPhotoAlbum'
 import SessionFeedbackForm from '../../my-semisto/components/SessionFeedbackForm'
 import { myApiRequest } from '../../my-semisto/lib/api'
@@ -255,6 +256,11 @@ export default function TrainingDetail() {
               <CarpoolingSection trainingId={trainingId} />
             </div>
           )}
+
+          {/* Contact WhatsApp (#40) — message pré-rempli avec l'activité concernée */}
+          <div className="flex justify-center pt-2">
+            <WhatsAppContactWidget activityTitle={training.title} />
+          </div>
         </div>
       )}
     </MySemistoShell>
