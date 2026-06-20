@@ -1082,7 +1082,7 @@
       ]
     },
     {
-      "endpointCount": 8,
+      "endpointCount": 10,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -1099,6 +1099,16 @@
         {
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/bucket",
+          "summary": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/chat-messages",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/chat-messages",
           "summary": "create"
         },
         {
@@ -1358,5 +1368,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 236
+  "totalEndpoints": 239
 }

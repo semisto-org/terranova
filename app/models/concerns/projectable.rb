@@ -16,6 +16,7 @@ module Projectable
     has_many :events, as: :projectable, dependent: :nullify
     has_many :knowledge_sections, as: :projectable, dependent: :nullify
     has_many :subscriptions, as: :subscribable, dependent: :destroy
+    has_many :chat_messages, as: :projectable, dependent: :destroy
     has_many_attached :project_documents
   end
 
