@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { GraduationCap, Loader2, BookOpen, Zap, Clock } from 'lucide-react'
 import MySemistoShell from '../../my-semisto/components/MySemistoShell'
 import TrainingCard from '../../my-semisto/components/TrainingCard'
+import WhatsAppContactWidget from '../../my-semisto/components/WhatsAppContactWidget'
 import { myApiRequest } from '../../my-semisto/lib/api'
 import { myPath, myApiPath } from '../../my-semisto/lib/paths'
 
@@ -74,6 +75,9 @@ export default function Academy() {
         <p className="text-sm text-stone-500 ml-12">
           Des ressources mises à ta disposition par l'équipe et les participants
         </p>
+        <div className="ml-12 mt-4">
+          <WhatsAppContactWidget />
+        </div>
         <hr className="my-section-divider mt-5" />
       </div>
 
