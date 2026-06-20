@@ -184,6 +184,12 @@ Rails.application.routes.draw do
       post   "projects/:type/:id/mute",                            to: "subscriptions#mute"
       delete "projects/:type/:id/mute",                            to: "subscriptions#unmute"
 
+      # Campfire (#145) — chat léger par projet. GET = historique paginé
+      # chronologique ; POST = nouveau message.  -> Notification (#104).
+      # (Diffusion temps réel = tranche 119b, hors de cette couche REST.)
+      get  "projects/:type/:id/chat-messages", to: "chat_messages#index"
+      post "projects/:type/:id/chat-messages", to: "chat_messages#create"
+
       # Flux d'activité ambiant (#110)
       get "activity", to: "activity#index"
 

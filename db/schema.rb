@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_064645) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -545,6 +545,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_210000) do
     t.index ["kind"], name: "index_bucket_transactions_on_kind"
     t.index ["member_id"], name: "index_bucket_transactions_on_member_id"
     t.index ["projectable_type", "projectable_id"], name: "index_bucket_transactions_on_projectable"
+  end
+
+  create_table "chat_messages", force: :cascade do |t|
+    t.bigint "author_id"
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.bigint "projectable_id", null: false
+    t.string "projectable_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_chat_messages_on_author_id"
+    t.index ["projectable_type", "projectable_id", "created_at"], name: "index_chat_messages_on_projectable_and_created_at"
   end
 
   create_table "chowder_items", force: :cascade do |t|
