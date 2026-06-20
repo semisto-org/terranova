@@ -150,6 +150,7 @@ export default function HomeIndex() {
   useShellNav({ sections: SECTION_TABS, activeSection: tab, onSectionChange: handleSectionChange })
 
   const [events, setEvents] = useState([])
+  const [calendarTasks, setCalendarTasks] = useState([])
   const [overviewData, setOverviewData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [eventForm, setEventForm] = useState(null)
@@ -161,10 +162,11 @@ export default function HomeIndex() {
 
   const loadData = useCallback(async () => {
     try {
-      const [eventsRes, overviewRes, academyCalendarRes] = await Promise.all([
+      const [eventsRes, overviewRes, academyCalendarRes, calendarRes] = await Promise.all([
         apiRequest('/api/v1/lab/events'),
         apiRequest('/api/v1/lab/overview'),
         apiRequest('/api/v1/academy/calendar').catch(() => []),
+        apiRequest('/api/v1/lab/calendar').catch(() => ({ tasks: [] })),
       ])
       const labEvents = eventsRes.items ?? eventsRes ?? []
 
@@ -187,6 +189,7 @@ export default function HomeIndex() {
       )
 
       setEvents([...labEvents, ...trainingEvents])
+      setCalendarTasks(calendarRes?.tasks ?? [])
       setOverviewData(overviewRes)
     } catch (err) {
       console.error('Failed to load data:', err)
@@ -531,6 +534,7 @@ export default function HomeIndex() {
             events={events}
             cycles={cycles}
             cyclePeriods={cyclePeriods}
+            tasks={calendarTasks}
             members={members}
             currentMemberId={currentMemberId}
             firstName={firstName}
@@ -538,6 +542,9 @@ export default function HomeIndex() {
             onViewEvent={() => {}}
             onEditEvent={handleEditEvent}
             onDeleteEvent={handleDeleteEvent}
+            onSelectTask={(projectType, projectId) =>
+              router.visit(`/projects/${projectType}/${projectId}`)
+            }
           />
 
           <div className="mt-6">
