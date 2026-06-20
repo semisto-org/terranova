@@ -2,6 +2,7 @@
 
 class Task < ApplicationRecord
   include Subscribable
+  include Reactable # réactions polymorphes (#111)
 
   STATUSES = %w[pending in_progress completed].freeze
   PRIORITIES = %w[low medium high].freeze

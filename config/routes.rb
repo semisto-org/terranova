@@ -776,6 +776,12 @@ Rails.application.routes.draw do
       delete "strategy/deliberation-comments/:id",   to: "strategy/deliberations#destroy_comment"
       post   "strategy/deliberation-comments/:id/reactions",        to: "strategy/deliberations#create_comment_reaction"
       delete "strategy/deliberation-comments/:id/reactions/:emoji", to: "strategy/deliberations#destroy_comment_reaction"
+
+      # Réactions polymorphes (#111) — substrat « Boost » : add / remove idempotent
+      # sur n'importe quel objet réactionnable (Comment, Task, Event, Deliberation).
+      post   "reactions", to: "reactions#create"
+      delete "reactions", to: "reactions#destroy"
+
       post   "strategy/deliberations/:id/attachments",                to: "strategy/deliberations#create_attachment"
       delete "strategy/deliberations/:id/attachments/:attachment_id", to: "strategy/deliberations#destroy_attachment"
 

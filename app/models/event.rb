@@ -1,6 +1,7 @@
 class Event < ApplicationRecord
   include SoftDeletable
   include Subscribable
+  include Reactable # réactions polymorphes (#111)
   belongs_to :cycle, optional: true
   belongs_to :event_type
   belongs_to :projectable, polymorphic: true, optional: true

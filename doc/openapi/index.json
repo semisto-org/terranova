@@ -1225,6 +1225,23 @@
       ]
     },
     {
+      "endpointCount": 2,
+      "file": "reactions.json",
+      "name": "reactions",
+      "operations": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/reactions",
+          "summary": "destroy"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/reactions",
+          "summary": "create"
+        }
+      ]
+    },
+    {
       "endpointCount": 3,
       "file": "settings.json",
       "name": "settings",
@@ -1432,5 +1449,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 249
+  "totalEndpoints": 251
 }

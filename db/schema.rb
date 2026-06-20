@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2193,6 +2193,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_130000) do
     t.index ["projectable_type", "projectable_id"], name: "index_project_memberships_on_projectable"
   end
 
+  create_table "reactions", force: :cascade do |t|
+    t.string "content", null: false
+    t.datetime "created_at", null: false
+    t.bigint "member_id", null: false
+    t.bigint "reactable_id", null: false
+    t.string "reactable_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id", "reactable_type", "reactable_id", "content"], name: "index_reactions_uniqueness", unique: true
+    t.index ["reactable_type", "reactable_id"], name: "index_reactions_on_reactable_type_and_reactable_id"
+  end
+
   create_table "revenues", force: :cascade do |t|
     t.decimal "amount", precision: 12, scale: 2, default: "0.0", null: false
     t.decimal "amount_excl_vat", precision: 12, scale: 2, default: "0.0", null: false
@@ -2868,6 +2879,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_130000) do
   add_foreign_key "post_its", "design_projects"
   add_foreign_key "post_its", "pole_projects"
   add_foreign_key "project_memberships", "members"
+  add_foreign_key "reactions", "members"
   add_foreign_key "revenues", "contacts"
   add_foreign_key "revenues", "organizations"
   add_foreign_key "scope_tasks", "scopes"
