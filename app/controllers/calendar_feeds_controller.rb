@@ -14,6 +14,17 @@ class CalendarFeedsController < ActionController::Base
            content_type: "text/calendar; charset=utf-8"
   end
 
+  # Flux iCal personnel d'un membre (#143). Authentifié par token signé révocable,
+  # sans session : GET /calendar/my/:token.ics. Contient ses events (event_attendees)
+  # + ses échéances de tâches assignées et datées (assignee_id + due_date).
+  def member
+    member = CalendarFeedToken.member_from(params[:token])
+    return head :unauthorized if member.nil?
+
+    render plain: CalendarIcsService.new(feed_name: "Mon agenda Semisto", events: member_events(member) + member_task_events(member)).call,
+           content_type: "text/calendar; charset=utf-8"
+  end
+
   private
 
   def authorize_feed!(feed)
@@ -31,8 +42,8 @@ class CalendarFeedsController < ActionController::Base
         title: [event.label, event.title].compact_blank.join(" · "),
         description: event.description,
         location: event.location,
-        start_at: event.start_date,
-        end_at: event.end_date,
+        start_date: event.start_date,
+        end_date: event.end_date,
         all_day: event.all_day,
         updated_at: event.updated_at
       }
@@ -51,12 +62,52 @@ class CalendarFeedsController < ActionController::Base
           title: training.title,
           description: [training.description, session.description].compact_blank.join("\n\n"),
           location: location_names.join(", "),
-          start_at: session.start_date,
-          end_at: session.end_date,
+          start_date: session.start_date,
+          end_date: session.end_date,
           all_day: true,
           updated_at: [session.updated_at, training.updated_at].compact.max
         }
       end
+    end
+  end
+
+  # Events auxquels le membre est inscrit (event_attendees).
+  def member_events(member)
+    Event.joins(:event_attendees)
+         .where(event_attendees: { member_id: member.id })
+         .includes(:event_type)
+         .order(:start_date)
+         .map do |event|
+      {
+        uid: "member-event-#{event.id}@terranova",
+        title: [event.label, event.title].compact_blank.join(" · "),
+        description: event.description,
+        location: event.location,
+        start_date: event.start_date,
+        end_date: event.end_date,
+        all_day: event.all_day,
+        updated_at: event.updated_at
+      }
+    end
+  end
+
+  # Échéances des tâches assignées et datées du membre (assignee_id + due_date).
+  # Modélisées comme des évènements all-day d'un jour sur la due_date.
+  def member_task_events(member)
+    member.assigned_tasks
+          .where.not(due_date: nil)
+          .order(:due_date)
+          .map do |task|
+      {
+        uid: "member-task-#{task.id}@terranova",
+        title: "À rendre : #{task.name}",
+        description: task.description,
+        location: nil,
+        start_date: task.due_date,
+        end_date: task.due_date,
+        all_day: true,
+        updated_at: task.updated_at
+      }
     end
   end
 end

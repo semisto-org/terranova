@@ -35,11 +35,11 @@ class CalendarIcsService
     ]
 
     if event[:all_day]
-      lines << "DTSTART;VALUE=DATE:#{event.fetch(:start_at).strftime('%Y%m%d')}"
-      lines << "DTEND;VALUE=DATE:#{(event.fetch(:end_at).to_date + 1.day).strftime('%Y%m%d')}"
+      lines << "DTSTART;VALUE=DATE:#{event.fetch(:start_date).strftime('%Y%m%d')}"
+      lines << "DTEND;VALUE=DATE:#{(event.fetch(:end_date).to_date + 1.day).strftime('%Y%m%d')}"
     else
-      lines << "DTSTART;TZID=#{TIMEZONE}:#{event.fetch(:start_at).strftime('%Y%m%dT%H%M%S')}"
-      lines << "DTEND;TZID=#{TIMEZONE}:#{event.fetch(:end_at).strftime('%Y%m%dT%H%M%S')}"
+      lines << "DTSTART;TZID=#{TIMEZONE}:#{event.fetch(:start_date).strftime('%Y%m%dT%H%M%S')}"
+      lines << "DTEND;TZID=#{TIMEZONE}:#{event.fetch(:end_date).strftime('%Y%m%dT%H%M%S')}"
     end
 
     lines << "DESCRIPTION:#{escape(event[:description])}" if event[:description].present?

@@ -18,6 +18,10 @@ export default function ProfileIndex() {
   const [avatarFile, setAvatarFile] = useState(null)
   const fileInputRef = useRef(null)
 
+  const [calendarFeed, setCalendarFeed] = useState(null)
+  const [calendarNotice, setCalendarNotice] = useState(null)
+  const [regenerating, setRegenerating] = useState(false)
+
   const [fields, setFields] = useState({
     firstName: '',
     lastName: '',
@@ -34,7 +38,48 @@ export default function ProfileIndex() {
 
   useEffect(() => {
     loadProfile()
+    loadCalendarFeed()
   }, [])
+
+  const loadCalendarFeed = async () => {
+    try {
+      const data = await apiRequest('/api/v1/profile/calendar-feed')
+      setCalendarFeed(data)
+    } catch (err) {
+      // Non bloquant : on n'empêche pas le chargement du profil si le flux échoue.
+      setCalendarFeed(null)
+    }
+  }
+
+  const copyCalendarUrl = async () => {
+    if (!calendarFeed?.url) return
+    try {
+      await navigator.clipboard.writeText(calendarFeed.url)
+      setCalendarNotice('Lien copié ✅')
+      setTimeout(() => setCalendarNotice(null), 2500)
+    } catch {
+      setCalendarNotice('Impossible de copier automatiquement le lien')
+      setTimeout(() => setCalendarNotice(null), 2500)
+    }
+  }
+
+  const handleRegenerateCalendar = async () => {
+    if (!window.confirm("Régénérer le lien invalidera l'ancien : tous les agendas abonnés avec l'ancien lien cesseront de se synchroniser. Continuer ?")) {
+      return
+    }
+    try {
+      setRegenerating(true)
+      const data = await apiRequest('/api/v1/profile/calendar-feed/regenerate', { method: 'POST' })
+      setCalendarFeed(data)
+      setCalendarNotice('Nouveau lien généré — l\'ancien est révoqué ✅')
+      setTimeout(() => setCalendarNotice(null), 3000)
+    } catch (err) {
+      setCalendarNotice(err.message || 'Erreur lors de la régénération du lien')
+      setTimeout(() => setCalendarNotice(null), 3000)
+    } finally {
+      setRegenerating(false)
+    }
+  }
 
   const loadProfile = async () => {
     try {
@@ -392,6 +437,68 @@ export default function ProfileIndex() {
           </button>
         </div>
       </form>
+
+      {/* S'abonner à mon agenda (#143) */}
+      <div className="mt-8 pt-6 border-t border-stone-200">
+        <h2 className="text-lg font-semibold text-stone-900 mb-1">
+          S'abonner à mon agenda
+        </h2>
+        <p className="text-sm text-stone-500 mb-4">
+          Synchronisez vos events et vos échéances de tâches dans Google Agenda, Apple
+          Calendrier ou Outlook grâce à ce lien iCal personnel.
+        </p>
+
+        {calendarNotice && (
+          <div className="mb-4 p-3 bg-stone-100 border border-stone-200 rounded-xl text-stone-700 text-sm">
+            {calendarNotice}
+          </div>
+        )}
+
+        {calendarFeed ? (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+              <input
+                type="text"
+                readOnly
+                value={calendarFeed.url}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 rounded-xl border border-stone-300 bg-stone-50 px-4 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-400"
+              />
+              <button
+                type="button"
+                onClick={copyCalendarUrl}
+                className="px-4 py-2 text-sm font-medium text-white bg-stone-900 rounded-xl hover:bg-stone-800 transition-colors whitespace-nowrap"
+              >
+                Copier le lien
+              </button>
+            </div>
+
+            {Array.isArray(calendarFeed.instructions) && calendarFeed.instructions.length > 0 && (
+              <ol className="list-decimal list-inside space-y-1 text-xs text-stone-500">
+                {calendarFeed.instructions.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            )}
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleRegenerateCalendar}
+                disabled={regenerating}
+                className="px-3 py-1.5 text-sm font-medium text-red-600 rounded-lg border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {regenerating ? 'Régénération...' : 'Régénérer / révoquer le lien'}
+              </button>
+              <p className="mt-1 text-xs text-stone-400">
+                Régénérer crée un nouveau lien et invalide immédiatement l'ancien.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-stone-400">Lien indisponible pour le moment.</p>
+        )}
+      </div>
     </div>
   )
 }
