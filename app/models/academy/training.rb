@@ -29,6 +29,24 @@ module Academy
     validates :vat_rate, numericality: { greater_than_or_equal_to: 0, less_than: 100 }
     validates :deposit_amount, numericality: { greater_than_or_equal_to: 0 }
 
+    # Soft-delete en cascade (#137). `SoftDeletable#soft_delete!` fait un
+    # `update_column` qui saute les callbacks : `dependent: :destroy` ne
+    # s'exécute donc pas, et les enfants (inscriptions, sessions, packs…)
+    # deviennent orphelins — leur parent masqué par le default_scope. Ces
+    # orphelins cassaient l'index Academy (500). On masque explicitement les
+    # enfants SoftDeletable avant de masquer la formation.
+    def soft_delete!
+      transaction do
+        sessions.each(&:soft_delete!)
+        registrations.each(&:soft_delete!)
+        documents.each(&:soft_delete!)
+        participant_categories.each(&:soft_delete!)
+        packs.each(&:soft_delete!)
+        album&.soft_delete!
+        super
+      end
+    end
+
     def price_excl_vat
       vat_rate.to_f > 0 ? (price / (1 + vat_rate / 100.0)).round(2) : price
     end

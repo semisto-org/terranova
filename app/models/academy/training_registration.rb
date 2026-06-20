@@ -36,6 +36,10 @@ module Academy
       line_total = items_total + packs_total
       return line_total if line_total.positive?
 
+      # Inscription orpheline : sa formation a été soft-deleted (default_scope
+      # → `training` est nil). On ne lève pas, on renvoie 0.0 (#137).
+      return 0.0 unless training
+
       modern_pricing = training.participant_categories.any? || training.packs.any?
       modern_pricing ? 0.0 : training.price.to_f
     end
