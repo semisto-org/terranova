@@ -28,6 +28,7 @@ import { ProjectEditModal } from '@/components/projects/ProjectEditModal'
 import { CollaborativeEditor } from '@/components/projects/CollaborativeEditor'
 import { ProjectDocuments, type DocumentData } from '@/components/projects/ProjectDocuments'
 import MuteProjectToggle from '@/components/subscriptions/MuteProjectToggle'
+import MessagesTab from '@/components/posts/MessagesTab'
 import {
   ArrowLeft,
   Users,
@@ -48,6 +49,7 @@ import {
   Trash2,
   FileText,
   Paperclip,
+  MessageSquareText,
 } from 'lucide-react'
 
 interface ProjectDetailProps {
@@ -66,6 +68,7 @@ const TYPE_CONFIG: Record<string, { label: string; accent: string; bg: string; i
 
 const TABS = [
   { id: 'overview', label: 'Aperçu', icon: ListTodo },
+  { id: 'messages', label: 'Messages', icon: MessageSquareText },
   { id: 'notes', label: 'Bloc-notes', icon: FileText },
   { id: 'documents', label: 'Documents', icon: Paperclip },
   { id: 'timesheets', label: 'Timesheets', icon: Clock },
@@ -262,6 +265,14 @@ export default function ProjectDetail({ typeKey, projectId, onBack, onRefreshLis
             config={config}
             isAdmin={isAdmin}
             onRefresh={() => loadProject(true)}
+          />
+        )}
+        {activeTab === 'messages' && (
+          <MessagesTab
+            typeKey={typeKey}
+            projectId={projectId}
+            members={project.members || []}
+            accent={config.accent}
           />
         )}
         {activeTab === 'notes' && (

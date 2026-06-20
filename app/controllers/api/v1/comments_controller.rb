@@ -10,6 +10,7 @@ module Api
       PARENTS = {
         "task_id" => Task,
         "event_id" => Event,
+        "post_id" => Post,
       }.freeze
 
       before_action :set_commentable

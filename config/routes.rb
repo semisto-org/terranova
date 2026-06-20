@@ -163,6 +163,16 @@ Rails.application.routes.draw do
       get    "events/:event_id/comments",     to: "comments#index"
       post   "events/:event_id/comments",     to: "comments#create"
       delete "events/:event_id/comments/:id", to: "comments#destroy"
+      get    "posts/:post_id/comments",        to: "comments#index"
+      post   "posts/:post_id/comments",        to: "comments#create"
+      delete "posts/:post_id/comments/:id",    to: "comments#destroy"
+
+      # Message Board par projet (#118) — posts imbriqués par projet ; show/update/destroy par id.
+      get    "projects/:type/:id/posts", to: "posts#index"
+      post   "projects/:type/:id/posts", to: "posts#create"
+      get    "posts/:id",                to: "posts#show"
+      patch  "posts/:id",                to: "posts#update"
+      delete "posts/:id",                to: "posts#destroy"
 
       # Boîte Hey! (#105) — notifications du membre courant (directed-at-me uniquement).
       get   "notifications",              to: "notifications#index"
@@ -180,6 +190,9 @@ Rails.application.routes.draw do
       get    "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#show"
       post   "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#create"
       delete "strategy/deliberations/:deliberation_id/subscription", to: "subscriptions#destroy"
+      get    "posts/:post_id/subscription",                          to: "subscriptions#show"
+      post   "posts/:post_id/subscription",                          to: "subscriptions#create"
+      delete "posts/:post_id/subscription",                          to: "subscriptions#destroy"
       get    "projects/:type/:id/mute",                            to: "subscriptions#mute_state"
       post   "projects/:type/:id/mute",                            to: "subscriptions#mute"
       delete "projects/:type/:id/mute",                            to: "subscriptions#unmute"

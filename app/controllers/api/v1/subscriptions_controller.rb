@@ -12,6 +12,7 @@ module Api
       PARENTS = {
         "task_id" => Task,
         "event_id" => Event,
+        "post_id" => Post,
         "deliberation_id" => ::Strategy::Deliberation,
       }.freeze
 

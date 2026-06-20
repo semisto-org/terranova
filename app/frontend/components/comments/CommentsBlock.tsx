@@ -29,7 +29,7 @@ interface MentionMember {
 }
 
 interface CommentsBlockProps {
-  parentType: 'tasks' | 'events'
+  parentType: 'tasks' | 'events' | 'posts'
   parentId: string
   accentColor?: string
 }
