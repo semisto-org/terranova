@@ -4,6 +4,7 @@ module Strategy
   class Deliberation < ApplicationRecord
     include SanitizesRichText
     include Subscribable
+    include Reactable # réactions polymorphes (#111)
 
     self.table_name = "strategy_deliberations"
 

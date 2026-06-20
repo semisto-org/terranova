@@ -9,6 +9,7 @@
 # pour que le service de notifications (#104) puisse les consommer.
 class Comment < ApplicationRecord
   include SanitizesRichText
+  include Reactable # réactions polymorphes (#111)
 
   MENTION_SELECTOR = 'span[data-type="mention"]'
 
