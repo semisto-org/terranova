@@ -455,7 +455,7 @@
       ]
     },
     {
-      "endpointCount": 7,
+      "endpointCount": 9,
       "file": "foundation.json",
       "name": "foundation",
       "operations": [
@@ -488,6 +488,16 @@
           "method": "PATCH",
           "path": "/api/v1/profile",
           "summary": "update"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/profile/calendar-feed",
+          "summary": "calendar_feed"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/profile/calendar-feed/regenerate",
+          "summary": "regenerate_calendar_feed"
         },
         {
           "method": "GET",
@@ -697,6 +707,18 @@
           "method": "GET",
           "path": "/api/v1/labs/{id}",
           "summary": "show"
+        }
+      ]
+    },
+    {
+      "endpointCount": 1,
+      "file": "my-planning.json",
+      "name": "my-planning",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/my-planning",
+          "summary": "my_planning"
         }
       ]
     },
@@ -1082,7 +1104,39 @@
       ]
     },
     {
-      "endpointCount": 10,
+      "endpointCount": 5,
+      "file": "posts.json",
+      "name": "posts",
+      "operations": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/posts/{id}",
+          "summary": "destroy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/posts/{id}",
+          "summary": "show"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/posts/{id}",
+          "summary": "update"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/posts/{post_id}/comments",
+          "summary": "create"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/posts/{post_id}/subscription",
+          "summary": "create"
+        }
+      ]
+    },
+    {
+      "endpointCount": 12,
       "file": "projects.json",
       "name": "projects",
       "operations": [
@@ -1125,6 +1179,16 @@
           "method": "POST",
           "path": "/api/v1/projects/{type}/{id}/mute",
           "summary": "mute"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/projects/{type}/{id}/posts",
+          "summary": "index"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/{type}/{id}/posts",
+          "summary": "create"
         },
         {
           "method": "POST",
@@ -1368,5 +1432,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 239
+  "totalEndpoints": 249
 }
