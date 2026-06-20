@@ -219,6 +219,19 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
     }
   }, [loadOverview])
 
+  // Pour les éditions inline d'une seule ligne (dropdown catégorie, statut…) :
+  // exécute l'action et remonte les erreurs, mais SANS refetch global ni flash
+  // de chargement. La mise à jour locale de la seule ligne concernée est faite
+  // par l'appelant à partir de la réponse PATCH (sérialisation complète).
+  const runInline = useCallback(async (fn) => {
+    setError(null)
+    try {
+      await fn()
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [])
+
   const showDetailFromApi = useCallback(async (title, path) => {
     setBusy(true)
     setError(null)
@@ -427,7 +440,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         Object.prototype.hasOwnProperty.call(changes, 'projectableType') ||
         Object.prototype.hasOwnProperty.call(changes, 'projectableId')
       if (!Object.keys(payload).length && !projectableChanged) return
-      await runAndRefresh(async () => {
+      await runInline(async () => {
         if (Object.keys(payload).length) {
           // Le PATCH renvoie déjà la dépense sérialisée complète : on remplace
           // uniquement la ligne concernée à partir de cette réponse, sans
@@ -468,12 +481,17 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
         ...(changes.poles ? { poles: changes.poles } : {}),
       }
       if (!Object.keys(payload).length || !ids?.length) return
-      await runAndRefresh(async () => {
-        await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/expenses/${id}`, {
+      await runInline(async () => {
+        const results = await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/expenses/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(payload),
         })))
-        await loadExpenses()
+        // Remplacement surgical des seules lignes modifiées à partir des réponses
+        // PATCH (sérialisation complète), sans refetch global du tableau.
+        const byId = new Map(results.filter((r) => r?.id).map((r) => [r.id, r]))
+        if (byId.size) {
+          setExpenses((prev) => prev.map((e) => byId.get(e.id) || e))
+        }
       })
     },
     onBulkExpenseDelete: (ids) => {
@@ -503,7 +521,7 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
     },
 
     onUpdateRevenue: (revenueId, patch) =>
-      runAndRefresh(async () => {
+      runInline(async () => {
         const body = {
           status: patch.status,
           pole: patch.pole,
@@ -512,20 +530,29 @@ export default function AdminSettings({ currentMemberId: initialMemberId }) {
           amount_excl_vat: patch.amountExclVat,
           amount: patch.amount,
         }
-        await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'PATCH', body: JSON.stringify(body) })
-        await loadRevenues()
+        // Le PATCH renvoie la recette sérialisée complète : on remplace
+        // uniquement la ligne concernée, sans refetch global du tableau.
+        const updated = await apiRequest(`/api/v1/lab/revenues/${revenueId}`, { method: 'PATCH', body: JSON.stringify(body) })
+        if (updated?.id) {
+          setRevenues((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+        }
       }),
 
     onBulkUpdateRevenues: async (ids, patch) => {
-      await runAndRefresh(async () => {
+      if (!ids?.length) return
+      await runInline(async () => {
         const body = {
           status: patch.status,
           pole: patch.pole,
           category: patch.category,
           date: patch.date,
         }
-        await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/revenues/${id}`, { method: 'PATCH', body: JSON.stringify(body) })))
-        await loadRevenues()
+        const results = await Promise.all(ids.map((id) => apiRequest(`/api/v1/lab/revenues/${id}`, { method: 'PATCH', body: JSON.stringify(body) })))
+        // Remplacement surgical des seules lignes modifiées, sans refetch global.
+        const byId = new Map(results.filter((r) => r?.id).map((r) => [r.id, r]))
+        if (byId.size) {
+          setRevenues((prev) => prev.map((r) => byId.get(r.id) || r))
+        }
       })
     },
 
