@@ -633,9 +633,15 @@ module Api
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
         trainings = Academy::Training.includes(:album, :participant_categories).order(updated_at: :desc)
-        sessions = Academy::TrainingSession.includes(feedbacks: :contact).order(start_date: :asc)
+        # Defense-in-depth (#137) : on ne sérialise que les sessions/inscriptions
+        # rattachées à une formation vivante. `Academy::Training.select(:id)`
+        # respecte le default_scope (deleted_at: nil) → exclut tout orphelin.
+        living_training_ids = Academy::Training.select(:id)
+        sessions = Academy::TrainingSession.where(training_id: living_training_ids)
+          .includes(feedbacks: :contact).order(start_date: :asc)
         locations = Academy::TrainingLocation.order(:name)
         registrations = Academy::TrainingRegistration
+          .where(training_id: living_training_ids)
           .includes(
             registration_items: :participant_category,
             registration_packs: { pack: { pack_items: :participant_category } },
