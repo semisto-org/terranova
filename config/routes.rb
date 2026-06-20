@@ -624,6 +624,7 @@ Rails.application.routes.draw do
       post "design/:project_id/client-portal-link", to: "design_studio#generate_client_portal_link"
 
       # Public academy registration (no auth required)
+      get "public/academy/trainings", to: "public/academy_registrations#index"
       get "public/academy/trainings/:training_id", to: "public/academy_registrations#training_info"
       post "public/academy/trainings/:training_id/payment-intent", to: "public/academy_registrations#create_payment_intent"
       post "public/stripe-webhooks", to: "public/stripe_webhooks#create"

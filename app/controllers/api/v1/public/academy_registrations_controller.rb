@@ -4,6 +4,19 @@ module Api
       class AcademyRegistrationsController < ApplicationController
         skip_before_action :verify_authenticity_token, only: [:create_payment_intent]
 
+        # Liste publique des activités aux inscriptions ouvertes (#45) — consommée
+        # en pull par le site Semisto pour la page « Formations ». Les activités
+        # hors `registrations_open` (idée, préparation, passées…) ne sont JAMAIS
+        # exposées ici ; le détail/inscription d'une activité reste sur
+        # `GET public/academy/trainings/:training_id` (training_info).
+        def index
+          trainings = Academy::Training.where(status: "registrations_open")
+                                       .includes(:training_type, :sessions)
+                                       .order(:created_at)
+
+          render json: { activities: trainings.map { |training| serialize_summary(training) } }
+        end
+
         def training_info
           training = Academy::Training.includes(:training_type, :sessions, :registrations, :participant_categories, packs: { pack_items: :participant_category })
                                        .find(params[:training_id])
@@ -72,6 +85,31 @@ module Api
               max: setting.volume_discount_max.to_f
             },
             sessions: sessions,
+            locations: locations
+          }
+        end
+
+        # Carte d'activité pour la page Formations : assez d'infos pour afficher
+        # et lier vers l'inscription, sans exposer les internes (finances…).
+        def serialize_summary(training)
+          location_ids = training.sessions.flat_map(&:location_ids).uniq
+          locations = Academy::TrainingLocation.where(id: location_ids).map do |loc|
+            { id: loc.id.to_s, name: loc.name, address: loc.address }
+          end
+          capacity = training.total_capacity
+
+          {
+            id: training.id.to_s,
+            title: training.title,
+            description: training.description,
+            trainingType: training.training_type&.name,
+            price: training.price.to_f,
+            vatRate: training.vat_rate.to_f,
+            firstSessionDate: training.first_session_date&.iso8601,
+            lastSessionDate: training.last_session_date&.iso8601,
+            maxParticipants: training.max_participants,
+            spotsRemaining: capacity.positive? ? [capacity - training.total_spots_taken, 0].max : nil,
+            requiresAccommodation: training.requires_accommodation,
             locations: locations
           }
         end
