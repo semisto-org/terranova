@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2625,6 +2625,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
     t.datetime "created_at", null: false
     t.text "description"
     t.date "due_date"
+    t.bigint "event_id"
     t.string "name", null: false
     t.text "notes"
     t.bigint "parent_id"
@@ -2644,6 +2645,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200000) do
     t.index ["assignee_id", "status"], name: "index_tasks_on_assignee_id_and_status"
     t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
     t.index ["completed_by_id"], name: "index_tasks_on_completed_by_id"
+    t.index ["event_id"], name: "index_tasks_on_event_id"
     t.index ["parent_id"], name: "index_tasks_on_parent_id"
     t.index ["pinged_at"], name: "index_tasks_on_pinged_at"
     t.index ["pinged_by_id"], name: "index_tasks_on_pinged_by_id"

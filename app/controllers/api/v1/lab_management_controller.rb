@@ -339,7 +339,9 @@ module Api
       end
 
       def show_event
-        render json: serialize_event(@event)
+        # La fiche réunion expose son ordre du jour : les tâches qui y ont été
+        # amenées (#37). Réservé au détail (pas dans la liste calendrier).
+        render json: serialize_event(@event).merge(tasks: serialize_event_agenda(@event))
       end
 
       def calendar
@@ -1514,6 +1516,21 @@ module Api
           attendeeIds: event.event_attendees.map { |ea| ea.member_id.to_s },
           cycleId: event.cycle_id&.to_s
         }
+      end
+
+      # Ordre du jour d'une réunion : les tâches rattachées (#37), allégées
+      # pour l'affichage (identité, statut, assigné).
+      def serialize_event_agenda(event)
+        event.tasks.includes(:assignee, task_list: :taskable).order(:position, :created_at).map do |task|
+          projectable = task.task_list&.taskable
+          {
+            id: task.id.to_s,
+            name: task.name,
+            status: task.status,
+            assigneeName: task.assignee_name,
+            projectName: projectable&.project_name
+          }
+        end
       end
 
       def serialize_event_types

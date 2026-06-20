@@ -3,6 +3,7 @@ import { X, Pencil, Trash2, Star, Hand, ExternalLink, UserCheck, CheckCircle2, C
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import CommentsBlock from '@/components/comments/CommentsBlock'
 import FollowButton from '@/components/subscriptions/FollowButton'
+import TaskMeetingPicker from './TaskMeetingPicker'
 import type { Task, ProjectTypeKey } from './types'
 import { PROJECT_TYPE_LABELS } from './types'
 
@@ -17,6 +18,7 @@ interface TaskDetailProps {
   onPing?: (id: string) => void
   onSaveNotes: (id: string, notes: string) => Promise<void> | void
   onNavigateToProject?: (projectType: ProjectTypeKey, projectId: string) => void
+  onTaskUpdated?: (task: Task) => void
 }
 
 const fmt = (iso?: string | null) =>
@@ -27,7 +29,7 @@ function fullName(m?: { firstName: string; lastName: string } | null) {
 }
 
 export function TaskDetail({
-  task, accentColor = '#5B5781', busy, onClose, onEdit, onDelete, onStar, onPing, onSaveNotes, onNavigateToProject,
+  task, accentColor = '#5B5781', busy, onClose, onEdit, onDelete, onStar, onPing, onSaveNotes, onNavigateToProject, onTaskUpdated,
 }: TaskDetailProps) {
   const [notes, setNotes] = useState(task.notes || '')
   const [savingNotes, setSavingNotes] = useState(false)
@@ -133,6 +135,9 @@ export function TaskDetail({
               </button>
             )}
           </div>
+
+          {/* Réunion / ordre du jour (#37) */}
+          <TaskMeetingPicker task={task} accentColor={accentColor} onChanged={onTaskUpdated} />
 
           {/* Commentaires (#102) */}
           <CommentsBlock parentType="tasks" parentId={task.id} accentColor={accentColor} />

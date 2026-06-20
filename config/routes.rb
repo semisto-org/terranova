@@ -152,6 +152,8 @@ Rails.application.routes.draw do
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"
       get "member-tasks/:member_id", to: "tasks#member_tasks"
+      # Réunions proposées pour « amener une tâche en réunion » (#37).
+      get "tasks/meeting-options", to: "tasks#meeting_options"
 
       # Commentaires polymorphes (#102) — routes imbriquées par parent.
       # Nouveau parent commentable = 3 lignes ici + 1 entrée dans CommentsController::PARENTS.

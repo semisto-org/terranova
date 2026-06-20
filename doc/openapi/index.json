@@ -374,12 +374,17 @@
       ]
     },
     {
-      "endpointCount": 1,
+      "endpointCount": 2,
       "file": "design_studio.json",
       "name": "design_studio",
       "operations": [
         {
           "method": "GET",
+          "path": "/api/v1/design_studio/reporting",
+          "summary": "reporting"
+        },
+        {
+          "method": "POST",
           "path": "/api/v1/design_studio/reporting",
           "summary": "reporting"
         }
@@ -569,7 +574,7 @@
       ]
     },
     {
-      "endpointCount": 21,
+      "endpointCount": 22,
       "file": "lab.json",
       "name": "lab",
       "operations": [
@@ -627,6 +632,11 @@
           "method": "POST",
           "path": "/api/v1/lab/contacts/{id}/impersonate",
           "summary": "impersonate_contact"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/lab/events/{id}",
+          "summary": "show_event"
         },
         {
           "method": "GET",
@@ -1265,10 +1275,20 @@
       ]
     },
     {
-      "endpointCount": 9,
+      "endpointCount": 11,
       "file": "tasks.json",
       "name": "tasks",
       "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/tasks/meeting-options",
+          "summary": "meeting_options"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/tasks/{id}",
+          "summary": "update_task"
+        },
         {
           "method": "PATCH",
           "path": "/api/v1/tasks/{id}/ping",
@@ -1328,5 +1348,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 231
+  "totalEndpoints": 235
 }

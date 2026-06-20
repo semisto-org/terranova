@@ -76,4 +76,28 @@ class TaskTest < ActiveSupport::TestCase
     assert_includes Task.recently_completed(14), done
     assert_not_includes Task.recently_completed(14), old_done
   end
+
+  # Lien tâche ↔ réunion (#37)
+  test 'a task can be brought to a meeting via the event association' do
+    event = build_event
+    task = @list.tasks.create!(name: 'Point budget', status: 'pending', event: event)
+    assert_equal event.id, task.reload.event_id
+    assert_includes event.tasks, task
+  end
+
+  test 'deleting the event nullifies the link, the task survives' do
+    event = build_event
+    task = @list.tasks.create!(name: 'Suivi', status: 'pending', event: event)
+    event.destroy
+    assert Task.exists?(task.id), 'la tâche doit survivre à la suppression de la réunion'
+    assert_nil task.reload.event_id
+  end
+
+  private
+
+  def build_event
+    event_type = EventType.create!(label: "Réunion-#{SecureRandom.hex(3)}")
+    Event.create!(title: 'Réunion équipe', event_type: event_type,
+                  start_date: 1.day.from_now, end_date: 1.day.from_now + 1.hour)
+  end
 end

@@ -12,6 +12,9 @@ class Task < ApplicationRecord
   belongs_to :completed_by, class_name: "Member", optional: true
   belongs_to :pinged_by, class_name: "Member", optional: true
   belongs_to :parent, class_name: "Task", optional: true
+  # Réunion à laquelle la tâche est portée (#37) — « amener en réunion ».
+  # Une tâche = une seule réunion ; relier ailleurs écrase le lien.
+  belongs_to :event, optional: true
 
   has_many :children, class_name: "Task", foreign_key: :parent_id, dependent: :nullify
   has_many :comments, as: :commentable, dependent: :destroy

@@ -146,6 +146,31 @@ module Api
         }
       end
 
+      # GET /api/v1/tasks/meeting-options
+      #
+      # Réunions proposées dans le sélecteur « Amener en réunion » (#37) :
+      # les événements à venir (non terminés) auxquels le membre courant est
+      # convié. Triés par date de début (le plus proche d'abord).
+      def meeting_options
+        events = Event.joins(:event_attendees)
+          .where(event_attendees: { member_id: current_member.id })
+          .where("events.end_date >= ?", Time.current)
+          .order(start_date: :asc)
+          .includes(:event_type)
+
+        render json: {
+          items: events.map do |event|
+            {
+              id: event.id.to_s,
+              title: event.title,
+              type: event.event_type.label,
+              startDate: event.start_date.iso8601,
+              location: event.location
+            }
+          end
+        }
+      end
+
       private
 
       def task_groups_for(member_id, recent_days: 14)
@@ -191,8 +216,8 @@ module Api
         # assigné via resolve_assignee. On n'autorise donc que l'assignation par
         # assignee_id (un membre de l'équipe), jamais du texte libre.
         permitted = params.permit(:name, :description, :notes, :status, :due_date, :assignee_id,
-                                   :priority, :time_minutes, :position, :parent_id, tags: [])
-        %i[priority due_date assignee_id time_minutes parent_id].each do |key|
+                                   :priority, :time_minutes, :position, :parent_id, :event_id, tags: [])
+        %i[priority due_date assignee_id time_minutes parent_id event_id].each do |key|
           permitted[key] = nil if permitted[key].is_a?(String) && permitted[key].empty?
         end
         permitted
@@ -254,6 +279,8 @@ module Api
           timeMinutes: task.time_minutes,
           position: task.position,
           parentId: task.parent_id&.to_s,
+          eventId: task.event_id&.to_s,
+          eventTitle: task.event&.title,
           taskListId: task.task_list_id.to_s,
           projectType: projectable&.project_type_key,
           projectId: projectable&.id&.to_s,
