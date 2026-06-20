@@ -13,6 +13,8 @@ class Event < ApplicationRecord
   has_one :album, as: :albumable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
   has_many :activity_events, as: :subject, dependent: :destroy
+  # Points d'action d'un compte-rendu (#47) — réunion → tâches.
+  has_many :action_items, class_name: "EventActionItem", dependent: :destroy
 
   validates :title, :event_type, :start_date, :end_date, presence: true
 
