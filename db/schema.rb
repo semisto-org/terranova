@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -681,6 +681,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_140000) do
     t.index ["project_id"], name: "index_design_annotations_on_project_id"
   end
 
+  create_table "design_calendars", force: :cascade do |t|
+    t.string "calendar_type", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "months", default: [], null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "calendar_type"], name: "index_design_calendars_on_project_and_type", unique: true
+  end
+
   create_table "design_client_contributions", force: :cascade do |t|
     t.string "client_id", null: false
     t.datetime "created_at", null: false
@@ -703,14 +712,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_140000) do
     t.index ["project_id"], name: "index_design_follow_up_visits_on_project_id"
   end
 
-  create_table "design_harvest_calendars", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.jsonb "months", default: [], null: false
-    t.bigint "project_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["project_id"], name: "index_design_harvest_calendars_on_project_id", unique: true
-  end
-
   create_table "design_interventions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "date", null: false
@@ -730,14 +731,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_140000) do
     t.jsonb "responses", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_design_interviews_on_project_id", unique: true
-  end
-
-  create_table "design_maintenance_calendars", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.jsonb "months", default: [], null: false
-    t.bigint "project_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["project_id"], name: "index_design_maintenance_calendars_on_project_id", unique: true
   end
 
   create_table "design_media_items", force: :cascade do |t|
@@ -2771,13 +2764,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_140000) do
   add_foreign_key "credentials", "members", column: "created_by_id"
   add_foreign_key "design_analysis_sections", "design_projects", column: "project_id"
   add_foreign_key "design_annotations", "design_projects", column: "project_id"
+  add_foreign_key "design_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_client_contributions", "design_projects", column: "project_id"
   add_foreign_key "design_follow_up_visits", "design_projects", column: "project_id"
-  add_foreign_key "design_harvest_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_interventions", "design_plant_records", column: "plant_record_id"
   add_foreign_key "design_interventions", "design_projects", column: "project_id"
   add_foreign_key "design_interviews", "design_projects", column: "project_id"
-  add_foreign_key "design_maintenance_calendars", "design_projects", column: "project_id"
   add_foreign_key "design_media_items", "design_projects", column: "project_id"
   add_foreign_key "design_methodology_items", "design_projects", column: "project_id"
   add_foreign_key "design_observation_notes", "design_projects", column: "project_id"

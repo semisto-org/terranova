@@ -38,8 +38,13 @@ module Design
     has_many :media_items, class_name: 'Design::MediaItem', foreign_key: :project_id, dependent: :destroy
     has_many :annotations, class_name: 'Design::Annotation', foreign_key: :project_id, dependent: :destroy
     has_one :client_contribution, class_name: 'Design::ClientContribution', foreign_key: :project_id, dependent: :destroy
-    has_one :harvest_calendar, class_name: 'Design::HarvestCalendar', foreign_key: :project_id, dependent: :destroy
-    has_one :maintenance_calendar, class_name: 'Design::MaintenanceCalendar', foreign_key: :project_id, dependent: :destroy
+    # Calendriers unifiés (#161) : une seule table design_calendars discriminée
+    # par calendar_type. has_one conditionnels — le scope sert aussi de valeur
+    # par défaut à la création (create_harvest_calendar! pose calendar_type).
+    has_one :harvest_calendar, -> { where(calendar_type: 'harvest') },
+            class_name: 'Design::Calendar', foreign_key: :project_id, dependent: :destroy
+    has_one :maintenance_calendar, -> { where(calendar_type: 'maintenance') },
+            class_name: 'Design::Calendar', foreign_key: :project_id, dependent: :destroy
     has_one :planting_plan, class_name: 'Design::PlantingPlan', foreign_key: :project_id, dependent: :destroy
     has_many :plant_records, class_name: 'Design::PlantRecord', foreign_key: :project_id, dependent: :destroy
     has_many :follow_up_visits, class_name: 'Design::FollowUpVisit', foreign_key: :project_id, dependent: :destroy
