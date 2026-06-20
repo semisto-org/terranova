@@ -30,6 +30,13 @@ export interface CalendarTask {
   projectName: string | null
 }
 
+// Projet listé dans le filtre « Mon planning » (#142).
+export interface PlanningProject {
+  type: string
+  id: string
+  name: string
+}
+
 export interface CalendarViewProps {
   events: Event[]
   cycles: Cycle[]
@@ -44,6 +51,16 @@ export interface CalendarViewProps {
   onEditEvent?: (eventId: string) => void
   onDeleteEvent?: (eventId: string) => void
   onSelectTask?: (projectType: string, projectId: string) => void
+  // Mode « Mon planning » (#142). Quand `planningMode` est fourni, le calendrier
+  // affiche la barre de contrôle Mine/Everyone + filtres type {events,to-dos} +
+  // projet. Sinon (défaut), le comportement Lab est inchangé.
+  planningMode?: 'mine' | 'everyone'
+  onPlanningModeChange?: (mode: 'mine' | 'everyone') => void
+  planningEntryTypes?: Array<'events' | 'todos'>
+  onPlanningEntryTypesChange?: (types: Array<'events' | 'todos'>) => void
+  projects?: PlanningProject[]
+  selectedProject?: string // "type:id" ou '' pour tous
+  onSelectedProjectChange?: (value: string) => void
 }
 
 type ViewMode = 'month' | 'week'
@@ -58,6 +75,7 @@ const eventTypeConfig: Record<string, { label: string; icon: string; color: stri
   'Semisto Day': { label: 'Semisto Day', icon: '🌳', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
   'Semos Fest': { label: 'Semos Fest', icon: '🎉', color: 'text-pink-700', bgColor: 'bg-pink-100' },
   'Formation': { label: 'Formation', icon: '📚', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  'À faire': { label: 'À faire', icon: '✓', color: 'text-teal-700', bgColor: 'bg-teal-100' },
 }
 
 const defaultEventConfig = { label: 'Événement', icon: '📌', color: 'text-stone-700', bgColor: 'bg-stone-100' }
@@ -183,7 +201,25 @@ export function CalendarView({
   onEditEvent,
   onDeleteEvent,
   onSelectTask,
+  planningMode,
+  onPlanningModeChange,
+  planningEntryTypes,
+  onPlanningEntryTypesChange,
+  projects,
+  selectedProject,
+  onSelectedProjectChange,
 }: CalendarViewProps) {
+  const isPlanning = planningMode !== undefined
+  const entryTypes = planningEntryTypes ?? ['events', 'todos']
+
+  const toggleEntryType = (type: 'events' | 'todos') => {
+    if (!onPlanningEntryTypesChange) return
+    const next = entryTypes.includes(type)
+      ? entryTypes.filter((t) => t !== type)
+      : [...entryTypes, type]
+    onPlanningEntryTypesChange(next)
+  }
+
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
@@ -502,22 +538,26 @@ export function CalendarView({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800">
-              Calendrier
+              {isPlanning ? 'Mon planning' : 'Calendrier'}
             </h1>
             <p className="text-stone-500 mt-1">
-              Cycles, réunions et événements du Lab
+              {isPlanning
+                ? 'Mes événements et échéances, tous projets confondus'
+                : 'Cycles, réunions et événements du Lab'}
             </p>
           </div>
 
-          <button
-            onClick={onCreateEvent}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B5781] hover:bg-[#4a4670] text-white rounded-lg font-medium transition-colors shadow-sm"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nouvel événement
-          </button>
+          {!isPlanning && (
+            <button
+              onClick={onCreateEvent}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B5781] hover:bg-[#4a4670] text-white rounded-lg font-medium transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nouvel événement
+            </button>
+          )}
         </div>
 
         {/* Calendar navigation */}
@@ -619,6 +659,72 @@ export function CalendarView({
               </button>
             </div>
           </div>
+
+          {/* Planning controls (#142) — Mine/Everyone + type + projet */}
+          {isPlanning && (
+            <div className="flex flex-wrap items-center gap-3 p-4 border-b border-stone-200 bg-stone-50">
+              {/* Bascule Mine / Everyone */}
+              <div className="flex bg-stone-100 rounded-lg p-1">
+                <button
+                  onClick={() => onPlanningModeChange?.('mine')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    planningMode === 'mine'
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  Mon planning
+                </button>
+                <button
+                  onClick={() => onPlanningModeChange?.('everyone')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    planningMode === 'everyone'
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  Tout le monde
+                </button>
+              </div>
+
+              {/* Filtre type d'entrée */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-stone-500">Afficher :</span>
+                {([['events', 'Événements'], ['todos', 'À faire']] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => toggleEntryType(key)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                      entryTypes.includes(key)
+                        ? 'bg-[#5B5781]/15 text-[#5B5781]'
+                        : 'bg-stone-200 text-stone-400 opacity-60'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filtre projet */}
+              {projects && projects.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-stone-500">Projet :</span>
+                  <select
+                    value={selectedProject ?? ''}
+                    onChange={(e) => onSelectedProjectChange?.(e.target.value)}
+                    className="border border-stone-300 rounded-lg px-2.5 py-1 text-xs bg-white text-stone-700"
+                  >
+                    <option value="">Tous mes projets</option>
+                    {projects.map((p) => (
+                      <option key={`${p.type}:${p.id}`} value={`${p.type}:${p.id}`}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Filters */}
           <div className="flex flex-wrap gap-2 p-4 border-b border-stone-200 bg-stone-50">

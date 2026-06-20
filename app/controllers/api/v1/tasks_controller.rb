@@ -171,7 +171,186 @@ module Api
         }
       end
 
+      # GET /api/v1/my-planning
+      #
+      # « Mon planning » (#142) : agrège, cross-projets, les events où je suis
+      # attendu (event_attendees) et mes tâches assignées (assignee_id) ayant
+      # une due_date, sous une forme commune consommable par CalendarView.
+      #
+      # Paramètres :
+      #   mode      — "mine" (défaut) | "everyone"
+      #   project   — "type:id" pour ne garder qu'un projet (ex. "lab-project:3")
+      #   types     — liste séparée par des virgules parmi {events, todos}
+      #               (défaut : les deux)
+      #
+      # Réponse : { entries: [...], projects: [{type,id,name}] }
+      # où `projects` peuple le filtre projet (les projets où je suis membre).
+      def my_planning
+        mode = params[:mode] == "everyone" ? "everyone" : "mine"
+        wanted_types = planning_types
+        project_filter = parse_project_filter(params[:project])
+        member_projects = projects_for_member(current_member)
+
+        entries = []
+        if wanted_types.include?("events")
+          entries.concat(planning_events(mode, project_filter, member_projects))
+        end
+        if wanted_types.include?("todos")
+          entries.concat(planning_todos(mode, project_filter, member_projects))
+        end
+
+        render json: {
+          entries: entries,
+          projects: member_projects.map do |projectable|
+            {
+              type: projectable.project_type_key,
+              id: projectable.id.to_s,
+              name: projectable.project_name
+            }
+          end
+        }
+      end
+
       private
+
+      # Types d'entrées demandés, normalisés (events / todos). Défaut : les deux.
+      def planning_types
+        raw = params[:types].to_s.split(",").map(&:strip).reject(&:blank?)
+        return %w[events todos] if raw.empty?
+
+        raw & %w[events todos]
+      end
+
+      # Décompose le filtre projet "type:id" en { type:, projectable_type:, id: }.
+      # Renvoie nil si absent ou inconnu.
+      def parse_project_filter(raw)
+        return nil if raw.blank?
+
+        type_key, id = raw.to_s.split(":", 2)
+        klass_name = Projectable::PROJECT_TYPE_KEYS.key(type_key)
+        return nil unless klass_name && id.present?
+
+        { projectable_type: klass_name, projectable_id: id }
+      end
+
+      # Projets où le membre est inscrit (les 4 types Projectable). Dédupliqués.
+      def projects_for_member(member)
+        ProjectMembership
+          .where(member_id: member.id)
+          .includes(:projectable)
+          .map(&:projectable)
+          .compact
+          .uniq { |p| [p.class.name, p.id] }
+      end
+
+      # Events sérialisés au shape calendrier (+ source:'event').
+      # mine     → uniquement les events où je suis attendu.
+      # everyone → les events des projets où je suis membre (sans filtre projet),
+      #            ou du projet ciblé si un filtre projet est passé.
+      def planning_events(mode, project_filter, member_projects)
+        scope = Event.includes(:event_attendees, :event_type)
+
+        if mode == "mine"
+          scope = scope
+            .joins(:event_attendees)
+            .where(event_attendees: { member_id: current_member.id })
+        end
+
+        if project_filter
+          scope = scope.where(
+            projectable_type: project_filter[:projectable_type],
+            projectable_id: project_filter[:projectable_id]
+          )
+        elsif mode == "everyone"
+          # everyone sans filtre projet : restreindre aux projets du membre.
+          pairs = member_projects.map { |p| [p.class.name, p.id] }
+          return [] if pairs.empty?
+
+          conditions = pairs.map { "(events.projectable_type = ? AND events.projectable_id = ?)" }.join(" OR ")
+          scope = scope.where(conditions, *pairs.flatten)
+        end
+
+        scope.distinct.map { |event| serialize_planning_event(event) }
+      end
+
+      # Tâches assignées + datées, sérialisées en entrées calendrier allDay
+      # mono-jour sur due_date (+ source:'todo'). Les tâches legacy sans
+      # assignee_id sont exclues (where.not). En mode everyone (sans filtre
+      # projet), on restreint aux projets où le membre est inscrit.
+      def planning_todos(mode, project_filter, member_projects)
+        scope = Task
+          .includes(:assignee, task_list: :taskable)
+          .where.not(assignee_id: nil)
+          .where.not(due_date: nil)
+
+        if mode == "mine"
+          scope = scope.where(assignee_id: current_member.id)
+        end
+
+        tasks = scope.to_a
+
+        # Filtrage par projet (en mémoire : le projet est porté par
+        # task_list.taskable, polymorphe, pas directement sur tasks).
+        if project_filter
+          tasks.select! do |task|
+            projectable = task.task_list&.taskable
+            projectable &&
+              projectable.class.name == project_filter[:projectable_type] &&
+              projectable.id.to_s == project_filter[:projectable_id].to_s
+          end
+        elsif mode == "everyone"
+          # everyone sans filtre : restreindre aux projets du membre.
+          allowed = member_projects.map { |p| [p.class.name, p.id] }.to_set
+          tasks.select! do |task|
+            projectable = task.task_list&.taskable
+            projectable && allowed.include?([projectable.class.name, projectable.id])
+          end
+        end
+
+        tasks.filter_map { |task| serialize_planning_todo(task) }
+      end
+
+      # Event → entrée calendrier (même shape que lab_management#serialize_event).
+      def serialize_planning_event(event)
+        {
+          id: event.id.to_s,
+          title: event.title,
+          type: event.event_type.label,
+          startDate: event.start_date.iso8601,
+          endDate: event.end_date.iso8601,
+          allDay: event.all_day,
+          location: event.location,
+          description: event.description,
+          attendeeIds: event.event_attendees.map { |ea| ea.member_id.to_s },
+          cycleId: event.cycle_id&.to_s,
+          source: "event"
+        }
+      end
+
+      # Task datée → entrée calendrier allDay mono-jour sur due_date.
+      def serialize_planning_todo(task)
+        projectable = task.task_list&.taskable
+        date = task.due_date.to_time.iso8601
+
+        {
+          id: "todo-#{task.id}",
+          taskId: task.id.to_s,
+          title: task.name,
+          type: "À faire",
+          startDate: date,
+          endDate: date,
+          allDay: true,
+          location: "",
+          description: task.description,
+          attendeeIds: task.assignee_id ? [task.assignee_id.to_s] : [],
+          cycleId: nil,
+          source: "todo",
+          assigneeId: task.assignee_id&.to_s,
+          projectName: projectable&.project_name,
+          projectType: projectable&.project_type_key,
+          projectId: projectable&.id&.to_s
+        }
+      end
 
       def task_groups_for(member_id, recent_days: 14)
         tasks = Task.includes(:assignee, task_list: :taskable, assigned_by: {}, completed_by: {}, pinged_by: {})

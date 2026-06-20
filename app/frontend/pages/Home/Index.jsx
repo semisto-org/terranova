@@ -18,6 +18,7 @@ import MyProjectsGrid from './components/MyProjectsGrid'
 
 const SECTION_TABS = [
   { id: 'home', label: 'Mon accueil' },
+  { id: 'planning', label: 'Mon planning' },
   { id: 'calendar', label: 'Tableau de bord' },
   { id: 'projects', label: 'Projets' },
   { id: 'impact', label: 'Impact' },
@@ -153,6 +154,14 @@ export default function HomeIndex() {
   const [calendarTasks, setCalendarTasks] = useState([])
   const [overviewData, setOverviewData] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // « Mon planning » (#142) : entrées cross-projets + filtres.
+  const [planningMode, setPlanningMode] = useState('mine')
+  const [planningEntryTypes, setPlanningEntryTypes] = useState(['events', 'todos'])
+  const [planningProjectFilter, setPlanningProjectFilter] = useState('')
+  const [planningEntries, setPlanningEntries] = useState([])
+  const [planningProjects, setPlanningProjects] = useState([])
+  const [planningLoading, setPlanningLoading] = useState(false)
   const [eventForm, setEventForm] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -199,6 +208,31 @@ export default function HomeIndex() {
   }, [])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Chargement « Mon planning » : l'endpoint filtre côté serveur (mode, projet,
+  // types). Les entrées renvoyées sont déjà au shape Event du calendrier.
+  const loadPlanning = useCallback(async () => {
+    setPlanningLoading(true)
+    try {
+      const query = new URLSearchParams({ mode: planningMode })
+      if (planningProjectFilter) query.set('project', planningProjectFilter)
+      if (planningEntryTypes.length > 0 && planningEntryTypes.length < 2) {
+        query.set('types', planningEntryTypes.join(','))
+      }
+      const res = await apiRequest(`/api/v1/my-planning?${query.toString()}`)
+      setPlanningEntries(res?.entries ?? [])
+      setPlanningProjects(res?.projects ?? [])
+    } catch (err) {
+      console.error('Failed to load planning:', err)
+      setPlanningEntries([])
+    } finally {
+      setPlanningLoading(false)
+    }
+  }, [planningMode, planningProjectFilter, planningEntryTypes])
+
+  useEffect(() => {
+    if (tab === 'planning') loadPlanning()
+  }, [tab, loadPlanning])
 
   const members = overviewData?.members ?? []
   const cycles = overviewData?.cycles ?? []
@@ -510,7 +544,7 @@ export default function HomeIndex() {
 
   // La grille « Mon accueil » charge ses propres données : on ne la bloque pas
   // derrière le chargement du calendrier/overview du Lab.
-  if (loading && tab !== 'home') {
+  if (loading && tab !== 'home' && tab !== 'planning') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-[#5B5781] rounded-full" />
@@ -527,6 +561,31 @@ export default function HomeIndex() {
       )}
 
       {tab === 'home' && <MyProjectsGrid />}
+
+      {tab === 'planning' && (
+        planningLoading && planningEntries.length === 0 ? (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-[#5B5781] rounded-full" />
+          </div>
+        ) : (
+          <CalendarView
+            events={planningEntries}
+            cycles={cycles}
+            cyclePeriods={cyclePeriods}
+            members={members}
+            currentMemberId={currentMemberId}
+            firstName={firstName}
+            planningMode={planningMode}
+            onPlanningModeChange={setPlanningMode}
+            planningEntryTypes={planningEntryTypes}
+            onPlanningEntryTypesChange={setPlanningEntryTypes}
+            projects={planningProjects}
+            selectedProject={planningProjectFilter}
+            onSelectedProjectChange={setPlanningProjectFilter}
+            onViewEvent={() => {}}
+          />
+        )
+      )}
 
       {tab === 'calendar' && (
         <>

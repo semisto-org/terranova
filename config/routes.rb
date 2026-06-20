@@ -152,6 +152,9 @@ Rails.application.routes.draw do
       patch "task-lists/:task_list_id/tasks/reorder", to: "tasks#reorder_tasks"
       get "my-tasks", to: "tasks#my_tasks"
       get "member-tasks/:member_id", to: "tasks#member_tasks"
+      # « Mon planning » (#142) : events attendus + tâches assignées datées,
+      # cross-projets, avec bascule mine/everyone et filtres projet/type.
+      get "my-planning", to: "tasks#my_planning"
       # Réunions proposées pour « amener une tâche en réunion » (#37).
       get "tasks/meeting-options", to: "tasks#meeting_options"
 
