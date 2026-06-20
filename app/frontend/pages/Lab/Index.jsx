@@ -9,6 +9,7 @@ import {
   SemosDashboard,
   ImpactDashboard,
 } from '../../lab-management/components'
+import { EventDetailModal } from '../../lab-management/components/EventDetailModal'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 
 const SECTION_TABS = [
@@ -153,6 +154,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
   const [data, setData] = useState(null)
   const [formModal, setFormModal] = useState(null)
   const [detailModal, setDetailModal] = useState(null)
+  const [eventDetail, setEventDetail] = useState(null)
   const [eventForm, setEventForm] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
@@ -221,6 +223,21 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
     try {
       const payload = await apiRequest(path)
       setDetailModal({ title, data: payload })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
+  // Fiche réunion (#37) : ouvre une vraie modale (avec ordre du jour) au lieu
+  // du dump JSON générique.
+  const openEventDetail = useCallback(async (eventId) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const payload = await apiRequest(`/api/v1/lab/events/${eventId}`)
+      setEventDetail(payload)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -495,7 +512,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       })
     },
 
-    onViewEvent: (eventId) => showDetailFromApi('Détail événement', `/api/v1/lab/events/${eventId}`),
+    onViewEvent: (eventId) => openEventDetail(eventId),
 
     onViewCycle: (cycleId) => {
       const cycle = (data?.cycles || []).find((item) => item.id === cycleId)
@@ -508,7 +525,7 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
       if (!guild) return
       setDetailModal({ title: 'Détail guilde', data: guild })
     },
-  }), [currentMemberId, data, events, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi])
+  }), [currentMemberId, data, events, members, openForm, pitches, runAndRefresh, scopes, setDeleteConfirm, showDetailFromApi, openEventDetail])
 
   if (loading) {
     return (
@@ -636,6 +653,14 @@ export default function LabIndex({ milestone, currentMemberId: initialMemberId }
           title={detailModal.title}
           data={detailModal.data}
           onClose={() => setDetailModal(null)}
+        />
+      )}
+
+      {eventDetail && (
+        <EventDetailModal
+          event={eventDetail}
+          members={members}
+          onClose={() => setEventDetail(null)}
         />
       )}
 

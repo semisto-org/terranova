@@ -1,5 +1,5 @@
 import React, { forwardRef, useMemo, useState } from 'react'
-import { Calendar, Clock, GripVertical, Hand, Pencil, Star, Trash2 } from 'lucide-react'
+import { Calendar, CalendarClock, Clock, GripVertical, Hand, Pencil, Star, Trash2 } from 'lucide-react'
 import ConfirmDeleteModal from '@/components/shared/ConfirmDeleteModal'
 import type { Task, MemberOption } from './types'
 import { STATUS_NEXT } from './types'
@@ -187,6 +187,12 @@ export const TaskRow = forwardRef<HTMLDivElement, TaskRowProps>(function TaskRow
             <span className="inline-flex items-center gap-1 text-xs text-stone-500">
               <Clock className="w-3 h-3" />
               {task.timeMinutes}min
+            </span>
+          )}
+          {task.eventTitle && (
+            <span className="inline-flex items-center gap-1 text-xs text-stone-500" title={`À l'ordre du jour : ${task.eventTitle}`}>
+              <CalendarClock className="w-3 h-3" />
+              <span className="truncate max-w-[10rem]">{task.eventTitle}</span>
             </span>
           )}
           {dots > 0 && (

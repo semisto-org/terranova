@@ -27,6 +27,8 @@ export interface Task {
   timeMinutes: number | null
   position: number
   parentId: string | null
+  eventId?: string | null
+  eventTitle?: string | null
   taskListId: string
   projectType?: ProjectTypeKey | null
   projectId?: string | null
