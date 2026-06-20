@@ -632,7 +632,7 @@ module Api
 
       def academy_payload
         training_types = Academy::TrainingType.order(:name)
-        trainings = Academy::Training.includes(:album, :participant_categories).order(updated_at: :desc)
+        trainings = Academy::Training.includes(:album, :participant_categories, :sessions, :registrations, :documents).order(updated_at: :desc)
         # Defense-in-depth (#137) : on ne sérialise que les sessions/inscriptions
         # rattachées à une formation vivante. `Academy::Training.select(:id)`
         # respecte le default_scope (deleted_at: nil) → exclut tout orphelin.
@@ -857,6 +857,18 @@ module Api
           totalCapacity: item.total_capacity,
           totalSpotsTaken: item.total_spots_taken,
           closureReadiness: closure_readiness(item),
+          # Pilotage financier/opérationnel — colonnes de la vue tableau (#139).
+          firstSessionDate: item.first_session_date&.iso8601,
+          lastSessionDate: item.last_session_date&.iso8601,
+          revenueExclVat: item.revenue_excl_vat,
+          expensesExclVat: item.expenses_excl_vat,
+          profit: item.profit_excl_vat,
+          profitMargin: item.profit_margin,
+          sessionsCount: item.sessions.size,
+          documentsCount: item.documents.size,
+          paidRegistrationsCount: item.paid_registrations_count,
+          expensesCount: item.attributed_expenses.count,
+          categoryPrices: item.category_prices,
           createdAt: item.created_at.iso8601,
           updatedAt: item.updated_at.iso8601
         }
