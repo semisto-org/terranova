@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import CommentsBlock from '@/components/comments/CommentsBlock'
 import FollowButton from '@/components/subscriptions/FollowButton'
+import { MeetingActionItems } from './MeetingActionItems'
 import type { Event, Cycle, Member, EventType } from '../types'
 
 interface CyclePeriod {
@@ -1505,6 +1506,13 @@ function EventDetailModal({ event, members, onClose, onEdit, onDelete }: EventDe
           {!(event as any)._isTrainingSession && (
             <div className="pt-2 border-t border-stone-100">
               <CommentsBlock parentType="events" parentId={event.id} />
+            </div>
+          )}
+
+          {/* Compte-rendu → tâches (#47) */}
+          {!(event as any)._isTrainingSession && (
+            <div className="pt-2 border-t border-stone-100">
+              <MeetingActionItems eventId={event.id} members={members} />
             </div>
           )}
         </div>
