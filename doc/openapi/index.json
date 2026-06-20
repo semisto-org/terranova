@@ -217,7 +217,7 @@
       ]
     },
     {
-      "endpointCount": 31,
+      "endpointCount": 33,
       "file": "design.json",
       "name": "design",
       "operations": [
@@ -260,6 +260,11 @@
           "method": "DELETE",
           "path": "/api/v1/design/planting-plan/markers/{marker_id}",
           "summary": "destroy_plant_marker"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/design/reporting",
+          "summary": "reporting"
         },
         {
           "method": "DELETE",
@@ -320,6 +325,11 @@
           "method": "POST",
           "path": "/api/v1/design/{project_id}/duplicate",
           "summary": "duplicate"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/design/{project_id}/expenses",
+          "summary": "create_expense"
         },
         {
           "method": "GET",
@@ -1454,5 +1464,5 @@
       "url": "https://terranova.semisto.org"
     }
   ],
-  "totalEndpoints": 252
+  "totalEndpoints": 254
 }

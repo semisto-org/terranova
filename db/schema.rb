@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -946,6 +946,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_150000) do
     t.integer "hours_planned", default: 0, null: false
     t.integer "hours_semos", default: 0, null: false
     t.integer "hours_worked", default: 0, null: false
+    t.string "kind", default: "client", null: false
     t.decimal "latitude", precision: 10, scale: 6, default: "0.0", null: false
     t.decimal "longitude", precision: 10, scale: 6, default: "0.0", null: false
     t.string "name", null: false
@@ -970,6 +971,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_150000) do
     t.string "website_url", default: "", null: false
     t.index ["client_portal_token"], name: "index_design_projects_on_client_portal_token", unique: true
     t.index ["deleted_at"], name: "index_design_projects_on_deleted_at"
+    t.index ["kind"], name: "index_design_projects_on_kind"
     t.index ["name"], name: "idx_design_projects_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["notion_id"], name: "index_design_projects_on_notion_id", unique: true
     t.index ["phase"], name: "index_design_projects_on_phase"
