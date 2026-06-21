@@ -682,6 +682,16 @@ nursery_third = Nursery::Nursery.find_or_create_by!(name: 'Les Jardins de Wallon
   n.is_pickup_point = false
 end
 
+_nursery_arbuste_fruitier = Nursery::Nursery.find_or_create_by!(name: 'Arbuste Fruitier') do |n|
+  n.nursery_type = 'partner'
+  n.integration  = 'platform'
+  n.website      = 'https://www.arbustefruitier.com'
+  n.country      = 'BE'
+  n.description  = 'Pépinière en permaculture spécialisée en arbustes fruitiers rares — catalogue synchronisé depuis leur boutique Shopify.'
+  n.specialties  = ['fruitiers', 'rares', 'permaculture']
+  n.is_pickup_point = true
+end
+
 # Containers
 container_p9 = Nursery::Container.find_or_create_by!(short_name: 'P9') do |c|
   c.name = 'Pot 9cm'
