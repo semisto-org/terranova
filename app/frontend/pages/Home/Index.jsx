@@ -5,6 +5,7 @@ import { useShellNav } from '../../components/shell/ShellContext'
 import { useUrlState } from '@/hooks/useUrlState'
 import {
   CalendarView,
+  PendingActionItems,
   EventForm,
   ShapeUpWorkboard,
   SemosDashboard,
@@ -605,6 +606,10 @@ export default function HomeIndex() {
               router.visit(`/projects/${projectType}/${projectId}`)
             }
           />
+
+          <div className="mt-6">
+            <PendingActionItems members={members} />
+          </div>
 
           <div className="mt-6">
             <MyTasksDashboard />
